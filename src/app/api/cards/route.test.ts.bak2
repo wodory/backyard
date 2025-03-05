@@ -1,0 +1,226 @@
+/**
+ * @jest-environment node
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { GET, POST } from './route';
+import prisma from '@/lib/prisma';
+
+// Prisma 클라이언트 모킹
+jest.mock('@/lib/prisma', () => ({
+  __esModule: true,
+  default: {
+    card: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+    },
+  },
+}));
+
+// Request 객체 모킹 - 타입 오류 해결
+if (!global.Request) {
+  // @ts-ignore - 테스트 환경에서만 사용되는 모킹
+  global.Request = function Request() {
+    return {
+      json: () => Promise.resolve({}),
+    };
+  };
+}
+
+// NextRequest 모킹
+jest.mock('next/server', () => {
+  return {
+    NextRequest: jest.fn().mockImplementation((url, options) => {
+      return {
+        url,
+        method: options?.method || 'GET',
+        json: jest.fn().mockImplementation(async () => {
+          return options?.body ? JSON.parse(options.body) : {};
+        }),
+        nextUrl: {
+          searchParams: new URLSearchParams(url?.split('?')[1] || ''),
+        },
+      };
+    }),
+    NextResponse: {
+      json: jest.fn().mockImplementation((data, options) => {
+        return {
+          status: options?.status || 200,
+          json: async () => data,
+        };
+      }),
+    },
+  };
+});
+
+describe('Cards API', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('GET /api/cards', () => {
+    it('모든 카드를 성공적으로 조회한다', async () => {
+      // 모킹된 데이터
+      const mockCards = [
+        {
+          id: '1',
+          title: '테스트 카드 1',
+          content: '테스트 내용 1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: 'user1',
+        },
+        {
+          id: '2',
+          title: '테스트 카드 2',
+          content: '테스트 내용 2',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: 'user2',
+        },
+      ];
+
+      // Prisma 응답 모킹
+      (prisma.card.findMany as jest.Mock).mockResolvedValue(mockCards);
+
+      // API 호출
+      const request = new NextRequest('http://localhost:3000/api/cards');
+      const response = await GET(request);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(200);
+      expect(data).toEqual(mockCards);
+      expect(prisma.card.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('사용자 ID로 필터링된 카드를 조회한다', async () => {
+      // 모킹된 데이터
+      const mockCards = [
+        {
+          id: '1',
+          title: '테스트 카드 1',
+          content: '테스트 내용 1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: 'user1',
+        },
+      ];
+
+      // Prisma 응답 모킹
+      (prisma.card.findMany as jest.Mock).mockResolvedValue(mockCards);
+
+      // API 호출
+      const request = new NextRequest('http://localhost:3000/api/cards?userId=user1');
+      const response = await GET(request);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(200);
+      expect(data).toEqual(mockCards);
+      expect(prisma.card.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user1' },
+        })
+      );
+    });
+
+    it('에러 발생 시 500 응답을 반환한다', async () => {
+      // 에러 모킹
+      (prisma.card.findMany as jest.Mock).mockRejectedValue(new Error('DB 에러'));
+
+      // API 호출
+      const request = new NextRequest('http://localhost:3000/api/cards');
+      const response = await GET(request);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(500);
+      expect(data).toHaveProperty('error');
+    });
+  });
+
+  describe('POST /api/cards', () => {
+    it('유효한 데이터로 카드를 생성한다', async () => {
+      // 모킹된 데이터
+      const mockCard = {
+        id: '1',
+        title: '새 카드',
+        content: '새 카드 내용',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 'user1',
+      };
+
+      // 요청 데이터
+      const requestData = {
+        title: '새 카드',
+        content: '새 카드 내용',
+        userId: 'user1',
+      };
+
+      // Prisma 응답 모킹
+      (prisma.card.create as jest.Mock).mockResolvedValue(mockCard);
+
+      // API 호출
+      const request = new NextRequest('http://localhost:3000/api/cards', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      });
+      const response = await POST(request);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(201);
+      expect(data).toEqual(mockCard);
+      expect(prisma.card.create).toHaveBeenCalledWith({
+        data: requestData,
+      });
+    });
+
+    it('유효하지 않은 데이터로 요청 시 400 응답을 반환한다', async () => {
+      // 유효하지 않은 요청 데이터 (제목 누락)
+      const requestData = {
+        content: '새 카드 내용',
+        userId: 'user1',
+      };
+
+      // API 호출
+      const request = new NextRequest('http://localhost:3000/api/cards', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      });
+      const response = await POST(request);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(400);
+      expect(data).toHaveProperty('error');
+      expect(prisma.card.create).not.toHaveBeenCalled();
+    });
+
+    it('에러 발생 시 500 응답을 반환한다', async () => {
+      // 요청 데이터
+      const requestData = {
+        title: '새 카드',
+        content: '새 카드 내용',
+        userId: 'user1',
+      };
+
+      // 에러 모킹
+      (prisma.card.create as jest.Mock).mockRejectedValue(new Error('DB 에러'));
+
+      // API 호출
+      const request = new NextRequest('http://localhost:3000/api/cards', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      });
+      const response = await POST(request);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(500);
+      expect(data).toHaveProperty('error');
+    });
+  });
+}); 
