@@ -172,3 +172,28 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
    ```
 
 **참고**: SQLite는 일부 PostgreSQL 기능을 지원하지 않을 수 있으므로 프로덕션 환경에서는 PostgreSQL을 사용하세요.
+
+## 개발 노트
+
+### 사용자 인증 시스템
+
+현재 애플리케이션은 개발 및 테스트 목적으로 하드코딩된 사용자 ID를 사용합니다. 이 ID는 `src/lib/constants.ts` 파일의 `DEFAULT_USER_ID` 상수에 저장되어 있습니다.
+
+#### 인증 시스템 구현 계획
+
+1. **로그인 및 회원가입 구현**
+   - Next.js 인증 시스템 구현 (NextAuth.js 또는 Supabase Auth 사용)
+   - 이메일/비밀번호 로그인
+   - 소셜 로그인 (Google, GitHub 등)
+
+2. **사용자 세션 관리**
+   - 로그인 상태 유지
+   - 세션 만료 처리
+   - 권한 관리
+
+3. **보안 강화**
+   - HTTPS 사용
+   - CSRF 보호
+   - Rate limiting
+
+이 인증 시스템이 구현되면 하드코딩된 사용자 ID 대신 현재 로그인한 사용자의 ID를 사용하게 됩니다.

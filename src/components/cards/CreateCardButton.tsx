@@ -17,9 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 import TiptapEditor from "@/components/editor/TiptapEditor";
-
-// 생성한 테스트 사용자 ID
-const TEST_USER_ID = "ab2473c2-21b5-4196-9562-3b720d80d77f";
+import { DEFAULT_USER_ID } from "@/lib/constants";
 
 // 컴포넌트에 props 타입 정의
 interface CreateCardButtonProps {
@@ -97,7 +95,7 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
         body: JSON.stringify({ 
           title, 
           content,
-          userId: TEST_USER_ID, // 사용자 ID 추가
+          userId: DEFAULT_USER_ID, // 사용자 ID 추가
           tags: tags // 태그 배열 추가
         }),
       });
