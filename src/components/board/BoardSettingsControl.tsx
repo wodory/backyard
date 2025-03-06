@@ -14,7 +14,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
-import { Settings, Grid3X3, LineIcon } from 'lucide-react';
+import { Settings, Grid3X3, ArrowRightIcon } from 'lucide-react';
 import { BoardSettings } from '@/lib/board-utils';
 import { SNAP_GRID_OPTIONS, CONNECTION_TYPE_OPTIONS, MARKER_TYPE_OPTIONS } from '@/lib/board-constants';
 import { ConnectionLineType, MarkerType } from 'reactflow';
@@ -107,7 +107,9 @@ export default function BoardSettingsControl({
         {/* 연결선 타입 설정 */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            <LineIcon className="mr-2 h-4 w-4" />
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 17C8 17 8 7 13 7C18 7 18 17 21 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             <span>연결선 스타일</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
@@ -127,9 +129,7 @@ export default function BoardSettingsControl({
         {/* 화살표 마커 설정 */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <ArrowRightIcon className="mr-2 h-4 w-4" />
             <span>화살표 스타일</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
