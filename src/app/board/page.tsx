@@ -23,6 +23,8 @@ import { Loader2, Save, LayoutGrid } from 'lucide-react';
 import CardNode from '@/components/board/CardNode';
 import { toast } from 'sonner';
 import CreateCardButton from '@/components/cards/CreateCardButton';
+import LayoutControls from '@/components/board/LayoutControls';
+import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 
 // 노드 타입 설정
 const nodeTypes = {
@@ -300,13 +302,22 @@ function BoardContent() {
     }
   }, [nodes, setNodes, viewportCenter, saveLayout]);
 
-  // 노드 자동 배치
+  // 노드 자동 배치 (기존 함수 수정)
   const handleAutoLayout = useCallback(() => {
-    const layoutedNodes = autoLayoutNodes(nodes);
+    const layoutedNodes = getGridLayout(nodes);
     setNodes(layoutedNodes);
     saveLayout(layoutedNodes);
-    toast.success("카드가 자동으로 배치되었습니다.");
+    toast.success("카드가 격자 형태로 배치되었습니다.");
   }, [nodes, setNodes, saveLayout]);
+
+  // 새로운 레이아웃 변경 핸들러 추가
+  const handleLayoutChange = useCallback((direction: 'horizontal' | 'vertical') => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    saveLayout(layoutedNodes);
+    toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
+  }, [nodes, edges, setNodes, setEdges, saveLayout]);
 
   useEffect(() => {
     fetchCards();
@@ -363,12 +374,17 @@ function BoardContent() {
               <Save className="w-4 h-4 mr-1" />
               레이아웃 저장
             </Button>
-            <Button size="sm" variant="secondary" onClick={handleAutoLayout}>
-              <LayoutGrid className="w-4 h-4 mr-1" />
-              자동 배치
-            </Button>
             <CreateCardButton onCardCreated={handleCardCreated} />
           </div>
+        </Panel>
+        
+        {/* 오른쪽 상단에 레이아웃 컨트롤 패널 추가 */}
+        <Panel position="top-right" className="mr-2 mt-2">
+          <LayoutControls
+            onLayoutChange={handleLayoutChange}
+            onAutoLayout={handleAutoLayout}
+            onSaveLayout={handleSaveLayout}
+          />
         </Panel>
       </ReactFlow>
     </div>
