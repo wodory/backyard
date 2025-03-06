@@ -16,6 +16,7 @@ import ReactFlow, {
   addEdge,
   EdgeChange,
   ReactFlowProvider,
+  MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
@@ -24,16 +25,15 @@ import CardNode from '@/components/board/CardNode';
 import { toast } from 'sonner';
 import CreateCardButton from '@/components/cards/CreateCardButton';
 import LayoutControls from '@/components/board/LayoutControls';
+import BoardSettingsControl from '@/components/board/BoardSettingsControl';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
+import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSettings, applyEdgeSettings } from '@/lib/board-utils';
+import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
 
 // 노드 타입 설정
 const nodeTypes = {
   card: CardNode,
 };
-
-// 로컬 스토리지 키
-const STORAGE_KEY = 'backyard-board-layout';
-const EDGES_STORAGE_KEY = 'backyard-board-edges';
 
 // 새 카드의 중앙 위치를 계산하는 함수
 const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
@@ -48,6 +48,7 @@ function BoardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewportCenter, setViewportCenter] = useState<{ x: number, y: number } | undefined>(undefined);
+  const [boardSettings, setBoardSettings] = useState<BoardSettings>(DEFAULT_BOARD_SETTINGS);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   
   // 뷰포트 중앙 계산
@@ -154,111 +155,25 @@ function BoardContent() {
     });
   }, []);
 
-  // 카드 데이터를 가져와서 노드로 변환
-  const fetchCards = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/cards');
-      
-      if (!response.ok) {
-        throw new Error('카드 데이터를 불러오는데 실패했습니다.');
-      }
-      
-      const cardsData = await response.json();
-      
-      // 로컬 스토리지에서 저장된 레이아웃 가져오기
-      let storedLayout = [];
-      try {
-        const storedData = localStorage.getItem(STORAGE_KEY);
-        if (storedData) {
-          storedLayout = JSON.parse(storedData);
-        }
-      } catch (err) {
-        console.error('Error loading stored layout:', err);
-      }
-      
-      // 카드 데이터를 노드로 변환 (저장된 레이아웃 적용)
-      const cardNodes: Node[] = applyStoredLayout(cardsData, storedLayout);
-      
-      setNodes(cardNodes);
-      
-      // 저장된 엣지 불러오기
-      try {
-        const storedEdges = localStorage.getItem(EDGES_STORAGE_KEY);
-        if (storedEdges) {
-          setEdges(JSON.parse(storedEdges));
-        } else {
-          // 임시 엣지 생성 (처음 실행 시에만)
-          const dummyEdges: Edge[] = [];
-          
-          // 간단한 예시로 첫 번째 카드와 두 번째 카드를 연결 (데이터가 있을 경우)
-          if (cardNodes.length >= 2) {
-            dummyEdges.push({
-              id: 'e1-2',
-              source: cardNodes[0].id,
-              target: cardNodes[1].id,
-              type: 'smoothstep',
-              animated: true,
-            });
-          }
-          
-          // 카드가 3개 이상이면 첫 번째와 세 번째도 연결 (예시)
-          if (cardNodes.length >= 3) {
-            dummyEdges.push({
-              id: 'e1-3',
-              source: cardNodes[0].id,
-              target: cardNodes[2].id,
-              type: 'default',
-            });
-          }
-          
-          setEdges(dummyEdges);
-        }
-      } catch (err) {
-        console.error('Error loading stored edges:', err);
-      }
-      
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching cards:', err);
-      setError('카드 데이터를 불러오는데 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setNodes, setEdges, applyStoredLayout]);
-
-  // 연결선 생성 처리 핸들러
+  // 노드 연결 핸들러
   const onConnect = useCallback(
-    (connection: Connection) => {
-      // 새로운 연결선 생성 시 edges 상태에 추가
-      setEdges((eds) => {
-        const newEdges = addEdge(
-          {
-            ...connection,
-            type: 'smoothstep', // 기본 연결선 타입 설정
-            animated: false, // 필요에 따라 애니메이션 설정
-            style: { stroke: '#555', strokeWidth: 2 }, // 연결선 스타일 설정
-          }, 
-          eds
-        );
-        
-        // 로컬 스토리지에 저장
-        setTimeout(() => {
-          try {
-            localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(newEdges));
-          } catch (err) {
-            console.error('Error saving edges after connection:', err);
-          }
-        }, 100);
-        
-        return newEdges;
-      });
-      
-      toast.success('새로운 연결이 생성되었습니다.');
+    (params: Connection) => {
+      // 기본 연결선 스타일과 마커 적용
+      const newEdge = {
+        ...params,
+        type: boardSettings.connectionLineType,
+        markerEnd: boardSettings.markerEnd ? {
+          type: boardSettings.markerEnd,
+          width: 20,
+          height: 20,
+        } : undefined,
+        animated: true,
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges, boardSettings]
   );
-  
+
   // 카드 생성 후 콜백
   const handleCardCreated = useCallback(async (cardData: any) => {
     try {
@@ -293,7 +208,7 @@ function BoardContent() {
     toast.success("카드가 격자 형태로 배치되었습니다.");
   }, [nodes, setNodes, saveLayout]);
 
-  // 새로운 레이아웃 변경 핸들러 추가
+  // 레이아웃 변경 핸들러
   const handleLayoutChange = useCallback((direction: 'horizontal' | 'vertical') => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction);
     setNodes(layoutedNodes);
@@ -301,6 +216,104 @@ function BoardContent() {
     saveLayout(layoutedNodes);
     toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
   }, [nodes, edges, setNodes, setEdges, saveLayout]);
+
+  // 보드 설정 변경 핸들러
+  const handleSettingsChange = useCallback((newSettings: BoardSettings) => {
+    setBoardSettings(newSettings);
+    saveBoardSettings(newSettings);
+    
+    // 연결선 스타일 변경이 있을 경우 모든 엣지에 적용
+    if (newSettings.connectionLineType !== boardSettings.connectionLineType || 
+        newSettings.markerEnd !== boardSettings.markerEnd) {
+      const updatedEdges = applyEdgeSettings(edges, newSettings);
+      setEdges(updatedEdges);
+      toast.success("연결선 스타일이 변경되었습니다.");
+    }
+    
+    // 스냅 그리드 변경 메시지
+    if (newSettings.snapToGrid !== boardSettings.snapToGrid || 
+        newSettings.snapGrid[0] !== boardSettings.snapGrid[0]) {
+      toast.success(
+        newSettings.snapToGrid 
+          ? `격자에 맞추기가 활성화되었습니다 (${newSettings.snapGrid[0]}px)` 
+          : "격자에 맞추기가 비활성화되었습니다"
+      );
+    }
+  }, [boardSettings, edges, setEdges]);
+
+  // 카드 및 설정 데이터 로드
+  const fetchCards = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // API에서 카드 데이터 가져오기
+      const response = await fetch('/api/cards');
+      
+      if (!response.ok) {
+        throw new Error('카드 목록을 불러오는데 실패했습니다.');
+      }
+      
+      const cardsData = await response.json();
+      
+      // 로컬 스토리지에서 노드 위치 불러오기
+      let savedNodesData: Record<string, { position: { x: number, y: number } }> = {};
+      try {
+        const savedLayout = localStorage.getItem(STORAGE_KEY);
+        if (savedLayout) {
+          savedNodesData = JSON.parse(savedLayout);
+        }
+      } catch (err) {
+        console.error('레이아웃 불러오기 실패:', err);
+      }
+      
+      // 로컬 스토리지에서 엣지 데이터 불러오기
+      let savedEdges: Edge[] = [];
+      try {
+        const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
+        if (savedEdgesData) {
+          savedEdges = JSON.parse(savedEdgesData);
+        }
+      } catch (err) {
+        console.error('엣지 데이터 불러오기 실패:', err);
+      }
+      
+      // 로컬 스토리지에서 보드 설정 불러오기
+      const loadedSettings = loadBoardSettings();
+      setBoardSettings(loadedSettings);
+      
+      // 노드 및 엣지 데이터 설정
+      const nodes = cardsData.map((card: any) => {
+        // 저장된 위치가 있으면 사용, 없으면 기본 위치 생성
+        const savedNode = savedNodesData[card.id];
+        const position = savedNode ? savedNode.position : { 
+          x: Math.random() * 500, 
+          y: Math.random() * 300 
+        };
+        
+        return {
+          id: card.id,
+          type: 'card',
+          position,
+          data: {
+            ...card,
+            tags: card.cardTags?.map((ct: any) => ct.tag.name) || []
+          }
+        };
+      });
+      
+      // 설정에 따라 엣지 스타일 적용
+      const styledEdges = applyEdgeSettings(savedEdges, loadedSettings);
+      
+      setNodes(nodes);
+      setEdges(styledEdges);
+    } catch (err) {
+      console.error('카드 데이터 불러오기 실패:', err);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setNodes, setEdges]);
 
   useEffect(() => {
     fetchCards();
@@ -341,7 +354,9 @@ function BoardContent() {
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
-        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineType={boardSettings.connectionLineType}
+        snapToGrid={boardSettings.snapToGrid}
+        snapGrid={boardSettings.snapGrid}
         deleteKeyCode={['Backspace', 'Delete']}
       >
         <Controls />
@@ -361,8 +376,12 @@ function BoardContent() {
           </div>
         </Panel>
         
-        {/* 오른쪽 상단에 레이아웃 컨트롤 패널 추가 */}
-        <Panel position="top-right" className="mr-2 mt-2">
+        {/* 오른쪽 상단에 레이아웃 및 설정 컨트롤 패널 추가 */}
+        <Panel position="top-right" className="mr-2 mt-2 flex gap-2">
+          <BoardSettingsControl
+            settings={boardSettings}
+            onSettingsChange={handleSettingsChange}
+          />
           <LayoutControls
             onLayoutChange={handleLayoutChange}
             onAutoLayout={handleAutoLayout}
