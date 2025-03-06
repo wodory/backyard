@@ -1,9 +1,17 @@
 import dagre from 'dagre';
-import { Node, Edge } from 'reactflow';
+import { Node, Edge, Position } from 'reactflow';
 
-// 노드 크기 설정
-const NODE_WIDTH = 300;
-const NODE_HEIGHT = 150;
+// 노드 크기 설정 - 실제 렌더링 크기에 맞게 조정
+const NODE_WIDTH = 320;
+const NODE_HEIGHT = 180;
+
+// 그래프 간격 설정
+const GRAPH_SETTINGS = {
+  rankdir: 'LR', // 방향: LR(수평) 또는 TB(수직)
+  nodesep: 100, // 같은 레벨의 노드 간 거리 (픽셀)
+  ranksep: 150, // 레벨 간 거리 (픽셀)
+  edgesep: 50, // 엣지 간 거리
+};
 
 /**
  * dagre 라이브러리를 사용하여 노드와 엣지의 레이아웃을 재배치하는 함수
@@ -27,7 +35,12 @@ export function getLayoutedElements(
 
   // 방향 설정 (LR: 왼쪽에서 오른쪽, TB: 위에서 아래)
   const isHorizontal = direction === 'horizontal';
-  dagreGraph.setGraph({ rankdir: isHorizontal ? 'LR' : 'TB' });
+  const settings = {
+    ...GRAPH_SETTINGS,
+    rankdir: isHorizontal ? 'LR' : 'TB',
+  };
+  
+  dagreGraph.setGraph(settings);
 
   // 노드 추가
   nodes.forEach(node => {
@@ -46,8 +59,12 @@ export function getLayoutedElements(
   const layoutedNodes = nodes.map(node => {
     const nodeWithPosition = dagreGraph.node(node.id);
 
+    // 방향에 따라 handle 위치 조정
     return {
       ...node,
+      // handle 위치: 수평 레이아웃이면 좌우, 수직 레이아웃이면 상하
+      targetPosition: isHorizontal ? Position.Left : Position.Top,
+      sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
       position: {
         x: nodeWithPosition.x - NODE_WIDTH / 2,
         y: nodeWithPosition.y - NODE_HEIGHT / 2,
@@ -66,16 +83,17 @@ export function getLayoutedElements(
  * @returns 배치된 노드 배열
  */
 export function getGridLayout(nodes: Node[], cardsPerRow: number = 3) {
-  const HORIZONTAL_GAP = 350;
+  const HORIZONTAL_GAP = 400;  // 좀 더 넓게 조정
   const VERTICAL_GAP = 250;
   
-  return nodes.map((node, index) => {
-    return {
-      ...node,
-      position: {
-        x: (index % cardsPerRow) * HORIZONTAL_GAP + 50,
-        y: Math.floor(index / cardsPerRow) * VERTICAL_GAP + 50,
-      }
-    };
-  });
+  return nodes.map((node, index) => ({
+    ...node,
+    // 모든 노드에 일관된 handle 위치 설정
+    targetPosition: Position.Top,
+    sourcePosition: Position.Bottom,
+    position: {
+      x: (index % cardsPerRow) * HORIZONTAL_GAP + 50,
+      y: Math.floor(index / cardsPerRow) * VERTICAL_GAP + 50,
+    }
+  }));
 } 

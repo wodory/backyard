@@ -7,14 +7,18 @@ import { Tag } from 'lucide-react';
 import TiptapViewer from '@/components/editor/TiptapViewer';
 
 // 카드 노드 컴포넌트 정의
-export default function CardNode({ data, isConnectable }: NodeProps) {
+export default function CardNode({ data, isConnectable, sourcePosition, targetPosition }: NodeProps) {
+  // sourcePosition과 targetPosition이 없으면 기본값 사용
+  const sourcePos = sourcePosition || Position.Bottom;
+  const targetPos = targetPosition || Position.Top;
+  
   return (
     <div className="min-w-[280px] max-w-[280px]">
       <Card className="border shadow-md hover:shadow-lg transition-shadow">
-        {/* 노드 연결 핸들(상단) */}
+        {/* 노드 연결 핸들(타겟 - 들어오는 연결) */}
         <Handle
           type="target"
-          position={Position.Top}
+          position={targetPos}
           isConnectable={isConnectable}
           className="w-3 h-3 bg-primary"
         />
@@ -50,10 +54,10 @@ export default function CardNode({ data, isConnectable }: NodeProps) {
           </Link>
         </CardFooter>
         
-        {/* 노드 연결 핸들(하단) */}
+        {/* 노드 연결 핸들(소스 - 나가는 연결) */}
         <Handle
           type="source"
-          position={Position.Bottom}
+          position={sourcePos}
           isConnectable={isConnectable}
           className="w-3 h-3 bg-primary"
         />

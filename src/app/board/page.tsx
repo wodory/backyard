@@ -41,23 +41,6 @@ const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
   return viewportCenter;
 };
 
-// 카드를 자동으로 정렬하는 함수
-const autoLayoutNodes = (nodes: Node[]) => {
-  const HORIZONTAL_GAP = 350;
-  const VERTICAL_GAP = 250;
-  const CARDS_PER_ROW = 3;
-  
-  return nodes.map((node, index) => {
-    return {
-      ...node,
-      position: {
-        x: (index % CARDS_PER_ROW) * HORIZONTAL_GAP + 50,
-        y: Math.floor(index / CARDS_PER_ROW) * VERTICAL_GAP + 50,
-      }
-    };
-  });
-};
-
 // 내부 구현을 위한 컴포넌트
 function BoardContent() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
