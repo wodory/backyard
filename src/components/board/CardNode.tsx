@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals } from 'reactflow';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
@@ -63,14 +63,18 @@ const adjustLightness = (color: string, lightnessIncrease: number): string => {
 };
 
 // 카드 노드 컴포넌트 정의
-export default function CardNode({ data, isConnectable, selected }: NodeProps) {
+export default function CardNode({ data, isConnectable, selected, id }: NodeProps) {
   // 카드 접기/펴기 상태
   const [isExpanded, setIsExpanded] = useState(false);
   // 호버 상태 추가
   const [isHovered, setIsHovered] = useState(false);
+  // 노드의 실제 높이를 저장하기 위한 ref
+  const nodeRef = useRef<HTMLDivElement>(null);
   
   // ReactFlow 인스턴스 가져오기
   const { getNodes, setNodes } = useReactFlow();
+  // 노드 내부 구조 업데이트 훅 추가
+  const updateNodeInternals = useUpdateNodeInternals();
   
   // 카드 클릭 핸들러 - 노드 선택 및 확장 토글 분리
   const handleCardClick = useCallback((event: React.MouseEvent) => {
@@ -92,6 +96,49 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
     }
     // 단일 클릭은 ReactFlow가 처리하도록 전파 - 추가 로직 없음
   }, [isExpanded]);
+  
+  // 접기/펼치기 토글 핸들러
+  const toggleExpand = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+  
+  // 상태 변경 시 노드 내부 업데이트
+  useEffect(() => {
+    // 노드가 펼쳐지거나 접힐 때 핸들 위치 업데이트
+    if (id) {
+      // 일련의 업데이트를 통해 핸들 위치가 정확히 계산되도록 함
+      // 1. 즉시 업데이트 
+      updateNodeInternals(id);
+      
+      // 2. 약간의 지연 후 업데이트 (레이아웃 변경 직후)
+      const timeoutId = setTimeout(() => {
+        updateNodeInternals(id);
+      }, 50);
+      
+      // 3. 트랜지션 완료 후 업데이트 (애니메이션 완료 후)
+      const secondTimeoutId = setTimeout(() => {
+        updateNodeInternals(id);
+      }, 250);
+      
+      // 4. 최종 업데이트 (모든 렌더링이 안정화된 후)
+      const finalTimeoutId = setTimeout(() => {
+        updateNodeInternals(id);
+      }, 500);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        clearTimeout(secondTimeoutId);
+        clearTimeout(finalTimeoutId);
+      };
+    }
+  }, [isExpanded, id, updateNodeInternals]);
+  
+  // 노드가 선택되거나 호버 상태가 변경될 때도 업데이트
+  useEffect(() => {
+    if (id) {
+      updateNodeInternals(id);
+    }
+  }, [id, selected, isHovered, updateNodeInternals]);
   
   // 마우스 오버 핸들러
   const handleMouseEnter = useCallback(() => {
@@ -127,73 +174,78 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
   // 외곽선 두께 (연결선과 통일)
   const borderWidth = 2; // 항상 2px로 고정
   
-  // 핸들러 크기 정의 - UI Config에서 가져온 값 사용
-  const handleSize = 12; // 크기 고정
-  
-  // 핸들러 위치 계산 - 보더의 정중앙에 위치하도록 정확히 설정
-  const handleOffset = 0; // 오프셋 0으로 변경, transform으로 위치 조정
-  
-  // 핸들러 스타일 - 그림자 효과 제거
-  const handleStyleBase = {
-    width: handleSize,
-    height: handleSize,
-    background: '#fff',
-    border: `2px solid ${connectionLineColor}`,
-    borderRadius: '50%',
-    zIndex: 30, // 더 높은 z-index 값으로 설정
-    transition: 'none', // 애니메이션 제거
-    padding: 0,
-    margin: 0,
-    opacity: 0, // 기본적으로 보이지 않음
-    pointerEvents: 'auto' as const // 타입 오류 해결
-  };
-  
-  // 호버 및 선택 상태에 따른 핸들러 스타일
-  const getHandleStyle = (baseStyle: React.CSSProperties, position: 'top' | 'right' | 'bottom' | 'left') => {
-    const positionStyles = {
-      top: {
-        top: -handleSize/2,
-        left: cardWidth / 2 - handleSize/2, // transform 대신 직접 위치 계산
-      },
-      right: {
-        right: -handleSize/2,
-        top: verticalHandlePosition - handleSize/2, // transform 대신 직접 위치 계산
-      },
-      bottom: {
-        bottom: -handleSize/2,
-        left: cardWidth / 2 - handleSize/2, // transform 대신 직접 위치 계산
-      },
-      left: {
-        left: -handleSize/2,
-        top: verticalHandlePosition - handleSize/2, // transform 대신 직접 위치 계산
-      }
-    };
-    
-    const style = {
-      ...baseStyle,
-      ...positionStyles[position],
-    };
-    
-    // 선택되었거나 호버 상태일 때 표시
-    if (selected || isHovered) {
-      return {
-        ...style,
-        opacity: 1, // 선택 또는 호버 시 항상 표시
-        zIndex: 35, // 더 높은 z-index
-      };
-    }
-    
-    return style;
-  };
-  
-  // 카드 높이 계산 (접힌 상태와 펼쳐진 상태)
-  const cardHeight = isExpanded ? 'auto' : '40px';
+  // 핸들러 크기 정의 
+  const handleSize = 10; // 정확히 10px로 고정
   
   // 카드 너비
   const cardWidth = 280;
   
-  // 접기/펴기 상태에 따른 좌우 핸들러 위치 조정
-  const verticalHandlePosition = isExpanded ? 140 : 20;
+  // 핸들러 스타일 - 기본 스타일 (핸들러 스타일을 useMemo로 최적화)
+  const handleStyleBase = useMemo(() => ({
+    width: handleSize,
+    height: handleSize,
+    backgroundColor: '#fff',
+    border: `2px solid ${connectionLineColor}`, // 모든 상태에서 동일한 테두리 색상 사용
+    borderRadius: '50%',
+    zIndex: 100, // z-index 증가
+    padding: 0,
+    margin: 0,
+    opacity: 1, // 항상 핸들러 표시
+    visibility: 'visible' as const, // 명시적으로 visible 설정
+    pointerEvents: 'auto' as const,
+    // 랜더링 최적화
+    willChange: 'transform',
+  }), [connectionLineColor]);
+  
+  // 핸들러 위치 계산 함수 - 모든 상태에서 완전히 동일한 스타일 사용
+  const getHandleStyle = useCallback((position: 'top' | 'right' | 'bottom' | 'left') => {
+    // 핸들 위치에 대한 기본 스타일 생성 (항상 새 객체 생성)
+    const style: React.CSSProperties = { ...handleStyleBase };
+    
+    // 정확한 소수점 계산을 위한 상수
+    const halfSize = handleSize / 2;
+    
+    // 모든 상태에서 완전히 동일한 위치 계산 (정수 값 사용)
+    switch (position) {
+      case 'top':
+        style.top = -halfSize; // handleSize의 절반만큼 위로
+        // transform이 CSS에서 무시되므로 직접 계산 (노드 너비의 절반 - 핸들 너비의 절반)
+        style.left = `calc(50% - ${halfSize}px)`;
+        // transform 속성 제거 (CSS에서 무시됨)
+        style.transform = 'none';
+        break;
+      case 'right':
+        style.right = -halfSize; // handleSize의 절반만큼 오른쪽으로
+        // transform이 CSS에서 무시되므로 직접 계산 (노드 높이의 절반 - 핸들 높이의 절반)
+        style.top = `calc(50% - ${halfSize}px)`;
+        style.transform = 'none';
+        break;
+      case 'bottom':
+        style.bottom = -halfSize; // handleSize의 절반만큼 아래로
+        // transform이 CSS에서 무시되므로 직접 계산 (노드 너비의 절반 - 핸들 너비의 절반)
+        style.left = `calc(50% - ${halfSize}px)`;
+        style.transform = 'none';
+        break;
+      case 'left':
+        style.left = -halfSize; // handleSize의 절반만큼 왼쪽으로
+        // transform이 CSS에서 무시되므로 직접 계산 (노드 높이의 절반 - 핸들 높이의 절반)
+        style.top = `calc(50% - ${halfSize}px)`;
+        style.transform = 'none';
+        break;
+    }
+    
+    return style;
+  }, [handleStyleBase, handleSize]);
+  
+  // 카드 높이 계산 (접힌 상태와 펼쳐진 상태)
+  const cardHeight = isExpanded ? 'auto' : '40px';
+
+  // 트랜지션 종료 이벤트 핸들러 - 애니메이션 완료 후 항상 업데이트
+  const handleTransitionEnd = useCallback(() => {
+    if (id) {
+      updateNodeInternals(id);
+    }
+  }, [id, updateNodeInternals]);
 
   return (
     <div 
@@ -206,6 +258,8 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
       onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      ref={nodeRef}
+      onTransitionEnd={handleTransitionEnd}
     >
       <div
         className={`card-node ${selected ? 'selected' : ''}`} 
@@ -244,7 +298,7 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
             variant="ghost" 
             size="sm" 
             className="p-0 h-6 w-6 ml-2"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={toggleExpand}
           >
             {isExpanded ? <ChevronUp size={16} /> : <ChevronRight size={16} />}
           </Button>
@@ -291,8 +345,8 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         position={Position.Top}
         id="top-target"
         isConnectable={isConnectable}
-        className="nodrag handle-top"
-        style={getHandleStyle(handleStyleBase, 'top')}
+        className="nodrag handle-top visible-handle" // visible-handle 클래스 추가
+        style={getHandleStyle('top')}
       />
       
       {/* 왼쪽 핸들러 */}
@@ -301,8 +355,8 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         position={Position.Left}
         id="left-target"
         isConnectable={isConnectable}
-        className="nodrag handle-left"
-        style={getHandleStyle(handleStyleBase, 'left')}
+        className="nodrag handle-left visible-handle" // visible-handle 클래스 추가
+        style={getHandleStyle('left')}
       />
       
       {/* 오른쪽 핸들러 */}
@@ -311,8 +365,8 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         position={Position.Right}
         id="right-source"
         isConnectable={isConnectable}
-        className="nodrag handle-right"
-        style={getHandleStyle(handleStyleBase, 'right')}
+        className="nodrag handle-right visible-handle" // visible-handle 클래스 추가
+        style={getHandleStyle('right')}
       />
       
       {/* 아래쪽 핸들러 */}
@@ -321,8 +375,8 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         position={Position.Bottom}
         id="bottom-source"
         isConnectable={isConnectable}
-        className="nodrag handle-bottom"
-        style={getHandleStyle(handleStyleBase, 'bottom')}
+        className="nodrag handle-bottom visible-handle" // visible-handle 클래스 추가
+        style={getHandleStyle('bottom')}
       />
     </div>
   );
