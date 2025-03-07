@@ -127,3 +127,173 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* React Flow 스타일 오버라이드 */
+.react-flow__connection-line {
+  stroke: #FF0072 !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: none !important;
+  z-index: 1;
+}
+
+.react-flow__edge-path {
+  stroke: #FF0072 !important;
+  stroke-dasharray: none !important;
+  stroke-width: 2px !important;
+  z-index: 1;
+}
+
+.react-flow__connectionline {
+  stroke: #FF0072 !important;
+  stroke-dasharray: none !important;
+  stroke-width: 2px !important;
+  z-index: 1;
+}
+
+/* React Flow 노드 컨테이너 */
+.card-node-container {
+  position: relative;
+  z-index: 10;
+}
+
+/* 카드 노드 기본 스타일 */
+.card-node {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-sizing: border-box;
+  border: 2px solid #C1C1C1;
+  transition: height 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* 선택된 카드 노드 */
+.card-node.selected {
+  background-color: #FFD3E6;
+  border-color: #FF0072;
+}
+
+/* 핸들 스타일 - 기본값 제거 */
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 커스텀 핸들 스타일 */
+.handle-top,
+.handle-right,
+.handle-bottom,
+.handle-left {
+  opacity: 0;
+  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
+  position: absolute;
+  z-index: 20 !important;
+  pointer-events: all;
+  margin: 0;
+  box-sizing: border-box !important;
+  box-shadow: none !important;
+}
+
+/* 호버 시 핸들 표시 */
+.card-node-container:hover .handle-top,
+.card-node-container:hover .handle-right,
+.card-node-container:hover .handle-bottom,
+.card-node-container:hover .handle-left,
+.card-node.selected ~ .handle-top,
+.card-node.selected ~ .handle-right,
+.card-node.selected ~ .handle-bottom,
+.card-node.selected ~ .handle-left {
+  opacity: 1;
+}
+
+/* 호버 효과 */
+.handle-top:hover,
+.handle-right:hover,
+.handle-bottom:hover,
+.handle-left:hover {
+  cursor: crosshair !important;
+  z-index: 30 !important;
+}
+
+/* TipTap 콘텐츠 스타일 */
+.tiptap-content {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* 다크 테마 대응 */
+.dark .card-node {
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+.dark .handle-top,
+.dark .handle-right,
+.dark .handle-bottom,
+.dark .handle-left {
+  background-color: hsl(var(--card)) !important;
+  box-shadow: none !important;
+}
+
+/* React Flow 노드 스타일 오버라이드 */
+.react-flow__node {
+  background-color: transparent !important;
+  background: transparent !important;
+  z-index: 5 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__node-default {
+  background-color: transparent !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  width: auto !important;
+  box-shadow: none !important;
+}
+
+/* 태그 스타일 */
+.tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+/* 선택된 카드 텍스트 색상 조정 */
+.card-node.selected .card-title,
+.card-node.selected .card-description,
+.card-node.selected .card-content {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* React Flow 노드 스타일 오버라이드 */
+.react-flow__node {
+  z-index: 5 !important;
+}
+
+.react-flow__edge {
+  z-index: 1 !important;
+}
+
+.react-flow__handle {
+  z-index: 30 !important;
+}
+
+.react-flow__renderer {
+  position: relative;
+  z-index: 0;
+}
+
+/* SVG 요소와 HTML 요소 간 상호작용 개선 */
+.react-flow__pane {
+  z-index: 0 !important;
+}
+
+.react-flow__selection {
+  z-index: 6 !important;
+}

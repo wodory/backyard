@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 명시적으로 추적할 폴더들
+!/.note
+!/.note/**
+!/.cursor
+!/.cursor/**
