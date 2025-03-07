@@ -31,4 +31,12 @@ export const MARKER_TYPE_OPTIONS = [
 // 스토리지 키
 export const STORAGE_KEY = 'backyard-board-layout';
 export const EDGES_STORAGE_KEY = 'backyard-board-edges';
-export const BOARD_SETTINGS_KEY = 'backyard-board-settings'; 
+export const BOARD_SETTINGS_KEY = 'backyard-board-settings';
+
+// 자동 저장 설정
+export const BOARD_CONFIG = {
+  // 자동 저장 간격 (분)
+  autoSaveInterval: 1,
+  // 토스트 메시지 표시 여부
+  showAutoSaveNotification: true,
+}; 

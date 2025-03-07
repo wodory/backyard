@@ -28,7 +28,7 @@ import LayoutControls from '@/components/board/LayoutControls';
 import BoardSettingsControl from '@/components/board/BoardSettingsControl';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSettings, applyEdgeSettings } from '@/lib/board-utils';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
 
 // 노드 타입 설정
 const nodeTypes = {
@@ -49,6 +49,9 @@ function BoardContent() {
   const [error, setError] = useState<string | null>(null);
   const [viewportCenter, setViewportCenter] = useState<{ x: number, y: number } | undefined>(undefined);
   const [boardSettings, setBoardSettings] = useState<BoardSettings>(DEFAULT_BOARD_SETTINGS);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasUnsavedChanges = useRef(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   
   // 뷰포트 중앙 계산
@@ -75,7 +78,7 @@ function BoardContent() {
     if (positionChanges.length > 0) {
       // 현재 노드 상태에 변경사항 적용
       const updatedNodes = applyNodeChanges(changes, nodes);
-      saveLayout(updatedNodes);
+      hasUnsavedChanges.current = true;
     }
   }, [nodes, onNodesChange]);
 
@@ -84,28 +87,24 @@ function BoardContent() {
     // 기본 변경 적용
     onEdgesChange(changes);
     
-    // 엣지 삭제 처리
-    const removedEdges = changes.filter(change => change.type === 'remove');
-    if (removedEdges.length > 0) {
-      toast.info('연결선이 삭제되었습니다.');
-    }
-    
-    // 변경 후 로컬 스토리지에 저장
-    setTimeout(() => saveEdges(), 100);
+    // 변경이 있을 때마다 저장 대기 상태로 설정
+    hasUnsavedChanges.current = true;
   }, [onEdgesChange]);
 
   // 레이아웃을 로컬 스토리지에 저장
   const saveLayout = useCallback((nodesToSave: Node[]) => {
     try {
-      // 노드 ID와 위치만 저장
-      const positions = nodesToSave.map(node => ({
-        id: node.id,
-        position: node.position,
-      }));
+      // 노드 ID와 위치만 저장 (객체 형태로 변환하여 노드 ID를 키로 사용)
+      const positions = nodesToSave.reduce((acc, node) => {
+        acc[node.id] = { position: node.position };
+        return acc;
+      }, {} as Record<string, { position: { x: number, y: number } }>);
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
+      return true;
     } catch (err) {
-      console.error('Error saving layout:', err);
+      console.error('레이아웃 저장 오류:', err);
+      return false;
     }
   }, []);
 
@@ -113,17 +112,78 @@ function BoardContent() {
   const saveEdges = useCallback(() => {
     try {
       localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
+      return true;
     } catch (err) {
-      console.error('Error saving edges:', err);
+      console.error('엣지 저장 오류:', err);
+      return false;
     }
   }, [edges]);
 
+  // 모든 레이아웃 데이터를 저장
+  const saveAllLayoutData = useCallback(() => {
+    const layoutSaved = saveLayout(nodes);
+    const edgesSaved = saveEdges();
+    
+    if (layoutSaved && edgesSaved) {
+      setLastSavedAt(new Date());
+      hasUnsavedChanges.current = false;
+      return true;
+    }
+    return false;
+  }, [nodes, saveLayout, saveEdges]);
+
   // 수동으로 현재 레이아웃 저장
   const handleSaveLayout = useCallback(() => {
-    saveLayout(nodes);
-    saveEdges();
-    toast.success('보드 레이아웃과 연결선이 저장되었습니다.');
-  }, [nodes, saveLayout, saveEdges]);
+    if (saveAllLayoutData()) {
+      toast.success('보드 레이아웃과 연결선이 저장되었습니다.');
+    } else {
+      toast.error('레이아웃 저장 중 오류가 발생했습니다.');
+    }
+  }, [saveAllLayoutData]);
+
+  // 자동 저장 기능 설정
+  useEffect(() => {
+    // 자동 저장 간격 (분 단위를 밀리초로 변환)
+    const autoSaveIntervalMs = BOARD_CONFIG.autoSaveInterval * 60 * 1000;
+
+    // 기존 인터벌 정리
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+
+    // 자동 저장 인터벌 설정
+    autoSaveIntervalRef.current = setInterval(() => {
+      if (hasUnsavedChanges.current && nodes.length > 0) {
+        const saved = saveAllLayoutData();
+        
+        // 설정에 따라 토스트 메시지 표시
+        if (saved && BOARD_CONFIG.showAutoSaveNotification) {
+          toast.info('보드 레이아웃이 자동 저장되었습니다.');
+        }
+      }
+    }, autoSaveIntervalMs);
+
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [nodes, saveAllLayoutData]);
+
+  // 페이지 언로드 전 저장되지 않은 변경사항 저장
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges.current) {
+        saveAllLayoutData();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [saveAllLayoutData]);
 
   // 저장된 레이아웃 적용
   const applyStoredLayout = useCallback((cardsData: any[], storedLayout: any[]) => {
@@ -213,9 +273,12 @@ function BoardContent() {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction);
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-    saveLayout(layoutedNodes);
+    
+    // 레이아웃 변경 후 저장 상태로 표시
+    hasUnsavedChanges.current = true;
+    
     toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
-  }, [nodes, edges, setNodes, setEdges, saveLayout]);
+  }, [nodes, edges, setNodes, setEdges]);
 
   // 보드 설정 변경 핸들러
   const handleSettingsChange = useCallback((newSettings: BoardSettings) => {
@@ -307,6 +370,7 @@ function BoardContent() {
       
       setNodes(nodes);
       setEdges(styledEdges);
+      setLastSavedAt(new Date());  // 초기 로드 시간을 마지막 저장 시간으로 설정
     } catch (err) {
       console.error('카드 데이터 불러오기 실패:', err);
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
@@ -374,6 +438,14 @@ function BoardContent() {
             </Button>
             <CreateCardButton onCardCreated={handleCardCreated} />
           </div>
+          {lastSavedAt && (
+            <p className="text-xs text-muted-foreground mt-2">
+              마지막 저장: {lastSavedAt.toLocaleTimeString()}
+              {BOARD_CONFIG.autoSaveInterval > 0 && 
+                ` (${BOARD_CONFIG.autoSaveInterval}분마다 자동 저장)`
+              }
+            </p>
+          )}
         </Panel>
         
         {/* 오른쪽 상단에 레이아웃 및 설정 컨트롤 패널 추가 */}
