@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import React, { useMemo, useState, useCallback } from 'react';
+import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
@@ -66,6 +66,42 @@ const adjustLightness = (color: string, lightnessIncrease: number): string => {
 export default function CardNode({ data, isConnectable, selected }: NodeProps) {
   // 카드 접기/펴기 상태
   const [isExpanded, setIsExpanded] = useState(false);
+  // 호버 상태 추가
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // ReactFlow 인스턴스 가져오기
+  const { getNodes, setNodes } = useReactFlow();
+  
+  // 카드 클릭 핸들러 - 노드 선택 및 확장 토글 분리
+  const handleCardClick = useCallback((event: React.MouseEvent) => {
+    // 이벤트 전파 중지하지 않음 - ReactFlow가 노드 선택을 처리하도록 함
+    // 단, 토글 버튼이나 링크 클릭 시에는 전파 중지
+    if (
+      (event.target as HTMLElement).tagName === 'BUTTON' || 
+      (event.target as HTMLElement).closest('button') || 
+      (event.target as HTMLElement).tagName === 'A'
+    ) {
+      event.stopPropagation(); // 버튼이나 링크만 이벤트 전파 중지
+      return;
+    }
+    
+    // 더블 클릭은 확장 상태 토글로 처리
+    if (event.detail === 2) { 
+      event.stopPropagation(); // 더블 클릭은 이벤트 전파 중지
+      setIsExpanded(!isExpanded);
+    }
+    // 단일 클릭은 ReactFlow가 처리하도록 전파 - 추가 로직 없음
+  }, [isExpanded]);
+  
+  // 마우스 오버 핸들러
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+  }, []);
+  
+  // 마우스 아웃 핸들러
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
   
   // UI 설정에서 데이터 가져오기
   const uiConfig = useMemo(() => {
@@ -104,8 +140,50 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
     background: '#fff',
     border: `2px solid ${connectionLineColor}`,
     borderRadius: '50%',
-    zIndex: 20, // 높은 z-index 값
-    transition: 'all 0.2s ease' // 부드러운 전환 효과
+    zIndex: 30, // 더 높은 z-index 값으로 설정
+    transition: 'none', // 애니메이션 제거
+    padding: 0,
+    margin: 0,
+    opacity: 0, // 기본적으로 보이지 않음
+    pointerEvents: 'auto' as const // 타입 오류 해결
+  };
+  
+  // 호버 및 선택 상태에 따른 핸들러 스타일
+  const getHandleStyle = (baseStyle: React.CSSProperties, position: 'top' | 'right' | 'bottom' | 'left') => {
+    const positionStyles = {
+      top: {
+        top: -handleSize/2,
+        left: cardWidth / 2 - handleSize/2, // transform 대신 직접 위치 계산
+      },
+      right: {
+        right: -handleSize/2,
+        top: verticalHandlePosition - handleSize/2, // transform 대신 직접 위치 계산
+      },
+      bottom: {
+        bottom: -handleSize/2,
+        left: cardWidth / 2 - handleSize/2, // transform 대신 직접 위치 계산
+      },
+      left: {
+        left: -handleSize/2,
+        top: verticalHandlePosition - handleSize/2, // transform 대신 직접 위치 계산
+      }
+    };
+    
+    const style = {
+      ...baseStyle,
+      ...positionStyles[position],
+    };
+    
+    // 선택되었거나 호버 상태일 때 표시
+    if (selected || isHovered) {
+      return {
+        ...style,
+        opacity: 1, // 선택 또는 호버 시 항상 표시
+        zIndex: 35, // 더 높은 z-index
+      };
+    }
+    
+    return style;
   };
   
   // 카드 높이 계산 (접힌 상태와 펼쳐진 상태)
@@ -119,12 +197,15 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
 
   return (
     <div 
-      className="card-node-container"
+      className={`card-node-container ${selected ? 'selected' : ''}`}
       style={{ 
         position: 'relative',
         width: `${cardWidth}px`,
         zIndex: selected ? 5 : 1
       }}
+      onClick={handleCardClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         className={`card-node ${selected ? 'selected' : ''}`} 
@@ -133,10 +214,11 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
           backgroundColor: selected ? selectedBackgroundColor : '#ffffff',
           borderRadius: '8px',
           border: `${borderWidth}px solid ${selected ? connectionLineColor : '#C1C1C1'}`,
-          transition: 'height 0.3s ease, background-color 0.2s ease, border-color 0.2s ease',
+          transition: 'all 0.2s ease',
           height: cardHeight,
           overflow: isExpanded ? 'auto' : 'hidden',
-          maxHeight: isExpanded ? '280px' : '40px'
+          maxHeight: isExpanded ? '280px' : '40px',
+          boxShadow: selected ? `0 0 0 2px ${connectionLineColor}` : 'none'
         }}
       >
         {/* 카드 헤더 */}
@@ -210,12 +292,7 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         id="top-target"
         isConnectable={isConnectable}
         className="nodrag handle-top"
-        style={{
-          ...handleStyleBase,
-          top: 0,
-          left: cardWidth / 2,
-          transform: 'translate(-50%, -50%)'
-        }}
+        style={getHandleStyle(handleStyleBase, 'top')}
       />
       
       {/* 왼쪽 핸들러 */}
@@ -225,12 +302,7 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         id="left-target"
         isConnectable={isConnectable}
         className="nodrag handle-left"
-        style={{
-          ...handleStyleBase,
-          left: 0,
-          top: verticalHandlePosition,
-          transform: 'translate(-50%, -50%)'
-        }}
+        style={getHandleStyle(handleStyleBase, 'left')}
       />
       
       {/* 오른쪽 핸들러 */}
@@ -240,12 +312,7 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         id="right-source"
         isConnectable={isConnectable}
         className="nodrag handle-right"
-        style={{
-          ...handleStyleBase,
-          right: 0,
-          top: verticalHandlePosition,
-          transform: 'translate(50%, -50%)'
-        }}
+        style={getHandleStyle(handleStyleBase, 'right')}
       />
       
       {/* 아래쪽 핸들러 */}
@@ -255,12 +322,7 @@ export default function CardNode({ data, isConnectable, selected }: NodeProps) {
         id="bottom-source"
         isConnectable={isConnectable}
         className="nodrag handle-bottom"
-        style={{
-          ...handleStyleBase,
-          bottom: 0,
-          left: cardWidth / 2,
-          transform: 'translate(-50%, 50%)'
-        }}
+        style={getHandleStyle(handleStyleBase, 'bottom')}
       />
     </div>
   );

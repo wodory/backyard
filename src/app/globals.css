@@ -137,17 +137,14 @@
 }
 
 .react-flow__edge-path {
-  stroke: #FF0072 !important;
-  stroke-dasharray: none !important;
-  stroke-width: 2px !important;
+  stroke-dasharray: none;
   z-index: 1;
 }
 
 .react-flow__connectionline {
-  stroke: #FF0072 !important;
-  stroke-dasharray: none !important;
-  stroke-width: 2px !important;
+  stroke-dasharray: none;
   z-index: 1;
+  stroke-width: 2px;
 }
 
 /* React Flow 노드 컨테이너 */
@@ -171,10 +168,13 @@
   border-color: #FF0072;
 }
 
-/* 핸들 스타일 - 기본값 제거 */
+/* 핸들 스타일 - 기본값 수정 */
 .react-flow__handle {
-  opacity: 0;
-  pointer-events: none;
+  /* 기본 핸들러는 숨김 */
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* 커스텀 핸들 스타일 */
@@ -182,14 +182,18 @@
 .handle-right,
 .handle-bottom,
 .handle-left {
-  opacity: 0;
-  transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease;
-  position: absolute;
+  opacity: 0 !important; /* 기본적으로 숨김 */
+  transition: opacity 0s linear; /* 애니메이션 제거 */
+  position: absolute !important;
   z-index: 20 !important;
-  pointer-events: all;
-  margin: 0;
+  pointer-events: all !important;
+  margin: 0 !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
   box-shadow: none !important;
+  width: 12px !important;
+  height: 12px !important;
+  background-color: white !important;
 }
 
 /* 호버 시 핸들 표시 */
@@ -197,11 +201,18 @@
 .card-node-container:hover .handle-right,
 .card-node-container:hover .handle-bottom,
 .card-node-container:hover .handle-left,
-.card-node.selected ~ .handle-top,
-.card-node.selected ~ .handle-right,
-.card-node.selected ~ .handle-bottom,
-.card-node.selected ~ .handle-left {
-  opacity: 1;
+.card-node-container.selected .handle-top,
+.card-node-container.selected .handle-right,
+.card-node-container.selected .handle-bottom,
+.card-node-container.selected .handle-left,
+.react-flow__node.selected .handle-top,
+.react-flow__node.selected .handle-right,
+.react-flow__node.selected .handle-bottom,
+.react-flow__node.selected .handle-left {
+  opacity: 1 !important; /* 호버나 선택 시 표시 */
+  transform: none !important; /* transform 제거 */
+  z-index: 25 !important;
+  display: block !important;
 }
 
 /* 호버 효과 */
@@ -209,6 +220,7 @@
 .handle-right:hover,
 .handle-bottom:hover,
 .handle-left:hover {
+  transform: none !important; /* transform 제거 */
   cursor: crosshair !important;
   z-index: 30 !important;
 }
@@ -296,4 +308,23 @@
 
 .react-flow__selection {
   z-index: 6 !important;
+}
+
+/* ReactFlow 선택된 노드 스타일 강화 */
+.react-flow__node.selected {
+  outline: 2px solid hsl(var(--primary)) !important;
+  outline-offset: 2px !important;
+  z-index: 10 !important;
+}
+
+/* 노드 선택 상태 확실하게 표시 */
+.react-flow__node.selected .card-node {
+  box-shadow: 0 0 0 2px hsl(var(--primary)) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+/* 노드 선택 가능성 표시 - 호버 효과 */
+.react-flow__node:not(.selected):hover .card-node {
+  box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.3) !important;
+  transition: box-shadow 0.2s ease !important;
 }
