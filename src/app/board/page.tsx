@@ -22,6 +22,7 @@ import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, LayoutGrid } from 'lucide-react';
 import CardNode from '@/components/board/CardNode';
+import CustomEdge from '@/components/board/CustomEdge';
 import { toast } from 'sonner';
 import CreateCardButton from '@/components/cards/CreateCardButton';
 import LayoutControls from '@/components/board/LayoutControls';
@@ -33,6 +34,11 @@ import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-consta
 // 노드 타입 설정
 const nodeTypes = {
   card: CardNode,
+};
+
+// 엣지 타입 설정
+const edgeTypes = {
+  custom: CustomEdge,
 };
 
 // 새 카드의 중앙 위치를 계산하는 함수
@@ -221,7 +227,7 @@ function BoardContent() {
       // 기본 연결선 스타일과 마커 적용
       const newEdge = {
         ...params,
-        type: boardSettings.connectionLineType,
+        type: 'custom', // 커스텀 엣지 타입 사용
         markerEnd: boardSettings.markerEnd ? {
           type: boardSettings.markerEnd,
           width: 20,
@@ -335,7 +341,11 @@ function BoardContent() {
       try {
         const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
         if (savedEdgesData) {
-          savedEdges = JSON.parse(savedEdgesData);
+          // 기존 엣지에 custom 타입 추가
+          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => ({
+            ...edge,
+            type: 'custom', // 모든 엣지에 커스텀 타입 적용
+          }));
         }
       } catch (err) {
         console.error('엣지 데이터 불러오기 실패:', err);
@@ -417,6 +427,7 @@ function BoardContent() {
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         connectionLineType={boardSettings.connectionLineType}
         snapToGrid={boardSettings.snapToGrid}
