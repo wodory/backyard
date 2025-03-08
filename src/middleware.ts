@@ -9,50 +9,74 @@ const authRoutes = ['/login', '/register'];
 const bypassAuthRoutes = ['/auth/callback', '/api'];
 
 export async function middleware(request: NextRequest) {
+  console.log('미들웨어 실행:', request.nextUrl.pathname);
+  
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          // Next.js 15에서는 서버 액션이나 라우트 핸들러에서만 쿠키를 수정할 수 있지만,
-          // 미들웨어에서는 응답 객체를 통해 쿠키를 설정할 수 있습니다.
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          response.cookies.set({ name, value: '', ...options, maxAge: 0 });
-        },
-      },
-    }
-  );
-
-  // auth 관련 데이터 갱신 (필요한 경우)
-  await supabase.auth.getSession();
-
-  // 요청 URL 가져오기
-  const url = request.nextUrl.clone();
-  const { pathname } = url;
-  
-  // 인증 우회 경로인 경우 인증 검사 건너뛰기
-  if (bypassAuthRoutes.some(route => pathname === route || pathname.startsWith(route))) {
-    console.log('인증 검사 건너뛰기:', pathname);
-    return response;
-  }
-  
   try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            const cookie = request.cookies.get(name);
+            console.log('쿠키 가져오기:', name, cookie ? '존재' : '없음');
+            return cookie?.value;
+          },
+          set(name: string, value: string, options: any) {
+            // Next.js 15에서는 서버 액션이나 라우트 핸들러에서만 쿠키를 수정할 수 있지만,
+            // 미들웨어에서는 응답 객체를 통해 쿠키를 설정할 수 있습니다.
+            console.log('쿠키 설정:', name);
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+              // Vercel 환경에서 작동하도록 명시적으로 보안 설정 추가
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+              httpOnly: true,
+            });
+          },
+          remove(name: string, options: any) {
+            console.log('쿠키 삭제:', name);
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+              maxAge: 0,
+              // Vercel 환경에서 작동하도록 명시적으로 보안 설정 추가
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+              httpOnly: true,
+            });
+          },
+        },
+      }
+    );
+
+    // auth 관련 데이터 갱신 (필요한 경우)
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('세션 확인:', session ? '로그인됨' : '로그인안됨');
+
+    // 요청 URL 가져오기
+    const url = request.nextUrl.clone();
+    const { pathname } = url;
+    
+    // 인증 우회 경로인 경우 인증 검사 건너뛰기
+    if (bypassAuthRoutes.some(route => pathname === route || pathname.startsWith(route))) {
+      console.log('인증 검사 건너뛰기:', pathname);
+      return response;
+    }
+    
     // 토큰 확인
     const accessToken = request.cookies.get('sb-access-token')?.value;
     const refreshToken = request.cookies.get('sb-refresh-token')?.value;
-    const isLoggedIn = !!accessToken;
+    const isLoggedIn = !!session; // 세션 기반으로 로그인 상태 판단
     
     console.log('경로 접근:', pathname, '인증 상태:', isLoggedIn ? '로그인됨' : '로그인안됨');
     
