@@ -5,8 +5,13 @@ import { User } from '@supabase/supabase-js';
 import { getCurrentUser, signOut } from '@/lib/auth';
 import { createBrowserClient } from '@/lib/supabase';
 
+// 확장된 사용자 타입 정의
+export interface ExtendedUser extends User {
+  dbUser?: any; // Prisma User 모델
+}
+
 type AuthContextType = {
-  user: User | null;
+  user: ExtendedUser | null;
   userDetails: any; // Prisma User 모델 타입
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -24,14 +29,48 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [userDetails, setUserDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 사용자 데이터베이스 동기화 함수
+  const syncUserWithDatabase = async (supabaseUser: User) => {
+    try {
+      if (!supabaseUser || !supabaseUser.id || !supabaseUser.email) {
+        console.warn('사용자 동기화 실패: 유효하지 않은 사용자 데이터');
+        return null;
+      }
+
+      // 로컬 데이터베이스에 사용자 등록/확인
+      const response = await fetch('/api/user/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: supabaseUser.id,
+          email: supabaseUser.email,
+          name: supabaseUser.user_metadata?.full_name || 
+                supabaseUser.user_metadata?.name || 
+                supabaseUser.email?.split('@')[0]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.user;
+      } else {
+        console.error('사용자 동기화 API 오류:', await response.text());
+        return null;
+      }
+    } catch (error) {
+      console.error('사용자 데이터베이스 동기화 오류:', error);
+      return null;
+    }
+  };
 
   // 인증 상태 확인
   const checkAuth = async () => {
     try {
-      const userData = await getCurrentUser();
+      const userData = await getCurrentUser() as ExtendedUser | null;
       
       if (userData) {
         setUser(userData);
@@ -71,8 +110,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // 사용자가 로그인하거나 토큰이 갱신될 때
-          checkAuth();
+          if (session && session.user) {
+            // 사용자가 로그인하거나 토큰이 갱신될 때 데이터베이스 동기화
+            console.log('인증 상태 변경 감지: 사용자 동기화 시작');
+            const dbUser = await syncUserWithDatabase(session.user);
+            
+            if (dbUser) {
+              // 동기화된 사용자 정보로 상태 업데이트
+              const extendedUser = { ...session.user, dbUser } as ExtendedUser;
+              setUser(extendedUser);
+              setUserDetails(dbUser);
+              setIsLoading(false);
+            } else {
+              // 동기화 실패 시 getCurrentUser로 다시 시도
+              checkAuth();
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           // 사용자가 로그아웃할 때
           setUser(null);

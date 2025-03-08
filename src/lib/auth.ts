@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from './supabase';
 import { deleteCookie } from 'cookies-next';
+import { User } from '@supabase/supabase-js';
 
 // 브라우저 환경에서 사용할 Supabase 클라이언트 생성 함수
 export const getBrowserClient = () => {
@@ -10,6 +11,11 @@ export const getBrowserClient = () => {
   }
   return createBrowserClient();
 };
+
+// ExtendedUser 타입 정의
+export interface ExtendedUser extends User {
+  dbUser?: any; // Prisma User 모델
+}
 
 // 회원가입 함수
 export async function signUp(email: string, password: string, name: string | null = null) {
@@ -120,7 +126,7 @@ export async function signOut() {
 }
 
 // 현재 사용자 정보 가져오기
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<ExtendedUser | null> {
   try {
     const client = getBrowserClient();
     const { data: { session }, error } = await client.auth.getSession();
@@ -137,72 +143,66 @@ export async function getCurrentUser() {
     if (typeof window !== 'undefined') {
       try {
         // API 호출을 통해 사용자 정보 가져오기
-        const response = await fetch(`/api/user/${session.user.id}`);
+        let response = await fetch(`/api/user/${session.user.id}`);
+        
+        // 사용자를 찾을 수 없는 경우, 로컬 데이터베이스에 동기화 시도
+        if (!response.ok && response.status === 404) {
+          console.log('사용자를 찾을 수 없어 데이터베이스에 동기화를 시도합니다.');
+          
+          // 사용자 동기화 시도
+          const registerResponse = await fetch('/api/user/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || 
+                   session.user.user_metadata?.name || 
+                   (session.user.email ? session.user.email.split('@')[0] : '사용자')
+            })
+          });
+          
+          if (registerResponse.ok) {
+            const userData = await registerResponse.json();
+            return {
+              ...session.user,
+              dbUser: userData.user
+            } as ExtendedUser;
+          }
+          
+          // 동기화 실패 시 첫 번째 사용자로 대체 (임시 해결책)
+          console.log('사용자 동기화 실패, 첫 번째 사용자 정보를 가져옵니다.');
+          const firstUserResponse = await fetch('/api/users/first');
+          
+          if (firstUserResponse.ok) {
+            const firstUser = await firstUserResponse.json();
+            // 첫 번째 사용자 정보를 직접 사용
+            return {
+              ...session.user,
+              dbUser: firstUser,
+            } as ExtendedUser;
+          }
+        }
         
         if (response.ok) {
           const userData = await response.json();
           return {
             ...session.user,
             dbUser: userData.user,
-          };
-        } else {
-          // API 호출 실패 시 기본 사용자 정보만 반환
-          console.warn('사용자 DB 정보 가져오기 실패');
-          
-          // 로그인은 이미 되었으므로 기본 사용자 정보 구성
-          return {
-            ...session.user,
-            dbUser: {
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name || 
-                    (session.user.email ? session.user.email.split('@')[0] : '사용자'),
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }
-          };
+          } as ExtendedUser;
         }
-      } catch (apiError) {
-        console.error('사용자 DB 정보 API 호출 오류:', apiError);
         
-        // API 호출 오류가 있어도 인증은 성공했으므로 기본 정보 반환
-        return {
-          ...session.user,
-          dbUser: {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.full_name || 
-                  (session.user.email ? session.user.email.split('@')[0] : '사용자'),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-        };
+        return null;
+      } catch (error) {
+        console.error('사용자 정보 가져오기 오류:', error);
+        return null;
       }
     }
     
-    // 서버 환경일 경우에만 실행 (import 구문이 실행되지 않아 오류 방지)
-    if (typeof window === 'undefined') {
-      // 동적으로 prisma import
-      const { default: prisma } = await import('./prisma');
-      
-      // Prisma로 추가 사용자 정보 가져오기
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-      });
-      
-      return {
-        ...session.user,
-        dbUser: user,
-      };
-    }
-    
-    // 기본 반환
-    return {
-      ...session.user,
-      dbUser: null,
-    };
+    // 서버 환경에서는 세션 사용자 정보만 반환
+    return session.user as ExtendedUser;
   } catch (error) {
-    console.error('사용자 정보 조회 실패:', error);
+    console.error('현재 사용자 정보 가져오기 오류:', error);
     return null;
   }
 }

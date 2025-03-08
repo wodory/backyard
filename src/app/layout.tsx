@@ -1,37 +1,45 @@
-import type { Metadata } from "next";
-import React from "react";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Metadata } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "sonner";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { InitDatabase } from "@/components/InitDatabase";
+import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "backyard - 지식 관리 도구",
-  description: "아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구",
+  title: "Backyard - 모든 아이디어를 정리하는 공간",
+  description: "효율적인 메모와 지식 관리를 위한 솔루션",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const cookieStore = await cookies();
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+  
   return (
     <html lang="ko">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
-          {children}
+          <main>
+            {children}
+            
+            {/* DB 초기화 스크립트 */}
+            <InitDatabase />
+          </main>
           <Toaster position="top-right" />
         </AuthProvider>
       </body>

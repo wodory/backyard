@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,7 +31,32 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [firstUserId, setFirstUserId] = useState<string>("");
   const isComposing = useRef(false);
+
+  // 사용자 ID 가져오기
+  useEffect(() => {
+    async function fetchFirstUserId() {
+      try {
+        const response = await fetch('/api/users/first');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.id) {
+            setFirstUserId(data.id);
+            console.log('사용자 ID 가져옴:', data.id);
+          } else {
+            console.error('사용자 ID를 가져오지 못함');
+          }
+        } else {
+          console.error('사용자 조회 실패:', response.status);
+        }
+      } catch (error) {
+        console.error('사용자 ID 가져오기 오류:', error);
+      }
+    }
+
+    fetchFirstUserId();
+  }, []);
 
   // 태그 추가 처리
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -83,6 +108,13 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
       toast.error("제목과 내용을 모두 입력해주세요.");
       return;
     }
+
+    // 사용자 ID 확인
+    const userId = firstUserId || DEFAULT_USER_ID;
+    if (!userId) {
+      toast.error("사용자 ID를 찾을 수 없습니다. 새로고침 후 다시 시도해주세요.");
+      return;
+    }
     
     setIsSubmitting(true);
     
@@ -95,7 +127,7 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
         body: JSON.stringify({ 
           title, 
           content,
-          userId: DEFAULT_USER_ID, // 사용자 ID 추가
+          userId,
           tags: tags // 태그 배열 추가
         }),
       });

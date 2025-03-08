@@ -4,15 +4,20 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
+    "dev": "NODE_ENV=development next dev",
+    "prebuild": "node scripts/pre-deploy.js",
+    "build": "NODE_ENV=production prisma generate && next build",
+    "start": "NODE_ENV=production next start",
     "lint": "next lint",
     "test": "vitest",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
-    "prisma:seed": "node prisma/seed/index.js"
+    "prisma:seed": "node prisma/seed/index.js",
+    "prisma:push": "prisma db push",
+    "prisma:generate": "prisma generate",
+    "sync-schema": "node scripts/sync-schema.js",
+    "pre-deploy": "node scripts/pre-deploy.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
