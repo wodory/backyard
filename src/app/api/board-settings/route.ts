@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // 보드 설정 스키마
 const boardSettingsSchema = z.object({
@@ -16,7 +16,7 @@ const boardSettingsSchema = z.object({
 });
 
 // 보드 설정 저장 API
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { userId, settings } = boardSettingsSchema.parse(body);
@@ -51,9 +51,9 @@ export async function POST(request: Request) {
 }
 
 // 보드 설정 조회 API
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const userId = searchParams.get('userId');
 
     if (!userId) {

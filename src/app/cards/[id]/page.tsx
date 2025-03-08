@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

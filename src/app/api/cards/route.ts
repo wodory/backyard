@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // 카드 생성 스키마
 const createCardSchema = z.object({
@@ -44,7 +44,7 @@ async function processTagsForCard(cardId: string, tagNames: string[] = []) {
 }
 
 // 카드 생성 API
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
@@ -108,16 +108,16 @@ export async function POST(request: Request) {
 }
 
 // 모든 카드 조회 API
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     // URL 쿼리 파라미터 파싱
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const userId = searchParams.get('userId');
     const q = searchParams.get('q');
     const tag = searchParams.get('tag');
     
     // 검색 조건 구성
-    let where: any = {};
+    const where: any = {};
     
     // 사용자 ID 필터
     if (userId) {

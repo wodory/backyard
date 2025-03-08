@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 
@@ -10,11 +10,11 @@ const updateCardSchema = z.object({
 
 // 개별 카드 조회 API
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     
     // 카드 조회
     const card = await prisma.card.findUnique({
@@ -48,11 +48,11 @@ export async function GET(
 
 // 카드 수정 API
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     const body = await request.json();
     
     // 데이터 유효성 검사
@@ -94,11 +94,11 @@ export async function PUT(
 
 // 카드 삭제 API
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     
     // 카드 존재 여부 확인
     const existingCard = await prisma.card.findUnique({

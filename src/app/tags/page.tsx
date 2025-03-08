@@ -1,17 +1,24 @@
 import { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TagForm from "@/components/tags/TagForm";
 import TagList from "@/components/tags/TagList";
+import { Tag } from "@prisma/client";
 
 export const metadata: Metadata = {
   title: "태그 관리 | Backyard",
   description: "태그를 생성하고 관리하는 페이지입니다.",
 };
 
+type TagWithCount = Tag & {
+  _count: {
+    cardTags: number;
+  };
+};
+
 export default async function TagsPage() {
-  let tags = [];
+  let tags: TagWithCount[] = [];
   
   try {
     tags = await prisma.tag.findMany({
