@@ -1,4 +1,4 @@
-// This is your Prisma schema file for SQLite,
+// This is your Prisma schema file for PostgreSQL,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -10,10 +10,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "sqlite"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
-  
-  
+  directUrl = env("DIRECT_URL")
+  extensions = [uuid_ossp(schema: "extensions")]
 }
 
 model User {

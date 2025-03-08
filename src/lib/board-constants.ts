@@ -28,6 +28,39 @@ export const MARKER_TYPE_OPTIONS = [
   { value: null, label: '없음 (None)' },
 ];
 
+// 연결선 두께 옵션
+export const STROKE_WIDTH_OPTIONS = [
+  { value: 1, label: '얇게 (1px)' },
+  { value: 2, label: '보통 (2px)' },
+  { value: 3, label: '굵게 (3px)' },
+  { value: 4, label: '매우 굵게 (4px)' },
+];
+
+// 마커 크기 옵션
+export const MARKER_SIZE_OPTIONS = [
+  { value: 10, label: '작게 (10px)' },
+  { value: 15, label: '보통 (15px)' },
+  { value: 20, label: '크게 (20px)' },
+  { value: 25, label: '매우 크게 (25px)' },
+];
+
+// 연결선 애니메이션 옵션
+export const EDGE_ANIMATION_OPTIONS = [
+  { value: true, label: '켜기' },
+  { value: false, label: '끄기' },
+];
+
+// 연결선 색상 옵션
+export const EDGE_COLOR_OPTIONS = [
+  { value: '#C1C1C1', label: '회색 (기본)', color: '#C1C1C1' },
+  { value: '#000000', label: '검정색', color: '#000000' },
+  { value: '#FF0072', label: '핑크색', color: '#FF0072' },
+  { value: '#3366FF', label: '파란색', color: '#3366FF' },
+  { value: '#43A047', label: '녹색', color: '#43A047' },
+  { value: '#FFC107', label: '노란색', color: '#FFC107' },
+  { value: '#9C27B0', label: '보라색', color: '#9C27B0' },
+];
+
 // 스토리지 키
 export const STORAGE_KEY = 'backyard-board-layout';
 export const EDGES_STORAGE_KEY = 'backyard-board-edges';

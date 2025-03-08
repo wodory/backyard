@@ -142,67 +142,89 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
     // 브라우저 환경에서는 API를 통해 사용자 정보 가져오기
     if (typeof window !== 'undefined') {
       try {
+        // 타임아웃 설정
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+        
         // API 호출을 통해 사용자 정보 가져오기
-        let response = await fetch(`/api/user/${session.user.id}`);
+        let response = await fetch(`/api/user/${session.user.id}`, {
+          signal: controller.signal
+        }).catch(error => {
+          console.error('사용자 정보 가져오기 오류:', error);
+          return null;
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // fetch 요청 자체가 실패한 경우
+        if (!response) {
+          console.log('API 요청 실패, 기본 사용자 정보 반환');
+          return {
+            ...session.user,
+            dbUser: {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || 
+                    session.user.user_metadata?.name || 
+                    (session.user.email ? session.user.email.split('@')[0] : '사용자'),
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          } as ExtendedUser;
+        }
         
         // 사용자를 찾을 수 없는 경우, 로컬 데이터베이스에 동기화 시도
         if (!response.ok && response.status === 404) {
           console.log('사용자를 찾을 수 없어 데이터베이스에 동기화를 시도합니다.');
           
-          // 사용자 동기화 시도
-          const registerResponse = await fetch('/api/user/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name || 
-                   session.user.user_metadata?.name || 
-                   (session.user.email ? session.user.email.split('@')[0] : '사용자')
-            })
-          });
+          const syncController = new AbortController();
+          const syncTimeoutId = setTimeout(() => syncController.abort(), 5000);
           
-          if (registerResponse.ok) {
-            const userData = await registerResponse.json();
-            return {
-              ...session.user,
-              dbUser: userData.user
-            } as ExtendedUser;
+          try {
+            // 사용자 동기화 시도
+            const registerResponse = await fetch('/api/user/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: session.user.id,
+                email: session.user.email,
+                name: session.user.user_metadata?.full_name || 
+                     session.user.user_metadata?.name || 
+                     (session.user.email ? session.user.email.split('@')[0] : '사용자')
+              }),
+              signal: syncController.signal
+            });
+            
+            clearTimeout(syncTimeoutId);
+            
+            if (registerResponse.ok) {
+              const userData = await registerResponse.json();
+              return {
+                ...session.user,
+                dbUser: userData.user
+              } as ExtendedUser;
+            }
+          } catch (syncError) {
+            clearTimeout(syncTimeoutId);
+            console.error('사용자 동기화 오류:', syncError);
           }
-          
-          // 동기화 실패 시 첫 번째 사용자로 대체 (임시 해결책)
-          console.log('사용자 동기화 실패, 첫 번째 사용자 정보를 가져옵니다.');
-          const firstUserResponse = await fetch('/api/users/first');
-          
-          if (firstUserResponse.ok) {
-            const firstUser = await firstUserResponse.json();
-            // 첫 번째 사용자 정보를 직접 사용
-            return {
-              ...session.user,
-              dbUser: firstUser,
-            } as ExtendedUser;
-          }
-        }
-        
-        if (response.ok) {
-          const userData = await response.json();
+        } else if (response.ok) {
+          const data = await response.json();
           return {
             ...session.user,
-            dbUser: userData.user,
+            dbUser: data.user
           } as ExtendedUser;
         }
-        
-        return null;
-      } catch (error) {
-        console.error('사용자 정보 가져오기 오류:', error);
-        return null;
+      } catch (fetchError) {
+        console.error('사용자 정보 API 호출 오류:', fetchError);
       }
     }
     
-    // 서버 환경에서는 세션 사용자 정보만 반환
+    // API 요청 실패 시 Supabase 사용자 정보만 반환
+    console.log('기본 사용자 정보 반환');
     return session.user as ExtendedUser;
   } catch (error) {
-    console.error('현재 사용자 정보 가져오기 오류:', error);
+    console.error('사용자 정보 가져오기 오류:', error);
     return null;
   }
 }

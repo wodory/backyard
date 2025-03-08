@@ -14,9 +14,17 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
-import { Settings, Grid3X3, ArrowRightIcon } from 'lucide-react';
+import { Settings, Grid3X3, ArrowRightIcon, Circle, SeparatorHorizontal, Paintbrush } from 'lucide-react';
 import { BoardSettings } from '@/lib/board-utils';
-import { SNAP_GRID_OPTIONS, CONNECTION_TYPE_OPTIONS, MARKER_TYPE_OPTIONS } from '@/lib/board-constants';
+import { 
+  SNAP_GRID_OPTIONS, 
+  CONNECTION_TYPE_OPTIONS, 
+  MARKER_TYPE_OPTIONS,
+  STROKE_WIDTH_OPTIONS,
+  MARKER_SIZE_OPTIONS,
+  EDGE_COLOR_OPTIONS,
+  EDGE_ANIMATION_OPTIONS
+} from '@/lib/board-constants';
 import { ConnectionLineType, MarkerType } from 'reactflow';
 
 interface BoardSettingsControlProps {
@@ -62,6 +70,51 @@ export default function BoardSettingsControl({
     const newSettings = {
       ...settings,
       snapToGrid: !settings.snapToGrid,
+    };
+    onSettingsChange(newSettings);
+  };
+  
+  // 연결선 두께 변경 핸들러
+  const handleStrokeWidthChange = (value: string) => {
+    const newSettings = {
+      ...settings,
+      strokeWidth: parseInt(value, 10),
+    };
+    onSettingsChange(newSettings);
+  };
+  
+  // 마커 크기 변경 핸들러
+  const handleMarkerSizeChange = (value: string) => {
+    const newSettings = {
+      ...settings,
+      markerSize: parseInt(value, 10),
+    };
+    onSettingsChange(newSettings);
+  };
+  
+  // 연결선 색상 변경 핸들러
+  const handleEdgeColorChange = (value: string) => {
+    const newSettings = {
+      ...settings,
+      edgeColor: value,
+    };
+    onSettingsChange(newSettings);
+  };
+  
+  // 선택된 연결선 색상 변경 핸들러
+  const handleSelectedEdgeColorChange = (value: string) => {
+    const newSettings = {
+      ...settings,
+      selectedEdgeColor: value,
+    };
+    onSettingsChange(newSettings);
+  };
+  
+  // 연결선 애니메이션 변경 핸들러
+  const handleAnimatedChange = (value: string) => {
+    const newSettings = {
+      ...settings,
+      animated: value === 'true',
     };
     onSettingsChange(newSettings);
   };
@@ -139,6 +192,111 @@ export default function BoardSettingsControl({
             >
               {MARKER_TYPE_OPTIONS.map(option => (
                 <DropdownMenuRadioItem key={option.value ?? 'null'} value={option.value === null ? 'null' : option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        
+        {/* 연결선 두께 설정 */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <SeparatorHorizontal className="mr-2 h-4 w-4" />
+            <span>연결선 두께</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup 
+              value={settings.strokeWidth.toString()} 
+              onValueChange={handleStrokeWidthChange}
+            >
+              {STROKE_WIDTH_OPTIONS.map(option => (
+                <DropdownMenuRadioItem key={option.value} value={option.value.toString()}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        
+        {/* 마커 크기 설정 */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Circle className="mr-2 h-4 w-4" />
+            <span>화살표 크기</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup 
+              value={settings.markerSize.toString()} 
+              onValueChange={handleMarkerSizeChange}
+            >
+              {MARKER_SIZE_OPTIONS.map(option => (
+                <DropdownMenuRadioItem key={option.value} value={option.value.toString()}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        
+        {/* 연결선 색상 설정 */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Paintbrush className="mr-2 h-4 w-4" />
+            <span>연결선 색상</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup 
+              value={settings.edgeColor} 
+              onValueChange={handleEdgeColorChange}
+            >
+              {EDGE_COLOR_OPTIONS.map(option => (
+                <DropdownMenuRadioItem key={option.value} value={option.value} className="flex items-center">
+                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: option.color }} />
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        
+        {/* 선택된 연결선 색상 설정 */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Paintbrush className="mr-2 h-4 w-4" />
+            <span>선택된 연결선 색상</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup 
+              value={settings.selectedEdgeColor} 
+              onValueChange={handleSelectedEdgeColorChange}
+            >
+              {EDGE_COLOR_OPTIONS.map(option => (
+                <DropdownMenuRadioItem key={option.value} value={option.value} className="flex items-center">
+                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: option.color }} />
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        
+        {/* 연결선 애니메이션 설정 */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12Z" stroke="currentColor" strokeWidth="2"/>
+              <path d="M14 10L19 12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>연결선 애니메이션</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup 
+              value={settings.animated.toString()} 
+              onValueChange={handleAnimatedChange}
+            >
+              {EDGE_ANIMATION_OPTIONS.map(option => (
+                <DropdownMenuRadioItem key={option.value.toString()} value={option.value.toString()}>
                   {option.label}
                 </DropdownMenuRadioItem>
               ))}

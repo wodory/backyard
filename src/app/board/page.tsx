@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -21,8 +21,6 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, LayoutGrid } from 'lucide-react';
-import CardNode from '@/components/board/CardNode';
-import CustomEdge from '@/components/board/CustomEdge';
 import { toast } from 'sonner';
 import CreateCardButton from '@/components/cards/CreateCardButton';
 import LayoutControls from '@/components/board/LayoutControls';
@@ -30,16 +28,7 @@ import BoardSettingsControl from '@/components/board/BoardSettingsControl';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSettings, applyEdgeSettings } from '@/lib/board-utils';
 import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
-
-// 노드 타입 설정
-const nodeTypes = {
-  card: CardNode,
-};
-
-// 엣지 타입 설정
-const edgeTypes = {
-  custom: CustomEdge,
-};
+import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 
 // 새 카드의 중앙 위치를 계산하는 함수
 const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
@@ -224,18 +213,51 @@ function BoardContent() {
   // 노드 연결 핸들러
   const onConnect = useCallback(
     (params: Connection) => {
-      // 기본 연결선 스타일과 마커 적용
+      // 보드 설정을 적용한 새 Edge 생성
       const newEdge = {
         ...params,
-        type: 'custom', // 커스텀 엣지 타입 사용
+        id: `edge-${params.source}-${params.target}-${Date.now()}`, // 고유 ID 생성
+        type: 'custom', // 커스텀 엣지 컴포넌트 사용
+        animated: boardSettings.animated, // 애니메이션 설정
+        // 스타일 설정
+        style: {
+          strokeWidth: boardSettings.strokeWidth,
+          stroke: boardSettings.edgeColor,
+        },
+        // 마커 설정
         markerEnd: boardSettings.markerEnd ? {
           type: boardSettings.markerEnd,
-          width: 20,
-          height: 20,
+          width: boardSettings.markerSize, 
+          height: boardSettings.markerSize,
+          color: boardSettings.edgeColor,
         } : undefined,
-        animated: true,
+        // 데이터 저장
+        data: {
+          edgeType: boardSettings.connectionLineType, // 연결선 타입 설정
+          settings: { ...boardSettings }, // 현재 보드 설정 저장
+          createdAt: new Date().toISOString() // 생성 시간 기록
+        }
       };
-      setEdges((eds) => addEdge(newEdge, eds));
+      
+      // 새 Edge 추가 및 로컬 스토리지에 저장
+      setEdges((eds) => {
+        const newEdges = addEdge(newEdge, eds);
+        
+        // 엣지 저장
+        try {
+          localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(newEdges));
+        } catch (error) {
+          console.error('엣지 저장 중 오류:', error);
+        }
+        
+        return newEdges;
+      });
+      
+      // 변경 표시
+      hasUnsavedChanges.current = true;
+      
+      // 로그로 확인
+      console.log(`새 연결선 생성: ${params.source} -> ${params.target}, 타입: ${boardSettings.connectionLineType}`);
     },
     [setEdges, boardSettings]
   );
@@ -288,18 +310,63 @@ function BoardContent() {
 
   // 보드 설정 변경 핸들러
   const handleSettingsChange = useCallback((newSettings: BoardSettings) => {
+    // 설정 변경 내용을 상태와 로컬 스토리지에 저장
     setBoardSettings(newSettings);
     saveBoardSettings(newSettings);
     
-    // 연결선 스타일 변경이 있을 경우 모든 엣지에 적용
-    if (newSettings.connectionLineType !== boardSettings.connectionLineType || 
-        newSettings.markerEnd !== boardSettings.markerEnd) {
-      const updatedEdges = applyEdgeSettings(edges, newSettings);
-      setEdges(updatedEdges);
-      toast.success("연결선 스타일이 변경되었습니다.");
+    // 모든 엣지에 새 설정 적용 (항상 실행) - 즉시 반영을 위해 강제로 업데이트
+    console.log("설정 변경 적용 중...", newSettings);
+    
+    // 1. 현재 엣지의 복사본 생성 (참조 변경)
+    const currentEdgesCopy = JSON.parse(JSON.stringify(edges));
+    
+    // 2. 설정 적용
+    const updatedEdges = applyEdgeSettings(currentEdgesCopy, newSettings);
+    
+    // 3. 새로운 엣지 배열로 상태 업데이트
+    setEdges(updatedEdges);
+    
+    // 4. 즉시 저장하여 변경 내용이 유지되도록 함
+    try {
+      localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
+    } catch (error) {
+      console.error('엣지 저장 중 오류:', error);
     }
     
-    // 스냅 그리드 변경 메시지
+    // 변경된 설정에 대한 알림 메시지
+    const changes: string[] = [];
+    
+    // 연결선 스타일 변경 확인
+    if (newSettings.connectionLineType !== boardSettings.connectionLineType) {
+      changes.push('연결선 유형');
+    }
+    
+    if (newSettings.markerEnd !== boardSettings.markerEnd) {
+      changes.push('화살표 유형');
+    }
+    
+    if (newSettings.strokeWidth !== boardSettings.strokeWidth) {
+      changes.push('선 굵기');
+    }
+    
+    if (newSettings.markerSize !== boardSettings.markerSize) {
+      changes.push('화살표 크기');
+    }
+    
+    if (newSettings.edgeColor !== boardSettings.edgeColor || 
+        newSettings.selectedEdgeColor !== boardSettings.selectedEdgeColor) {
+      changes.push('선 색상');
+    }
+    
+    if (newSettings.animated !== boardSettings.animated) {
+      changes.push('애니메이션 ' + (newSettings.animated ? '활성화' : '비활성화'));
+    }
+    
+    if (changes.length > 0) {
+      toast.success(`연결선 설정이 변경되었습니다: ${changes.join(', ')}`);
+    }
+    
+    // 스냅 그리드 변경 확인
     if (newSettings.snapToGrid !== boardSettings.snapToGrid || 
         newSettings.snapGrid[0] !== boardSettings.snapGrid[0]) {
       toast.success(
@@ -341,11 +408,36 @@ function BoardContent() {
       try {
         const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
         if (savedEdgesData) {
-          // 기존 엣지에 custom 타입 추가
-          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => ({
-            ...edge,
-            type: 'custom', // 모든 엣지에 커스텀 타입 적용
-          }));
+          // 로컬 스토리지에서 보드 설정 불러오기
+          const loadedSettings = loadBoardSettings();
+          
+          // 엣지 데이터 변환 및 타입 확인
+          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => {
+            // 기본 타입 설정
+            const updatedEdge = {
+              ...edge,
+              type: 'custom', // 모든 엣지에 커스텀 타입 적용
+            };
+            
+            // 엣지의 data.edgeType이 없으면 초기화
+            if (!edge.data?.edgeType) {
+              updatedEdge.data = {
+                ...(edge.data || {}),
+                edgeType: loadedSettings.connectionLineType,
+                settings: { ...loadedSettings }
+              };
+            }
+            
+            // style이 없으면 초기화
+            if (!edge.style) {
+              updatedEdge.style = {
+                strokeWidth: loadedSettings.strokeWidth,
+                stroke: edge.selected ? loadedSettings.selectedEdgeColor : loadedSettings.edgeColor
+              };
+            }
+            
+            return updatedEdge;
+          });
         }
       } catch (err) {
         console.error('엣지 데이터 불러오기 실패:', err);
@@ -426,8 +518,8 @@ function BoardContent() {
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
+        nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
         fitView
         connectionLineType={boardSettings.connectionLineType}
         snapToGrid={boardSettings.snapToGrid}

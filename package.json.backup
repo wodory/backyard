@@ -17,11 +17,7 @@
     "prisma:push": "prisma db push",
     "prisma:generate": "prisma generate",
     "sync-schema": "node scripts/sync-schema.js",
-    "schema:sync": "node scripts/schema-sync.js",
-    "pre-deploy": "node scripts/pre-deploy.js",
-    "db:setup": "node scripts/select-db.js && npx prisma generate",
-    "db:setup:dev": "NODE_ENV=development node scripts/select-db.js && npx prisma generate",
-    "db:setup:prod": "NODE_ENV=production node scripts/select-db.js && npx prisma generate"
+    "pre-deploy": "node scripts/pre-deploy.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
@@ -83,7 +79,6 @@
     "jsdom": "^26.0.0",
     "node-fetch": "^2.7.0",
     "prisma": "^6.4.1",
-    "prisma-json-schema-generator": "^5.1.5",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^6.2.0",

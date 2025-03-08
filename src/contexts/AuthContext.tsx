@@ -41,25 +41,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
 
-      // 로컬 데이터베이스에 사용자 등록/확인
-      const response = await fetch('/api/user/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // 타임아웃 설정
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+
+      try {
+        // 로컬 데이터베이스에 사용자 등록/확인
+        const response = await fetch('/api/user/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            name: supabaseUser.user_metadata?.full_name || 
+                  supabaseUser.user_metadata?.name || 
+                  supabaseUser.email?.split('@')[0]
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          return data.user;
+        } else {
+          console.error('사용자 동기화 API 오류:', await response.text());
+          
+          // API 응답이 실패해도 기본 사용자 객체를 반환
+          return {
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            name: supabaseUser.user_metadata?.full_name || 
+                  supabaseUser.user_metadata?.name || 
+                  supabaseUser.email?.split('@')[0],
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        console.error('API 호출 중 오류:', fetchError);
+        
+        // 네트워크 오류라도 기본 사용자 객체를 반환
+        return {
           id: supabaseUser.id,
           email: supabaseUser.email,
           name: supabaseUser.user_metadata?.full_name || 
                 supabaseUser.user_metadata?.name || 
-                supabaseUser.email?.split('@')[0]
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.user;
-      } else {
-        console.error('사용자 동기화 API 오류:', await response.text());
-        return null;
+                supabaseUser.email?.split('@')[0],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
       }
     } catch (error) {
       console.error('사용자 데이터베이스 동기화 오류:', error);

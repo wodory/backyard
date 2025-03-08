@@ -187,11 +187,10 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     backgroundColor: '#fff',
     border: `2px solid ${connectionLineColor}`, // 모든 상태에서 동일한 테두리 색상 사용
     borderRadius: '50%',
-    zIndex: 100, // z-index 증가
+    zIndex: 100,
     padding: 0,
     margin: 0,
-    opacity: 1, // 항상 핸들러 표시
-    visibility: 'visible' as const, // 명시적으로 visible 설정
+    // opacity와 visibility 속성 제거하여 CSS로 제어
     pointerEvents: 'auto' as const,
     // 랜더링 최적화
     willChange: 'transform',
@@ -249,7 +248,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
 
   return (
     <div 
-      className={`card-node-container ${selected ? 'selected' : ''}`}
+      className={`card-node-container ${selected ? 'selected' : ''} ${isHovered ? 'hovered' : ''}`}
       style={{ 
         position: 'relative',
         width: `${cardWidth}px`,
@@ -345,7 +344,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         position={Position.Top}
         id="top-target"
         isConnectable={isConnectable}
-        className="nodrag handle-top visible-handle" // visible-handle 클래스 추가
+        className="nodrag handle-top" // visible-handle 클래스 제거
         style={getHandleStyle('top')}
       />
       
@@ -355,7 +354,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         position={Position.Left}
         id="left-target"
         isConnectable={isConnectable}
-        className="nodrag handle-left visible-handle" // visible-handle 클래스 추가
+        className="nodrag handle-left" // visible-handle 클래스 제거
         style={getHandleStyle('left')}
       />
       
@@ -365,7 +364,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         position={Position.Right}
         id="right-source"
         isConnectable={isConnectable}
-        className="nodrag handle-right visible-handle" // visible-handle 클래스 추가
+        className="nodrag handle-right" // visible-handle 클래스 제거
         style={getHandleStyle('right')}
       />
       
@@ -375,7 +374,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         position={Position.Bottom}
         id="bottom-source"
         isConnectable={isConnectable}
-        className="nodrag handle-bottom visible-handle" // visible-handle 클래스 추가
+        className="nodrag handle-bottom" // visible-handle 클래스 제거
         style={getHandleStyle('bottom')}
       />
     </div>

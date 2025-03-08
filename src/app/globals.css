@@ -168,7 +168,7 @@
 /* 선택된 카드 노드 */
 .card-node.selected {
   background-color: #FFD3E6;
-  border-color: #FF0072;
+  border-color: #fdcbe1;
 }
 
 /* 핸들 스타일 - 기본값 수정 */
@@ -185,12 +185,12 @@
 .handle-right,
 .handle-bottom,
 .handle-left {
-  /* 기존 opacity:0 제거 - 항상 보이도록 설정 */
-  opacity: 1 !important; 
-  transition: none !important; /* 애니메이션 제거 */
+  /* 기본 상태에서는 숨김 */
+  opacity: 0 !important; 
+  transition: opacity 0.2s ease !important;
   position: absolute !important;
   z-index: 20 !important;
-  pointer-events: all !important;
+  pointer-events: none !important; /* 기본 상태에서는 마우스 이벤트 비활성화 */
   /* 마진과 패딩 제거로 정확한 위치 계산 */
   margin: 0 !important;
   padding: 0 !important;
@@ -222,12 +222,16 @@
 .card-node-container.selected .handle-right,
 .card-node-container.selected .handle-bottom,
 .card-node-container.selected .handle-left,
+.card-node-container.hovered .handle-top,
+.card-node-container.hovered .handle-right,
+.card-node-container.hovered .handle-bottom,
+.card-node-container.hovered .handle-left,
 .react-flow__node.selected .handle-top,
 .react-flow__node.selected .handle-right,
 .react-flow__node.selected .handle-bottom,
 .react-flow__node.selected .handle-left {
   opacity: 1 !important; /* 호버나 선택 시 표시 */
-  /* transform: none !important; /* transform 제거 */
+  pointer-events: auto !important; /* 호버나 선택 시 마우스 이벤트 활성화 */
   z-index: 25 !important;
   display: block !important;
   /* 크기 변화 없음 */
@@ -352,22 +356,33 @@
   transition: box-shadow 0.2s ease !important;
 }
 
-/* 항상 보이는 핸들러를 위한 스타일 */
-.visible-handle {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
-  pointer-events: auto !important;
-  /* transform: none !important; /* transform 제거 */
+/* 연결선 애니메이션 */
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
 }
 
-.react-flow__handle.visible-handle {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
-  pointer-events: auto !important;
-  z-index: 100 !important;
-  /* transform: none !important; /* transform 제거 */
-  width: 10px !important;
-  height: 10px !important;
+/* 연결선 선택 효과 - React Flow 공식 방식 사용 */
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge path[data-selected="true"] {
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 2px rgba(255, 0, 114, 0.4));
+}
+
+/* 연결선 호버 효과 */
+.react-flow__edge:hover .react-flow__edge-path {
+  opacity: 0.8;
+}
+
+/* 다크 모드에서 연결선 색상 */
+.dark .react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+/* 다크 모드에서 선택된 연결선 색상 */
+.dark .react-flow__edge.selected .react-flow__edge-path,
+.dark .react-flow__edge path[data-selected="true"] {
+  stroke: #ff0072 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 0, 114, 0.5));
 }

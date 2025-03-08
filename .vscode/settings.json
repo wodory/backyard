@@ -18,6 +18,7 @@
     "http",
     "net"
   ],
+  "npm.packageManager": "yarn",
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   }

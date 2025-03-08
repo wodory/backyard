@@ -222,17 +222,31 @@ async function applySchemaToSupabase(migrationFile) {
 async function main() {
   console.log('로컬 SQLite DB와 Supabase PostgreSQL DB 간의 스키마 동기화를 시작합니다...');
   
-  // prisma-diff 패키지 의존성 제거
-  console.log('환경 변수를 확인하고 있습니다...');
+  // 필요한 패키지 설치 확인
+  try {
+    execSync('npx prisma-diff --help', { stdio: 'ignore' });
+  } catch (error) {
+    console.log('prisma-diff 패키지를 설치합니다...');
+    execSync('npm install --save-dev prisma-diff', { stdio: 'inherit' });
+  }
   
-  if (process.env.NODE_ENV === 'production') {
-    console.log('프로덕션 환경 감지: 스키마 동기화는 로컬 개발 환경에서만 실행 가능합니다.');
-    console.log('프로덕션 배포를 위해서는 db:setup:prod 명령어를 통해 사전에 설정하세요.');
+  // 스키마 차이 확인
+  const diff = checkSchemaDiff();
+  
+  if (!diff) {
+    rl.close();
     return;
   }
   
-  console.log('현재 개발 환경의 스키마 변경사항이 있다면, 프로덕션 환경에 직접 적용하는 대신');
-  console.log('변경사항을 schema.postgresql.prisma 파일에 반영하고 수동으로 배포하는 것이 안전합니다.');
+  // 변경사항 저장
+  const migrationFile = saveSchemaChanges(diff);
+  
+  // 사용자에게 확인 후 적용
+  const success = await applySchemaToSupabase(migrationFile);
+  
+  if (success) {
+    console.log('스키마 동기화가 성공적으로 완료되었습니다!');
+  }
   
   rl.close();
 }
