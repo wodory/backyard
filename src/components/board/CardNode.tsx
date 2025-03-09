@@ -73,7 +73,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const nodeRef = useRef<HTMLDivElement>(null);
   
   // ReactFlow 인스턴스 가져오기
-  const { getNodes, setNodes } = useReactFlow();
+  const { getNodes, setNodes, getNode } = useReactFlow();
   // 노드 내부 구조 업데이트 훅 추가
   const updateNodeInternals = useUpdateNodeInternals();
   
@@ -254,6 +254,13 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     }
   }, [id, updateNodeInternals]);
 
+  // 현재 노드가 드래그 중인지 확인 (ReactFlow 상태에서)
+  const currentNode = getNode(id);
+  const isDragging = currentNode?.dragging || false;
+
+  // 카드가 활성화된 상태인지 확인 (선택됨, 펼쳐짐, 드래그 중, 호버 상태 중 하나라도 해당됨)
+  const isActive = selected || isExpanded || isDragging || isHovered;
+
   return (
     <div 
       ref={nodeRef}
@@ -270,7 +277,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         transition: 'height 0.2s ease-in-out, background-color 0.2s ease',
         overflow: 'visible', // 핸들이 잘리지 않도록 오버플로우 설정
         position: 'relative',
-        zIndex: selected || isExpanded ? 10 : 1, // 선택되거나 펼쳐진 카드는 위에 표시
+        zIndex: isActive ? 9999 : 1, // 활성화된 카드는 항상 최상위에 표시 (모든 상태에서 동일한 높은 값)
       }}
     >
       {/* 노드 인스펙트 컴포넌트 추가 */}
