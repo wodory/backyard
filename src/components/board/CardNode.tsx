@@ -270,6 +270,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         transition: 'height 0.2s ease-in-out, background-color 0.2s ease',
         overflow: 'visible', // 핸들이 잘리지 않도록 오버플로우 설정
         position: 'relative',
+        zIndex: selected || isExpanded ? 10 : 1, // 선택되거나 펼쳐진 카드는 위에 표시
       }}
     >
       {/* 노드 인스펙트 컴포넌트 추가 */}
