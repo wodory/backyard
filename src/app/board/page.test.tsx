@@ -1,7 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import BoardPage from './page';
-import { Node, Edge, NodeChange } from 'reactflow';
+import { Node, Edge, NodeChange } from '@xyflow/react';
 
 // LocalStorage 모킹
 const localStorageMock = (() => {

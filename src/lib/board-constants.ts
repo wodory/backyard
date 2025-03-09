@@ -1,4 +1,4 @@
-import { ConnectionLineType, MarkerType } from 'reactflow';
+import { ConnectionLineType, MarkerType } from '@xyflow/react';
 
 // 스냅 그리드 옵션
 export const SNAP_GRID_OPTIONS = [
@@ -72,4 +72,6 @@ export const BOARD_CONFIG = {
   autoSaveInterval: 1,
   // 토스트 메시지 표시 여부
   showAutoSaveNotification: true,
+  // 콘솔 로깅 활성화 여부
+  enableConsoleLogging: true,
 }; 

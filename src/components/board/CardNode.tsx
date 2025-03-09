@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals } from 'reactflow';
+import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals, NodeToolbar } from '@xyflow/react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
 import TiptapViewer from '@/components/editor/TiptapViewer';
 import { loadDefaultBoardUIConfig } from '@/lib/board-ui-config';
 import { CSSProperties } from 'react';
+import { NodeInspect } from '@/components/debug/NodeInspector';
 
 // 헥스 색상을 HSL로 변환하는 함수
 const hexToHsl = (hex: string): { h: number, s: number, l: number } | null => {
@@ -248,94 +249,86 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
 
   return (
     <div 
-      className={`card-node-container ${selected ? 'selected' : ''} ${isHovered ? 'hovered' : ''}`}
-      style={{ 
-        position: 'relative',
-        width: `${cardWidth}px`,
-        zIndex: selected ? 5 : 1
-      }}
+      ref={nodeRef}
       onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      ref={nodeRef}
       onTransitionEnd={handleTransitionEnd}
+      className={`card-node bg-white rounded-md shadow-md ${selected ? 'ring-2 ring-blue-400' : ''}`}
+      style={{
+        width: `${cardWidth}px`,
+        height: cardHeight,
+        border: `${borderWidth}px solid ${selected ? connectionLineColor : '#e2e8f0'}`,
+        backgroundColor: selected ? selectedBackgroundColor : '#fff',
+        transition: 'height 0.2s ease-in-out, background-color 0.2s ease',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
     >
-      <div
-        className={`card-node ${selected ? 'selected' : ''}`} 
-        style={{ 
-          width: '100%',
-          backgroundColor: selected ? selectedBackgroundColor : '#ffffff',
-          borderRadius: '8px',
-          border: `${borderWidth}px solid ${selected ? connectionLineColor : '#C1C1C1'}`,
-          transition: 'all 0.2s ease',
-          height: cardHeight,
-          overflow: isExpanded ? 'auto' : 'hidden',
-          maxHeight: isExpanded ? '280px' : '40px',
-          boxShadow: selected ? `0 0 0 2px ${connectionLineColor}` : 'none'
-        }}
-      >
-        {/* 카드 헤더 */}
-        <div className="card-header" style={{ 
-          padding: '0 12px',
-          display: 'flex', 
-          justifyContent: 'space-between', 
+      {/* 노드 인스펙트 컴포넌트 추가 */}
+      <NodeInspect data={data} id={id} />
+      
+      {/* 카드 헤더 */}
+      <div className="card-header" style={{ 
+        padding: '0 12px',
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
+        height: '40px'
+      }}>
+        <h3 className="text-md font-semibold truncate text-center flex-grow" style={{
+          margin: 0,
+          lineHeight: '40px',
+          display: 'flex',
           alignItems: 'center',
-          borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
+          justifyContent: 'center',
           height: '40px'
         }}>
-          <h3 className="text-md font-semibold truncate text-center flex-grow" style={{
-            margin: 0,
-            lineHeight: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '40px'
-          }}>
-            {data.title}
-          </h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="p-0 h-6 w-6 ml-2"
-            onClick={toggleExpand}
-          >
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronRight size={16} />}
-          </Button>
-        </div>
-        
-        {/* 카드 콘텐츠 - 펼쳐진 상태에서만 보임 */}
-        {isExpanded && (
-          <div className="card-content" style={{ 
-            padding: '8px 12px',
-            fontSize: '0.6rem',
-            maxHeight: '240px',
-            overflow: 'auto'
-          }}>
-            <div className="tiptap-content" style={{ fontSize: '0.8rem' }}>
-              <TiptapViewer content={data.content} />
-            </div>
-            
-            {/* 태그 표시 */}
-            {data.tags && data.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {data.tags.map((tag: string, index: number) => (
-                  <div key={index} className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs flex items-center">
-                    <Tag size={10} className="mr-1" />
-                    {tag}
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* 카드 푸터 */}
-            <div className="card-footer" style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
-              <Link href={`/cards/${data.id}`} passHref>
-                <Button size="sm" variant="outline">자세히 보기</Button>
-              </Link>
-            </div>
-          </div>
-        )}
+          {data.title}
+        </h3>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="p-0 h-6 w-6 ml-2"
+          onClick={toggleExpand}
+        >
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronRight size={16} />}
+        </Button>
       </div>
+      
+      {/* 카드 콘텐츠 - 펼쳐진 상태에서만 보임 */}
+      {isExpanded && (
+        <div className="card-content" style={{ 
+          padding: '8px 12px',
+          fontSize: '0.6rem',
+          maxHeight: '240px',
+          overflow: 'auto'
+        }}>
+          <div className="tiptap-content" style={{ fontSize: '0.8rem' }}>
+            <TiptapViewer content={data.content} />
+          </div>
+          
+          {/* 태그 표시 */}
+          {data.tags && data.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {data.tags.map((tag: string, index: number) => (
+                <div key={index} className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs flex items-center">
+                  <Tag size={10} className="mr-1" />
+                  {tag}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* 카드 푸터 */}
+          <div className="card-footer" style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+            <Link href={`/cards/${data.id}`} passHref>
+              <Button size="sm" variant="outline">자세히 보기</Button>
+            </Link>
+          </div>
+        </div>
+      )}
       
       {/* 핸들러 - 카드 외부에 위치 */}
       {/* 위쪽 핸들러 */}

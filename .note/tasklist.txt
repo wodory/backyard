@@ -189,3 +189,8 @@ const { user, session, error } = await supabase.auth.signIn({
 ### 버그 : 수평/수직 레이아웃
 - 간격이 너무 벌어지는 문제
 - 이 값도 옵션으로 설정
+
+
+
+## Computing
+- [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows

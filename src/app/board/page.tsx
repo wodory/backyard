@@ -1,24 +1,28 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import ReactFlow, {
-  Node,
-  Edge,
+import {
+  ReactFlow,
   Controls,
   Background,
-  Panel,
   useNodesState,
   useEdgesState,
-  ConnectionLineType,
-  NodeChange,
-  applyNodeChanges,
-  Connection,
   addEdge,
-  EdgeChange,
-  ReactFlowProvider,
+  Panel,
+  ConnectionLineType,
+  Position,
   MarkerType,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+  useReactFlow,
+  useUpdateNodeInternals,
+  Node,
+  Edge,
+  ReactFlowProvider,
+  NodeChange,
+  EdgeChange,
+  Connection,
+  applyNodeChanges
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,6 +33,7 @@ import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSettings, applyEdgeSettings } from '@/lib/board-utils';
 import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
+import DevTools, { useChangeLoggerHooks } from '@/components/debug/DevTools';
 
 // 새 카드의 중앙 위치를 계산하는 함수
 const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
@@ -49,6 +54,19 @@ function BoardContent() {
   const hasUnsavedChanges = useRef(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   
+  // 변경 로거 이벤트 핸들러
+  const { onNodesChangeLogger, onEdgesChangeLogger } = useChangeLoggerHooks();
+  
+  // 노드 및 엣지 변경 로깅을 위한 상태 추가
+  const [nodeChanges, setNodeChanges] = useState<NodeChange[]>([]);
+  const [edgeChanges, setEdgeChanges] = useState<EdgeChange[]>([]);
+  
+  // updateNodeInternals 함수 초기화
+  const updateNodeInternals = useUpdateNodeInternals();
+  
+  // ReactFlow 인스턴스 참조
+  const { fitView } = useReactFlow();
+  
   // 뷰포트 중앙 계산
   const updateViewportCenter = useCallback(() => {
     if (!reactFlowWrapper.current) return;
@@ -60,31 +78,41 @@ function BoardContent() {
     });
   }, []);
   
-  // 노드 위치 변경 핸들러 (위치 변경 시에만 저장)
+  // 노드 변경 핸들러 수정
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // 변경 사항 로깅
+    setNodeChanges(changes);
+    
+    // 변경 로거에 전달
+    onNodesChangeLogger(changes);
+    
     // 기존 노드 정보를 변경
     onNodesChange(changes);
     
-    // 위치 변경이 있는 경우에만 로컬 스토리지에 저장
+    // 위치 변경이 있는 경우에만 저장 상태로 표시
     const positionChanges = changes.filter(
       change => change.type === 'position' && change.position
     );
     
     if (positionChanges.length > 0) {
-      // 현재 노드 상태에 변경사항 적용
-      const updatedNodes = applyNodeChanges(changes, nodes);
       hasUnsavedChanges.current = true;
     }
-  }, [nodes, onNodesChange]);
-
-  // 엣지 변경 핸들러
+  }, [nodes, onNodesChange, onNodesChangeLogger]);
+  
+  // 엣지 변경 핸들러 수정
   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    // 변경 사항 로깅
+    setEdgeChanges(changes);
+    
+    // 변경 로거에 전달
+    onEdgesChangeLogger(changes);
+    
     // 기본 변경 적용
     onEdgesChange(changes);
     
     // 변경이 있을 때마다 저장 대기 상태로 설정
     hasUnsavedChanges.current = true;
-  }, [onEdgesChange]);
+  }, [onEdgesChange, onEdgesChangeLogger]);
 
   // 레이아웃을 로컬 스토리지에 저장
   const saveLayout = useCallback((nodesToSave: Node[]) => {
@@ -213,9 +241,27 @@ function BoardContent() {
   // 노드 연결 핸들러
   const onConnect = useCallback(
     (params: Connection) => {
+      // 현재 레이아웃 방향 판단 (노드의 targetPosition으로 확인)
+      const firstNode = nodes[0];
+      const isHorizontal = firstNode?.targetPosition === Position.Left;
+      
+      // 핸들 ID 설정
+      let sourceHandle = params.sourceHandle;
+      let targetHandle = params.targetHandle;
+      
+      // 핸들이 지정되지 않은 경우 레이아웃 방향에 따라 기본 핸들 지정
+      if (!sourceHandle) {
+        sourceHandle = isHorizontal ? 'right-source' : 'bottom-source';
+      }
+      if (!targetHandle) {
+        targetHandle = isHorizontal ? 'left-target' : 'top-target';
+      }
+      
       // 보드 설정을 적용한 새 Edge 생성
       const newEdge = {
         ...params,
+        sourceHandle,
+        targetHandle,
         id: `edge-${params.source}-${params.target}-${Date.now()}`, // 고유 ID 생성
         type: 'custom', // 커스텀 엣지 컴포넌트 사용
         animated: boardSettings.animated, // 애니메이션 설정
@@ -259,7 +305,7 @@ function BoardContent() {
       // 로그로 확인
       console.log(`새 연결선 생성: ${params.source} -> ${params.target}, 타입: ${boardSettings.connectionLineType}`);
     },
-    [setEdges, boardSettings]
+    [nodes, setEdges, boardSettings]
   );
 
   // 카드 생성 후 콜백
@@ -305,8 +351,28 @@ function BoardContent() {
     // 레이아웃 변경 후 저장 상태로 표시
     hasUnsavedChanges.current = true;
     
+    // 모든 노드의 내부 구조 업데이트 - 핸들 위치를 반영하기 위해
+    // 즉시 업데이트
+    layoutedNodes.forEach(node => {
+      updateNodeInternals(node.id);
+    });
+    
+    // 약간의 지연 후 다시 업데이트 (레이아웃 변경 완료 후)
+    setTimeout(() => {
+      layoutedNodes.forEach(node => {
+        updateNodeInternals(node.id);
+      });
+    }, 50);
+    
+    // 애니메이션 완료 후 최종 업데이트
+    setTimeout(() => {
+      layoutedNodes.forEach(node => {
+        updateNodeInternals(node.id);
+      });
+    }, 300);
+    
     toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
-  }, [nodes, edges, setNodes, setEdges]);
+  }, [nodes, edges, setNodes, setEdges, updateNodeInternals]);
 
   // 보드 설정 변경 핸들러
   const handleSettingsChange = useCallback((newSettings: BoardSettings) => {
@@ -513,19 +579,28 @@ function BoardContent() {
   return (
     <div className="w-full h-screen" ref={reactFlowWrapper}>
       <ReactFlow
+        ref={reactFlowWrapper}
         nodes={nodes}
+        nodeTypes={NODE_TYPES}
         edges={edges}
+        edgeTypes={EDGE_TYPES}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
-        nodeTypes={NODE_TYPES}
-        edgeTypes={EDGE_TYPES}
+        onInit={flow => {
+          updateViewportCenter();
+          console.log('ReactFlow initialized', flow);
+        }}
         fitView
-        connectionLineType={boardSettings.connectionLineType}
+        minZoom={0.1}
+        maxZoom={1.5}
+        connectionLineType={ConnectionLineType.Step}
+        fitViewOptions={{ padding: 0.2 }}
         snapToGrid={boardSettings.snapToGrid}
         snapGrid={boardSettings.snapGrid}
         deleteKeyCode={['Backspace', 'Delete']}
       >
+        <DevTools />
         <Controls />
         <Background />
         <Panel position="top-left" className="bg-card shadow-md rounded-md p-3">

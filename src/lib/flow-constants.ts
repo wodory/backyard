@@ -5,10 +5,12 @@
 
 import CardNode from '@/components/board/CardNode';
 import CustomEdge from '@/components/board/CustomEdge';
+import { NodeInspect } from '@/components/debug/NodeInspector';
 
 // 노드 타입 정의 - 객체 프리징하여 변경 불가능하게 함
 export const NODE_TYPES = Object.freeze({
   card: CardNode,
+  nodeInspect: NodeInspect,
 });
 
 // 엣지 타입 정의 - 객체 프리징하여 변경 불가능하게 함

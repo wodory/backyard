@@ -1,4 +1,4 @@
-import { Edge, MarkerType, ConnectionLineType } from 'reactflow';
+import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
 import { BOARD_SETTINGS_KEY } from './board-constants';
 
 export interface BoardSettings {

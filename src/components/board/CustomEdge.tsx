@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from 'reactflow';
+import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
 import { loadBoardSettings } from '@/lib/board-utils';
 
 // 확장된 엣지 Props 인터페이스
@@ -59,7 +59,7 @@ function CustomEdge({
 
   // 엣지 패스 계산 (연결선 타입에 따라)
   const [edgePath] = useMemo(() => {
-    console.log(`엣지 ${id}의 타입: ${effectiveEdgeType}`);
+    //console.log(`엣지 ${id}의 타입: ${effectiveEdgeType}`);
     
     // 타입에 따라 적절한 경로 생성 함수 사용
     switch (effectiveEdgeType) {
@@ -128,7 +128,14 @@ function CustomEdge({
       markerEnd={markerEnd} 
       style={edgeStyle}
       data-selected={selected ? 'true' : 'false'}
-      {...restProps}
+      {...{
+        ...restProps,
+        selectable: undefined,
+        deletable: undefined,
+        sourceHandleId: undefined,
+        targetHandleId: undefined,
+        pathOptions: undefined
+      }}
     />
   );
 }

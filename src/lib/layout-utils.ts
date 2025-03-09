@@ -1,5 +1,5 @@
 import dagre from 'dagre';
-import { Node, Edge, Position } from 'reactflow';
+import { Node, Edge, Position } from '@xyflow/react';
 
 // 노드 크기 설정 - 실제 렌더링 크기에 맞게 조정
 const NODE_WIDTH = 320;
@@ -72,7 +72,27 @@ export function getLayoutedElements(
     };
   });
 
-  return { nodes: layoutedNodes, edges };
+  // 엣지 핸들 위치 업데이트
+  const layoutedEdges = edges.map(edge => {
+    // 원래의 엣지 속성을 유지하면서 레이아웃 방향에 따라 핸들 위치 업데이트
+    const updatedEdge = { ...edge };
+    
+    // 방향에 따라 소스/타겟 핸들 업데이트
+    if (isHorizontal) {
+      updatedEdge.sourceHandle = 'right-source';  // 수평 레이아웃에서는 오른쪽이 소스
+      updatedEdge.targetHandle = 'left-target';   // 수평 레이아웃에서는 왼쪽이 타겟
+    } else {
+      updatedEdge.sourceHandle = 'bottom-source'; // 수직 레이아웃에서는 아래쪽이 소스
+      updatedEdge.targetHandle = 'top-target';    // 수직 레이아웃에서는 위쪽이 타겟
+    }
+    
+    return updatedEdge;
+  });
+
+  return { 
+    nodes: layoutedNodes, 
+    edges: layoutedEdges 
+  };
 }
 
 /**

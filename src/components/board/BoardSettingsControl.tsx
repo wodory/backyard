@@ -25,7 +25,7 @@ import {
   EDGE_COLOR_OPTIONS,
   EDGE_ANIMATION_OPTIONS
 } from '@/lib/board-constants';
-import { ConnectionLineType, MarkerType } from 'reactflow';
+import { ConnectionLineType, MarkerType } from '@xyflow/react';
 
 interface BoardSettingsControlProps {
   settings: BoardSettings;
