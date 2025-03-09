@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore, useReactFlow, Node, Edge, ReactFlowState } from '@xyflow/react';
 import dagre from 'dagre';
+import defaultConfig from '../../config/cardBoardUiOptions.json';
 
 interface DagreNodePositioningProps {
   Options: { rankdir: 'TB' | 'LR' | 'BT' | 'RL' };
@@ -10,30 +11,30 @@ interface DagreNodePositioningProps {
   SetViewIsFit: (value: boolean) => void;
 }
 
-// 기본 CardNode의 크기와 일치시키기 위해 설정
-const nodeWidth = 280;
-const nodeHeight = 40;
+// 기본 CardNode의 크기 - 설정 파일에서 가져오기
+const nodeWidth = defaultConfig.layout.nodeSize.width;
+const nodeHeight = defaultConfig.layout.nodeSize.height;
 
 const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
   const [nodesPositioned, setNodesPositioned] = useState(false);
   const { fitView } = useReactFlow();
   
   // 제네릭 타입 명시하여 Store 타입 오류 해결
-  const store = useStore<ReactFlowState>();
-  const nodeInternals = store.nodeInternals;
-  const flattenedNodes = Array.from(nodeInternals.values());
+  const store = useStore();
+  const nodeInternals = store.getState().nodeInternals;
+  const flattenedNodes = Array.from(nodeInternals.values()) as Node[];
 
   useEffect(() => {
     // 노드 크기가 감지되었는지 확인 (첫 번째 노드에 width 속성이 있을 때 실행)
-    if (flattenedNodes.length > 0 && flattenedNodes[0]?.width) {
+    if (flattenedNodes.length > 0 && flattenedNodes[0]?.dimensions) {
       const dagreGraph = new dagre.graphlib.Graph();
       dagreGraph.setDefaultEdgeLabel(() => ({}));
       dagreGraph.setGraph(Options);
 
       // 모든 노드를 dagre 그래프에 등록 (실제 측정된 크기 사용하거나 기본값 사용)
       flattenedNodes.forEach((node) => {
-        const width = node.width || nodeWidth;
-        const height = node.height || nodeHeight;
+        const width = node.dimensions?.width || nodeWidth;
+        const height = node.dimensions?.height || nodeHeight;
         dagreGraph.setNode(node.id, { width, height });
       });
 
@@ -48,14 +49,18 @@ const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Ed
       // 각 노드의 위치를 업데이트
       const layoutedNodes = flattenedNodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
+        if (!nodeWithPosition) {
+          return node;
+        }
+        
         let updatedNode = {
           ...node,
           position: {
-            x: nodeWithPosition.x - nodeWidth / 2,
-            y: nodeWithPosition.y - nodeHeight / 2
+            x: nodeWithPosition.x - (node.dimensions?.width || nodeWidth) / 2,
+            y: nodeWithPosition.y - (node.dimensions?.height || nodeHeight) / 2
           },
           data: { ...node.data }
-        };
+        } as Node;
 
         // 레이아웃 방향에 따라 핸들 위치 지정
         if (Options.rankdir === 'TB' || Options.rankdir === 'BT') {

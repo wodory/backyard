@@ -1,16 +1,17 @@
 import dagre from 'dagre';
 import { Node, Edge, Position } from '@xyflow/react';
+import defaultConfig from '../config/cardBoardUiOptions.json';
 
-// 노드 크기 설정 - 실제 렌더링 크기에 맞게 조정
-const NODE_WIDTH = 320;
-const NODE_HEIGHT = 180;
+// 노드 크기 설정 - 설정 파일에서 가져오기
+const NODE_WIDTH = defaultConfig.layout.nodeSize.width;
+const NODE_HEIGHT = defaultConfig.layout.nodeSize.height;
 
-// 그래프 간격 설정
+// 그래프 간격 설정 - 설정 파일에서 가져오기
 const GRAPH_SETTINGS = {
   rankdir: 'LR', // 방향: LR(수평) 또는 TB(수직)
-  nodesep: 30, // 같은 레벨의 노드 간 거리 (픽셀)
-  ranksep: 30, // 레벨 간 거리 (픽셀) - 노드 높이(180px)의 3배
-  edgesep: 10, // 엣지 간 거리
+  nodesep: defaultConfig.layout.graphSettings.nodesep, // 같은 레벨의 노드 간 거리 (픽셀)
+  ranksep: defaultConfig.layout.graphSettings.ranksep, // 레벨 간 거리 (픽셀)
+  edgesep: defaultConfig.layout.graphSettings.edgesep, // 엣지 간 거리
 };
 
 /**
