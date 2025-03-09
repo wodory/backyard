@@ -8,9 +8,9 @@ const NODE_HEIGHT = 180;
 // 그래프 간격 설정
 const GRAPH_SETTINGS = {
   rankdir: 'LR', // 방향: LR(수평) 또는 TB(수직)
-  nodesep: 100, // 같은 레벨의 노드 간 거리 (픽셀)
-  ranksep: 150, // 레벨 간 거리 (픽셀)
-  edgesep: 50, // 엣지 간 거리
+  nodesep: 30, // 같은 레벨의 노드 간 거리 (픽셀)
+  ranksep: 30, // 레벨 간 거리 (픽셀) - 노드 높이(180px)의 3배
+  edgesep: 10, // 엣지 간 거리
 };
 
 /**
