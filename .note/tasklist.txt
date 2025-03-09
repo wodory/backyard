@@ -36,8 +36,9 @@
 - 연결선 핸들러 표시
 - 연결선 핸들러 색상은 연결선과 동일
 
-[ ] 카드 클릭 
+[ ] 카드 클릭, 선택
 - 카드 위를 클릭하면 카드 선택 상태가 된다
+- 카드를 드래스, 클릭, 선택하면 z-index가 가장 높다.
 
 
 
@@ -183,14 +184,16 @@ const { user, session, error } = await supabase.auth.signIn({
 - [ ] 엣지 스타일 
 - [ ] 엣지 색상 (기본/selected)
 
-### 스타일 체계화
+### 스타일 및 설정값 체계화
 - [ ] 스타일 변수 관리 cardBoardUiOptions.json
+- [ ] 핸들 크기 등이 하드 코딩되어 있음.
 
 ### 버그 : 수평/수직 레이아웃
-- 간격이 너무 벌어지는 문제
-- 이 값도 옵션으로 설정
-
-
+- [ ] 간격이 너무 벌어지는 문제
+- [ ] 이 값도 옵션으로 설정
 
 ## Computing
 - [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows
+
+## z-index 문제
+https://reactflow.dev/learn/advanced-use/state-management
