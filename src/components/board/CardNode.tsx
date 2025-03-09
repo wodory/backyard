@@ -176,7 +176,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const borderWidth = 2; // 항상 2px로 고정
   
   // 핸들러 크기 정의 
-  const handleSize = 10; // 정확히 10px로 고정
+  const handleSize = 12; // 10px에서 12px로 크기 증가
   
   // 카드 너비
   const cardWidth = 280;
@@ -195,7 +195,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     pointerEvents: 'auto' as const,
     // 랜더링 최적화
     willChange: 'transform',
-  }), [connectionLineColor]);
+  }), [connectionLineColor, handleSize]);
   
   // 핸들러 위치 계산 함수 - 모든 상태에서 완전히 동일한 스타일 사용
   const getHandleStyle = useCallback((position: 'top' | 'right' | 'bottom' | 'left') => {
@@ -208,27 +208,22 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     // 모든 상태에서 완전히 동일한 위치 계산 (정수 값 사용)
     switch (position) {
       case 'top':
-        style.top = -halfSize; // handleSize의 절반만큼 위로
-        // transform이 CSS에서 무시되므로 직접 계산 (노드 너비의 절반 - 핸들 너비의 절반)
+        style.top = -6; // 정확히 위치 지정 (12px의 절반이므로 6px)
         style.left = `calc(50% - ${halfSize}px)`;
-        // transform 속성 제거 (CSS에서 무시됨)
         style.transform = 'none';
         break;
       case 'right':
-        style.right = -halfSize; // handleSize의 절반만큼 오른쪽으로
-        // transform이 CSS에서 무시되므로 직접 계산 (노드 높이의 절반 - 핸들 높이의 절반)
+        style.right = -6; // 정확히 위치 지정
         style.top = `calc(50% - ${halfSize}px)`;
         style.transform = 'none';
         break;
       case 'bottom':
-        style.bottom = -halfSize; // handleSize의 절반만큼 아래로
-        // transform이 CSS에서 무시되므로 직접 계산 (노드 너비의 절반 - 핸들 너비의 절반)
+        style.bottom = -6; // 정확히 위치 지정
         style.left = `calc(50% - ${halfSize}px)`;
         style.transform = 'none';
         break;
       case 'left':
-        style.left = -halfSize; // handleSize의 절반만큼 왼쪽으로
-        // transform이 CSS에서 무시되므로 직접 계산 (노드 높이의 절반 - 핸들 높이의 절반)
+        style.left = -6; // 정확히 위치 지정
         style.top = `calc(50% - ${halfSize}px)`;
         style.transform = 'none';
         break;
@@ -254,14 +249,14 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onTransitionEnd={handleTransitionEnd}
-      className={`card-node bg-white rounded-md shadow-md ${selected ? 'ring-2 ring-blue-400' : ''}`}
+      className={`card-node-container card-node bg-white rounded-md ${selected ? 'ring-2 ring-blue-400' : ''} ${isHovered ? 'hovered' : ''}`}
       style={{
         width: `${cardWidth}px`,
         height: cardHeight,
         border: `${borderWidth}px solid ${selected ? connectionLineColor : '#e2e8f0'}`,
         backgroundColor: selected ? selectedBackgroundColor : '#fff',
         transition: 'height 0.2s ease-in-out, background-color 0.2s ease',
-        overflow: 'hidden',
+        overflow: 'visible', // 핸들이 잘리지 않도록 오버플로우 설정
         position: 'relative',
       }}
     >

@@ -52,7 +52,7 @@ export default async function RootLayout({
             {/* DB 초기화 스크립트 */}
             <InitDatabase />
           </main>
-          <Toaster position="top-right" />
+          <Toaster position="bottom-center" />
         </AuthProvider>
       </body>
     </html>

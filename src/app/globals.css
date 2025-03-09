@@ -154,6 +154,7 @@
 .card-node-container {
   position: relative;
   z-index: 10;
+  overflow: visible !important;
 }
 
 /* 카드 노드 기본 스타일 */
@@ -163,6 +164,9 @@
   box-sizing: border-box;
   border: 2px solid #C1C1C1;
   transition: height 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  position: relative;
+  box-shadow: none !important;
 }
 
 /* 선택된 카드 노드 */
@@ -196,9 +200,9 @@
   padding: 0 !important;
   box-sizing: border-box !important;
   box-shadow: none !important;
-  /* 크기 정확하게 지정 */
-  width: 10px !important;
-  height: 10px !important;
+  /* 크기 정확하게 지정 - 12px로 증가 */
+  width: 12px !important;
+  height: 12px !important;
   background-color: white !important;
   /* 완벽한 원형 보장 */
   border-radius: 50% !important;
@@ -234,9 +238,9 @@
   pointer-events: auto !important; /* 호버나 선택 시 마우스 이벤트 활성화 */
   z-index: 25 !important;
   display: block !important;
-  /* 크기 변화 없음 */
-  width: 10px !important;
-  height: 10px !important;
+  /* 크기 변화 - 12px로 증가 */
+  width: 12px !important;
+  height: 12px !important;
 }
 
 /* 호버 효과 */
@@ -247,9 +251,9 @@
   /* transform: none !important; /* transform 제거 */
   cursor: crosshair !important;
   z-index: 30 !important;
-  /* 크기 변화 없음 */
-  width: 10px !important;
-  height: 10px !important;
+  /* 크기 변화 - 12px로 증가 */
+  width: 12px !important;
+  height: 12px !important;
 }
 
 /* TipTap 콘텐츠 스타일 */
@@ -280,6 +284,8 @@
   padding: 0 !important;
   border: none !important;
   box-shadow: none !important;
+  /* 오버플로우 속성 추가 - 핸들이 밖으로 나가도록 허용 */
+  overflow: visible !important;
 }
 
 .react-flow__node-default {
