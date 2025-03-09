@@ -3,8 +3,8 @@ import { Node, Edge, Position } from '@xyflow/react';
 import defaultConfig from '../config/cardBoardUiOptions.json';
 
 // 노드 크기 설정 - 설정 파일에서 가져오기
-const NODE_WIDTH = defaultConfig.layout.nodeSize.width;
-const NODE_HEIGHT = defaultConfig.layout.nodeSize.height;
+const NODE_WIDTH = defaultConfig.card.nodeSize.width;
+const NODE_HEIGHT = defaultConfig.card.nodeSize.height;
 
 // 그래프 간격 설정 - 설정 파일에서 가져오기
 const GRAPH_SETTINGS = {
@@ -104,8 +104,9 @@ export function getLayoutedElements(
  * @returns 배치된 노드 배열
  */
 export function getGridLayout(nodes: Node[], cardsPerRow: number = 3) {
-  const HORIZONTAL_GAP = 400;  // 좀 더 넓게 조정
-  const VERTICAL_GAP = 250;
+  // 간격 값을 설정 파일에서 가져옴
+  const HORIZONTAL_GAP = NODE_WIDTH * 1.5;  // 노드 너비의 1.5배
+  const VERTICAL_GAP = NODE_HEIGHT * 6;     // 노드 높이의 6배
   
   return nodes.map((node, index) => ({
     ...node,

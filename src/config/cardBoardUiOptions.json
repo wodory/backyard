@@ -20,12 +20,12 @@
       "default": 16,
       "title": 16,
       "content": 16,
-      "tags": 12
+      "tags": 10
     },
     "nodeSize": {
-      "width": 130,
+      "width": 150,
       "height": 48,
-      "maxHeight": 240
+      "maxHeight": 180
     }
   },
   "handles": {
@@ -41,8 +41,8 @@
       "vertical": 30
     },
     "graphSettings": {
-      "nodesep": 40,
-      "ranksep": 40,
+      "nodesep": 60,
+      "ranksep": 60,
       "edgesep": 40
     }
   }

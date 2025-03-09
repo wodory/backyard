@@ -100,23 +100,8 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   
   // 접기/펼치기 토글 핸들러
   const toggleExpand = useCallback(() => {
-    setIsExpanded(prev => {
-      const newExpandedState = !prev;
-      
-      // 펼침 상태가 될 때 이 노드를 선택 상태로 설정
-      if (newExpandedState && id) {
-        // ReactFlow에서 제공하는 노드 선택 방식 활용
-        setNodes(nodes => 
-          nodes.map(node => ({
-            ...node,
-            selected: node.id === id // 현재 노드만 선택, 나머지는 선택 해제
-          }))
-        );
-      }
-      
-      return newExpandedState;
-    });
-  }, [id, setNodes]);
+    setIsExpanded(prev => !prev);
+  }, []);
   
   // 상태 변경 시 노드 내부 업데이트
   useEffect(() => {
@@ -158,7 +143,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   
   // 노드의 z-index를 직접 조작하는 효과
   useEffect(() => {
-    if (id && isExpanded) {
+    if (id && (isExpanded || selected || isHovered)) {
       // 노드 목록 가져오기
       const nodes = getNodes();
       
@@ -172,7 +157,6 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         // 활성화된 노드의 z-index를 최대값으로 설정
         updatedNodes[currentNodeIndex] = {
           ...updatedNodes[currentNodeIndex],
-          selected: true, // 펼쳐진 상태에서는 항상 선택 상태로 유지
           zIndex: 1000 // 매우 높은 z-index 값
         };
         
@@ -180,7 +164,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         setNodes(updatedNodes);
       }
     }
-  }, [id, isExpanded, getNodes, setNodes]);
+  }, [id, isExpanded, selected, isHovered, getNodes, setNodes]);
   
   // 마우스 오버 핸들러
   const handleMouseEnter = useCallback(() => {
@@ -294,62 +278,6 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       updateNodeInternals(id);
     }
   }, [id, updateNodeInternals]);
-
-  // 노드가 선택됐을 때 모든 펼쳐진 노드 접기 효과
-  useEffect(() => {
-    // 현재 노드가 선택되고 펼쳐져 있지 않다면, 모든 펼쳐진 노드를 접기
-    if (selected && !isExpanded) {
-      const allNodes = getNodes();
-      
-      // 펼쳐진 노드가 있는지 확인하고, 있다면 모두 접기
-      const hasExpandedNodes = allNodes.some(node => 
-        node.id !== id && node.data?.isExpanded
-      );
-      
-      if (hasExpandedNodes) {
-        // 모든 노드의 상태 업데이트 (펼침 상태 초기화)
-        setNodes(nodes => 
-          nodes.map(node => 
-            node.id !== id && node.data?.isExpanded
-              ? { ...node, data: { ...node.data, isExpanded: false } }
-              : node
-          )
-        );
-      }
-    }
-  }, [selected, isExpanded, id, getNodes, setNodes]);
-
-  // 노드가 펼쳐졌을 때 다른 모든 노드를 접는 효과
-  useEffect(() => {
-    // 현재 노드가 펼쳐졌을 때만 실행
-    if (isExpanded && id) {
-      // 다른 펼쳐진 노드들을 접기 위해 글로벌 이벤트 발생
-      // React Flow의 노드 상태를 직접 수정하는 대신 이벤트를 통해 커뮤니케이션
-      const customEvent = new CustomEvent('node-expanded', { 
-        detail: { nodeId: id }
-      });
-      window.dispatchEvent(customEvent);
-    }
-  }, [isExpanded, id]);
-
-  // 다른 노드가 펼쳐졌을 때 현재 노드를 접는 이벤트 리스너
-  useEffect(() => {
-    const handleNodeExpanded = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      // 다른 노드가 펼쳐졌고, 현재 노드가 펼쳐져 있다면 접기
-      if (customEvent.detail.nodeId !== id && isExpanded) {
-        setIsExpanded(false);
-      }
-    };
-
-    // 이벤트 리스너 등록
-    window.addEventListener('node-expanded', handleNodeExpanded);
-
-    // 정리 함수
-    return () => {
-      window.removeEventListener('node-expanded', handleNodeExpanded);
-    };
-  }, [id, isExpanded]);
 
   // 현재 노드가 드래그 중인지 확인 (ReactFlow 상태에서)
   const currentNode = getNode(id);
