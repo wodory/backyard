@@ -178,8 +178,20 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   // 핸들러 크기 정의 
   const handleSize = 12; // 10px에서 12px로 크기 증가
   
-  // 카드 너비
-  const cardWidth = 280;
+  // 카드 너비 - 설정 파일에서 가져오기
+  const cardWidth = uiConfig.card.nodeSize?.width || 280;
+  
+  // 카드 헤더 높이 - 설정 파일에서 가져오기
+  const cardHeaderHeight = uiConfig.card.nodeSize?.height || 40;
+  
+  // 카드 최대 높이 - 설정 파일에서 가져오기
+  const cardMaxHeight = uiConfig.card.nodeSize?.maxHeight || 240;
+  
+  // 폰트 크기 - 설정 파일에서 가져오기
+  const defaultFontSize = uiConfig.card?.fontSizes?.default || 16;
+  const titleFontSize = uiConfig.card?.fontSizes?.title || 16;
+  const contentFontSize = uiConfig.card?.fontSizes?.content || 16;
+  const tagsFontSize = uiConfig.card?.fontSizes?.tags || 12;
   
   // 핸들러 스타일 - 기본 스타일 (핸들러 스타일을 useMemo로 최적화)
   const handleStyleBase = useMemo(() => ({
@@ -233,7 +245,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   }, [handleStyleBase, handleSize]);
   
   // 카드 높이 계산 (접힌 상태와 펼쳐진 상태)
-  const cardHeight = isExpanded ? 'auto' : '40px';
+  const cardHeight = isExpanded ? 'auto' : `${cardHeaderHeight}px`;
 
   // 트랜지션 종료 이벤트 핸들러 - 애니메이션 완료 후 항상 업데이트
   const handleTransitionEnd = useCallback(() => {
@@ -270,15 +282,21 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         justifyContent: 'space-between', 
         alignItems: 'center',
         borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
-        height: '40px'
+        height: `${cardHeaderHeight}px`
       }}>
-        <h3 className="text-md font-semibold truncate text-center flex-grow" style={{
+        <h3 className="text-md font-semibold text-center flex-grow" style={{
           margin: 0,
-          lineHeight: '40px',
-          display: 'flex',
+          lineHeight: `${Math.floor(cardHeaderHeight / 2)}px`,
           alignItems: 'center',
           justifyContent: 'center',
-          height: '40px'
+          height: `${cardHeaderHeight}px`,
+          fontSize: `${titleFontSize}px`,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          padding: '4px 0'
         }}>
           {data.title}
         </h3>
@@ -296,11 +314,11 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       {isExpanded && (
         <div className="card-content" style={{ 
           padding: '8px 12px',
-          fontSize: '0.6rem',
-          maxHeight: '240px',
+          fontSize: `${contentFontSize}px`,
+          maxHeight: `${cardMaxHeight}px`,
           overflow: 'auto'
         }}>
-          <div className="tiptap-content" style={{ fontSize: '0.8rem' }}>
+          <div className="tiptap-content" style={{ fontSize: `${contentFontSize}px` }}>
             <TiptapViewer content={data.content} />
           </div>
           
@@ -308,7 +326,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           {data.tags && data.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {data.tags.map((tag: string, index: number) => (
-                <div key={index} className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs flex items-center">
+                <div key={index} className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs flex items-center" style={{ fontSize: `${tagsFontSize}px` }}>
                   <Tag size={10} className="mr-1" />
                   {tag}
                 </div>

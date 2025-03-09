@@ -1,4 +1,5 @@
 {
+  "autoSaveIntervalMinutes": 1,
   "board": {
     "snapToGrid": false,
     "snapGrid": [15, 15],
@@ -14,7 +15,18 @@
     "defaultWidth": 280,
     "backgroundColor": "#FFFFFF",
     "borderRadius": 8,
-    "tagBackgroundColor": "#F2F2F2"
+    "tagBackgroundColor": "#F2F2F2",
+    "fontSizes": {
+      "default": 16,
+      "title": 16,
+      "content": 16,
+      "tags": 12
+    },
+    "nodeSize": {
+      "width": 130,
+      "height": 48,
+      "maxHeight": 240
+    }
   },
   "handles": {
     "size": 10,
@@ -28,11 +40,6 @@
       "horizontal": 30,
       "vertical": 30
     },
-    "nodeSize": {
-      "width": 160,
-      "height": 40
-    },
-    "autoSaveIntervalMinutes": 1,
     "graphSettings": {
       "nodesep": 40,
       "ranksep": 40,
