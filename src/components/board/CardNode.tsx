@@ -286,17 +286,15 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       }}>
         <h3 className="text-md font-semibold text-center flex-grow" style={{
           margin: 0,
-          lineHeight: `${Math.floor(cardHeaderHeight / 2)}px`,
+          lineHeight: `${cardHeaderHeight}px`,
           alignItems: 'center',
           justifyContent: 'center',
           height: `${cardHeaderHeight}px`,
           fontSize: `${titleFontSize}px`,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          padding: '4px 0'
+          whiteSpace: 'nowrap',
+          padding: '0 4px'
         }}>
           {data.title}
         </h3>
