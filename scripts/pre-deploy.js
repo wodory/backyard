@@ -15,7 +15,6 @@ console.log('배포 전 환경 확인 중...');
 
 // 환경 변수 확인
 const requiredEnvVars = [
-  'DATABASE_PROVIDER',
   'DATABASE_URL'
 ];
 
@@ -36,9 +35,6 @@ if (process.env.NODE_ENV === 'production') {
   } else {
     console.log('모든 필수 환경 변수가 설정되었습니다.');
   }
-
-  // 프로덕션 환경의 데이터베이스 공급자 확인
-  console.log(`사용 중인 데이터베이스 공급자: ${process.env.DATABASE_PROVIDER || '미설정'}`);
 }
 
 // Prisma 생성

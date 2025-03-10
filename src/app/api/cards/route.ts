@@ -167,7 +167,6 @@ export async function GET(request: NextRequest) {
     // 환경 정보 로깅
     console.log('API 호출 환경:', {
       NODE_ENV: process.env.NODE_ENV,
-      DATABASE_PROVIDER: process.env.DATABASE_PROVIDER,
       DATABASE_URL_PREFIX: process.env.DATABASE_URL?.substring(0, 10) + '...' // 보안을 위해 URL 전체를 로깅하지 않음
     });
     
