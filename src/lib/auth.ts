@@ -124,7 +124,7 @@ export async function signInWithGoogle() {
           prompt: 'consent',
         },
         // 브라우저에서 스토리지 사용 (쿠키 문제 해결)
-        skipBrowserStorage: false,
+        skipBrowserRedirect: false,
       },
     });
     
