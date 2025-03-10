@@ -24,7 +24,7 @@ cd backyard
 
 ### 2. 의존성 설치
 ```bash
-npm install
+yarn install
 ```
 
 ### 3. 환경 변수 설정
@@ -71,13 +71,17 @@ NEXT_PUBLIC_OAUTH_REDIRECT_URL="https://your-project-name.vercel.app"
 
 ### 4. 데이터베이스 설정
 
-```bash
-# Prisma 스키마 동기화
-npx prisma generate
-npx prisma db push
+개발 환경에서는 SQLite를 사용합니다. 다음 명령어로 데이터베이스를 설정하세요:
 
-# 개발용 SQLite 데이터베이스 생성
-npx prisma migrate dev
+```bash
+# 개발 환경 DB 설정
+yarn db:setup:dev
+
+# Prisma 클라이언트 생성
+yarn prisma:generate
+
+# (선택적) 초기 데이터 생성
+yarn prisma:seed
 ```
 
 ### 5. Google OAuth 설정
@@ -90,18 +94,29 @@ npx prisma migrate dev
    - 개발: `http://localhost:3000/auth/callback`
    - 프로덕션: `https://your-project-name.vercel.app/auth/callback`
 
-### 6. 개발 서버 실행
+### 6. Supabase 설정
+
+1. [Supabase](https://supabase.com) 프로젝트 생성
+2. Authentication > Providers > Google 설정
+3. 승인된 리다이렉션 URI 추가:
+   - 개발: `http://localhost:3000/auth/callback`
+   - 프로덕션: `https://your-project-name.vercel.app/auth/callback`
+
+### 7. 개발 서버 실행
 
 ```bash
-npm run dev
+yarn dev
 ```
 
-### 7. 프로덕션 배포 (Vercel)
+### 8. 프로덕션 배포 (Vercel)
 
 1. [Vercel](https://vercel.com)에서 GitHub 저장소 import
 2. 환경 변수 설정:
    - `.env.production` 파일의 내용을 Vercel 프로젝트 설정 > Environment Variables에 추가
-3. 배포 실행
+3. 배포 실행:
+   ```bash
+   npx vercel deploy --prod
+   ```
 
 ## 주요 기능
 
@@ -114,6 +129,57 @@ npm run dev
 ## 개발 가이드
 
 자세한 개발 가이드는 [/.note](/.note) 디렉토리를 참조하세요.
+
+## 데이터베이스 스키마 관리
+
+프로젝트는 두 가지 데이터베이스 환경을 지원합니다:
+
+1. **개발 환경 (SQLite)**
+   - `prisma/schema.sqlite.prisma`
+   - 로컬 개발용
+
+2. **프로덕션 환경 (PostgreSQL)**
+   - `prisma/schema.postgresql.prisma`
+   - Supabase 배포용
+
+스키마 동기화가 필요한 경우:
+```bash
+yarn schema:sync
+```
+
+## 문제 해결
+
+### 데이터베이스 연결 문제
+
+1. **개발 환경 (SQLite)**
+   ```bash
+   # SQLite 데이터베이스 초기화
+   rm -f prisma/dev.db
+   yarn db:setup:dev
+   ```
+
+2. **프로덕션 환경 (PostgreSQL)**
+   - Supabase 대시보드에서 데이터베이스 연결 정보 확인
+   - `DATABASE_URL`과 `DIRECT_URL` 환경 변수 확인
+
+### 환경 변수 문제
+
+1. 각 환경 변수 파일이 올바르게 설정되었는지 확인:
+   - `.env`
+   - `.env.development`
+   - `.env.production`
+
+2. Vercel 배포 시 환경 변수가 올바르게 설정되었는지 확인
+
+### OAuth 인증 문제
+
+1. Google Cloud Console 설정 확인:
+   - 승인된 리디렉션 URI
+   - OAuth 동의 화면 설정
+
+2. Supabase 설정 확인:
+   - Google OAuth Provider 설정
+   - 승인된 콜백 URL
 
 ## 라이선스
 
@@ -197,71 +263,6 @@ MIT License
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## 문제 해결
-
-### 데이터베이스 연결 문제
-
-데이터베이스 연결에 문제가 있는 경우 다음 사항을 확인하세요:
-
-1. **PostgreSQL 서버가 실행 중인지 확인**
-   ```bash
-   # macOS
-   brew services list | grep postgres
-   
-   # Linux
-   systemctl status postgresql
-   ```
-
-2. **데이터베이스 존재 확인**
-   ```bash
-   psql -l
-   ```
-
-3. **데이터베이스 사용자 권한 확인**
-   ```bash
-   psql -c "SELECT current_user;"
-   psql -c "SELECT current_database();"
-   ```
-
-4. **마이그레이션 초기화 (문제가 지속될 경우)**
-   ```bash
-   # 기존 마이그레이션 삭제
-   rm -rf prisma/migrations
-   
-   # 새로운 마이그레이션 생성
-   npx prisma migrate dev --name init
-   ```
-
-5. **Prisma 클라이언트 재생성**
-   ```bash
-   npx prisma generate
-   ```
-
-### 다른 데이터베이스 사용하기 (개발 환경용)
-
-개발 환경에서는 SQLite를 사용할 수도 있습니다. 이를 위해 다음과 같이 설정하세요:
-
-1. `.env.development` 파일을 생성하고 다음 내용을 추가:
-   ```
-   DATABASE_URL="file:./dev.db"
-   ```
-
-2. Prisma 스키마를 수정하여 데이터베이스 공급자를 SQLite로 변경:
-   ```prisma
-   datasource db {
-     provider = "sqlite"
-     url      = env("DATABASE_URL")
-   }
-   ```
-
-3. 마이그레이션 초기화 및 실행:
-   ```bash
-   rm -rf prisma/migrations
-   npx prisma migrate dev --name init
-   ```
-
-**참고**: SQLite는 일부 PostgreSQL 기능을 지원하지 않을 수 있으므로 프로덕션 환경에서는 PostgreSQL을 사용하세요.
 
 ## 개발 노트
 

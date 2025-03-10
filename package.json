@@ -16,7 +16,6 @@
     "prisma:seed": "node prisma/seed/index.js",
     "prisma:push": "prisma db push",
     "prisma:generate": "prisma generate",
-    "sync-schema": "node scripts/sync-schema.js",
     "schema:sync": "node scripts/schema-sync.js",
     "pre-deploy": "node scripts/pre-deploy.js",
     "db:setup": "node scripts/select-db.js && npx prisma generate",
