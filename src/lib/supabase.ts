@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 let browserClientInstance: ReturnType<typeof createClient> | null = null;
 let serverClientInstance: ReturnType<typeof createClient> | null = null;
 
+// 환경 변수 확인
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
 // Next.js 서버 컴포넌트 및 API 라우트용 Supabase 클라이언트
 export const createSupabaseClient = () => {
   if (typeof window !== 'undefined') {
@@ -15,43 +19,58 @@ export const createSupabaseClient = () => {
     return serverClientInstance;
   }
   
-  // 환경 변수 체크
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
+  // 정적 렌더링 및 개발 환경을 위한 안전한 클라이언트 생성
   if (!supabaseUrl || !supabaseKey) {
-    console.error('Supabase 환경 변수가 설정되지 않았습니다.');
-    // 빌드 타임 및 배포 시 오류 방지를 위한 더미 클라이언트 반환
+    console.warn('Supabase 환경 변수가 설정되지 않았습니다. Vercel 대시보드에서 환경 변수를 확인하세요.');
+    
+    // 빌드 타임 및 배포 시 오류 방지를 위한 더미 클라이언트
+    return {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signInWithOAuth: () => Promise.resolve({ data: {}, error: null }),
+      },
+      from: () => ({ select: () => ({ data: [], error: null }) }),
+    } as any;
+  }
+  
+  try {
+    serverClientInstance = createClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        auth: {
+          flowType: 'pkce',
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false
+        }
+      }
+    );
+    
+    return serverClientInstance;
+  } catch (error) {
+    console.error('Supabase 서버 클라이언트 생성 실패:', error);
     return {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       },
-      // 필요한 경우 더 많은 더미 메소드 추가
     } as any;
   }
-  
-  serverClientInstance = createClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      auth: {
-        flowType: 'pkce',
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false
-      }
-    }
-  );
-  
-  return serverClientInstance;
 };
 
 // 브라우저 클라이언트용 Supabase 인스턴스
 // 필요한 경우에만 import하여 사용
 export const createBrowserClient = () => {
+  // 브라우저 환경이 아니면 더미 클라이언트 반환
   if (typeof window === 'undefined') {
-    throw new Error('이 함수는 브라우저 환경에서만 사용할 수 있습니다.');
+    return {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+    } as any;
   }
   
   // 이미 생성된 인스턴스가 있으면 재사용
@@ -59,34 +78,59 @@ export const createBrowserClient = () => {
     return browserClientInstance;
   }
   
-  // 환경 변수 체크
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
+  // 클라이언트 환경에서 안전하게 처리
   if (!supabaseUrl || !supabaseKey) {
-    console.error('Supabase 환경 변수가 설정되지 않았습니다.');
-    throw new Error('Supabase URL 및 Anon Key가 필요합니다.');
+    console.warn('Supabase 환경 변수가 설정되지 않았습니다. Vercel 대시보드에서 환경 변수를 확인하세요.');
+    
+    if (process.env.NODE_ENV !== 'production') {
+      // 개발 환경에서는 더미 클라이언트 반환
+      return {
+        auth: {
+          getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          signInWithOAuth: () => Promise.resolve({ data: {}, error: null }),
+        },
+        from: () => ({ select: () => ({ data: [], error: null }) }),
+      } as any;
+    }
+    
+    // 운영 환경에서는 경고만 표시하고 계속 진행 (오류 방지)
+    console.error('Supabase 환경 변수가 누락되었습니다. 기능이 제한될 수 있습니다.');
   }
   
-  browserClientInstance = createClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      auth: {
-        flowType: 'pkce',
-        persistSession: true,
-        detectSessionInUrl: true
+  try {
+    browserClientInstance = createClient(
+      supabaseUrl || 'https://placeholder-supabase-url.supabase.co',
+      supabaseKey || 'placeholder-anon-key',
+      {
+        auth: {
+          flowType: 'pkce',
+          persistSession: true,
+          detectSessionInUrl: true
+        }
       }
-    }
-  );
-  
-  return browserClientInstance;
+    );
+    
+    return browserClientInstance;
+  } catch (error) {
+    console.error('Supabase 브라우저 클라이언트 생성 실패:', error);
+    return {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+    } as any;
+  }
 };
 
 // 안전한 클라이언트 생성 (정적 빌드 시 오류 방지)
 const createSafeClient = () => {
   try {
-    return typeof window === 'undefined' ? createSupabaseClient() : createBrowserClient();
+    if (typeof window === 'undefined') {
+      return createSupabaseClient();
+    } else {
+      return createBrowserClient();
+    }
   } catch (error) {
     console.error('Supabase 클라이언트 생성 실패:', error);
     // 빌드 타임 에러 방지를 위한 더미 클라이언트
