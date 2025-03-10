@@ -47,12 +47,13 @@ export default function AuthCallbackPage() {
         if (data?.session) {
           console.log('인증 성공, 세션 생성됨');
           
-          // 토큰을 쿠키에 저장 (미들웨어에서 이 쿠키로 인증 확인)
+          // 토큰을 쿠키에 저장 (미들웨어와 동일한 설정 사용)
           setCookie('sb-access-token', data.session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            httpOnly: true
           });
           
           if (data.session.refresh_token) {
@@ -60,7 +61,8 @@ export default function AuthCallbackPage() {
               maxAge: 60 * 60 * 24 * 30, // 30일
               path: '/',
               secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
+              sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+              httpOnly: true
             });
           }
           
@@ -96,9 +98,24 @@ export default function AuthCallbackPage() {
             // 사용자 정보 저장 실패해도 인증은 계속 진행
           }
           
-          // 보드 페이지로 리디렉션
-          console.log('인증 완료, 보드 페이지로 이동');
-          router.push('/board');
+          // 세션이 완전히 설정되었는지 한 번 더 확인
+          const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            return !!session;
+          };
+
+          // 세션 확인 후 리디렉션
+          if (await checkSession()) {
+            console.log('인증 완료, 보드 페이지로 이동');
+            // 전체 페이지 리로드를 위해 window.location 사용
+            setTimeout(() => {
+              window.location.href = '/board';
+            }, 500);
+          } else {
+            console.error('세션 설정 실패');
+            setError('세션 설정에 실패했습니다.');
+            setLoading(false);
+          }
         } else {
           // 세션이 없으면 에러 표시
           console.error('세션 없음');
