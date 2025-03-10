@@ -1,34 +1,44 @@
 #!/usr/bin/env node
 
 /**
- * 배포 전 스키마 확인 스크립트
+ * 배포 전 환경 설정 스크립트
  * 
  * 이 스크립트는 Vercel 등의 프로덕션 환경에 배포하기 전에
- * 환경에 맞는 DB 스키마를 설정하고 필요시 Supabase DB에 적용합니다.
+ * 환경 파일을 확인하고 필요한 설정을 적용합니다.
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// 경로 설정
-const prismaDir = path.resolve(__dirname, '../prisma');
-const schemaPath = path.join(prismaDir, 'schema.prisma');
-const postgresSchemaPath = path.join(prismaDir, 'schema.postgresql.prisma');
+console.log('배포 전 환경 확인 중...');
 
-console.log('배포 전 스키마 확인 중...');
+// 환경 변수 확인
+const requiredEnvVars = [
+  'DATABASE_PROVIDER',
+  'DATABASE_URL'
+];
 
-// 배포 환경에서는 항상 PostgreSQL 스키마 사용
+// 프로덕션 환경 변수 확인
 if (process.env.NODE_ENV === 'production') {
-  console.log('프로덕션 환경 감지: PostgreSQL 스키마로 전환합니다...');
+  console.log('프로덕션 환경 감지: 환경 변수를 확인합니다...');
   
-  // PostgreSQL 스키마 파일 복사
-  if (fs.existsSync(postgresSchemaPath)) {
-    fs.copyFileSync(postgresSchemaPath, schemaPath);
-    console.log('PostgreSQL 스키마 파일이 성공적으로 적용되었습니다.');
-  } else {
-    console.error(`오류: PostgreSQL 스키마 파일을 찾을 수 없습니다: ${postgresSchemaPath}`);
+  const missingVars = [];
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      missingVars.push(envVar);
+    }
   }
+  
+  if (missingVars.length > 0) {
+    console.warn(`경고: 다음 환경 변수가 설정되지 않았습니다: ${missingVars.join(', ')}`);
+    console.log('Vercel 대시보드에서 이러한 환경 변수를 설정했는지 확인하세요.');
+  } else {
+    console.log('모든 필수 환경 변수가 설정되었습니다.');
+  }
+
+  // 프로덕션 환경의 데이터베이스 공급자 확인
+  console.log(`사용 중인 데이터베이스 공급자: ${process.env.DATABASE_PROVIDER || '미설정'}`);
 }
 
 // Prisma 생성

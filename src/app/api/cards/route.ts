@@ -164,11 +164,31 @@ export async function POST(request: NextRequest) {
 // 모든 카드 조회 API
 export async function GET(request: NextRequest) {
   try {
+    // 환경 정보 로깅
+    console.log('API 호출 환경:', {
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_PROVIDER: process.env.DATABASE_PROVIDER,
+      DATABASE_URL_PREFIX: process.env.DATABASE_URL?.substring(0, 10) + '...' // 보안을 위해 URL 전체를 로깅하지 않음
+    });
+    
     // Prisma 클라이언트가 초기화되었는지 확인
     if (!prisma) {
       console.error('Prisma 클라이언트가 초기화되지 않았습니다.');
       return NextResponse.json(
         { error: '데이터베이스 연결을 초기화하는 중 오류가 발생했습니다.' },
+        { status: 500 }
+      );
+    }
+    
+    // Prisma 클라이언트 상태 확인
+    try {
+      // 빠른 데이터베이스 연결 테스트
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('데이터베이스 연결 테스트 성공');
+    } catch (dbError) {
+      console.error('데이터베이스 연결 테스트 실패:', dbError);
+      return NextResponse.json(
+        { error: '데이터베이스 연결 실패. 관리자에게 문의하세요.' },
         { status: 500 }
       );
     }

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development next dev",
     "prebuild": "node scripts/pre-deploy.js",
-    "build": "NODE_ENV=production prisma generate && next build",
+    "build": "NODE_ENV=production prisma generate && prisma migrate deploy && next build",
     "start": "NODE_ENV=production next start",
     "lint": "next lint",
     "test": "vitest",
@@ -20,7 +20,8 @@
     "pre-deploy": "node scripts/pre-deploy.js",
     "db:setup": "node scripts/select-db.js && npx prisma generate",
     "db:setup:dev": "NODE_ENV=development node scripts/select-db.js && npx prisma generate",
-    "db:setup:prod": "NODE_ENV=production node scripts/select-db.js && npx prisma generate"
+    "db:setup:prod": "NODE_ENV=production node scripts/select-db.js && npx prisma generate",
+    "db:test": "node scripts/test-db.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
