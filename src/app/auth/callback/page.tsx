@@ -47,13 +47,13 @@ export default function AuthCallbackPage() {
         if (data?.session) {
           console.log('인증 성공, 세션 생성됨');
           
-          // 토큰을 쿠키에 저장 (미들웨어와 동일한 설정 사용)
+          // 쿠키를 설정할 때 httpOnly 사용하지 않음 (클라이언트 측에서 접근 가능하도록)
           setCookie('sb-access-token', data.session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            httpOnly: true
+            // httpOnly: false (기본값이 false임)
           });
           
           if (data.session.refresh_token) {
@@ -62,11 +62,17 @@ export default function AuthCallbackPage() {
               path: '/',
               secure: process.env.NODE_ENV === 'production',
               sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-              httpOnly: true
+              // httpOnly: false (기본값이 false임)
             });
           }
           
           console.log('세션 토큰을 쿠키에 저장함');
+          
+          // 설정된 쿠키 확인
+          const accessCookie = getCookie('sb-access-token');
+          const refreshCookie = getCookie('sb-refresh-token');
+          console.log('쿠키 확인 - 액세스 토큰:', accessCookie ? '존재함' : '없음');
+          console.log('쿠키 확인 - 리프레시 토큰:', refreshCookie ? '존재함' : '없음');
           
           // 사용자 정보를 데이터베이스에 저장 또는 업데이트
           try {
@@ -100,17 +106,23 @@ export default function AuthCallbackPage() {
           
           // 세션이 완전히 설정되었는지 한 번 더 확인
           const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            return !!session;
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              return !!session;
+            } catch (error) {
+              console.error('세션 재확인 오류:', error);
+              return false;
+            }
           };
 
           // 세션 확인 후 리디렉션
           if (await checkSession()) {
             console.log('인증 완료, 보드 페이지로 이동');
             // 전체 페이지 리로드를 위해 window.location 사용
+            // 지연 시간을 늘려 쿠키가 완전히 설정될 시간을 확보
             setTimeout(() => {
               window.location.href = '/board';
-            }, 500);
+            }, 1000);
           } else {
             console.error('세션 설정 실패');
             setError('세션 설정에 실패했습니다.');
@@ -139,7 +151,7 @@ export default function AuthCallbackPage() {
           <h2 className="text-xl font-bold text-red-600 mb-4">인증 오류</h2>
           <p className="text-gray-700 mb-4">{error}</p>
           <button 
-            onClick={() => router.push('/login')}
+            onClick={() => window.location.href = '/login'}
             className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
             로그인으로 돌아가기

@@ -95,28 +95,47 @@ export async function signInWithGoogle() {
     // 우선순위 1: 명시적 OAuth 리다이렉션 URL (GCP에 등록된 URL)
     if (process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL) {
       origin = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
+      console.log('환경 변수에서 리디렉션 URL 설정:', origin);
     } 
     // 우선순위 2: Vercel URL (이전 방식과 호환성 유지)
     else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
       origin = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+      console.log('Vercel URL에서 리디렉션 URL 설정:', origin);
+    } else {
+      console.log('환경 변수가 없어 현재 origin 사용:', origin);
     }
+  } else {
+    console.log('개발 환경에서 현재 origin 사용:', origin);
   }
   
   const redirectTo = `${origin}/auth/callback`;
   
   console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
   
-  return supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo,
-      queryParams: {
-        // 필요한 경우 Google OAuth 추가 Scope 지정
-        access_type: 'offline',
-        prompt: 'consent',
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        queryParams: {
+          // 필요한 경우 Google OAuth 추가 Scope 지정
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
-    },
-  });
+    });
+    
+    if (error) {
+      console.error('Google OAuth 초기화 오류:', error);
+      throw error;
+    }
+    
+    console.log('Google OAuth 시작됨, 리디렉션 URL:', data.url);
+    return data;
+  } catch (error) {
+    console.error('Google 로그인 오류:', error);
+    throw error;
+  }
 }
 
 // 로그아웃 함수

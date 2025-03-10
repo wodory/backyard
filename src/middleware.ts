@@ -11,6 +11,15 @@ const bypassAuthRoutes = ['/auth/callback', '/api'];
 export async function middleware(request: NextRequest) {
   console.log('미들웨어 실행:', request.nextUrl.pathname);
   
+  // 쿠키 확인 디버깅
+  const cookies = request.cookies;
+  const accessToken = cookies.get('sb-access-token')?.value;
+  const refreshToken = cookies.get('sb-refresh-token')?.value;
+  
+  console.log('쿠키 확인 - 액세스 토큰:', accessToken ? '존재함' : '없음');
+  console.log('쿠키 확인 - 리프레시 토큰:', refreshToken ? '존재함' : '없음');
+  console.log('모든 쿠키:', Array.from(cookies.getAll()).map(c => c.name));
+  
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -25,13 +34,13 @@ export async function middleware(request: NextRequest) {
         cookies: {
           get(name: string) {
             const cookie = request.cookies.get(name);
-            console.log('쿠키 가져오기:', name, cookie ? '존재' : '없음');
+            console.log('쿠키 가져오기:', name, cookie ? '존재' : '없음', cookie?.value ? `(값 길이: ${cookie.value.length})` : '');
             return cookie?.value;
           },
           set(name: string, value: string, options: any) {
             // Next.js 15에서는 서버 액션이나 라우트 핸들러에서만 쿠키를 수정할 수 있지만,
             // 미들웨어에서는 응답 객체를 통해 쿠키를 설정할 수 있습니다.
-            console.log('쿠키 설정:', name);
+            console.log('쿠키 설정:', name, `(값 길이: ${value.length})`);
             response.cookies.set({
               name,
               value,
@@ -60,8 +69,17 @@ export async function middleware(request: NextRequest) {
     );
 
     // auth 관련 데이터 갱신 (필요한 경우)
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('세션 획득 오류:', sessionError.message);
+    }
+    
     console.log('세션 확인:', session ? '로그인됨' : '로그인안됨');
+    if (session) {
+      console.log('세션 정보 - 사용자 ID:', session.user?.id);
+      console.log('세션 정보 - 만료 시간:', new Date(session.expires_at! * 1000).toISOString());
+    }
 
     // 요청 URL 가져오기
     const url = request.nextUrl.clone();
@@ -74,8 +92,6 @@ export async function middleware(request: NextRequest) {
     }
     
     // 토큰 확인
-    const accessToken = request.cookies.get('sb-access-token')?.value;
-    const refreshToken = request.cookies.get('sb-refresh-token')?.value;
     const isLoggedIn = !!session; // 세션 기반으로 로그인 상태 판단
     
     console.log('경로 접근:', pathname, '인증 상태:', isLoggedIn ? '로그인됨' : '로그인안됨');
