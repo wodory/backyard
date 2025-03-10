@@ -15,9 +15,25 @@ export const createSupabaseClient = () => {
     return serverClientInstance;
   }
   
+  // 환경 변수 체크
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase 환경 변수가 설정되지 않았습니다.');
+    // 빌드 타임 및 배포 시 오류 방지를 위한 더미 클라이언트 반환
+    return {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+      // 필요한 경우 더 많은 더미 메소드 추가
+    } as any;
+  }
+  
   serverClientInstance = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       auth: {
         flowType: 'pkce',
@@ -43,9 +59,18 @@ export const createBrowserClient = () => {
     return browserClientInstance;
   }
   
+  // 환경 변수 체크
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase 환경 변수가 설정되지 않았습니다.');
+    throw new Error('Supabase URL 및 Anon Key가 필요합니다.');
+  }
+  
   browserClientInstance = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       auth: {
         flowType: 'pkce',
@@ -58,6 +83,22 @@ export const createBrowserClient = () => {
   return browserClientInstance;
 };
 
+// 안전한 클라이언트 생성 (정적 빌드 시 오류 방지)
+const createSafeClient = () => {
+  try {
+    return typeof window === 'undefined' ? createSupabaseClient() : createBrowserClient();
+  } catch (error) {
+    console.error('Supabase 클라이언트 생성 실패:', error);
+    // 빌드 타임 에러 방지를 위한 더미 클라이언트
+    return {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+    } as any;
+  }
+};
+
 // 기본 클라이언트 생성 (서버 컴포넌트에서 사용)
-const supabase = typeof window === 'undefined' ? createSupabaseClient() : createBrowserClient();
+const supabase = createSafeClient();
 export default supabase; 
