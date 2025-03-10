@@ -87,8 +87,16 @@ export async function signIn(email: string, password: string) {
 export async function signInWithGoogle() {
   const supabase = getBrowserClient();
   
-  // 현재 URL 가져오기
-  const origin = window.location.origin;
+  // 현재 URL 또는 환경 변수에서 리다이렉션 URL 설정
+  let origin = window.location.origin;
+  
+  // Vercel 환경에서 실행 중이고 프로덕션 환경인 경우, 배포 URL 사용
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    origin = process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
+      : origin;
+  }
+  
   const redirectTo = `${origin}/auth/callback`;
   
   console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
