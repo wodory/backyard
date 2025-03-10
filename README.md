@@ -1,33 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Backyard
 
-## Getting Started
+마인드맵 스타일의 카드 보드 애플리케이션입니다.
 
-First, run the development server:
+## 기술 스택
+
+- **프레임워크**: Next.js 14 (App Router)
+- **언어**: TypeScript
+- **스타일링**: Tailwind CSS
+- **UI 컴포넌트**: shadcn/ui
+- **데이터베이스**: 
+  - 개발: SQLite
+  - 프로덕션: Supabase (PostgreSQL)
+- **인증**: Supabase Auth (Google OAuth)
+- **배포**: Vercel
+
+## 프로젝트 설정 방법
+
+### 1. 저장소 클론
+```bash
+git clone https://github.com/wodory/backyard.git
+cd backyard
+```
+
+### 2. 의존성 설치
+```bash
+npm install
+```
+
+### 3. 환경 변수 설정
+
+세 가지 환경 변수 파일을 설정해야 합니다:
+
+```bash
+# 환경 변수 템플릿 파일 복사
+cp .env.example .env
+cp .env.development.example .env.development
+cp .env.production.example .env.production
+```
+
+각 파일의 용도와 설정 방법:
+
+#### `.env` (공통 설정)
+- Supabase 프로젝트의 URL과 anon key 설정
+- Supabase 대시보드 > Project Settings > API에서 확인 가능
+```bash
+NEXT_PUBLIC_SUPABASE_URL="your-project-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+```
+
+#### `.env.development` (개발 환경)
+- 로컬 개발 환경에서 사용
+- SQLite 데이터베이스 사용
+- OAuth 리다이렉션은 localhost:3000으로 설정
+```bash
+DATABASE_PROVIDER="sqlite"
+DATABASE_URL="file:./prisma/dev.db"
+NEXT_PUBLIC_OAUTH_REDIRECT_URL="http://localhost:3000"
+```
+
+#### `.env.production` (프로덕션 환경)
+- Vercel 배포 환경에서 사용
+- Supabase PostgreSQL 데이터베이스 사용
+- OAuth 리다이렉션은 Vercel 배포 URL 사용
+```bash
+DATABASE_PROVIDER="postgresql"
+DATABASE_URL="postgresql://postgres:password@project-id.supabase.co:6543/postgres"
+DIRECT_URL="postgresql://postgres:password@project-id.supabase.co:5432/postgres"
+NEXT_PUBLIC_OAUTH_REDIRECT_URL="https://your-project-name.vercel.app"
+```
+
+### 4. 데이터베이스 설정
+
+```bash
+# Prisma 스키마 동기화
+npx prisma generate
+npx prisma db push
+
+# 개발용 SQLite 데이터베이스 생성
+npx prisma migrate dev
+```
+
+### 5. Google OAuth 설정
+
+1. [Google Cloud Console](https://console.cloud.google.com/) 접속
+2. 새 프로젝트 생성 또는 기존 프로젝트 선택
+3. OAuth 동의 화면 설정
+4. 사용자 인증 정보 > OAuth 2.0 클라이언트 ID 생성
+5. 승인된 리다이렉션 URI 설정:
+   - 개발: `http://localhost:3000/auth/callback`
+   - 프로덕션: `https://your-project-name.vercel.app/auth/callback`
+
+### 6. 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 7. 프로덕션 배포 (Vercel)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. [Vercel](https://vercel.com)에서 GitHub 저장소 import
+2. 환경 변수 설정:
+   - `.env.production` 파일의 내용을 Vercel 프로젝트 설정 > Environment Variables에 추가
+3. 배포 실행
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 주요 기능
 
-## Learn More
+- 카드 생성 및 관리
+- 카드 간 연결 관계 설정
+- 마인드맵 스타일 레이아웃
+- Google 계정으로 로그인
+- 실시간 자동 저장
 
-To learn more about Next.js, take a look at the following resources:
+## 개발 가이드
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+자세한 개발 가이드는 [/.note](/.note) 디렉토리를 참조하세요.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 라이선스
+
+MIT License
 
 ## 데이터베이스 설정
 
