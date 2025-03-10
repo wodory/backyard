@@ -26,10 +26,21 @@ export async function middleware(request: NextRequest) {
     },
   });
 
+  // 환경 변수 확인
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('미들웨어: Supabase 환경 변수가 설정되지 않았습니다.');
+    
+    // 환경 변수가 없는 경우, 기본 요청 계속 진행 (차단하지 않음)
+    return response;
+  }
+
   try {
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseKey,
       {
         cookies: {
           get(name: string) {
@@ -75,19 +86,6 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // auth 관련 데이터 갱신 (필요한 경우)
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('세션 획득 오류:', sessionError.message);
-    }
-    
-    console.log('세션 확인:', session ? '로그인됨' : '로그인안됨');
-    if (session) {
-      console.log('세션 정보 - 사용자 ID:', session.user?.id);
-      console.log('세션 정보 - 만료 시간:', new Date(session.expires_at! * 1000).toISOString());
-    }
-
     // 요청 URL 가져오기
     const url = request.nextUrl.clone();
     
@@ -97,8 +95,61 @@ export async function middleware(request: NextRequest) {
       return response;
     }
     
-    // 토큰 확인
-    const isLoggedIn = !!session; // 세션 기반으로 로그인 상태 판단
+    // 직접 토큰 확인 (쿠키 기반)
+    let isLoggedIn = false;
+    
+    // 1. 쿠키 토큰 기반 확인
+    if (accessToken) {
+      isLoggedIn = true;
+      console.log('액세스 토큰 쿠키 확인 성공');
+    } 
+    // 2. Supabase 세션 기반 확인 (백업 방법)
+    else {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('세션 획득 오류:', sessionError.message);
+        }
+        
+        isLoggedIn = !!session;
+        console.log('세션 확인:', isLoggedIn ? '로그인됨' : '로그인안됨');
+        
+        if (session) {
+          console.log('세션 정보 - 사용자 ID:', session.user?.id);
+          console.log('세션 정보 - 만료 시간:', new Date(session.expires_at! * 1000).toISOString());
+          
+          // 쿠키가 없지만 세션이 있는 경우, 쿠키 복구
+          if (!accessToken) {
+            response.cookies.set({
+              name: 'sb-access-token',
+              value: session.access_token,
+              maxAge: 60 * 60 * 24 * 7, // 7일
+              path: '/',
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              httpOnly: false,
+            });
+            
+            if (session.refresh_token) {
+              response.cookies.set({
+                name: 'sb-refresh-token',
+                value: session.refresh_token,
+                maxAge: 60 * 60 * 24 * 30, // 30일
+                path: '/',
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                httpOnly: false,
+              });
+            }
+            
+            console.log('세션 토큰을 쿠키에 복구함');
+          }
+        }
+      } catch (sessionError) {
+        console.error('세션 확인 중 오류:', sessionError);
+      }
+    }
     
     console.log('경로 접근:', pathname, '인증 상태:', isLoggedIn ? '로그인됨' : '로그인안됨');
     
@@ -107,7 +158,7 @@ export async function middleware(request: NextRequest) {
       pathname === route || pathname.startsWith(`${route}/`)
     );
     
-    // 인증된 사용자가 접근할 수 없는 경로인지 확인
+    // 인증된 사용자는 접근할 수 없는 경로인지 확인
     const isAuthRoute = authRoutes.some(route => 
       pathname === route || pathname.startsWith(`${route}/`)
     );
