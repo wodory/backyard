@@ -26,12 +26,16 @@ export default function AuthCallbackPage() {
         }
 
         console.log('클라이언트 측 인증 콜백 처리 시작');
+        console.log('현재 URL:', window.location.href);
         
         // Supabase 클라이언트 가져오기
         const supabase = getBrowserClient();
+        console.log('Supabase 클라이언트 초기화 완료');
         
         // 세션 상태 확인 (Supabase가 자동으로 URL의 코드를 처리)
+        console.log('세션 상태 확인 시작');
         const { data, error: sessionError } = await supabase.auth.getSession();
+        console.log('세션 데이터:', data);
         
         if (sessionError) {
           console.error('세션 확인 오류:', sessionError);
