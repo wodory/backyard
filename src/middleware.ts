@@ -45,10 +45,10 @@ export async function middleware(request: NextRequest) {
               name,
               value,
               ...options,
-              // Vercel 환경에서 작동하도록 명시적으로 보안 설정 추가
+              // 프로덕션, 개발 환경 모두 일관된 설정 사용
               secure: process.env.NODE_ENV === 'production',
-              sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-              httpOnly: true,
+              sameSite: 'lax',
+              httpOnly: false, // 클라이언트에서 접근 가능하도록
             });
           },
           remove(name: string, options: any) {
@@ -58,15 +58,22 @@ export async function middleware(request: NextRequest) {
               value: '',
               ...options,
               maxAge: 0,
-              // Vercel 환경에서 작동하도록 명시적으로 보안 설정 추가
+              // 프로덕션, 개발 환경 모두 일관된 설정 사용
               secure: process.env.NODE_ENV === 'production',
-              sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-              httpOnly: true,
+              sameSite: 'lax',
+              httpOnly: false, // 클라이언트에서 접근 가능하도록
             });
           },
         },
       }
     );
+
+    // 콜백 URL로 리디렉션 중인 경우 처리 우회
+    const { pathname, search } = request.nextUrl;
+    if (pathname === '/auth/callback' && search) {
+      console.log('콜백 처리 감지 - 미들웨어 우회');
+      return response;
+    }
 
     // auth 관련 데이터 갱신 (필요한 경우)
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -83,7 +90,6 @@ export async function middleware(request: NextRequest) {
 
     // 요청 URL 가져오기
     const url = request.nextUrl.clone();
-    const { pathname } = url;
     
     // 인증 우회 경로인 경우 인증 검사 건너뛰기
     if (bypassAuthRoutes.some(route => pathname === route || pathname.startsWith(route))) {

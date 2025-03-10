@@ -87,32 +87,33 @@ export async function signIn(email: string, password: string) {
 export async function signInWithGoogle() {
   const supabase = getBrowserClient();
   
-  // 현재 URL 또는 환경 변수에서 리다이렉션 URL 설정
-  let origin = window.location.origin;
+  // 항상 명시적인 URL 사용
+  let redirectTo = '';
   
-  // 프로덕션 환경인 경우, OAuth 리다이렉션 URL 환경 변수 사용
+  // 프로덕션 환경에서는 환경 변수 사용
   if (process.env.NODE_ENV === 'production') {
-    // 우선순위 1: 명시적 OAuth 리다이렉션 URL (GCP에 등록된 URL)
-    if (process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL) {
-      origin = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
-      console.log('환경 변수에서 리디렉션 URL 설정:', origin);
-    } 
-    // 우선순위 2: Vercel URL (이전 방식과 호환성 유지)
-    else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      origin = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-      console.log('Vercel URL에서 리디렉션 URL 설정:', origin);
-    } else {
-      console.log('환경 변수가 없어 현재 origin 사용:', origin);
-    }
+    // 명시적 URL 사용 (Vercel 배포에서 사용)
+    redirectTo = 'https://backyard-orpin.vercel.app/auth/callback';
+    console.log('프로덕션용 하드코딩 리디렉션 URL 사용:', redirectTo);
   } else {
-    console.log('개발 환경에서 현재 origin 사용:', origin);
+    // 개발 환경에서는 localhost 사용
+    redirectTo = 'http://localhost:3000/auth/callback';
+    console.log('개발 환경용 하드코딩 리디렉션 URL 사용:', redirectTo);
   }
-  
-  const redirectTo = `${origin}/auth/callback`;
   
   console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
   
   try {
+    // 쿠키 정리 먼저 수행 (이전 상태 제거)
+    localStorage.removeItem('supabase.auth.token');
+    document.cookie.split(';').forEach(c => {
+      const cookieName = c.split('=')[0].trim();
+      if (cookieName.startsWith('sb-')) {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        console.log(`쿠키 삭제: ${cookieName}`);
+      }
+    });
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -122,6 +123,8 @@ export async function signInWithGoogle() {
           access_type: 'offline',
           prompt: 'consent',
         },
+        // 브라우저에서 스토리지 사용 (쿠키 문제 해결)
+        skipBrowserStorage: false,
       },
     });
     
@@ -131,6 +134,9 @@ export async function signInWithGoogle() {
     }
     
     console.log('Google OAuth 시작됨, 리디렉션 URL:', data.url);
+    
+    // 명시적 리디렉션 수행
+    window.location.href = data.url;
     return data;
   } catch (error) {
     console.error('Google 로그인 오류:', error);
