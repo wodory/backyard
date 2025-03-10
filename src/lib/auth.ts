@@ -90,11 +90,16 @@ export async function signInWithGoogle() {
   // 현재 URL 또는 환경 변수에서 리다이렉션 URL 설정
   let origin = window.location.origin;
   
-  // Vercel 환경에서 실행 중이고 프로덕션 환경인 경우, 배포 URL 사용
-  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    origin = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
-      : origin;
+  // 프로덕션 환경인 경우, OAuth 리다이렉션 URL 환경 변수 사용
+  if (process.env.NODE_ENV === 'production') {
+    // 우선순위 1: 명시적 OAuth 리다이렉션 URL (GCP에 등록된 URL)
+    if (process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL) {
+      origin = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
+    } 
+    // 우선순위 2: Vercel URL (이전 방식과 호환성 유지)
+    else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+      origin = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    }
   }
   
   const redirectTo = `${origin}/auth/callback`;
