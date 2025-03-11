@@ -60,6 +60,7 @@ export async function middleware(request: NextRequest) {
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
               httpOnly: false, // 클라이언트에서 접근 가능하도록
+              // 도메인 속성 제거 - 쿠키는 기본적으로 현재 도메인에만 설정됨
             });
           },
           remove(name: string, options: any) {
@@ -73,6 +74,7 @@ export async function middleware(request: NextRequest) {
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
               httpOnly: false, // 클라이언트에서 접근 가능하도록
+              // 도메인 속성 제거 - 쿠키는 기본적으로 현재 도메인에만 설정됨
             });
           },
         },

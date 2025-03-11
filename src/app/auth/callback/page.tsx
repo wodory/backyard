@@ -77,13 +77,16 @@ export default function AuthCallbackPage() {
             setDebugInfo(prev => prev + `\n체크 9-오류: 로컬 스토리지 저장 실패 - ${storageError}`);
           }
           
-          // 쿠키를 설정할 때 보안 옵션 강화
+          // 쿠키를 설정할 때 도메인 설정 수정
+          // 현재 호스트 이름에서 도메인 추출
+          const hostname = window.location.hostname;
+          
           setCookie('sb-access-token', data.session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
             secure: true, // HTTPS에서만 사용
-            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost'
+            sameSite: 'lax'
+            // 도메인 속성 제거 - 기본적으로 현재 도메인에 설정됨
           });
           
           if (data.session.refresh_token) {
@@ -91,8 +94,8 @@ export default function AuthCallbackPage() {
               maxAge: 60 * 60 * 24 * 30, // 30일
               path: '/',
               secure: true, // HTTPS에서만 사용
-              sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-              domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost'
+              sameSite: 'lax'
+              // 도메인 속성 제거 - 기본적으로 현재 도메인에 설정됨
             });
           }
           

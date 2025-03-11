@@ -88,7 +88,11 @@ export async function signInWithGoogle() {
   const supabase = getBrowserClient();
   
   // 환경 변수에서 리디렉션 URL 가져오기
-  const baseUrl = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
+  // 프로덕션에서는 환경 변수를 사용하고, 로컬에서는 현재 호스트 기반으로 URL 생성
+  const baseUrl = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
+    ? `${window.location.protocol}//${window.location.host}`
+    : process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
+    
   const redirectTo = `${baseUrl}/auth/callback`;
   
   console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
