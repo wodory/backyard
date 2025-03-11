@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "yarn env:dev && yarn db:setup:dev && NODE_ENV=development next dev",
     "prebuild": "node scripts/pre-deploy.js",
-    "build": "NODE_ENV=production yarn db:setup:prod && prisma generate && prisma migrate deploy --skip-generate && next build",
-    "build:local": "NODE_ENV=production yarn db:setup:prod && prisma generate && prisma migrate deploy --skip-generate && next build",
+    "build": "NODE_ENV=production yarn db:setup:prod && prisma generate && prisma migrate deploy && next build",
+    "build:local": "NODE_ENV=production yarn db:setup:prod && prisma generate && prisma migrate deploy && next build",
     "start": "NODE_ENV=production next start",
     "lint": "next lint",
     "test": "vitest",
