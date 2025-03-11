@@ -106,11 +106,11 @@ export async function signIn(email: string, password: string) {
       const secureStr = isSecure ? 'Secure; ' : '';
       
       // 액세스 토큰 저장
-      document.cookie = `sb-access-token=${data.session.access_token}; ${domainStr}path=/; max-age=${60 * 60 * 24 * 7}; SameSite=${sameSite}; ${secureStr}`;
+      document.cookie = `sb-access-token=${data.session.access_token}; ${domainStr} path=/; max-age=${60 * 60 * 24 * 7}; SameSite=${sameSite}; ${secureStr}`;
       
       // 리프레시 토큰 저장
       if (data.session.refresh_token) {
-        document.cookie = `sb-refresh-token=${data.session.refresh_token}; ${domainStr}path=/; max-age=${60 * 60 * 24 * 30}; SameSite=${sameSite}; ${secureStr}`;
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; ${domainStr} path=/; max-age=${60 * 60 * 24 * 30}; SameSite=${sameSite}; ${secureStr}`;
       }
       
       // localStorage에도 백업 (fallback)
