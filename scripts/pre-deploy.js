@@ -62,5 +62,10 @@ console.log('✅ 환경 설정 확인 완료');
 
 // Prisma 클라이언트 생성
 console.log('Prisma 클라이언트를 생성합니다...');
-execSync('npx prisma generate', { stdio: 'inherit' });
-console.log('✅ Prisma 클라이언트가 생성되었습니다.'); 
+try {
+  execSync('npx prisma generate', { stdio: 'inherit' });
+  console.log('✅ Prisma 클라이언트가 생성되었습니다.');
+} catch (error) {
+  console.error(`⚠️ Prisma 클라이언트 생성 중 오류가 발생했습니다: ${error.message}`);
+  console.error('하지만 배포 과정을 계속 진행합니다.');
+} 
