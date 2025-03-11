@@ -13,15 +13,22 @@ const { execSync } = require('child_process');
 
 console.log('배포 전 환경 설정 확인 중...');
 
-// 필수 환경 변수 목록
-const requiredEnvVars = [
-  'POSTGRES_PRISMA_URL',
-  'POSTGRES_URL_NON_POOLING',
+// 기본 필수 환경 변수 목록
+let requiredEnvVars = [
   'DATABASE_PROVIDER',
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  'NEXT_PUBLIC_OAUTH_REDIRECT_URL'
+  'DATABASE_URL'
 ];
+
+// 데이터베이스 프로바이더에 따라 추가 변수 검증
+if (process.env.DATABASE_PROVIDER === 'postgresql') {
+  requiredEnvVars.push('DIRECT_URL');
+  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
+  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  
+  if (process.env.NODE_ENV === 'production') {
+    requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
+  }
+}
 
 // 환경 변수 검증
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
@@ -38,15 +45,15 @@ console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
 
 // 프로덕션 환경 확인
 if (process.env.NODE_ENV === 'production') {
-  console.log('프로덕션 환경 감지: PostgreSQL 설정을 확인합니다...');
+  console.log('프로덕션 환경 감지: 설정을 확인합니다...');
   
   if (process.env.DATABASE_PROVIDER !== 'postgresql') {
     console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
     process.exit(1);
   }
   
-  if (!process.env.POSTGRES_PRISMA_URL.includes('supabase.co')) {
-    console.error('❌ POSTGRES_PRISMA_URL이 Supabase 연결 문자열이 아닙니다.');
+  if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
+    console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
     process.exit(1);
   }
 }
