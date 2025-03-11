@@ -10,6 +10,7 @@ export default function AuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  const [countdown, setCountdown] = useState<number>(10); // 카운트다운 추가
 
   useEffect(() => {
     async function handleAuthCallback() {
@@ -20,7 +21,14 @@ export default function AuthCallbackPage() {
         const errorDescription = searchParams.get('error_description');
         const code = searchParams.get('code');
         
-        setDebugInfo(prev => prev + `\n체크 1: URL 파라미터 - code: ${code ? '있음' : '없음'}, error: ${errorParam || '없음'}`);
+        // 현재 URL과 사용자 환경 정보 기록
+        const debugStartInfo = `
+현재 URL: ${window.location.href}
+호스트: ${window.location.host}
+환경: ${process.env.NODE_ENV}
+리디렉션 URL 환경변수: ${process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL || '설정되지 않음'}
+        `;
+        setDebugInfo(debugStartInfo + `\n\n체크 1: URL 파라미터 - code: ${code ? '있음' : '없음'}, error: ${errorParam || '없음'}`);
         
         if (errorParam) {
           console.error('OAuth 에러:', errorParam, errorDescription);
@@ -49,8 +57,13 @@ export default function AuthCallbackPage() {
         
         // 직접 세션 가져오기 시도
         const { data, error: sessionError } = await supabase.auth.getSession();
-        console.log('세션 데이터:', data);
-        setDebugInfo(prev => prev + `\n체크 6: 세션 데이터 - ${data?.session ? '세션 있음' : '세션 없음'}`);
+        
+        // 세션 디버그 정보 추가
+        const sessionDebugInfo = data?.session 
+          ? `세션 있음, 사용자 ID: ${data.session.user?.id || '없음'}, 이메일: ${data.session.user?.email || '없음'}`
+          : '세션 없음';
+        setDebugInfo(prev => prev + `\n체크 6: 세션 데이터 - ${sessionDebugInfo}`);
+        console.log('세션 데이터:', sessionDebugInfo);
         
         if (sessionError) {
           console.error('세션 확인 오류:', sessionError);
@@ -147,13 +160,25 @@ export default function AuthCallbackPage() {
           console.log('인증 완료, 보드 페이지로 이동 준비');
           setDebugInfo(prev => prev + '\n체크 13: 보드 페이지로 이동 준비');
           
-          // 지연 후 페이지 이동 (쿠키 설정 완료 대기)
-          setTimeout(() => {
-            // 전체 페이지 리로드를 위해 location.href 사용
-            console.log('보드 페이지로 최종 이동');
-            setDebugInfo(prev => prev + '\n체크 14: 보드 페이지로 최종 이동');
-            window.location.href = '/board';
-          }, 1500);
+          // 카운트다운 시작
+          setLoading(false);
+          const countdownInterval = setInterval(() => {
+            setCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval);
+                
+                // 카운트다운 완료 후 페이지 이동
+                console.log('보드 페이지로 최종 이동');
+                setDebugInfo(prev => prev + '\n체크 14: 보드 페이지로 최종 이동');
+                
+                // 리디렉션 방법 1: window.location.href (페이지 새로고침)
+                window.location.href = '/board';
+                
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
           
         } else {
           // 세션이 없으면 에러 표시
@@ -179,15 +204,26 @@ export default function AuthCallbackPage() {
         <div className="p-6 max-w-md bg-white rounded-lg border border-red-200 shadow-lg">
           <h2 className="text-xl font-bold text-red-600 mb-4">인증 오류</h2>
           <p className="text-gray-700 mb-4">{error}</p>
-          <pre className="text-xs bg-gray-100 p-2 rounded mb-4 overflow-auto max-h-40">
-            {debugInfo || '디버그 정보 없음'}
-          </pre>
-          <button 
-            onClick={() => window.location.href = '/login'}
-            className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            로그인으로 돌아가기
-          </button>
+          <details className="mb-4">
+            <summary className="text-sm text-blue-500 cursor-pointer">디버그 정보 보기</summary>
+            <pre className="text-xs bg-gray-100 p-2 mt-2 rounded overflow-auto max-h-60 whitespace-pre-wrap">
+              {debugInfo || '디버그 정보 없음'}
+            </pre>
+          </details>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => window.location.href = '/login'}
+              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              로그인으로 돌아가기
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            >
+              새로고침
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -195,12 +231,31 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-      <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
-      <p className="text-gray-600 mb-4">잠시만 기다려 주세요.</p>
-      <pre className="text-xs bg-gray-100 p-2 rounded max-w-md overflow-auto max-h-40">
-        {debugInfo || '디버그 정보 없음'}
-      </pre>
+      {loading ? (
+        <>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
+          <p className="text-gray-600 mb-4">잠시만 기다려 주세요.</p>
+        </>
+      ) : (
+        <>
+          <div className="text-2xl text-green-500 mb-4">✓</div>
+          <h2 className="text-xl font-semibold mb-2">인증 성공!</h2>
+          <p className="text-gray-600 mb-4">{countdown}초 후 자동으로 이동합니다...</p>
+          <button 
+            onClick={() => {window.location.href = '/board'}}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
+          >
+            지금 이동하기
+          </button>
+        </>
+      )}
+      <details className="w-full max-w-md mt-4">
+        <summary className="text-sm text-blue-500 cursor-pointer">디버그 정보 보기</summary>
+        <pre className="text-xs bg-gray-100 p-3 mt-2 rounded overflow-auto max-h-60 whitespace-pre-wrap">
+          {debugInfo || '디버그 정보 없음'}
+        </pre>
+      </details>
     </div>
   );
 } 
