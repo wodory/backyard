@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development next dev",
+    "dev": "yarn env:dev && NODE_ENV=development next dev",
     "prebuild": "node scripts/pre-deploy.js",
     "build": "NODE_ENV=production prisma generate && prisma migrate deploy && next build",
     "start": "NODE_ENV=production next start",
@@ -21,7 +21,11 @@
     "db:setup": "node scripts/select-db.js && npx prisma generate",
     "db:setup:dev": "NODE_ENV=development node scripts/select-db.js && npx prisma generate",
     "db:setup:prod": "NODE_ENV=production node scripts/select-db.js && npx prisma generate",
-    "db:test": "node scripts/test-db.js"
+    "db:test": "node scripts/test-db.js",
+    "env:dev": "vercel env pull .env.development",
+    "env:prod": "vercel env pull .env.production",
+    "deploy": "yarn env:prod && vercel --prod",
+    "deploy:preview": "yarn env:prod && vercel"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
