@@ -36,11 +36,29 @@ export default function AuthForm() {
         
         // 추가: 쿠키를 여기서도 직접 설정 (보완책)
         if (session) {
+          // 현재 호스트 가져오기
+          const host = window.location.hostname;
+          const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+          
+          // 도메인 설정 (로컬호스트가 아닌 경우에만)
+          let domain = undefined;
+          if (!isLocalhost) {
+            // 서브도메인 포함하기 위해 최상위 도메인만 설정
+            const hostParts = host.split('.');
+            if (hostParts.length > 1) {
+              // vercel.app 또는 yoursite.com 형태일 경우
+              domain = '.' + hostParts.slice(-2).join('.');
+            } else {
+              domain = host;
+            }
+          }
+          
           // cookies-next 라이브러리 사용
           setCookie('sb-access-token', session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
-            secure: process.env.NODE_ENV === 'production',
+            domain: domain,
+            secure: window.location.protocol === 'https:',
             sameSite: 'lax'
           });
           
@@ -48,12 +66,16 @@ export default function AuthForm() {
             setCookie('sb-refresh-token', session.refresh_token, {
               maxAge: 60 * 60 * 24 * 30, // 30일
               path: '/',
-              secure: process.env.NODE_ENV === 'production',
+              domain: domain,
+              secure: window.location.protocol === 'https:',
               sameSite: 'lax'
             });
           }
           
-          console.log('AuthForm: 쿠키에 인증 정보 저장됨');
+          console.log('AuthForm: 쿠키에 인증 정보 저장됨', {
+            호스트: host,
+            도메인설정: domain || '없음'
+          });
         }
         
         toast.success('로그인 성공!');

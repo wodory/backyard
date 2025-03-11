@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
               value,
               ...options,
               // 프로덕션, 개발 환경 모두 일관된 설정 사용
-              secure: process.env.NODE_ENV === 'production',
+              secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
               sameSite: 'lax',
               httpOnly: false, // 클라이언트에서 접근 가능하도록
               // 도메인 속성 제거 - 쿠키는 기본적으로 현재 도메인에만 설정됨
@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
               ...options,
               maxAge: 0,
               // 프로덕션, 개발 환경 모두 일관된 설정 사용
-              secure: process.env.NODE_ENV === 'production',
+              secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
               sameSite: 'lax',
               httpOnly: false, // 클라이언트에서 접근 가능하도록
               // 도메인 속성 제거 - 쿠키는 기본적으로 현재 도메인에만 설정됨
@@ -115,7 +115,7 @@ export async function middleware(request: NextRequest) {
         value: accessToken,
         maxAge: 60 * 60 * 24 * 7, // 7일
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
         sameSite: 'lax',
         httpOnly: false,
       });
@@ -126,11 +126,18 @@ export async function middleware(request: NextRequest) {
           value: refreshToken,
           maxAge: 60 * 60 * 24 * 30, // 30일
           path: '/',
-          secure: process.env.NODE_ENV === 'production',
+          secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
           sameSite: 'lax',
           httpOnly: false,
         });
       }
+      
+      // 디버깅을 위한 로그 추가
+      console.log('미들웨어: 기존 쿠키 복제됨', {
+        환경: process.env.NODE_ENV,
+        URL: request.url,
+        프로토콜: request.url.startsWith('https://') ? 'HTTPS' : 'HTTP'
+      });
     } 
     // 2. Supabase 세션 기반 확인 (백업 방법)
     else {
@@ -155,7 +162,7 @@ export async function middleware(request: NextRequest) {
               value: session.access_token,
               maxAge: 60 * 60 * 24 * 7, // 7일
               path: '/',
-              secure: process.env.NODE_ENV === 'production',
+              secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
               sameSite: 'lax',
               httpOnly: false,
             });
@@ -166,13 +173,17 @@ export async function middleware(request: NextRequest) {
                 value: session.refresh_token,
                 maxAge: 60 * 60 * 24 * 30, // 30일
                 path: '/',
-                secure: process.env.NODE_ENV === 'production',
+                secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
                 sameSite: 'lax',
                 httpOnly: false,
               });
             }
             
-            console.log('세션 토큰을 쿠키에 복구함');
+            console.log('미들웨어: 세션 토큰을 쿠키에 복구함', {
+              환경: process.env.NODE_ENV,
+              URL: request.url,
+              프로토콜: request.url.startsWith('https://') ? 'HTTPS' : 'HTTP'  
+            });
           }
         } else {
           console.log('세션 없음');

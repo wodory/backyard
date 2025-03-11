@@ -78,15 +78,59 @@ export async function signIn(email: string, password: string) {
 
     // 로그인 성공 시 쿠키에 세션 정보 저장
     if (data.session) {
-      // 액세스 토큰 쿠키 설정
-      document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; ${process.env.NODE_ENV === 'production' ? 'Secure' : ''}`;
+      // 현재 호스트 가져오기
+      const host = typeof window !== 'undefined' ? window.location.hostname : '';
+      const isLocalhost = host === 'localhost' || host === '127.0.0.1';
       
-      // 리프레시 토큰 쿠키 설정 (있는 경우)
-      if (data.session.refresh_token) {
-        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax; ${process.env.NODE_ENV === 'production' ? 'Secure' : ''}`;
+      // Secure 속성은 HTTPS에서만 설정
+      const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      
+      // SameSite 설정 - 프로덕션에서는 Strict 또는 Lax
+      // 리다이렉트가 많으면 Lax가 권장됨
+      const sameSite = 'lax'; // 크로스 사이트 요청에도 쿠키 전송 허용
+      
+      // 도메인 설정 (로컬호스트가 아닌 경우에만)
+      let domain = '';
+      if (!isLocalhost) {
+        // 서브도메인 포함하기 위해 최상위 도메인만 설정
+        const hostParts = host.split('.');
+        if (hostParts.length > 1) {
+          // vercel.app 또는 yoursite.com 형태일 경우
+          domain = hostParts.slice(-2).join('.');
+        } else {
+          domain = host;
+        }
       }
       
-      console.log('로그인 성공: 쿠키에 토큰 저장됨');
+      const domainStr = domain ? `domain=.${domain}; ` : ''; 
+      const secureStr = isSecure ? 'Secure; ' : '';
+      
+      // 액세스 토큰 저장
+      document.cookie = `sb-access-token=${data.session.access_token}; ${domainStr}path=/; max-age=${60 * 60 * 24 * 7}; SameSite=${sameSite}; ${secureStr}`;
+      
+      // 리프레시 토큰 저장
+      if (data.session.refresh_token) {
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; ${domainStr}path=/; max-age=${60 * 60 * 24 * 30}; SameSite=${sameSite}; ${secureStr}`;
+      }
+      
+      // localStorage에도 백업 (fallback)
+      try {
+        localStorage.setItem('supabase.auth.token', JSON.stringify({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          expires_at: data.session.expires_at
+        }));
+      } catch (err) {
+        console.warn('로컬 스토리지 저장 실패:', err);
+      }
+      
+      console.log('로그인 성공: 쿠키에 토큰 저장됨', {
+        환경: process.env.NODE_ENV,
+        호스트: host,
+        도메인설정: domain || '없음',
+        보안설정: isSecure ? 'HTTPS' : 'HTTP',
+        SameSite: sameSite
+      });
     } else {
       console.warn('로그인 성공했지만 세션 데이터가 없습니다.');
     }

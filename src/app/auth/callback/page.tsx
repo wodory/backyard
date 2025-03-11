@@ -77,43 +77,63 @@ export default function AuthCallbackPage() {
           console.log('인증 성공, 세션 생성됨');
           setDebugInfo(prev => prev + '\n체크 8: 인증 성공, 세션 생성됨');
           
-          // 세션 데이터 로컬 스토리지에 저장 (미들웨어 대체용)
-          try {
-            localStorage.setItem('supabase.auth.token', JSON.stringify({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              expires_at: data.session.expires_at
-            }));
-            setDebugInfo(prev => prev + '\n체크 9: 로컬 스토리지에 세션 저장');
-          } catch (storageError) {
-            console.error('로컬 스토리지 저장 오류:', storageError);
-            setDebugInfo(prev => prev + `\n체크 9-오류: 로컬 스토리지 저장 실패 - ${storageError}`);
-          }
-          
-          // 쿠키를 설정할 때 도메인 설정 수정
           // 현재 호스트 이름에서 도메인 추출
           const hostname = window.location.hostname;
+          const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+          
+          // 도메인 설정 (로컬호스트가 아닌 경우에만)
+          let domain = undefined;
+          if (!isLocalhost) {
+            // 서브도메인 포함하기 위해 최상위 도메인만 설정
+            const hostParts = hostname.split('.');
+            if (hostParts.length > 1) {
+              // vercel.app 또는 yoursite.com 형태일 경우
+              domain = '.' + hostParts.slice(-2).join('.');
+            } else {
+              domain = hostname;
+            }
+          }
+          
+          // 보안 설정 확인
+          const isSecure = window.location.protocol === 'https:';
           
           setCookie('sb-access-token', data.session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
-            secure: true, // HTTPS에서만 사용
+            domain: domain,
+            secure: isSecure,
             sameSite: 'lax'
-            // 도메인 속성 제거 - 기본적으로 현재 도메인에 설정됨
           });
           
           if (data.session.refresh_token) {
             setCookie('sb-refresh-token', data.session.refresh_token, {
               maxAge: 60 * 60 * 24 * 30, // 30일
               path: '/',
-              secure: true, // HTTPS에서만 사용
+              domain: domain,
+              secure: isSecure,
               sameSite: 'lax'
-              // 도메인 속성 제거 - 기본적으로 현재 도메인에 설정됨
             });
           }
           
-          console.log('세션 토큰을 쿠키에 저장함');
-          setDebugInfo(prev => prev + '\n체크 10: 세션 토큰을 쿠키에 저장함');
+          // localStorage에도 백업 저장
+          try {
+            localStorage.setItem('supabase.auth.token', JSON.stringify({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+              expires_at: data.session.expires_at
+            }));
+            setDebugInfo(prev => prev + '\n추가 조치: 로컬 스토리지에 토큰 백업 저장');
+          } catch (storageError) {
+            console.error('로컬 스토리지 저장 오류:', storageError);
+            setDebugInfo(prev => prev + `\n로컬 스토리지 오류: ${storageError}`);
+          }
+          
+          console.log('세션 토큰을 쿠키에 저장함', {
+            환경: process.env.NODE_ENV,
+            호스트: hostname,
+            도메인: domain || '없음',
+            보안: isSecure ? 'HTTPS' : 'HTTP'
+          });
           
           // 설정된 쿠키 확인
           const accessCookie = getCookie('sb-access-token');
