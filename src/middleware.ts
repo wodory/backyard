@@ -108,6 +108,29 @@ export async function middleware(request: NextRequest) {
     if (accessToken) {
       isLoggedIn = true;
       console.log('액세스 토큰 쿠키 확인 성공');
+      
+      // 쿠키가 있으면 응답 쿠키에도 동일하게 설정 (확실한 지속성 보장)
+      response.cookies.set({
+        name: 'sb-access-token',
+        value: accessToken,
+        maxAge: 60 * 60 * 24 * 7, // 7일
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        httpOnly: false,
+      });
+      
+      if (refreshToken) {
+        response.cookies.set({
+          name: 'sb-refresh-token',
+          value: refreshToken,
+          maxAge: 60 * 60 * 24 * 30, // 30일
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          httpOnly: false,
+        });
+      }
     } 
     // 2. Supabase 세션 기반 확인 (백업 방법)
     else {

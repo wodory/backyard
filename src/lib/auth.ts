@@ -76,6 +76,21 @@ export async function signIn(email: string, password: string) {
       throw error;
     }
 
+    // 로그인 성공 시 쿠키에 세션 정보 저장
+    if (data.session) {
+      // 액세스 토큰 쿠키 설정
+      document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; ${process.env.NODE_ENV === 'production' ? 'Secure' : ''}`;
+      
+      // 리프레시 토큰 쿠키 설정 (있는 경우)
+      if (data.session.refresh_token) {
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax; ${process.env.NODE_ENV === 'production' ? 'Secure' : ''}`;
+      }
+      
+      console.log('로그인 성공: 쿠키에 토큰 저장됨');
+    } else {
+      console.warn('로그인 성공했지만 세션 데이터가 없습니다.');
+    }
+
     return data;
   } catch (error) {
     console.error('로그인 실패:', error);
@@ -98,15 +113,14 @@ export async function signInWithGoogle() {
   console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
   
   try {
-    // 쿠키 정리 먼저 수행 (이전 상태 제거)
+    // 쿠키 정리 - 간소화하고 표준 방식으로 변경
     localStorage.removeItem('supabase.auth.token');
-    document.cookie.split(';').forEach(c => {
-      const cookieName = c.split('=')[0].trim();
-      if (cookieName.startsWith('sb-')) {
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        console.log(`쿠키 삭제: ${cookieName}`);
-      }
-    });
+    
+    // 기존 Supabase 인증 쿠키 삭제
+    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;`;
+    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;`;
+    
+    console.log('인증 쿠키 및 로컬 스토리지 정리 완료');
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

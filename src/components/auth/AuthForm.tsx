@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signIn, signUp, signInWithGoogle } from '@/lib/auth';
 import { toast } from 'sonner';
+import { setCookie } from 'cookies-next';
 
 type AuthMode = 'login' | 'register';
 
@@ -31,7 +32,30 @@ export default function AuthForm() {
 
     try {
       if (mode === 'login') {
-        await signIn(email, password);
+        const { session } = await signIn(email, password);
+        
+        // 추가: 쿠키를 여기서도 직접 설정 (보완책)
+        if (session) {
+          // cookies-next 라이브러리 사용
+          setCookie('sb-access-token', session.access_token, {
+            maxAge: 60 * 60 * 24 * 7, // 7일
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+          });
+          
+          if (session.refresh_token) {
+            setCookie('sb-refresh-token', session.refresh_token, {
+              maxAge: 60 * 60 * 24 * 30, // 30일
+              path: '/',
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax'
+            });
+          }
+          
+          console.log('AuthForm: 쿠키에 인증 정보 저장됨');
+        }
+        
         toast.success('로그인 성공!');
       } else {
         await signUp(email, password, name);
