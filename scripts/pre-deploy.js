@@ -15,8 +15,8 @@ console.log('배포 전 환경 설정 확인 중...');
 
 // 필수 환경 변수 목록
 const requiredEnvVars = [
-  'DATABASE_URL',
-  'DIRECT_URL',
+  'POSTGRES_PRISMA_URL',
+  'POSTGRES_URL_NON_POOLING',
   'DATABASE_PROVIDER',
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -45,8 +45,8 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
   
-  if (!process.env.DATABASE_URL.includes('supabase.co')) {
-    console.error('❌ DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
+  if (!process.env.POSTGRES_PRISMA_URL.includes('supabase.co')) {
+    console.error('❌ POSTGRES_PRISMA_URL이 Supabase 연결 문자열이 아닙니다.');
     process.exit(1);
   }
 }
