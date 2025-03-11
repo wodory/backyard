@@ -77,52 +77,62 @@ export default function AuthCallbackPage() {
           console.log('인증 성공, 세션 생성됨');
           setDebugInfo(prev => prev + '\n체크 8: 인증 성공, 세션 생성됨');
           
-          // 현재 호스트 이름에서 도메인 추출
+          // 현재 호스트 이름 가져오기
           const hostname = window.location.hostname;
           const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
           
-          // 도메인 설정 (로컬호스트가 아닌 경우에만)
-          let domain = undefined;
-          if (!isLocalhost) {
-            // 서브도메인 포함하기 위해 최상위 도메인만 설정
-            const hostParts = hostname.split('.');
-            if (hostParts.length > 1) {
-              // vercel.app 또는 yoursite.com 형태일 경우
-              domain = '.' + hostParts.slice(-2).join('.');
-            } else {
-              domain = hostname;
-            }
-          }
-          
-          // 보안 설정 확인
-          const isSecure = window.location.protocol === 'https:';
-          
-          setCookie('sb-access-token', data.session.access_token, {
+          // 도메인 설정 개선
+          let cookieOptions = {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
-            domain: domain,
-            secure: isSecure,
-            sameSite: 'lax'
-          });
+            secure: true, // production에서는 항상 true
+            sameSite: 'lax' as const
+          };
           
-          if (data.session.refresh_token) {
-            setCookie('sb-refresh-token', data.session.refresh_token, {
-              maxAge: 60 * 60 * 24 * 30, // 30일
-              path: '/',
-              domain: domain,
-              secure: isSecure,
-              sameSite: 'lax'
-            });
+          // localhost가 아닌 경우에만 도메인 설정
+          if (!isLocalhost) {
+            cookieOptions = {
+              ...cookieOptions,
+              domain: hostname // 전체 호스트네임 사용
+            };
           }
           
-          // localStorage에도 백업 저장
+          // 쿠키 설정 시도 1: cookies-next 라이브러리
+          try {
+            setCookie('sb-access-token', data.session.access_token, cookieOptions);
+            
+            if (data.session.refresh_token) {
+              setCookie('sb-refresh-token', data.session.refresh_token, {
+                ...cookieOptions,
+                maxAge: 60 * 60 * 24 * 30 // 30일
+              });
+            }
+          } catch (cookieError) {
+            console.error('cookies-next 설정 실패:', cookieError);
+            setDebugInfo(prev => prev + `\n쿠키 설정 실패 (cookies-next): ${cookieError}`);
+          }
+          
+          // 쿠키 설정 시도 2: document.cookie (백업)
+          try {
+            const cookieStr = `sb-access-token=${data.session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
+            document.cookie = cookieStr;
+            
+            if (data.session.refresh_token) {
+              document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax; Secure`;
+            }
+          } catch (docCookieError) {
+            console.error('document.cookie 설정 실패:', docCookieError);
+            setDebugInfo(prev => prev + `\n쿠키 설정 실패 (document.cookie): ${docCookieError}`);
+          }
+          
+          // localStorage 백업 (이미 존재하는 코드)
           try {
             localStorage.setItem('supabase.auth.token', JSON.stringify({
               access_token: data.session.access_token,
               refresh_token: data.session.refresh_token,
               expires_at: data.session.expires_at
             }));
-            setDebugInfo(prev => prev + '\n추가 조치: 로컬 스토리지에 토큰 백업 저장');
+            setDebugInfo(prev => prev + '\n로컬 스토리지 백업 완료');
           } catch (storageError) {
             console.error('로컬 스토리지 저장 오류:', storageError);
             setDebugInfo(prev => prev + `\n로컬 스토리지 오류: ${storageError}`);
@@ -131,8 +141,8 @@ export default function AuthCallbackPage() {
           console.log('세션 토큰을 쿠키에 저장함', {
             환경: process.env.NODE_ENV,
             호스트: hostname,
-            도메인: domain || '없음',
-            보안: isSecure ? 'HTTPS' : 'HTTP'
+            도메인: cookieOptions.domain || '없음',
+            보안: cookieOptions.secure ? 'HTTPS' : 'HTTP'
           });
           
           // 설정된 쿠키 확인

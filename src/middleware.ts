@@ -115,9 +115,9 @@ export async function middleware(request: NextRequest) {
         value: accessToken,
         maxAge: 60 * 60 * 24 * 7, // 7일
         path: '/',
-        secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
+        secure: true, // production에서는 항상 true로 설정
         sameSite: 'lax',
-        httpOnly: false,
+        httpOnly: false, // 클라이언트에서 접근 가능하도록
       });
       
       if (refreshToken) {
@@ -126,9 +126,9 @@ export async function middleware(request: NextRequest) {
           value: refreshToken,
           maxAge: 60 * 60 * 24 * 30, // 30일
           path: '/',
-          secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
+          secure: true, // production에서는 항상 true로 설정
           sameSite: 'lax',
-          httpOnly: false,
+          httpOnly: false, // 클라이언트에서 접근 가능하도록
         });
       }
       
@@ -136,7 +136,8 @@ export async function middleware(request: NextRequest) {
       console.log('미들웨어: 기존 쿠키 복제됨', {
         환경: process.env.NODE_ENV,
         URL: request.url,
-        프로토콜: request.url.startsWith('https://') ? 'HTTPS' : 'HTTP'
+        프로토콜: request.url.startsWith('https://') ? 'HTTPS' : 'HTTP',
+        보안설정: 'Secure=true'
       });
     } 
     // 2. Supabase 세션 기반 확인 (백업 방법)
