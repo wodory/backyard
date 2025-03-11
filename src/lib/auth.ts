@@ -87,19 +87,9 @@ export async function signIn(email: string, password: string) {
 export async function signInWithGoogle() {
   const supabase = getBrowserClient();
   
-  // 항상 명시적인 URL 사용
-  let redirectTo = '';
-  
-  // 프로덕션 환경에서는 환경 변수 사용
-  if (process.env.NODE_ENV === 'production') {
-    // 명시적 URL 사용 (Vercel 배포에서 사용)
-    redirectTo = 'https://backyard-orpin.vercel.app/auth/callback';
-    console.log('프로덕션용 하드코딩 리디렉션 URL 사용:', redirectTo);
-  } else {
-    // 개발 환경에서는 localhost 사용
-    redirectTo = 'http://localhost:3000/auth/callback';
-    console.log('개발 환경용 하드코딩 리디렉션 URL 사용:', redirectTo);
-  }
+  // 환경 변수에서 리디렉션 URL 가져오기
+  const baseUrl = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
+  const redirectTo = `${baseUrl}/auth/callback`;
   
   console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
   
@@ -119,11 +109,9 @@ export async function signInWithGoogle() {
       options: {
         redirectTo,
         queryParams: {
-          // 필요한 경우 Google OAuth 추가 Scope 지정
           access_type: 'offline',
           prompt: 'consent',
         },
-        // 브라우저에서 스토리지 사용 (쿠키 문제 해결)
         skipBrowserRedirect: false,
       },
     });

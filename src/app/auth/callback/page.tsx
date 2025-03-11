@@ -77,20 +77,22 @@ export default function AuthCallbackPage() {
             setDebugInfo(prev => prev + `\n체크 9-오류: 로컬 스토리지 저장 실패 - ${storageError}`);
           }
           
-          // 쿠키를 설정할 때 httpOnly 사용하지 않음 (클라이언트 측에서 접근 가능하도록)
+          // 쿠키를 설정할 때 보안 옵션 강화
           setCookie('sb-access-token', data.session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
             path: '/',
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax', // 모든 환경에서 lax로 통일
+            secure: true, // HTTPS에서만 사용
+            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+            domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost'
           });
           
           if (data.session.refresh_token) {
             setCookie('sb-refresh-token', data.session.refresh_token, {
               maxAge: 60 * 60 * 24 * 30, // 30일
               path: '/',
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax', // 모든 환경에서 lax로 통일
+              secure: true, // HTTPS에서만 사용
+              sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+              domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost'
             });
           }
           
