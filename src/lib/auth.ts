@@ -1,6 +1,6 @@
 'use client';
 
-import { createBrowserSupabaseClient } from './supabase-browser';
+import { createBrowserClient } from './supabase';
 import { deleteCookie } from 'cookies-next';
 import { User } from '@supabase/supabase-js';
 
@@ -10,8 +10,8 @@ export const getBrowserClient = () => {
     throw new Error('브라우저 환경에서만 사용 가능합니다.');
   }
   
-  // createBrowserClient 대신 createBrowserSupabaseClient 사용
-  return createBrowserSupabaseClient();
+  // createBrowserSupabaseClient 대신 createBrowserClient 사용
+  return createBrowserClient();
 };
 
 // ExtendedUser 타입 정의

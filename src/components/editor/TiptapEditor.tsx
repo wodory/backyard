@@ -3,13 +3,8 @@
 import React, { useCallback, useEffect } from 'react'
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Bold from '@tiptap/extension-bold'
-import Italic from '@tiptap/extension-italic'
 import Link from '@tiptap/extension-link'
 import Heading from '@tiptap/extension-heading'
-import BulletList from '@tiptap/extension-bullet-list'
-import OrderedList from '@tiptap/extension-ordered-list'
-import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
 import { Button } from '@/components/ui/button'
 import { 
@@ -22,6 +17,7 @@ import {
   ListOrdered as OrderedListIcon,
   Image as ImageIcon
 } from 'lucide-react'
+import Placeholder from '@tiptap/extension-placeholder'
 
 interface TiptapEditorProps {
   content: string
@@ -38,21 +34,30 @@ export default function TiptapEditor({
 }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Bold,
-      Italic,
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        heading: false,
+      }),
       Link.configure({
         openOnClick: false,
       }),
       Heading.configure({
-        levels: [1, 2],
+        levels: [1, 2, 3],
       }),
-      BulletList,
-      OrderedList,
-      ListItem,
       Image,
+      Placeholder.configure({
+        placeholder: placeholder || '내용을 입력하세요...',
+      }),
     ],
     content: content,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },

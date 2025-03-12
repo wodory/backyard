@@ -85,7 +85,7 @@ export default function AuthForm() {
       }
       
       // 성공 후 리디렉션 또는 상태 업데이트
-      window.location.href = '/board';
+      window.location.href = '/';
     } catch (error: any) {
       console.error('인증 오류:', error);
       toast.error(error.message || '인증 중 오류가 발생했습니다.');

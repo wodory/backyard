@@ -75,6 +75,66 @@ export function saveBoardSettings(settings: BoardSettings): void {
 }
 
 /**
+ * 서버 API를 통해 보드 설정을 저장하는 함수
+ */
+export async function saveBoardSettingsToServer(userId: string, settings: BoardSettings): Promise<boolean> {
+  try {
+    const response = await fetch('/api/board-settings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        settings,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('서버에 보드 설정을 저장하는데 실패했습니다.');
+    }
+
+    // 로컬에도 저장
+    saveBoardSettings(settings);
+    return true;
+  } catch (error) {
+    console.error('서버 보드 설정 저장 중 오류:', error);
+    return false;
+  }
+}
+
+/**
+ * 서버 API를 통해 보드 설정을 불러오는 함수
+ */
+export async function loadBoardSettingsFromServer(userId: string): Promise<BoardSettings | null> {
+  try {
+    const response = await fetch(`/api/board-settings?userId=${encodeURIComponent(userId)}`);
+    
+    if (!response.ok) {
+      throw new Error('서버에서 보드 설정을 불러오는데 실패했습니다.');
+    }
+
+    const data = await response.json();
+    
+    if (!data.settings) {
+      return null; // 설정이 없는 경우
+    }
+
+    const settings = {
+      ...DEFAULT_BOARD_SETTINGS,
+      ...data.settings,
+    };
+
+    // 로컬에도 저장
+    saveBoardSettings(settings);
+    return settings;
+  } catch (error) {
+    console.error('서버 보드 설정 로드 중 오류:', error);
+    return null;
+  }
+}
+
+/**
  * 보드 설정에 따라 엣지 스타일을 적용하는 함수
  * 모든 연결선에 설정이 즉시 반영되도록 함
  */

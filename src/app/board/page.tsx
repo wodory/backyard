@@ -25,7 +25,8 @@ import {
   OnConnectEnd,
   XYPosition
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+// reactflow 스타일 버그 픽스 
+// import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,12 +34,21 @@ import CreateCardButton from '@/components/cards/CreateCardButton';
 import LayoutControls from '@/components/board/LayoutControls';
 import BoardSettingsControl from '@/components/board/BoardSettingsControl';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSettings, applyEdgeSettings } from '@/lib/board-utils';
+import { 
+  BoardSettings, 
+  DEFAULT_BOARD_SETTINGS, 
+  loadBoardSettings, 
+  saveBoardSettings, 
+  applyEdgeSettings, 
+  saveBoardSettingsToServer, 
+  loadBoardSettingsFromServer 
+} from '@/lib/board-utils';
 import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 import DevTools, { useChangeLoggerHooks } from '@/components/debug/DevTools';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { CreateCardModal } from '@/components/cards/CreateCardModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 새 카드의 중앙 위치를 계산하는 함수
 const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
@@ -58,6 +68,7 @@ function BoardContent() {
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChanges = useRef(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   
   // 엣지 드롭 기능을 위한 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -168,6 +179,63 @@ function BoardContent() {
     return false;
   }, [nodes, saveLayout, saveEdges]);
 
+  // 보드 설정 변경 핸들러
+  const handleBoardSettingsChange = useCallback(async (newSettings: BoardSettings) => {
+    setBoardSettings(newSettings);
+    
+    // 로컬 스토리지에 저장
+    saveBoardSettings(newSettings);
+    
+    // 새 설정을 엣지에 적용
+    const updatedEdges = applyEdgeSettings(edges, newSettings);
+    setEdges(updatedEdges);
+    
+    // 인증된 사용자인 경우 서버에도 저장
+    if (isAuthenticated && user?.id) {
+      const saved = await saveBoardSettingsToServer(user.id, newSettings);
+      if (saved) {
+        console.log('보드 설정이 서버에 저장되었습니다.');
+      } else {
+        console.error('보드 설정 서버 저장 실패');
+      }
+    }
+  }, [edges, setEdges, isAuthenticated, user?.id]);
+
+  // 서버에서 보드 설정 로드
+  const loadBoardSettingsFromServerIfAuthenticated = useCallback(async () => {
+    if (isAuthenticated && user?.id) {
+      try {
+        const settings = await loadBoardSettingsFromServer(user.id);
+        if (settings) {
+          console.log('서버에서 보드 설정을 불러왔습니다.');
+          setBoardSettings(settings);
+          
+          // 새 설정을 엣지에 적용
+          const updatedEdges = applyEdgeSettings(edges, settings);
+          setEdges(updatedEdges);
+        } else {
+          // 서버에 설정이 없으면 로컬 설정 사용
+          const localSettings = loadBoardSettings();
+          setBoardSettings(localSettings);
+          
+          // 로컬 설정을 서버에 저장
+          if (localSettings !== DEFAULT_BOARD_SETTINGS) {
+            await saveBoardSettingsToServer(user.id, localSettings);
+          }
+        }
+      } catch (error) {
+        console.error('보드 설정 로드 오류:', error);
+        // 오류 발생 시 로컬 설정 사용
+        const localSettings = loadBoardSettings();
+        setBoardSettings(localSettings);
+      }
+    } else {
+      // 인증되지 않은 경우 로컬 설정만 로드
+      const localSettings = loadBoardSettings();
+      setBoardSettings(localSettings);
+    }
+  }, [isAuthenticated, user?.id, edges, setEdges]);
+
   // 수동으로 현재 레이아웃 저장
   const handleSaveLayout = useCallback(() => {
     if (saveAllLayoutData()) {
@@ -207,6 +275,13 @@ function BoardContent() {
     };
   }, [nodes, saveAllLayoutData]);
 
+  // 인증 상태가 변경되면 보드 설정 다시 로드
+  useEffect(() => {
+    if (!isAuthLoading) {
+      loadBoardSettingsFromServerIfAuthenticated();
+    }
+  }, [isAuthLoading, loadBoardSettingsFromServerIfAuthenticated]);
+
   // 페이지 언로드 전 저장되지 않은 변경사항 저장
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -220,6 +295,118 @@ function BoardContent() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [saveAllLayoutData]);
+  
+  // 카드 및 설정 데이터 로드
+  const fetchCards = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // API에서 카드 데이터 가져오기
+      const response = await fetch('/api/cards');
+      
+      if (!response.ok) {
+        throw new Error('카드 목록을 불러오는데 실패했습니다.');
+      }
+      
+      const cardsData = await response.json();
+      
+      // 로컬 스토리지에서 노드 위치 불러오기
+      let savedNodesData: Record<string, { position: { x: number, y: number } }> = {};
+      try {
+        const savedLayout = localStorage.getItem(STORAGE_KEY);
+        if (savedLayout) {
+          savedNodesData = JSON.parse(savedLayout);
+        }
+      } catch (err) {
+        console.error('레이아웃 불러오기 실패:', err);
+      }
+      
+      // 로컬 스토리지에서 엣지 데이터 불러오기
+      let savedEdges: Edge[] = [];
+      try {
+        const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
+        if (savedEdgesData) {
+          // 로컬 스토리지에서 보드 설정 불러오기
+          const loadedSettings = loadBoardSettings();
+          
+          // 엣지 데이터 변환 및 타입 확인
+          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => {
+            // 기본 타입 설정
+            const updatedEdge = {
+              ...edge,
+              type: 'custom', // 모든 엣지에 커스텀 타입 적용
+            };
+            
+            // 엣지의 data.edgeType이 없으면 초기화
+            if (!edge.data?.edgeType) {
+              updatedEdge.data = {
+                ...(edge.data || {}),
+                edgeType: loadedSettings.connectionLineType,
+                settings: { ...loadedSettings }
+              };
+            }
+            
+            // style이 없으면 초기화
+            if (!edge.style) {
+              updatedEdge.style = {
+                strokeWidth: loadedSettings.strokeWidth,
+                stroke: edge.selected ? loadedSettings.selectedEdgeColor : loadedSettings.edgeColor
+              };
+            }
+            
+            return updatedEdge;
+          });
+        }
+      } catch (err) {
+        console.error('엣지 데이터 불러오기 실패:', err);
+      }
+      
+      // 노드 및 엣지 데이터 설정
+      const nodes = cardsData.map((card: any) => {
+        // 저장된 위치가 있으면 사용, 없으면 기본 위치 생성
+        const savedNode = savedNodesData[card.id];
+        const position = savedNode ? savedNode.position : { 
+          x: Math.random() * 500, 
+          y: Math.random() * 300 
+        };
+        
+        return {
+          id: card.id,
+          type: 'card',
+          position,
+          data: {
+            ...card,
+            tags: card.cardTags?.map((ct: any) => ct.tag.name) || []
+          }
+        };
+      });
+      
+      // 설정에 따라 엣지 스타일 적용
+      const styledEdges = applyEdgeSettings(savedEdges, boardSettings);
+      
+      setNodes(nodes);
+      setEdges(styledEdges);
+      setLastSavedAt(new Date());  // 초기 로드 시간을 마지막 저장 시간으로 설정
+    } catch (err) {
+      console.error('카드 데이터 불러오기 실패:', err);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setNodes, setEdges, boardSettings]);
+  
+  // 컴포넌트 마운트 시 카드 데이터 로드
+  useEffect(() => {
+    fetchCards();
+    updateViewportCenter();
+    
+    // 창 크기 변경 시 뷰포트 중앙 업데이트
+    window.addEventListener('resize', updateViewportCenter);
+    return () => {
+      window.removeEventListener('resize', updateViewportCenter);
+    };
+  }, [fetchCards, updateViewportCenter]);
 
   // 저장된 레이아웃 적용
   const applyStoredLayout = useCallback((cardsData: any[], storedLayout: any[]) => {
@@ -454,190 +641,6 @@ function BoardContent() {
     toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
   }, [nodes, edges, setNodes, setEdges, updateNodeInternals]);
 
-  // 보드 설정 변경 핸들러
-  const handleSettingsChange = useCallback((newSettings: BoardSettings) => {
-    // 설정 변경 내용을 상태와 로컬 스토리지에 저장
-    setBoardSettings(newSettings);
-    saveBoardSettings(newSettings);
-    
-    // 모든 엣지에 새 설정 적용 (항상 실행) - 즉시 반영을 위해 강제로 업데이트
-    console.log("설정 변경 적용 중...", newSettings);
-    
-    // 1. 현재 엣지의 복사본 생성 (참조 변경)
-    const currentEdgesCopy = JSON.parse(JSON.stringify(edges));
-    
-    // 2. 설정 적용
-    const updatedEdges = applyEdgeSettings(currentEdgesCopy, newSettings);
-    
-    // 3. 새로운 엣지 배열로 상태 업데이트
-    setEdges(updatedEdges);
-    
-    // 4. 즉시 저장하여 변경 내용이 유지되도록 함
-    try {
-      localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
-    } catch (error) {
-      console.error('엣지 저장 중 오류:', error);
-    }
-    
-    // 변경된 설정에 대한 알림 메시지
-    const changes: string[] = [];
-    
-    // 연결선 스타일 변경 확인
-    if (newSettings.connectionLineType !== boardSettings.connectionLineType) {
-      changes.push('연결선 유형');
-    }
-    
-    if (newSettings.markerEnd !== boardSettings.markerEnd) {
-      changes.push('화살표 유형');
-    }
-    
-    if (newSettings.strokeWidth !== boardSettings.strokeWidth) {
-      changes.push('선 굵기');
-    }
-    
-    if (newSettings.markerSize !== boardSettings.markerSize) {
-      changes.push('화살표 크기');
-    }
-    
-    if (newSettings.edgeColor !== boardSettings.edgeColor || 
-        newSettings.selectedEdgeColor !== boardSettings.selectedEdgeColor) {
-      changes.push('선 색상');
-    }
-    
-    if (newSettings.animated !== boardSettings.animated) {
-      changes.push('애니메이션 ' + (newSettings.animated ? '활성화' : '비활성화'));
-    }
-    
-    if (changes.length > 0) {
-      toast.success(`연결선 설정이 변경되었습니다: ${changes.join(', ')}`);
-    }
-    
-    // 스냅 그리드 변경 확인
-    if (newSettings.snapToGrid !== boardSettings.snapToGrid || 
-        newSettings.snapGrid[0] !== boardSettings.snapGrid[0]) {
-      toast.success(
-        newSettings.snapToGrid 
-          ? `격자에 맞추기가 활성화되었습니다 (${newSettings.snapGrid[0]}px)` 
-          : "격자에 맞추기가 비활성화되었습니다"
-      );
-    }
-  }, [boardSettings, edges, setEdges]);
-
-  // 카드 및 설정 데이터 로드
-  const fetchCards = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // API에서 카드 데이터 가져오기
-      const response = await fetch('/api/cards');
-      
-      if (!response.ok) {
-        throw new Error('카드 목록을 불러오는데 실패했습니다.');
-      }
-      
-      const cardsData = await response.json();
-      
-      // 로컬 스토리지에서 노드 위치 불러오기
-      let savedNodesData: Record<string, { position: { x: number, y: number } }> = {};
-      try {
-        const savedLayout = localStorage.getItem(STORAGE_KEY);
-        if (savedLayout) {
-          savedNodesData = JSON.parse(savedLayout);
-        }
-      } catch (err) {
-        console.error('레이아웃 불러오기 실패:', err);
-      }
-      
-      // 로컬 스토리지에서 엣지 데이터 불러오기
-      let savedEdges: Edge[] = [];
-      try {
-        const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
-        if (savedEdgesData) {
-          // 로컬 스토리지에서 보드 설정 불러오기
-          const loadedSettings = loadBoardSettings();
-          
-          // 엣지 데이터 변환 및 타입 확인
-          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => {
-            // 기본 타입 설정
-            const updatedEdge = {
-              ...edge,
-              type: 'custom', // 모든 엣지에 커스텀 타입 적용
-            };
-            
-            // 엣지의 data.edgeType이 없으면 초기화
-            if (!edge.data?.edgeType) {
-              updatedEdge.data = {
-                ...(edge.data || {}),
-                edgeType: loadedSettings.connectionLineType,
-                settings: { ...loadedSettings }
-              };
-            }
-            
-            // style이 없으면 초기화
-            if (!edge.style) {
-              updatedEdge.style = {
-                strokeWidth: loadedSettings.strokeWidth,
-                stroke: edge.selected ? loadedSettings.selectedEdgeColor : loadedSettings.edgeColor
-              };
-            }
-            
-            return updatedEdge;
-          });
-        }
-      } catch (err) {
-        console.error('엣지 데이터 불러오기 실패:', err);
-      }
-      
-      // 로컬 스토리지에서 보드 설정 불러오기
-      const loadedSettings = loadBoardSettings();
-      setBoardSettings(loadedSettings);
-      
-      // 노드 및 엣지 데이터 설정
-      const nodes = cardsData.map((card: any) => {
-        // 저장된 위치가 있으면 사용, 없으면 기본 위치 생성
-        const savedNode = savedNodesData[card.id];
-        const position = savedNode ? savedNode.position : { 
-          x: Math.random() * 500, 
-          y: Math.random() * 300 
-        };
-        
-        return {
-          id: card.id,
-          type: 'card',
-          position,
-          data: {
-            ...card,
-            tags: card.cardTags?.map((ct: any) => ct.tag.name) || []
-          }
-        };
-      });
-      
-      // 설정에 따라 엣지 스타일 적용
-      const styledEdges = applyEdgeSettings(savedEdges, loadedSettings);
-      
-      setNodes(nodes);
-      setEdges(styledEdges);
-      setLastSavedAt(new Date());  // 초기 로드 시간을 마지막 저장 시간으로 설정
-    } catch (err) {
-      console.error('카드 데이터 불러오기 실패:', err);
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setNodes, setEdges]);
-
-  useEffect(() => {
-    fetchCards();
-    updateViewportCenter();
-    
-    // 창 크기 변경 시 뷰포트 중앙 업데이트
-    window.addEventListener('resize', updateViewportCenter);
-    return () => {
-      window.removeEventListener('resize', updateViewportCenter);
-    };
-  }, [fetchCards, updateViewportCenter]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -713,7 +716,7 @@ function BoardContent() {
           <LayoutControls onLayoutChange={handleLayoutChange} />
           <BoardSettingsControl 
             settings={boardSettings} 
-            onSettingsChange={handleSettingsChange}
+            onSettingsChange={handleBoardSettingsChange}
           />
         </Panel>
         

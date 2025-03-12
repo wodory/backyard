@@ -205,6 +205,8 @@ package.json
     "deploy:preview": "yarn env:prod && vercel"
   },
   "dependencies": {
+    "@auth/core": "^0.38.0",
+    "@auth/prisma-adapter": "^2.8.0",
     "@hookform/resolvers": "^4.1.2",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -225,6 +227,7 @@ package.json
     "@tiptap/extension-link": "^2.11.5",
     "@tiptap/extension-list-item": "^2.11.5",
     "@tiptap/extension-ordered-list": "^2.11.5",
+    "@tiptap/extension-placeholder": "^2.11.5",
     "@tiptap/pm": "^2.11.5",
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
@@ -234,8 +237,10 @@ package.json
     "clsx": "^2.1.1",
     "cookies-next": "^5.1.0",
     "dagre": "^0.8.5",
+    "framer-motion": "^12.5.0",
     "lucide-react": "^0.476.0",
     "next": "15.2.0",
+    "next-auth": "^5.0.0-beta.25",
     "next-themes": "^0.4.4",
     "postcss": "^8.5.3",
     "react": "^19.0.0",
@@ -244,7 +249,8 @@ package.json
     "sonner": "^2.0.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -418,6 +424,25 @@ export default defineConfig({
 ```
 ```
 
+.cursor/mcp.json
+```
+{
+    "mcpServers": {
+      "@smithery-ai-server-sequential-thinking": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@smithery/cli@latest",
+          "run",
+          "@smithery-ai/server-sequential-thinking",
+          "--config",
+          "{}"
+        ]
+      }
+    }
+  }
+```
+
 .note/.gitkeep
 ```
 ```
@@ -433,14 +458,19 @@ export default defineConfig({
 - 캔버스 컴포넌트는 타 팀에서 개발 중인 컴포넌트와 통합 가능하도록 설계
 - 오른쪽 패널은 카드 목록 및 카드 뷰어 두 가지 모드. 캔버스에서 카드를 선택하면 카드 콘텐츠 뷰어, 아니면 카드 목록. 
 - 모든 아이콘은 60x60 크기로 구현. 외부에서 일러스트풍의 아이콘을 가져오기. 
+- 사이드바는 슬라이딩 애니메이션으로 토글되도록 구현
 
 ## 1. 기본 레이아웃 및 컴포넌트 설정
 
 - [ ] 필수 패키지 설치: React, Next.js, Tailwind CSS, Lucide React 아이콘, React Flow
+- [ ] 추가 패키지 설치: zustand (상태 관리), framer-motion (애니메이션)
 - [ ] 프로젝트 기본 구조 설정 (폴더 구조, 컴포넌트 분리 계획)
 - [ ] 글로벌 스타일 및 Tailwind 설정 완료
 - [ ] 공통 컴포넌트 생성 (버튼, 패널, 드롭다운 등)
 - [ ] 반응형 레이아웃 기준 설정 (브레이크포인트, 크기 조정 정책)
+- [ ] Zustand 스토어 구조 설계 및 초기 구현
+  - [ ] 앱 상태 인터페이스 정의 (selectedCardId, isSidebarOpen 등)
+  - [ ] 기본 액션 구현 (selectCard, toggleSidebar 등)
 
 ## 2. 플로팅 도구 막대 구현
 
@@ -460,15 +490,18 @@ export default defineConfig({
   - [ ] 새 카드, 수평 정렬, 수직 정렬, 요약 기능 아이콘 구현
   - [ ] 텍스트 레이블 추가
   - [ ] 화면 크기에 따른 위치 조정 로직 (오른쪽 패널 너비 고려)
+  - [ ] 기존 레이아웃 옵션 메뉴 기능 통합
 
 ## 3. 메인 캔버스 영역 구현
 
 - [ ] /board 통합
+  - [ ] 기존 Board 컴포넌트를 MainCanvas 컴포넌트로 변환
+  - [ ] 카드 선택 이벤트 구현 (Zustand 상태 업데이트)
 
 - [ ] 통합 인터페이스
   - [ ] 외부 컴포넌트와의 연동 인터페이스 설계
   - [ ] 이벤트 처리 시스템 구축 (선택된 노드 정보 전달 등)
-  - [ ] 공통 상태 관리 구현 (Context API 또는 Redux)
+  - [ ] Zustand를 활용한 상태 관리 구현
 
 ## 4. 오른쪽 패널 구현
 
@@ -477,10 +510,13 @@ export default defineConfig({
   - [ ] 적절한 마진 및 패딩 적용
   - [ ] 스크롤 처리
   - [ ] 카드를 선택하면 문서 콘텐츠, 카드를 선택하지 않았다면 카드 목록 
+  - [ ] framer-motion을 활용한 슬라이딩 애니메이션 구현
+  - [ ] 패널 토글 버튼 추가 및 기능 구현
 
 - [ ] 카드 목록 구현
   - [ ] /cards 통합
   - [ ] 카드를 한 줄로 표시
+  - [ ] 카드 선택 시 Zustand 상태 업데이트
 
 - [ ] 카드 콘텐츠 뷰어 > 뷰어 헤더 구현
   - [ ] 선택한 카드의 contents = 문서
@@ -495,15 +531,18 @@ export default defineConfig({
 
 ## 5. 상태 관리 및 데이터 연동
 
-- [ ] 전역 상태 관리 구현
-  - [ ] 현재 선택된 노드 상태
-  - [ ] 프로젝트 메타데이터 상태
-  - [ ] UI 상태 (패널 표시 여부, 메뉴 열림 상태 등)
+- [ ] Zustand 상태 관리 구현
+  - [ ] 현재 선택된 노드 상태 관리
+  - [ ] 사이드바 열림/닫힘 상태 관리
+  - [ ] 프로젝트 메타데이터 상태 관리
+  - [ ] UI 상태 관리 (패널 표시 여부, 메뉴 열림 상태 등)
+  - [ ] 상태 지속성 설정 (localStorage 연동)
 
 - [ ] API 연동 설계
   - [ ] 데이터 가져오기/저장 인터페이스
   - [ ] 다른 프로젝트 컴포넌트와의 통신 방식 정의
   - [ ] 에러 처리 및 로딩 상태 관리
+  - [ ] Zustand 상태와 API 데이터 동기화 로직
 
 ## 6. 확장성 및 통합
 
@@ -517,7 +556,19 @@ export default defineConfig({
   - [ ] 일관된 스타일링 적용
   - [ ] 성능 최적화 전략
 
-## 7. 마무리 및 검증
+## 7. 성능 최적화
+
+- [ ] ReactFlow 성능 최적화
+  - [ ] 대량의 노드/에지 처리 시 가상화 적용
+  - [ ] 불필요한 리렌더링 방지를 위한 메모이제이션
+  - [ ] 지연 로딩 전략 구현
+
+- [ ] 애니메이션 최적화
+  - [ ] 하드웨어 가속 활용 (transform, opacity 속성 우선 사용)
+  - [ ] 애니메이션 프레임 최적화
+  - [ ] 낮은 사양 디바이스에서의 성능 테스트
+
+## 8. 마무리 및 검증
 
 - [ ] 크로스 브라우저 테스트
 - [ ] 접근성 검사 및 개선
@@ -525,13 +576,34 @@ export default defineConfig({
 - [ ] 코드 리팩토링 및 정리
 - [ ] 문서화 (개발자 가이드, API 문서 등)
 
+## 9. 구현 단계 및 예상 시간
+
+### 1단계: 기본 레이아웃 및 상태 관리 설정 (2-3시간)
+- Zustand 스토어 생성
+- 메인 레이아웃 컴포넌트 구현
+- Next.js 라우팅 조정 (app/page.tsx를 메인으로)
+
+### 2단계: 핵심 컴포넌트 구현 (4-5시간)
+- 사이드바 컴포넌트 (토글 기능 포함)
+- 메인 캔버스 구현 (기존 board 컴포넌트 통합)
+- 툴바 컴포넌트 (상단, 하단)
+
+### 3단계: 기능 연동 및 최적화 (3-4시간)
+- 카드 선택 시 사이드바 전환 로직 구현
+- 반응형 레이아웃 조정
+- 성능 최적화
+
+### 총 예상 시간: 9-12시간
+
 ## 특별 고려사항
 
 - 모든 UI 요소는 플로팅 패널로 구현하여 시각적 일관성 유지
-- 도구 막대와 패널은 5px 마진으로 간격 유지
+- 도구 막대와 패널은 3px 마진으로 간격 유지
 - 캔버스 컴포넌트는 타 팀에서 개발 중인 컴포넌트와 통합 가능하도록 설계
 - 문서 뷰어는 캔버스에서 선택된 노드 데이터와 연동되도록 구현
 - 모든 아이콘은 60x60 크기로 일관성 있게 구현
+- Zustand를 활용한 명확한 상태 관리로 코드 복잡성 감소
+- framer-motion을 활용한 부드러운 애니메이션 구현
 ```
 
 .note/tasklist.txt
@@ -741,7 +813,11 @@ const { user, session, error } = await supabase.auth.signIn({
 ## Computing
 - [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows
 
-** 화요일 - 전체 UI 변경  ** 
+** 수요일 - 전체 UI 변경  ** 
+
+## react flow 기능 추가 
+- [ ] https://reactflow.dev/examples/nodes/add-node-on-edge-drop
+- [x] https://reactflow.dev/examples/nodes/delete-middle-node
 
 ## 특별 고려사항
 
@@ -846,6 +922,9 @@ const { user, session, error } = await supabase.auth.signIn({
 - 캔버스 컴포넌트는 타 팀에서 개발 중인 컴포넌트와 통합 가능하도록 설계
 - 문서 뷰어는 캔버스에서 선택된 노드 데이터와 연동되도록 구현
 - 모든 아이콘은 60x60 크기로 일관성 있게 구현
+
+
+
 ```
 
 prisma/schema.master.prisma
@@ -1233,6 +1312,417 @@ model BoardSettings {
 
   @@map("board_settings")
 } 
+```
+
+scripts/create-user.js
+```
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function main() {
+  try {
+    const user = await prisma.user.create({
+      data: {
+        email: 'test@example.com',
+        name: 'Test User'
+      }
+    });
+    console.log('Created user:', user);
+  } catch (error) {
+    console.error('Error creating user:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main(); 
+```
+
+scripts/pre-deploy.js
+```
+#!/usr/bin/env node
+
+/**
+ * 배포 전 환경 설정 스크립트
+ * 
+ * 이 스크립트는 Vercel 등의 프로덕션 환경에 배포하기 전에
+ * 환경 파일을 확인하고 필요한 설정을 적용합니다.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+console.log('배포 전 환경 설정 확인 중...');
+
+// 기본 필수 환경 변수 목록
+let requiredEnvVars = [
+  'DATABASE_PROVIDER',
+  'DATABASE_URL'
+];
+
+// 데이터베이스 프로바이더에 따라 추가 변수 검증
+if (process.env.DATABASE_PROVIDER === 'postgresql') {
+  requiredEnvVars.push('DIRECT_URL');
+  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
+  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  
+  if (process.env.NODE_ENV === 'production') {
+    requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
+  }
+}
+
+// 환경 변수 검증
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ 누락된 환경 변수가 있습니다:');
+  missingEnvVars.forEach(envVar => {
+    console.error(`   - ${envVar}`);
+  });
+  process.exit(1);
+}
+
+console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
+
+// 프로덕션 환경 확인
+if (process.env.NODE_ENV === 'production') {
+  console.log('프로덕션 환경 감지: 설정을 확인합니다...');
+  
+  if (process.env.DATABASE_PROVIDER !== 'postgresql') {
+    console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
+    process.exit(1);
+  }
+  
+  if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
+    console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
+    process.exit(1);
+  }
+}
+
+console.log('✅ 환경 설정 확인 완료');
+
+// Prisma 클라이언트 생성
+console.log('Prisma 클라이언트를 생성합니다...');
+try {
+  execSync('npx prisma generate', { stdio: 'inherit' });
+  console.log('✅ Prisma 클라이언트가 생성되었습니다.');
+} catch (error) {
+  console.error(`⚠️ Prisma 클라이언트 생성 중 오류가 발생했습니다: ${error.message}`);
+  console.error('하지만 배포 과정을 계속 진행합니다.');
+} 
+```
+
+scripts/schema-sync.js
+```
+#!/usr/bin/env node
+
+/**
+ * Prisma 스키마 동기화 스크립트
+ * 
+ * 이 스크립트는 마스터 템플릿에서 각 환경별 스키마를 생성합니다.
+ */
+const fs = require('fs');
+const path = require('path');
+
+// 경로 설정
+const basePath = path.join(__dirname, '../prisma');
+const masterSchemaPath = path.join(basePath, 'schema.master.prisma');
+const sqliteSchemaPath = path.join(basePath, 'schema.sqlite.prisma');
+const postgresSchemaPath = path.join(basePath, 'schema.postgresql.prisma');
+
+console.log('Prisma 스키마 동기화를 시작합니다...');
+
+// 마스터 스키마 파일 확인
+if (!fs.existsSync(masterSchemaPath)) {
+  console.log('마스터 스키마 파일이 없습니다. 현재 schema.prisma를 마스터로 사용합니다.');
+  const currentSchemaPath = path.join(basePath, 'schema.prisma');
+  if (fs.existsSync(currentSchemaPath)) {
+    fs.copyFileSync(currentSchemaPath, masterSchemaPath);
+    console.log(`현재 스키마를 마스터 템플릿으로 복사했습니다: ${masterSchemaPath}`);
+  } else {
+    console.error('오류: 현재 스키마 파일도 찾을 수 없습니다!');
+    process.exit(1);
+  }
+}
+
+// 마스터 스키마 읽기
+console.log(`마스터 스키마 파일 읽기: ${masterSchemaPath}`);
+const masterSchema = fs.readFileSync(masterSchemaPath, 'utf8');
+
+// SQLite 스키마 생성
+const sqliteSchema = masterSchema
+  .replace(/provider(\s*)=(\s*)"postgresql"/g, 'provider$1=$2"sqlite"')
+  .replace(/directUrl(\s*)=(\s*)env\("DIRECT_URL"\)/g, '')
+  .replace(/extensions(\s*)=(\s*)\[.*?\]/g, '')
+  .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for SQLite,');
+
+// PostgreSQL 스키마 생성
+const postgresSchema = masterSchema
+  .replace(/provider(\s*)=(\s*)"sqlite"/g, 'provider$1=$2"postgresql"')
+  .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for PostgreSQL,');
+
+// 생성된 스키마 파일 저장
+fs.writeFileSync(sqliteSchemaPath, sqliteSchema);
+console.log(`SQLite 스키마 파일이 생성되었습니다: ${sqliteSchemaPath}`);
+
+fs.writeFileSync(postgresSchemaPath, postgresSchema);
+console.log(`PostgreSQL 스키마 파일이 생성되었습니다: ${postgresSchemaPath}`);
+
+console.log('스키마 동기화가 완료되었습니다.');
+console.log('이제 환경에 맞는 스키마를 적용하려면 다음 명령을 실행하세요:');
+console.log('- 개발 환경: yarn db:setup:dev');
+console.log('- 프로덕션 환경: yarn db:setup:prod');
+
+```
+
+scripts/select-db.js
+```
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+// 환경 확인
+const isProduction = process.env.NODE_ENV === 'production';
+const dbType = isProduction ? 'postgresql' : 'sqlite';
+
+// 경로 설정
+const basePath = path.join(__dirname, '../prisma');
+const schemaPath = path.join(basePath, 'schema.prisma');
+const sourceSchemaPath = path.join(basePath, `schema.${dbType}.prisma`);
+
+console.log(`환경: ${isProduction ? '프로덕션' : '개발'}`);
+console.log(`데이터베이스: ${dbType}`);
+console.log(`소스 스키마: ${sourceSchemaPath}`);
+console.log(`타겟 스키마: ${schemaPath}`);
+
+// 파일 복사
+try {
+  // 소스 파일 존재 확인
+  if (!fs.existsSync(sourceSchemaPath)) {
+    console.error(`오류: 소스 스키마 파일을 찾을 수 없습니다: ${sourceSchemaPath}`);
+    process.exit(1);
+  }
+
+  // 파일 복사
+  fs.copyFileSync(sourceSchemaPath, schemaPath);
+  console.log(`✅ 성공: ${dbType} 스키마를 복사했습니다.`);
+
+  // Prisma 생성 명령어 안내
+  console.log('이제 다음 명령어를 실행하세요: npx prisma generate');
+} catch (error) {
+  console.error(`❌ 오류 발생: ${error.message}`);
+  process.exit(1);
+} 
+```
+
+scripts/test-db.js
+```
+// 데이터베이스 연결 테스트 스크립트
+const { PrismaClient } = require('@prisma/client');
+
+async function main() {
+  console.log('데이터베이스 연결 테스트 시작...');
+  console.log('환경 변수:', {
+    NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_PROVIDER: process.env.DATABASE_PROVIDER
+  });
+
+  try {
+    const prisma = new PrismaClient();
+    console.log('Prisma 클라이언트 초기화 성공');
+
+    // 연결 테스트
+    console.log('데이터베이스 연결 시도 중...');
+    await prisma.$connect();
+    console.log('데이터베이스 연결 성공!');
+
+    // 간단한 쿼리 테스트
+    console.log('사용자 조회 시도 중...');
+    const users = await prisma.user.findMany({ take: 5 });
+    console.log(`사용자 조회 성공: ${users.length}명의 사용자 발견`);
+    
+    // 연결 종료
+    await prisma.$disconnect();
+    console.log('데이터베이스 연결 종료');
+  } catch (error) {
+    console.error('에러 발생:', error);
+  }
+}
+
+main(); 
+```
+
+src/middleware.ts
+```
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+
+// 보호된 경로 (로그인 필요)
+const protectedRoutes = ['/board', '/cards', '/tags'];
+// 인증된 사용자는 접근할 수 없는 경로
+const authRoutes = ['/login', '/register'];
+// 인증 검사를 건너뛸 경로
+const bypassAuthRoutes = ['/login', '/register', '/auth/callback', '/api/auth'];
+
+export async function middleware(request: NextRequest) {
+  console.log('미들웨어 실행:', request.nextUrl.pathname);
+  
+  // 응답 객체 준비
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+  
+  // 쿠키 확인 디버깅
+  const cookies = request.cookies;
+  const accessToken = cookies.get('sb-access-token')?.value;
+  const refreshToken = cookies.get('sb-refresh-token')?.value;
+  
+  console.log('인증 상태 확인:', {
+    path: request.nextUrl.pathname,
+    액세스토큰: accessToken ? '존재함' : '없음',
+    리프레시토큰: refreshToken ? '존재함' : '없음',
+    모든쿠키: Array.from(cookies.getAll()).map(c => c.name)
+  });
+  
+  // 환경 변수 확인
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('미들웨어: Supabase 환경 변수가 설정되지 않았습니다.');
+    return response;
+  }
+  
+  try {
+    // OAuth 콜백 경로인 경우 우회
+    if (request.nextUrl.pathname === '/auth/callback') {
+      console.log('콜백 처리 감지 - 미들웨어 우회');
+      return response;
+    }
+    
+    // 루트 경로에서 code 파라미터가 있는 경우 (링크를 통한 접근)
+    if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.has('code')) {
+      const code = request.nextUrl.searchParams.get('code');
+      const redirectUrl = new URL('/auth/callback', request.url);
+      redirectUrl.searchParams.set('code', code!);
+      
+      console.log('루트 경로에서 인증 코드 감지, 리디렉션:', redirectUrl.toString());
+      
+      return NextResponse.redirect(redirectUrl);
+    }
+    
+    // 인증 상태 확인
+    const isLoggedIn = !!accessToken;
+    console.log('경로 접근:', request.nextUrl.pathname, '인증 상태:', isLoggedIn ? '로그인됨' : '로그인안됨');
+    
+    // URL 객체 준비
+    const url = request.nextUrl.clone();
+    
+    // 인증 우회 경로인 경우 인증 검사 건너뛰기
+    if (bypassAuthRoutes.some(route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route))) {
+      console.log('인증 검사 건너뛰기:', request.nextUrl.pathname);
+      return response;
+    }
+    
+    // 로그인이 필요한 경로인지 확인
+    const isProtectedRoute = protectedRoutes.some(route => 
+      request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
+    );
+    
+    // 인증된 사용자는 접근할 수 없는 경로인지 확인
+    const isAuthRoute = authRoutes.some(route => 
+      request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
+    );
+    
+    // 미인증 상태에서 보호된 경로 접근 시도
+    if (isProtectedRoute && !isLoggedIn) {
+      console.log('인증되지 않은 사용자가 보호된 경로에 접근 시도:', request.nextUrl.pathname, '-> 로그인 페이지로 리디렉션');
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    
+    // 인증 상태에서 로그인/회원가입 페이지 접근 시도
+    if (isAuthRoute && isLoggedIn) {
+      console.log('인증된 사용자가 인증 경로에 접근 시도:', request.nextUrl.pathname, '-> 보드 페이지로 리디렉션');
+      url.pathname = '/board';
+      return NextResponse.redirect(url);
+    }
+    
+    // 그 외 경로는 그대로 진행
+    return response;
+  } catch (error) {
+    console.error('미들웨어 처리 중 오류:', error);
+    return response;
+  }
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
+}; 
+```
+
+src/setupTests.ts
+```
+import '@testing-library/jest-dom/vitest';
+import { expect, vi, beforeAll, afterAll } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Jest DOM matchers 확장 설정
+expect.extend(matchers);
+
+// 전역 모킹 설정
+vi.mock('next/navigation', () => {
+  return {
+    useRouter: vi.fn(() => ({
+      push: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+    })),
+    usePathname: vi.fn(() => '/'),
+    useSearchParams: vi.fn(() => ({
+      get: (param: string) => null,
+      toString: () => '',
+    })),
+  };
+});
+
+// 콘솔 오류 모킹 (테스트 중 예상된 오류가 발생해도 테스트 출력이 어지럽지 않도록)
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args: any[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('ReactDOM.render is no longer supported')
+    ) {
+      return;
+    }
+    originalError(...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
+
+// 글로벌 페치 모킹
+global.fetch = vi.fn(); 
 ```
 
 supabase/config.toml
@@ -1708,686 +2198,11 @@ declare module '@prisma/client' {
 } 
 ```
 
-scripts/create-user.js
-```
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-async function main() {
-  try {
-    const user = await prisma.user.create({
-      data: {
-        email: 'test@example.com',
-        name: 'Test User'
-      }
-    });
-    console.log('Created user:', user);
-  } catch (error) {
-    console.error('Error creating user:', error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-main(); 
-```
-
-scripts/pre-deploy.js
-```
-#!/usr/bin/env node
-
-/**
- * 배포 전 환경 설정 스크립트
- * 
- * 이 스크립트는 Vercel 등의 프로덕션 환경에 배포하기 전에
- * 환경 파일을 확인하고 필요한 설정을 적용합니다.
- */
-
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-
-console.log('배포 전 환경 설정 확인 중...');
-
-// 기본 필수 환경 변수 목록
-let requiredEnvVars = [
-  'DATABASE_PROVIDER',
-  'DATABASE_URL'
-];
-
-// 데이터베이스 프로바이더에 따라 추가 변수 검증
-if (process.env.DATABASE_PROVIDER === 'postgresql') {
-  requiredEnvVars.push('DIRECT_URL');
-  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
-  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  
-  if (process.env.NODE_ENV === 'production') {
-    requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
-  }
-}
-
-// 환경 변수 검증
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-if (missingEnvVars.length > 0) {
-  console.error('❌ 누락된 환경 변수가 있습니다:');
-  missingEnvVars.forEach(envVar => {
-    console.error(`   - ${envVar}`);
-  });
-  process.exit(1);
-}
-
-console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
-
-// 프로덕션 환경 확인
-if (process.env.NODE_ENV === 'production') {
-  console.log('프로덕션 환경 감지: 설정을 확인합니다...');
-  
-  if (process.env.DATABASE_PROVIDER !== 'postgresql') {
-    console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
-    process.exit(1);
-  }
-  
-  if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
-    console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
-    process.exit(1);
-  }
-}
-
-console.log('✅ 환경 설정 확인 완료');
-
-// Prisma 클라이언트 생성
-console.log('Prisma 클라이언트를 생성합니다...');
-try {
-  execSync('npx prisma generate', { stdio: 'inherit' });
-  console.log('✅ Prisma 클라이언트가 생성되었습니다.');
-} catch (error) {
-  console.error(`⚠️ Prisma 클라이언트 생성 중 오류가 발생했습니다: ${error.message}`);
-  console.error('하지만 배포 과정을 계속 진행합니다.');
-} 
-```
-
-scripts/schema-sync.js
-```
-#!/usr/bin/env node
-
-/**
- * Prisma 스키마 동기화 스크립트
- * 
- * 이 스크립트는 마스터 템플릿에서 각 환경별 스키마를 생성합니다.
- */
-const fs = require('fs');
-const path = require('path');
-
-// 경로 설정
-const basePath = path.join(__dirname, '../prisma');
-const masterSchemaPath = path.join(basePath, 'schema.master.prisma');
-const sqliteSchemaPath = path.join(basePath, 'schema.sqlite.prisma');
-const postgresSchemaPath = path.join(basePath, 'schema.postgresql.prisma');
-
-console.log('Prisma 스키마 동기화를 시작합니다...');
-
-// 마스터 스키마 파일 확인
-if (!fs.existsSync(masterSchemaPath)) {
-  console.log('마스터 스키마 파일이 없습니다. 현재 schema.prisma를 마스터로 사용합니다.');
-  const currentSchemaPath = path.join(basePath, 'schema.prisma');
-  if (fs.existsSync(currentSchemaPath)) {
-    fs.copyFileSync(currentSchemaPath, masterSchemaPath);
-    console.log(`현재 스키마를 마스터 템플릿으로 복사했습니다: ${masterSchemaPath}`);
-  } else {
-    console.error('오류: 현재 스키마 파일도 찾을 수 없습니다!');
-    process.exit(1);
-  }
-}
-
-// 마스터 스키마 읽기
-console.log(`마스터 스키마 파일 읽기: ${masterSchemaPath}`);
-const masterSchema = fs.readFileSync(masterSchemaPath, 'utf8');
-
-// SQLite 스키마 생성
-const sqliteSchema = masterSchema
-  .replace(/provider(\s*)=(\s*)"postgresql"/g, 'provider$1=$2"sqlite"')
-  .replace(/directUrl(\s*)=(\s*)env\("DIRECT_URL"\)/g, '')
-  .replace(/extensions(\s*)=(\s*)\[.*?\]/g, '')
-  .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for SQLite,');
-
-// PostgreSQL 스키마 생성
-const postgresSchema = masterSchema
-  .replace(/provider(\s*)=(\s*)"sqlite"/g, 'provider$1=$2"postgresql"')
-  .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for PostgreSQL,');
-
-// 생성된 스키마 파일 저장
-fs.writeFileSync(sqliteSchemaPath, sqliteSchema);
-console.log(`SQLite 스키마 파일이 생성되었습니다: ${sqliteSchemaPath}`);
-
-fs.writeFileSync(postgresSchemaPath, postgresSchema);
-console.log(`PostgreSQL 스키마 파일이 생성되었습니다: ${postgresSchemaPath}`);
-
-console.log('스키마 동기화가 완료되었습니다.');
-console.log('이제 환경에 맞는 스키마를 적용하려면 다음 명령을 실행하세요:');
-console.log('- 개발 환경: yarn db:setup:dev');
-console.log('- 프로덕션 환경: yarn db:setup:prod');
-
-```
-
-scripts/select-db.js
-```
-#!/usr/bin/env node
-
-const fs = require('fs');
-const path = require('path');
-
-// 환경 확인
-const isProduction = process.env.NODE_ENV === 'production';
-const dbType = isProduction ? 'postgresql' : 'sqlite';
-
-// 경로 설정
-const basePath = path.join(__dirname, '../prisma');
-const schemaPath = path.join(basePath, 'schema.prisma');
-const sourceSchemaPath = path.join(basePath, `schema.${dbType}.prisma`);
-
-console.log(`환경: ${isProduction ? '프로덕션' : '개발'}`);
-console.log(`데이터베이스: ${dbType}`);
-console.log(`소스 스키마: ${sourceSchemaPath}`);
-console.log(`타겟 스키마: ${schemaPath}`);
-
-// 파일 복사
-try {
-  // 소스 파일 존재 확인
-  if (!fs.existsSync(sourceSchemaPath)) {
-    console.error(`오류: 소스 스키마 파일을 찾을 수 없습니다: ${sourceSchemaPath}`);
-    process.exit(1);
-  }
-
-  // 파일 복사
-  fs.copyFileSync(sourceSchemaPath, schemaPath);
-  console.log(`✅ 성공: ${dbType} 스키마를 복사했습니다.`);
-
-  // Prisma 생성 명령어 안내
-  console.log('이제 다음 명령어를 실행하세요: npx prisma generate');
-} catch (error) {
-  console.error(`❌ 오류 발생: ${error.message}`);
-  process.exit(1);
-} 
-```
-
-scripts/test-db.js
-```
-// 데이터베이스 연결 테스트 스크립트
-const { PrismaClient } = require('@prisma/client');
-
-async function main() {
-  console.log('데이터베이스 연결 테스트 시작...');
-  console.log('환경 변수:', {
-    NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: process.env.DATABASE_URL,
-    DATABASE_PROVIDER: process.env.DATABASE_PROVIDER
-  });
-
-  try {
-    const prisma = new PrismaClient();
-    console.log('Prisma 클라이언트 초기화 성공');
-
-    // 연결 테스트
-    console.log('데이터베이스 연결 시도 중...');
-    await prisma.$connect();
-    console.log('데이터베이스 연결 성공!');
-
-    // 간단한 쿼리 테스트
-    console.log('사용자 조회 시도 중...');
-    const users = await prisma.user.findMany({ take: 5 });
-    console.log(`사용자 조회 성공: ${users.length}명의 사용자 발견`);
-    
-    // 연결 종료
-    await prisma.$disconnect();
-    console.log('데이터베이스 연결 종료');
-  } catch (error) {
-    console.error('에러 발생:', error);
-  }
-}
-
-main(); 
-```
-
-src/middleware.ts
-```
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
-
-// 보호된 경로 (로그인 필요)
-const protectedRoutes = ['/board', '/cards', '/tags'];
-// 인증된 사용자는 접근할 수 없는 경로
-const authRoutes = ['/login', '/register'];
-// 인증 검사를 건너뛸 경로
-const bypassAuthRoutes = ['/auth/callback', '/api'];
-
-export async function middleware(request: NextRequest) {
-  console.log('미들웨어 실행:', request.nextUrl.pathname);
-  
-  // 쿠키 확인 디버깅
-  const cookies = request.cookies;
-  const accessToken = cookies.get('sb-access-token')?.value;
-  const refreshToken = cookies.get('sb-refresh-token')?.value;
-  
-  console.log('쿠키 확인 - 액세스 토큰:', accessToken ? `존재함 (길이: ${accessToken.length})` : '없음');
-  console.log('쿠키 확인 - 리프레시 토큰:', refreshToken ? `존재함 (길이: ${refreshToken.length})` : '없음');
-  console.log('모든 쿠키:', Array.from(cookies.getAll()).map(c => c.name));
-  
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  // 환경 변수 확인
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('미들웨어: Supabase 환경 변수가 설정되지 않았습니다.');
-    
-    // 환경 변수가 없는 경우, 기본 요청 계속 진행 (차단하지 않음)
-    return response;
-  }
-
-  try {
-    const supabase = createServerClient(
-      supabaseUrl,
-      supabaseKey,
-      {
-        cookies: {
-          get(name: string) {
-            const cookie = request.cookies.get(name);
-            const logMessage = cookie 
-              ? `존재 (값 길이: ${cookie.value.length})`
-              : '없음';
-            console.log('쿠키 가져오기:', name, logMessage);
-            return cookie?.value;
-          },
-          set(name: string, value: string, options: any) {
-            // Next.js 15에서는 서버 액션이나 라우트 핸들러에서만 쿠키를 수정할 수 있지만,
-            // 미들웨어에서는 응답 객체를 통해 쿠키를 설정할 수 있습니다.
-            console.log('쿠키 설정:', name, `(값 길이: ${value.length})`, 'options:', JSON.stringify(options));
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-              // 프로덕션, 개발 환경 모두 일관된 설정 사용
-              secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
-              sameSite: 'lax',
-              httpOnly: false, // 클라이언트에서 접근 가능하도록
-              // 도메인 속성 제거 - 쿠키는 기본적으로 현재 도메인에만 설정됨
-            });
-          },
-          remove(name: string, options: any) {
-            console.log('쿠키 삭제:', name, 'options:', JSON.stringify(options));
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-              maxAge: 0,
-              // 프로덕션, 개발 환경 모두 일관된 설정 사용
-              secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
-              sameSite: 'lax',
-              httpOnly: false, // 클라이언트에서 접근 가능하도록
-              // 도메인 속성 제거 - 쿠키는 기본적으로 현재 도메인에만 설정됨
-            });
-          },
-        },
-      }
-    );
-
-    // 콜백 URL로 리디렉션 중인 경우 처리 우회
-    const { pathname, search } = request.nextUrl;
-    if (pathname === '/auth/callback' && search) {
-      console.log('콜백 처리 감지 - 미들웨어 우회');
-      return response;
-    }
-
-    // 요청 URL 가져오기
-    const url = request.nextUrl.clone();
-    
-    // 인증 우회 경로인 경우 인증 검사 건너뛰기
-    if (bypassAuthRoutes.some(route => pathname === route || pathname.startsWith(route))) {
-      console.log('인증 검사 건너뛰기:', pathname);
-      return response;
-    }
-    
-    // 직접 토큰 확인 (쿠키 기반)
-    let isLoggedIn = false;
-    let sessionUserId = null;
-    
-    // 1. 쿠키 토큰 기반 확인
-    if (accessToken) {
-      isLoggedIn = true;
-      console.log('액세스 토큰 쿠키 확인 성공');
-      
-      // 쿠키가 있으면 응답 쿠키에도 동일하게 설정 (확실한 지속성 보장)
-      response.cookies.set({
-        name: 'sb-access-token',
-        value: accessToken,
-        maxAge: 60 * 60 * 24 * 7, // 7일
-        path: '/',
-        secure: true, // production에서는 항상 true로 설정
-        sameSite: 'lax',
-        httpOnly: false, // 클라이언트에서 접근 가능하도록
-      });
-      
-      if (refreshToken) {
-        response.cookies.set({
-          name: 'sb-refresh-token',
-          value: refreshToken,
-          maxAge: 60 * 60 * 24 * 30, // 30일
-          path: '/',
-          secure: true, // production에서는 항상 true로 설정
-          sameSite: 'lax',
-          httpOnly: false, // 클라이언트에서 접근 가능하도록
-        });
-      }
-      
-      // 디버깅을 위한 로그 추가
-      console.log('미들웨어: 기존 쿠키 복제됨', {
-        환경: process.env.NODE_ENV,
-        URL: request.url,
-        프로토콜: request.url.startsWith('https://') ? 'HTTPS' : 'HTTP',
-        보안설정: 'Secure=true'
-      });
-    } 
-    // 2. Supabase 세션 기반 확인 (백업 방법)
-    else {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('세션 획득 오류:', sessionError.message);
-        }
-        
-        isLoggedIn = !!session;
-        
-        if (session) {
-          sessionUserId = session.user?.id;
-          console.log('세션 확인 성공:', session.user?.id);
-          console.log('세션 만료 시간:', new Date(session.expires_at! * 1000).toISOString());
-          
-          // 쿠키가 없지만 세션이 있는 경우, 쿠키 복구
-          if (!accessToken) {
-            response.cookies.set({
-              name: 'sb-access-token',
-              value: session.access_token,
-              maxAge: 60 * 60 * 24 * 7, // 7일
-              path: '/',
-              secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
-              sameSite: 'lax',
-              httpOnly: false,
-            });
-            
-            if (session.refresh_token) {
-              response.cookies.set({
-                name: 'sb-refresh-token',
-                value: session.refresh_token,
-                maxAge: 60 * 60 * 24 * 30, // 30일
-                path: '/',
-                secure: process.env.NODE_ENV === 'production' || request.url.startsWith('https://'),
-                sameSite: 'lax',
-                httpOnly: false,
-              });
-            }
-            
-            console.log('미들웨어: 세션 토큰을 쿠키에 복구함', {
-              환경: process.env.NODE_ENV,
-              URL: request.url,
-              프로토콜: request.url.startsWith('https://') ? 'HTTPS' : 'HTTP'  
-            });
-          }
-        } else {
-          console.log('세션 없음');
-        }
-      } catch (sessionError) {
-        console.error('세션 확인 중 오류:', sessionError);
-      }
-    }
-    
-    console.log('경로 접근:', pathname, '인증 상태:', isLoggedIn ? `로그인됨 (${sessionUserId || 'ID 없음'})` : '로그인안됨');
-    
-    // 로그인이 필요한 경로인지 확인
-    const isProtectedRoute = protectedRoutes.some(route => 
-      pathname === route || pathname.startsWith(`${route}/`)
-    );
-    
-    // 인증된 사용자는 접근할 수 없는 경로인지 확인
-    const isAuthRoute = authRoutes.some(route => 
-      pathname === route || pathname.startsWith(`${route}/`)
-    );
-    
-    // 미인증 상태에서 보호된 경로 접근 시도
-    if (isProtectedRoute && !isLoggedIn) {
-      console.log('인증되지 않은 사용자가 보호된 경로에 접근 시도:', pathname, '-> 로그인 페이지로 리디렉션');
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
-    }
-    
-    // 인증 상태에서 로그인/회원가입 페이지 접근 시도
-    if (isAuthRoute && isLoggedIn) {
-      console.log('인증된 사용자가 인증 경로에 접근 시도:', pathname, '-> 보드 페이지로 리디렉션');
-      url.pathname = '/board';
-      return NextResponse.redirect(url);
-    }
-    
-    return response;
-  } catch (error) {
-    console.error('미들웨어 처리 중 오류:', error);
-    return response;
-  }
-}
-
-// 미들웨어가 적용될 경로를 지정합니다.
-export const config = {
-  matcher: [
-    // 인증이 필요한 경로는 여기에 추가
-    /*
-      '/protected',
-      '/dashboard/:path*',
-    */
-    // 모든 경로에 미들웨어 적용 (필요에 따라 조정)
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
-}; 
-```
-
-src/setupTests.ts
-```
-import '@testing-library/jest-dom/vitest';
-import { expect, vi, beforeAll, afterAll } from 'vitest';
-import * as matchers from '@testing-library/jest-dom/matchers';
-
-// Jest DOM matchers 확장 설정
-expect.extend(matchers);
-
-// 전역 모킹 설정
-vi.mock('next/navigation', () => {
-  return {
-    useRouter: vi.fn(() => ({
-      push: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-    })),
-    usePathname: vi.fn(() => '/'),
-    useSearchParams: vi.fn(() => ({
-      get: (param: string) => null,
-      toString: () => '',
-    })),
-  };
-});
-
-// 콘솔 오류 모킹 (테스트 중 예상된 오류가 발생해도 테스트 출력이 어지럽지 않도록)
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: any[]) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('ReactDOM.render is no longer supported')
-    ) {
-      return;
-    }
-    originalError(...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
-});
-
-// 글로벌 페치 모킹
-global.fetch = vi.fn(); 
-```
-
 prisma/migrations/migration_lock.toml
 ```
 # Please do not edit this file manually
 # It should be added in your version-control system (e.g., Git)
-provider = "postgresql"
-```
-
-supabase/migrations/20240319000000_init.sql
-```
--- PostgreSQL 확장 활성화
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- 테이블 생성 순서 중요: 참조 관계 때문에 순서대로 생성해야 함
-
--- 사용자 테이블 (Supabase Auth와 연동)
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  name TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 카드 테이블
-CREATE TABLE IF NOT EXISTS cards (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  content TEXT,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 태그 테이블
-CREATE TABLE IF NOT EXISTS tags (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 카드-태그 연결 테이블
-CREATE TABLE IF NOT EXISTS card_tags (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
-  tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(card_id, tag_id)
-);
-
--- 보드 설정 테이블
-CREATE TABLE IF NOT EXISTS board_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  settings JSONB NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 트리거 함수: 업데이트 시간 자동 갱신
-CREATE OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 각 테이블에 트리거 적용
-CREATE TRIGGER update_users_modtime
-  BEFORE UPDATE ON users
-  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_cards_modtime
-  BEFORE UPDATE ON cards
-  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_tags_modtime
-  BEFORE UPDATE ON tags
-  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_board_settings_modtime
-  BEFORE UPDATE ON board_settings
-  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
--- RLS (Row Level Security) 정책 설정
-
--- 테이블 RLS 활성화
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cards ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
-ALTER TABLE card_tags ENABLE ROW LEVEL SECURITY;
-ALTER TABLE board_settings ENABLE ROW LEVEL SECURITY;
-
--- 사용자 테이블 정책
-CREATE POLICY "사용자는 자신의 정보만 조회할 수 있음" ON users
-  FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "사용자는 자신의 정보만 업데이트할 수 있음" ON users
-  FOR UPDATE USING (auth.uid() = id);
-
--- 카드 테이블 정책
-CREATE POLICY "모든 인증된 사용자는 카드를 조회할 수 있음" ON cards
-  FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "사용자는 자신의 카드만 생성할 수 있음" ON cards
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "사용자는 자신의 카드만 업데이트할 수 있음" ON cards
-  FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "사용자는 자신의 카드만 삭제할 수 있음" ON cards
-  FOR DELETE USING (auth.uid() = user_id);
-
--- 태그 테이블 정책
-CREATE POLICY "모든 인증된 사용자는 태그를 조회할 수 있음" ON tags
-  FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "인증된 사용자는 태그를 생성할 수 있음" ON tags
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
--- 태그 업데이트 및 삭제는 관리자만 가능하도록 설정할 수도 있음
-
--- 카드-태그 연결 테이블 정책
-CREATE POLICY "인증된 사용자는 카드-태그 연결을 조회할 수 있음" ON card_tags
-  FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "사용자는 자신의 카드에만 태그를 연결할 수 있음" ON card_tags
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM cards 
-      WHERE cards.id = card_id AND cards.user_id = auth.uid()
-    )
-  );
-CREATE POLICY "사용자는 자신의 카드에서만 태그 연결을 삭제할 수 있음" ON card_tags
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM cards 
-      WHERE cards.id = card_id AND cards.user_id = auth.uid()
-    )
-  );
-
--- 보드 설정 테이블 정책
-CREATE POLICY "사용자는 자신의 보드 설정만 조회할 수 있음" ON board_settings
-  FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "사용자는 자신의 보드 설정만 생성할 수 있음" ON board_settings
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "사용자는 자신의 보드 설정만 업데이트할 수 있음" ON board_settings
-  FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "사용자는 자신의 보드 설정만 삭제할 수 있음" ON board_settings
-  FOR DELETE USING (auth.uid() = user_id); 
+provider = "sqlite"
 ```
 
 prisma/seed/index.js
@@ -2916,6 +2731,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "sonner";
 import { InitDatabase } from "@/components/InitDatabase";
 import "@/app/globals.css";
+// reactflow 스타일 버그 픽스 
+// import "@xyflow/react/dist/style.css";
 
 export default function RootLayout({
   children,
@@ -2932,7 +2749,7 @@ export default function RootLayout({
             {/* DB 초기화 스크립트 */}
             <InitDatabase />
           </main>
-          <Toaster position="bottom-center" />
+          <Toaster position="top-center" />
         </AuthProvider>
       </body>
     </html>
@@ -3015,32 +2832,10 @@ describe('Home 페이지', () => {
 
 src/app/page.tsx
 ```
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center">Hello backyard</CardTitle>
-          <CardDescription className="text-center">
-            아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center gap-2 flex-wrap">
-          <Button variant="outline" asChild>
-            <Link href="/cards">카드 목록 보기</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/board">보드 시각화</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <DashboardLayout />;
 }
 ```
 
@@ -3132,6 +2927,497 @@ src/config/cardBoardUiOptions.json
 } 
 ```
 
+src/contexts/AuthContext.tsx
+```
+'use client';
+
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { User } from '@supabase/supabase-js';
+import { getCurrentUser, signOut } from '@/lib/auth';
+import { createBrowserClient } from '@/lib/supabase';
+
+// 확장된 사용자 타입 정의
+export interface ExtendedUser extends User {
+  dbUser?: any; // Prisma User 모델
+}
+
+type AuthContextType = {
+  user: ExtendedUser | null;
+  userDetails: any; // Prisma User 모델 타입
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  userDetails: null,
+  isLoading: true,
+  isAuthenticated: false,
+  logout: async () => {},
+});
+
+export const useAuth = () => useContext(AuthContext);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<ExtendedUser | null>(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 사용자 데이터베이스 동기화 함수
+  const syncUserWithDatabase = async (supabaseUser: User) => {
+    try {
+      if (!supabaseUser || !supabaseUser.id || !supabaseUser.email) {
+        console.warn('사용자 동기화 실패: 유효하지 않은 사용자 데이터');
+        return null;
+      }
+
+      // 타임아웃 설정
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+
+      try {
+        // 로컬 데이터베이스에 사용자 등록/확인
+        const response = await fetch('/api/user/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            name: supabaseUser.user_metadata?.full_name || 
+                  supabaseUser.user_metadata?.name || 
+                  supabaseUser.email?.split('@')[0]
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          return data.user;
+        } else {
+          console.error('사용자 동기화 API 오류:', await response.text());
+          
+          // API 응답이 실패해도 기본 사용자 객체를 반환
+          return {
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            name: supabaseUser.user_metadata?.full_name || 
+                  supabaseUser.user_metadata?.name || 
+                  supabaseUser.email?.split('@')[0],
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        console.error('API 호출 중 오류:', fetchError);
+        
+        // 네트워크 오류라도 기본 사용자 객체를 반환
+        return {
+          id: supabaseUser.id,
+          email: supabaseUser.email,
+          name: supabaseUser.user_metadata?.full_name || 
+                supabaseUser.user_metadata?.name || 
+                supabaseUser.email?.split('@')[0],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+    } catch (error) {
+      console.error('사용자 데이터베이스 동기화 오류:', error);
+      return null;
+    }
+  };
+
+  // 인증 상태 확인
+  const checkAuth = async () => {
+    try {
+      const userData = await getCurrentUser() as ExtendedUser | null;
+      
+      if (userData) {
+        setUser(userData);
+        setUserDetails(userData.dbUser);
+      } else {
+        setUser(null);
+        setUserDetails(null);
+      }
+    } catch (error) {
+      console.error('인증 상태 확인 오류:', error);
+      setUser(null);
+      setUserDetails(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 로그아웃
+  const logout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setUserDetails(null);
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+    }
+  };
+
+  // 초기 인증 상태 확인
+  useEffect(() => {
+    checkAuth();
+
+    // 브라우저 환경에서만 Supabase 클라이언트 생성
+    const supabase = createBrowserClient();
+    
+    // Supabase 인증 이벤트 리스너
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session && session.user) {
+            // 사용자가 로그인하거나 토큰이 갱신될 때 데이터베이스 동기화
+            console.log('인증 상태 변경 감지: 사용자 동기화 시작');
+            const dbUser = await syncUserWithDatabase(session.user);
+            
+            if (dbUser) {
+              // 동기화된 사용자 정보로 상태 업데이트
+              const extendedUser = { ...session.user, dbUser } as ExtendedUser;
+              setUser(extendedUser);
+              setUserDetails(dbUser);
+              setIsLoading(false);
+            } else {
+              // 동기화 실패 시 getCurrentUser로 다시 시도
+              checkAuth();
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          // 사용자가 로그아웃할 때
+          setUser(null);
+          setUserDetails(null);
+        }
+      }
+    );
+
+    // 컴포넌트 언마운트 시 리스너 제거
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        userDetails,
+        isLoading,
+        isAuthenticated: !!user,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+} 
+```
+
+src/hooks/useAddNodeOnEdgeDrop.ts
+```
+import { useState, useCallback } from 'react';
+import { OnConnectStart, OnConnectEnd, useReactFlow, Connection, XYPosition } from '@xyflow/react';
+
+interface UseAddNodeOnEdgeDropProps {
+  onCreateNode: (position: XYPosition, connectingNodeId: string, handleType: 'source' | 'target') => void;
+}
+
+/**
+ * 엣지를 드래그해서 특정 위치에 드롭했을 때 새 노드를 생성하는 기능을 제공하는 훅
+ */
+export function useAddNodeOnEdgeDrop({ onCreateNode }: UseAddNodeOnEdgeDropProps) {
+  // 현재 연결 중인 노드 ID
+  const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+  // 현재 연결 중인 핸들 타입 (source 또는 target)
+  const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
+  
+  // ReactFlow 인스턴스 가져오기
+  const { screenToFlowPosition, getNodes } = useReactFlow();
+  
+  // 연결 시작 핸들러
+  const onConnectStart: OnConnectStart = useCallback((_, { nodeId, handleType }) => {
+    setConnectingNodeId(nodeId);
+    setConnectingHandleType(handleType as 'source' | 'target');
+  }, []);
+  
+  // 연결 종료 핸들러
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event) => {
+      if (!connectingNodeId || !connectingHandleType || !event) {
+        return;
+      }
+      
+      // 마우스 이벤트를 캐스팅
+      const mouseEvent = event as MouseEvent;
+      
+      // 마우스 위치를 Flow 좌표로 변환
+      const position = screenToFlowPosition({
+        x: mouseEvent.clientX,
+        y: mouseEvent.clientY,
+      });
+      
+      // 노드 목록 가져오기
+      const nodes = getNodes();
+      
+      // 해당 위치에 이미 노드가 있는지 확인 (50px 허용 오차)
+      const targetNodeAtPosition = nodes.find(
+        node => 
+          Math.abs(node.position.x - position.x) < 50 && 
+          Math.abs(node.position.y - position.y) < 50
+      );
+      
+      // 이미 노드가 있으면 자동 연결 처리는 하지 않고 기본 동작을 사용
+      if (!targetNodeAtPosition) {
+        // 노드가 없으면 새 노드 생성 함수 호출
+        onCreateNode(position, connectingNodeId, connectingHandleType);
+      }
+      
+      // 연결 상태 초기화
+      setConnectingNodeId(null);
+      setConnectingHandleType(null);
+    },
+    [connectingNodeId, connectingHandleType, getNodes, onCreateNode, screenToFlowPosition]
+  );
+  
+  return {
+    connectingNodeId,
+    connectingHandleType,
+    onConnectStart,
+    onConnectEnd,
+  };
+} 
+```
+
+src/store/useAppStore.ts
+```
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+export interface AppState {
+  // 선택된 카드 상태
+  selectedCardId: string | null;
+  selectCard: (cardId: string | null) => void;
+  
+  // 사이드바 상태
+  isSidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+  
+  // 레이아웃 옵션 (수평/수직/자동배치)
+  layoutDirection: 'horizontal' | 'vertical' | 'auto';
+  setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto') => void;
+}
+
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      // 선택된 카드 상태 초기값 및 액션
+      selectedCardId: null,
+      selectCard: (cardId) => set({ selectedCardId: cardId }),
+      
+      // 사이드바 상태 초기값 및 액션
+      isSidebarOpen: true,
+      setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+      toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+      
+      // 레이아웃 옵션 초기값 및 액션
+      layoutDirection: 'auto' as const,
+      setLayoutDirection: (direction) => set({ layoutDirection: direction }),
+    }),
+    {
+      name: 'backyard-app-storage', // localStorage에 저장될 키 이름
+      partialize: (state) => ({
+        // 영구 저장할 상태만 선택
+        isSidebarOpen: state.isSidebarOpen,
+        layoutDirection: state.layoutDirection,
+        // selectedCardId는 세션별로 달라질 수 있으므로 저장하지 않음
+      }),
+    }
+  )
+) 
+```
+
+src/types/card.ts
+```
+export interface User {
+  id: string;
+  name: string | null;
+}
+
+export interface Card {
+  id: string;
+  title: string;
+  content: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user?: User;
+}
+
+export interface CreateCardInput {
+  title: string;
+  content?: string;
+  userId: string;
+}
+
+export interface UpdateCardInput {
+  title?: string;
+  content?: string;
+} 
+```
+
+src/types/supabase.ts
+```
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+// Supabase 데이터베이스의 타입 정의
+export interface Database {
+  public: {
+    Tables: {
+      users: {
+        Row: {
+          id: string
+          email: string
+          name: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          name?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          name?: string | null
+          updated_at?: string
+        }
+      }
+      cards: {
+        Row: {
+          id: string
+          title: string
+          content: string | null
+          user_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          content?: string | null
+          user_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          content?: string | null
+          user_id?: string
+          updated_at?: string
+        }
+      }
+      tags: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+      }
+      card_tags: {
+        Row: {
+          id: string
+          card_id: string
+          tag_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          card_id: string
+          tag_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          card_id?: string
+          tag_id?: string
+        }
+      }
+      board_settings: {
+        Row: {
+          id: string
+          user_id: string
+          settings: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          settings: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          settings?: Json
+          updated_at?: string
+        }
+      }
+    }
+    Views: {}
+    Functions: {}
+  }
+} 
+```
+
+src/types/vitest.d.ts
+```
+/// <reference types="vitest" />
+/// <reference types="@testing-library/jest-dom" />
+
+import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
+
+declare global {
+  namespace Vi {
+    interface JestAssertion<T = any> extends jest.Matchers<void, T> {}
+  }
+
+  // @testing-library/jest-dom 확장
+  interface Matchers<R = void, T = {}> extends TestingLibraryMatchers<typeof expect.stringContaining, R> {}
+} 
+```
+
 src/lib/auth.ts
 ```
 'use client';
@@ -3145,6 +3431,8 @@ export const getBrowserClient = () => {
   if (typeof window === 'undefined') {
     throw new Error('브라우저 환경에서만 사용 가능합니다.');
   }
+  
+  // createBrowserSupabaseClient 대신 createBrowserClient 사용
   return createBrowserClient();
 };
 
@@ -3242,11 +3530,11 @@ export async function signIn(email: string, password: string) {
       const secureStr = isSecure ? 'Secure; ' : '';
       
       // 액세스 토큰 저장
-      document.cookie = `sb-access-token=${data.session.access_token}; ${domainStr}path=/; max-age=${60 * 60 * 24 * 7}; SameSite=${sameSite}; ${secureStr}`;
+      document.cookie = `sb-access-token=${data.session.access_token}; ${domainStr} path=/; max-age=${60 * 60 * 24 * 7}; SameSite=${sameSite}; ${secureStr}`;
       
       // 리프레시 토큰 저장
       if (data.session.refresh_token) {
-        document.cookie = `sb-refresh-token=${data.session.refresh_token}; ${domainStr}path=/; max-age=${60 * 60 * 24 * 30}; SameSite=${sameSite}; ${secureStr}`;
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; ${domainStr} path=/; max-age=${60 * 60 * 24 * 30}; SameSite=${sameSite}; ${secureStr}`;
       }
       
       // localStorage에도 백업 (fallback)
@@ -3280,52 +3568,70 @@ export async function signIn(email: string, password: string) {
 
 // Google 로그인 함수
 export async function signInWithGoogle() {
-  const supabase = getBrowserClient();
-  
-  // 환경 변수에서 리디렉션 URL 가져오기
-  // 프로덕션에서는 환경 변수를 사용하고, 로컬에서는 현재 호스트 기반으로 URL 생성
-  const baseUrl = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
-    ? `${window.location.protocol}//${window.location.host}`
-    : process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
-    
-  const redirectTo = `${baseUrl}/auth/callback`;
-  
-  console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
-  
   try {
-    // 쿠키 정리 - 간소화하고 표준 방식으로 변경
-    localStorage.removeItem('supabase.auth.token');
+    // 브라우저 환경 확인
+    if (typeof window === 'undefined') {
+      throw new Error('브라우저 환경에서만 실행 가능합니다.');
+    }
     
-    // 기존 Supabase 인증 쿠키 삭제
-    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;`;
-    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;`;
+    // 브라우저 클라이언트 생성
+    const supabase = getBrowserClient();
     
-    console.log('인증 쿠키 및 로컬 스토리지 정리 완료');
+    // 리디렉션 URL 설정
+    const redirectTo = `${window.location.origin}/auth/callback`;
     
+    console.log('[Auth] Google 로그인 시작:', {
+      리디렉션URL: redirectTo
+    });
+    
+    // 디버깅: 로그인 시도 전 로컬 스토리지 상태 확인
+    const beforeVerifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Auth] 로그인 전 code_verifier 상태:', 
+      beforeVerifier ? `존재함 (길이: ${beforeVerifier.length})` : '없음');
+    
+    // OAuth 로그인 시작 (Supabase가 PKCE 흐름을 자동으로 처리)
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
-        },
-        skipBrowserRedirect: false,
-      },
+          prompt: 'consent'
+        }
+      }
     });
     
     if (error) {
-      console.error('Google OAuth 초기화 오류:', error);
+      console.error('[Auth] Google OAuth 초기화 오류:', error);
       throw error;
     }
     
-    console.log('Google OAuth 시작됨, 리디렉션 URL:', data.url);
+    if (!data?.url) {
+      console.error('[Auth] OAuth URL이 생성되지 않았습니다.');
+      throw new Error('인증 URL을 생성할 수 없습니다.');
+    }
     
-    // 명시적 리디렉션 수행
+    // 디버깅: 로그인 시도 후 로컬 스토리지 상태 확인
+    const afterVerifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Auth] 로그인 후 code_verifier 상태:', {
+      존재여부: afterVerifier ? '존재함' : '없음',
+      길이: afterVerifier?.length || 0,
+      값: afterVerifier ? `${afterVerifier.substring(0, 5)}...${afterVerifier.substring(afterVerifier.length - 5)}` : '없음'
+    });
+    
+    // 로컬 스토리지에 백업 (디버깅용)
+    if (afterVerifier) {
+      sessionStorage.setItem('auth.code_verifier.backup', afterVerifier);
+      console.log('[Auth] code_verifier를 세션 스토리지에 백업했습니다.');
+    }
+    
+    // URL로 리디렉션
+    console.log('[Auth] OAuth URL로 리디렉션:', data.url);
     window.location.href = data.url;
+    
     return data;
   } catch (error) {
-    console.error('Google 로그인 오류:', error);
+    console.error('[Auth] Google 로그인 오류:', error);
     throw error;
   }
 }
@@ -3353,15 +3659,32 @@ export async function signOut() {
 export async function getCurrentUser(): Promise<ExtendedUser | null> {
   try {
     const client = getBrowserClient();
-    const { data: { session }, error } = await client.auth.getSession();
+    const { data, error } = await client.auth.getSession();
     
     if (error) {
-      throw error;
-    }
-    
-    if (!session) {
+      console.error('세션 가져오기 오류:', error.message);
       return null;
     }
+    
+    const session = data.session;
+    
+    if (!session) {
+      console.log('세션 없음, 로그인되지 않음');
+      return null;
+    }
+    
+    const user = session.user;
+    
+    if (!user) {
+      console.error('세션에 사용자 정보 없음');
+      return null;
+    }
+    
+    console.log('세션 사용자 정보 확인:', {
+      id: user.id,
+      email: user.email,
+      auth_provider: user.app_metadata?.provider
+    });
     
     // 브라우저 환경에서는 API를 통해 사용자 정보 가져오기
     if (typeof window !== 'undefined') {
@@ -3371,8 +3694,12 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
         
         // API 호출을 통해 사용자 정보 가져오기
-        let response = await fetch(`/api/user/${session.user.id}`, {
-          signal: controller.signal
+        let response = await fetch(`/api/user/${user.id}`, {
+          signal: controller.signal,
+          // 인증 헤더 추가
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
         }).catch(error => {
           console.error('사용자 정보 가져오기 오류:', error);
           return null;
@@ -3384,13 +3711,13 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
         if (!response) {
           console.log('API 요청 실패, 기본 사용자 정보 반환');
           return {
-            ...session.user,
+            ...user,
             dbUser: {
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name || 
-                    session.user.user_metadata?.name || 
-                    (session.user.email ? session.user.email.split('@')[0] : '사용자'),
+              id: user.id,
+              email: user.email,
+              name: user.user_metadata?.full_name || 
+                    user.user_metadata?.name || 
+                    (user.email ? user.email.split('@')[0] : '사용자'),
               createdAt: new Date(),
               updatedAt: new Date()
             }
@@ -3408,13 +3735,16 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
             // 사용자 동기화 시도
             const registerResponse = await fetch('/api/user/register', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
               body: JSON.stringify({
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.user_metadata?.full_name || 
-                     session.user.user_metadata?.name || 
-                     (session.user.email ? session.user.email.split('@')[0] : '사용자')
+                id: user.id,
+                email: user.email,
+                name: user.user_metadata?.full_name || 
+                     user.user_metadata?.name || 
+                     (user.email ? user.email.split('@')[0] : '사용자')
               }),
               signal: syncController.signal
             });
@@ -3424,7 +3754,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
             if (registerResponse.ok) {
               const userData = await registerResponse.json();
               return {
-                ...session.user,
+                ...user,
                 dbUser: userData.user
               } as ExtendedUser;
             }
@@ -3435,7 +3765,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
         } else if (response.ok) {
           const data = await response.json();
           return {
-            ...session.user,
+            ...user,
             dbUser: data.user
           } as ExtendedUser;
         }
@@ -3446,7 +3776,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
     
     // API 요청 실패 시 Supabase 사용자 정보만 반환
     console.log('기본 사용자 정보 반환');
-    return session.user as ExtendedUser;
+    return user as ExtendedUser;
   } catch (error) {
     console.error('사용자 정보 가져오기 오류:', error);
     return null;
@@ -3790,6 +4120,66 @@ export function saveBoardSettings(settings: BoardSettings): void {
     } catch (error) {
       console.error('보드 설정 저장 중 오류:', error);
     }
+  }
+}
+
+/**
+ * 서버 API를 통해 보드 설정을 저장하는 함수
+ */
+export async function saveBoardSettingsToServer(userId: string, settings: BoardSettings): Promise<boolean> {
+  try {
+    const response = await fetch('/api/board-settings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        settings,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('서버에 보드 설정을 저장하는데 실패했습니다.');
+    }
+
+    // 로컬에도 저장
+    saveBoardSettings(settings);
+    return true;
+  } catch (error) {
+    console.error('서버 보드 설정 저장 중 오류:', error);
+    return false;
+  }
+}
+
+/**
+ * 서버 API를 통해 보드 설정을 불러오는 함수
+ */
+export async function loadBoardSettingsFromServer(userId: string): Promise<BoardSettings | null> {
+  try {
+    const response = await fetch(`/api/board-settings?userId=${encodeURIComponent(userId)}`);
+    
+    if (!response.ok) {
+      throw new Error('서버에서 보드 설정을 불러오는데 실패했습니다.');
+    }
+
+    const data = await response.json();
+    
+    if (!data.settings) {
+      return null; // 설정이 없는 경우
+    }
+
+    const settings = {
+      ...DEFAULT_BOARD_SETTINGS,
+      ...data.settings,
+    };
+
+    // 로컬에도 저장
+    saveBoardSettings(settings);
+    return settings;
+  } catch (error) {
+    console.error('서버 보드 설정 로드 중 오류:', error);
+    return null;
   }
 }
 
@@ -4432,12 +4822,44 @@ import { Database } from '../types/supabase';
 let supabaseBrowserClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
 export function createBrowserSupabaseClient() {
-  if (!supabaseBrowserClient) {
-    supabaseBrowserClient = createBrowserClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+  // 이미 생성된 클라이언트가 있으면 재사용
+  if (supabaseBrowserClient) {
+    return supabaseBrowserClient;
   }
+  
+  // 디버깅: 로컬 스토리지 상태 확인
+  if (typeof window !== 'undefined') {
+    const verifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Supabase] 클라이언트 생성 전 code_verifier 상태:', 
+      verifier ? `존재함 (길이: ${verifier.length})` : '없음');
+    
+    // 로컬 스토리지의 모든 키 출력 (디버깅용)
+    console.log('[Supabase] 로컬 스토리지 키:', 
+      Object.keys(localStorage).filter(key => key.startsWith('supabase')));
+  }
+  
+  // 공식 문서에 따른 기본 설정으로 클라이언트 생성
+  supabaseBrowserClient = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: true,
+        detectSessionInUrl: true,
+        autoRefreshToken: true
+      }
+    }
+  );
+  
+  console.log('[Supabase] 브라우저 클라이언트 생성 완료');
+  
+  // 디버깅: 클라이언트 생성 후 로컬 스토리지 상태 확인
+  if (typeof window !== 'undefined') {
+    const verifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Supabase] 클라이언트 생성 후 code_verifier 상태:', 
+      verifier ? `존재함 (길이: ${verifier.length})` : '없음');
+  }
+  
   return supabaseBrowserClient;
 } 
 ```
@@ -4581,7 +5003,9 @@ export const createBrowserClient = () => {
         auth: {
           flowType: 'pkce',
           persistSession: true,
-          detectSessionInUrl: true
+          detectSessionInUrl: true,
+          autoRefreshToken: true,
+          storageKey: 'supabase.auth.token'
         }
       }
     );
@@ -4784,449 +5208,238 @@ export function parseTagsInText(text: string): { text: string, tags: string[] } 
 }
 ```
 
-src/contexts/AuthContext.tsx
+supabase/migrations/20240319000000_init.sql
 ```
-'use client';
+-- PostgreSQL 확장 활성화
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { getCurrentUser, signOut } from '@/lib/auth';
-import { createBrowserClient } from '@/lib/supabase';
+-- 테이블 생성 순서 중요: 참조 관계 때문에 순서대로 생성해야 함
 
-// 확장된 사용자 타입 정의
-export interface ExtendedUser extends User {
-  dbUser?: any; // Prisma User 모델
-}
+-- 사용자 테이블 (Supabase Auth와 연동)
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-type AuthContextType = {
-  user: ExtendedUser | null;
-  userDetails: any; // Prisma User 모델 타입
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  logout: () => Promise<void>;
-};
+-- 카드 테이블
+CREATE TABLE IF NOT EXISTS cards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  content TEXT,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  userDetails: null,
-  isLoading: true,
-  isAuthenticated: false,
-  logout: async () => {},
-});
+-- 태그 테이블
+CREATE TABLE IF NOT EXISTS tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-export const useAuth = () => useContext(AuthContext);
+-- 카드-태그 연결 테이블
+CREATE TABLE IF NOT EXISTS card_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+  tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(card_id, tag_id)
+);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<ExtendedUser | null>(null);
-  const [userDetails, setUserDetails] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+-- 보드 설정 테이블
+CREATE TABLE IF NOT EXISTS board_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  settings JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-  // 사용자 데이터베이스 동기화 함수
-  const syncUserWithDatabase = async (supabaseUser: User) => {
-    try {
-      if (!supabaseUser || !supabaseUser.id || !supabaseUser.email) {
-        console.warn('사용자 동기화 실패: 유효하지 않은 사용자 데이터');
-        return null;
-      }
+-- 트리거 함수: 업데이트 시간 자동 갱신
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-      // 타임아웃 설정
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+-- 각 테이블에 트리거 적용
+CREATE TRIGGER update_users_modtime
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
-      try {
-        // 로컬 데이터베이스에 사용자 등록/확인
-        const response = await fetch('/api/user/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: supabaseUser.id,
-            email: supabaseUser.email,
-            name: supabaseUser.user_metadata?.full_name || 
-                  supabaseUser.user_metadata?.name || 
-                  supabaseUser.email?.split('@')[0]
-          }),
-          signal: controller.signal
-        });
+CREATE TRIGGER update_cards_modtime
+  BEFORE UPDATE ON cards
+  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
-        clearTimeout(timeoutId);
+CREATE TRIGGER update_tags_modtime
+  BEFORE UPDATE ON tags
+  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
-        if (response.ok) {
-          const data = await response.json();
-          return data.user;
-        } else {
-          console.error('사용자 동기화 API 오류:', await response.text());
-          
-          // API 응답이 실패해도 기본 사용자 객체를 반환
-          return {
-            id: supabaseUser.id,
-            email: supabaseUser.email,
-            name: supabaseUser.user_metadata?.full_name || 
-                  supabaseUser.user_metadata?.name || 
-                  supabaseUser.email?.split('@')[0],
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-        }
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        console.error('API 호출 중 오류:', fetchError);
-        
-        // 네트워크 오류라도 기본 사용자 객체를 반환
-        return {
-          id: supabaseUser.id,
-          email: supabaseUser.email,
-          name: supabaseUser.user_metadata?.full_name || 
-                supabaseUser.user_metadata?.name || 
-                supabaseUser.email?.split('@')[0],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-      }
-    } catch (error) {
-      console.error('사용자 데이터베이스 동기화 오류:', error);
-      return null;
-    }
-  };
+CREATE TRIGGER update_board_settings_modtime
+  BEFORE UPDATE ON board_settings
+  FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
-  // 인증 상태 확인
-  const checkAuth = async () => {
-    try {
-      const userData = await getCurrentUser() as ExtendedUser | null;
-      
-      if (userData) {
-        setUser(userData);
-        setUserDetails(userData.dbUser);
-      } else {
-        setUser(null);
-        setUserDetails(null);
-      }
-    } catch (error) {
-      console.error('인증 상태 확인 오류:', error);
-      setUser(null);
-      setUserDetails(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+-- RLS (Row Level Security) 정책 설정
 
-  // 로그아웃
-  const logout = async () => {
-    try {
-      await signOut();
-      setUser(null);
-      setUserDetails(null);
-    } catch (error) {
-      console.error('로그아웃 오류:', error);
-    }
-  };
+-- 테이블 RLS 활성화
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE card_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE board_settings ENABLE ROW LEVEL SECURITY;
 
-  // 초기 인증 상태 확인
-  useEffect(() => {
-    checkAuth();
+-- 사용자 테이블 정책
+CREATE POLICY "사용자는 자신의 정보만 조회할 수 있음" ON users
+  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "사용자는 자신의 정보만 업데이트할 수 있음" ON users
+  FOR UPDATE USING (auth.uid() = id);
 
-    // 브라우저 환경에서만 Supabase 클라이언트 생성
-    const supabase = createBrowserClient();
-    
-    // Supabase 인증 이벤트 리스너
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (session && session.user) {
-            // 사용자가 로그인하거나 토큰이 갱신될 때 데이터베이스 동기화
-            console.log('인증 상태 변경 감지: 사용자 동기화 시작');
-            const dbUser = await syncUserWithDatabase(session.user);
-            
-            if (dbUser) {
-              // 동기화된 사용자 정보로 상태 업데이트
-              const extendedUser = { ...session.user, dbUser } as ExtendedUser;
-              setUser(extendedUser);
-              setUserDetails(dbUser);
-              setIsLoading(false);
-            } else {
-              // 동기화 실패 시 getCurrentUser로 다시 시도
-              checkAuth();
-            }
-          }
-        } else if (event === 'SIGNED_OUT') {
-          // 사용자가 로그아웃할 때
-          setUser(null);
-          setUserDetails(null);
-        }
-      }
-    );
+-- 카드 테이블 정책
+CREATE POLICY "모든 인증된 사용자는 카드를 조회할 수 있음" ON cards
+  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "사용자는 자신의 카드만 생성할 수 있음" ON cards
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "사용자는 자신의 카드만 업데이트할 수 있음" ON cards
+  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "사용자는 자신의 카드만 삭제할 수 있음" ON cards
+  FOR DELETE USING (auth.uid() = user_id);
 
-    // 컴포넌트 언마운트 시 리스너 제거
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+-- 태그 테이블 정책
+CREATE POLICY "모든 인증된 사용자는 태그를 조회할 수 있음" ON tags
+  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "인증된 사용자는 태그를 생성할 수 있음" ON tags
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+-- 태그 업데이트 및 삭제는 관리자만 가능하도록 설정할 수도 있음
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userDetails,
-        isLoading,
-        isAuthenticated: !!user,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+-- 카드-태그 연결 테이블 정책
+CREATE POLICY "인증된 사용자는 카드-태그 연결을 조회할 수 있음" ON card_tags
+  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "사용자는 자신의 카드에만 태그를 연결할 수 있음" ON card_tags
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM cards 
+      WHERE cards.id = card_id AND cards.user_id = auth.uid()
+    )
   );
-} 
+CREATE POLICY "사용자는 자신의 카드에서만 태그 연결을 삭제할 수 있음" ON card_tags
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM cards 
+      WHERE cards.id = card_id AND cards.user_id = auth.uid()
+    )
+  );
+
+-- 보드 설정 테이블 정책
+CREATE POLICY "사용자는 자신의 보드 설정만 조회할 수 있음" ON board_settings
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "사용자는 자신의 보드 설정만 생성할 수 있음" ON board_settings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "사용자는 자신의 보드 설정만 업데이트할 수 있음" ON board_settings
+  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "사용자는 자신의 보드 설정만 삭제할 수 있음" ON board_settings
+  FOR DELETE USING (auth.uid() = user_id); 
 ```
 
-src/types/card.ts
-```
-export interface User {
-  id: string;
-  name: string | null;
-}
-
-export interface Card {
-  id: string;
-  title: string;
-  content: string | null;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  user?: User;
-}
-
-export interface CreateCardInput {
-  title: string;
-  content?: string;
-  userId: string;
-}
-
-export interface UpdateCardInput {
-  title?: string;
-  content?: string;
-} 
-```
-
-src/types/supabase.ts
-```
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
-// Supabase 데이터베이스의 타입 정의
-export interface Database {
-  public: {
-    Tables: {
-      users: {
-        Row: {
-          id: string
-          email: string
-          name: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          email: string
-          name?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          name?: string | null
-          updated_at?: string
-        }
-      }
-      cards: {
-        Row: {
-          id: string
-          title: string
-          content: string | null
-          user_id: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          content?: string | null
-          user_id: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          content?: string | null
-          user_id?: string
-          updated_at?: string
-        }
-      }
-      tags: {
-        Row: {
-          id: string
-          name: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-      }
-      card_tags: {
-        Row: {
-          id: string
-          card_id: string
-          tag_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          card_id: string
-          tag_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          card_id?: string
-          tag_id?: string
-        }
-      }
-      board_settings: {
-        Row: {
-          id: string
-          user_id: string
-          settings: Json
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          settings: Json
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          settings?: Json
-          updated_at?: string
-        }
-      }
-    }
-    Views: {}
-    Functions: {}
-  }
-} 
-```
-
-src/types/vitest.d.ts
-```
-/// <reference types="vitest" />
-/// <reference types="@testing-library/jest-dom" />
-
-import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
-
-declare global {
-  namespace Vi {
-    interface JestAssertion<T = any> extends jest.Matchers<void, T> {}
-  }
-
-  // @testing-library/jest-dom 확장
-  interface Matchers<R = void, T = {}> extends TestingLibraryMatchers<typeof expect.stringContaining, R> {}
-} 
-```
-
-prisma/migrations/20250227050602_init/migration.sql
+prisma/migrations/20250311104541_init/migration.sql
 ```
 -- CreateTable
-CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "name" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "cards" (
-    "id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "content" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+CREATE TABLE "accounts" (
+    "id" TEXT NOT NULL PRIMARY KEY,
     "user_id" TEXT NOT NULL,
-
-    CONSTRAINT "cards_pkey" PRIMARY KEY ("id")
+    "type" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "provider_account_id" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER,
+    "token_type" TEXT,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "session_state" TEXT,
+    CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+-- CreateTable
+CREATE TABLE "sessions" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "session_token" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "expires" DATETIME NOT NULL,
+    CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
 
--- AddForeignKey
-ALTER TABLE "cards" ADD CONSTRAINT "cards_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-```
+-- CreateTable
+CREATE TABLE "verification_tokens" (
+    "identifier" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires" DATETIME NOT NULL
+);
 
-prisma/migrations/20250306112255_init/migration.sql
-```
 -- CreateTable
 CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,
     "name" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+    "image" TEXT,
+    "email_verified" DATETIME,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
 );
 
 -- CreateTable
 CREATE TABLE "cards" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "title" TEXT NOT NULL,
     "content" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL,
     "user_id" TEXT NOT NULL,
-
-    CONSTRAINT "cards_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "cards_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "tags" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
 );
 
 -- CreateTable
 CREATE TABLE "card_tags" (
-    "id" TEXT NOT NULL,
+    "id" TEXT NOT NULL PRIMARY KEY,
     "card_id" TEXT NOT NULL,
     "tag_id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "card_tags_pkey" PRIMARY KEY ("id")
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "card_tags_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "cards" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "card_tags_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+-- CreateTable
+CREATE TABLE "board_settings" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "user_id" TEXT NOT NULL,
+    "settings" JSONB NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL,
+    CONSTRAINT "board_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "accounts_provider_provider_account_id_key" ON "accounts"("provider", "provider_account_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sessions_session_token_key" ON "sessions"("session_token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "verification_tokens_identifier_token_key" ON "verification_tokens"("identifier", "token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
@@ -5236,707 +5449,9 @@ CREATE UNIQUE INDEX "tags_name_key" ON "tags"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "card_tags_card_id_tag_id_key" ON "card_tags"("card_id", "tag_id");
-
--- AddForeignKey
-ALTER TABLE "cards" ADD CONSTRAINT "cards_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "card_tags" ADD CONSTRAINT "card_tags_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "cards"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "card_tags" ADD CONSTRAINT "card_tags_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-```
-
-prisma/migrations/20250307042922_add_board_settings/migration.sql
-```
--- CreateTable
-CREATE TABLE "board_settings" (
-    "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "settings" JSONB NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "board_settings_pkey" PRIMARY KEY ("id")
-);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "board_settings_user_id_key" ON "board_settings"("user_id");
-
--- AddForeignKey
-ALTER TABLE "board_settings" ADD CONSTRAINT "board_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-```
-
-prisma/migrations/20250304224858_add_tags/migration.sql
-```
--- CreateTable
-CREATE TABLE "tags" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "card_tags" (
-    "id" TEXT NOT NULL,
-    "card_id" TEXT NOT NULL,
-    "tag_id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "card_tags_pkey" PRIMARY KEY ("id")
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "tags_name_key" ON "tags"("name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "card_tags_card_id_tag_id_key" ON "card_tags"("card_id", "tag_id");
-
--- AddForeignKey
-ALTER TABLE "card_tags" ADD CONSTRAINT "card_tags_card_id_fkey" FOREIGN KEY ("card_id") REFERENCES "cards"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "card_tags" ADD CONSTRAINT "card_tags_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-```
-
-prisma/migrations/20250227055331_init/migration.sql
-```
--- DropForeignKey
-ALTER TABLE "cards" DROP CONSTRAINT "cards_user_id_fkey";
-
--- AlterTable
-ALTER TABLE "cards" ALTER COLUMN "content" DROP NOT NULL;
-
--- AddForeignKey
-ALTER TABLE "cards" ADD CONSTRAINT "cards_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-```
-
-src/app/login/page.tsx
-```
-import AuthForm from "@/components/auth/AuthForm";
-
-export default function LoginPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <AuthForm />
-    </div>
-  );
-} 
-```
-
-src/app/cards/page.test.tsx
-```
-/**
- * @vitest-environment jsdom
- */
-
-import { render, screen } from '@testing-library/react';
-import CardsPage from './page';
-import '@testing-library/jest-dom/vitest';
-import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-
-// React.Suspense 모킹
-vi.mock('react', () => {
-  const originalReact = vi.importActual('react');
-  return {
-    ...originalReact,
-    Suspense: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => {
-      return (
-        <>
-          <div data-testid="suspense-fallback">{fallback}</div>
-          <div data-testid="suspense-children">{children}</div>
-        </>
-      );
-    },
-  };
-});
-
-// 테스트용 CardListSkeleton (page 모듈에서 가져오지 않고 테스트에서 직접 정의)
-const CardListSkeleton = () => (
-  <div data-testid="skeleton-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {Array(6).fill(0).map((_, index) => (
-      <div key={index} className="border rounded-md p-4 space-y-4">
-        <div data-testid="skeleton" className="h-6 w-3/4" />
-        <div data-testid="skeleton" className="h-24" />
-        <div className="flex justify-between">
-          <div data-testid="skeleton" className="h-4 w-1/4" />
-          <div data-testid="skeleton" className="h-8 w-1/4" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
-// Suspense 내부 컴포넌트 모킹
-vi.mock('@/components/cards/CardList', () => {
-  return {
-    default: vi.fn(() => <div data-testid="card-list">카드 목록 컴포넌트</div>)
-  };
-});
-
-vi.mock('@/components/cards/CreateCardButton', () => {
-  return {
-    default: vi.fn(() => <button data-testid="create-card-button">새 카드 만들기</button>)
-  };
-});
-
-// UI 컴포넌트 모킹
-vi.mock('@/components/ui/skeleton', () => ({
-  Skeleton: vi.fn(({ className }: { className?: string }) => <div data-testid="skeleton" className={className} />),
-}));
-
-describe('Cards Page', () => {
-  it('페이지 제목이 올바르게 렌더링되는지 확인한다', () => {
-    render(<CardsPage />);
-    
-    const heading = screen.getByRole('heading', { name: /카드 목록/i });
-    expect(heading).toBeInTheDocument();
-  });
-  
-  it('카드 목록 컴포넌트가 렌더링되는지 확인한다', () => {
-    render(<CardsPage />);
-    
-    const cardListContainer = screen.getByTestId('suspense-children');
-    expect(cardListContainer).toBeInTheDocument();
-    
-    const cardList = screen.getByTestId('card-list');
-    expect(cardList).toBeInTheDocument();
-  });
-  
-  it('새 카드 만들기 버튼이 렌더링되는지 확인한다', () => {
-    render(<CardsPage />);
-    
-    const createButton = screen.getByTestId('create-card-button');
-    expect(createButton).toBeInTheDocument();
-  });
-  
-  it('Suspense fallback이 스켈레톤을 사용하는지 확인한다', () => {
-    render(<CardsPage />);
-    
-    const fallbackContainer = screen.getByTestId('suspense-fallback');
-    expect(fallbackContainer).toBeInTheDocument();
-  });
-});
-
-describe('CardListSkeleton', () => {
-  it('6개의 스켈레톤 카드를 렌더링한다', () => {
-    render(<CardListSkeleton />);
-    
-    const skeletons = screen.getAllByTestId('skeleton');
-    // 각 카드는 4개의 스켈레톤 요소를 가짐 (제목, 내용, 날짜, 버튼)
-    expect(skeletons.length).toBe(6 * 4);
-  });
-  
-  it('그리드 레이아웃을 사용한다', () => {
-    render(<CardListSkeleton />);
-    
-    const gridContainer = screen.getByTestId('skeleton-grid');
-    expect(gridContainer).toHaveClass('grid');
-    expect(gridContainer).toHaveClass('grid-cols-1');
-    expect(gridContainer).toHaveClass('md:grid-cols-2');
-    expect(gridContainer).toHaveClass('lg:grid-cols-3');
-  });
-}); 
-```
-
-src/app/cards/page.tsx
-```
-import { Metadata } from "next";
-import { Suspense } from 'react';
-import CardList from "../../components/cards/CardList";
-import CreateCardButton from "../../components/cards/CreateCardButton";
-import { Skeleton } from '@/components/ui/skeleton';
-
-export const metadata: Metadata = {
-  title: "카드 목록 | Backyard",
-  description: "백야드 카드 목록 페이지입니다.",
-};
-
-// 카드 목록 로딩 스켈레톤
-function CardListSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array(6).fill(0).map((_, index) => (
-        <div key={index} className="border rounded-md p-4 space-y-4">
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-24" />
-          <div className="flex justify-between">
-            <Skeleton className="h-4 w-1/4" />
-            <Skeleton className="h-8 w-1/4" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export default function CardsPage() {
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">카드 목록</h1>
-        <CreateCardButton />
-      </div>
-      
-      <Suspense fallback={<CardListSkeleton />}>
-        <CardList />
-      </Suspense>
-    </div>
-  );
-} 
-```
-
-src/app/test-db/page.tsx
-```
-import React from 'react';
-import prisma from '@/lib/prisma';
-import type { Tag } from '@prisma/client';
-
-// 태그와 연결된 카드 수를 포함하는 타입 정의
-type TagWithCount = Tag & {
-  _count: {
-    cardTags: number;
-  };
-};
-
-export default async function TestDatabasePage() {
-  let tags: TagWithCount[] = [];
-  let error: string | null = null;
-  
-  try {
-    // Prisma를 사용하여 태그 목록을 가져옵니다
-    tags = await prisma.tag.findMany({
-      include: {
-        _count: {
-          select: {
-            cardTags: true,
-          },
-        },
-      },
-    });
-  } catch (e) {
-    console.error('데이터베이스 연결 오류:', e);
-    error = e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
-  }
-
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">데이터베이스 연결 테스트</h1>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-2xl font-semibold mb-4">태그 목록</h2>
-        
-        {error ? (
-          <div className="p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded">
-            <p className="text-red-700 dark:text-red-400">
-              데이터베이스 연결 오류: {error}
-            </p>
-            <p className="mt-2 text-sm text-red-600 dark:text-red-300">
-              Vercel 환경 변수가 올바르게 설정되었는지 확인하세요.
-            </p>
-          </div>
-        ) : tags.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">등록된 태그가 없습니다.</p>
-        ) : (
-          <ul className="space-y-2">
-            {tags.map((tag) => (
-              <li 
-                key={tag.id}
-                className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded"
-              >
-                <span className="font-medium">{tag.name}</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  연결된 카드: {tag._count.cardTags}개
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        
-        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded">
-          <p className="text-green-700 dark:text-green-400">
-            {!error 
-              ? '이 페이지가 정상적으로 로드되었다면 Prisma와 Supabase 연결이 성공적으로 구성된 것입니다!' 
-              : '로컬 환경에서는 연결 오류가 발생할 수 있습니다. Vercel 배포 환경에서 다시 테스트해보세요.'}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-} 
-```
-
-src/components/auth/AuthForm.tsx
-```
-'use client';
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { signIn, signUp, signInWithGoogle } from '@/lib/auth';
-import { toast } from 'sonner';
-import { setCookie } from 'cookies-next';
-
-type AuthMode = 'login' | 'register';
-
-export default function AuthForm() {
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-  const toggleMode = () => {
-    setMode(mode === 'login' ? 'register' : 'login');
-    // 폼 초기화
-    setEmail('');
-    setPassword('');
-    setName('');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      if (mode === 'login') {
-        const { session } = await signIn(email, password);
-        
-        // 추가: 쿠키를 여기서도 직접 설정 (보완책)
-        if (session) {
-          // 현재 호스트 가져오기
-          const host = window.location.hostname;
-          const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-          
-          // 도메인 설정 (로컬호스트가 아닌 경우에만)
-          let domain = undefined;
-          if (!isLocalhost) {
-            // 서브도메인 포함하기 위해 최상위 도메인만 설정
-            const hostParts = host.split('.');
-            if (hostParts.length > 1) {
-              // vercel.app 또는 yoursite.com 형태일 경우
-              domain = '.' + hostParts.slice(-2).join('.');
-            } else {
-              domain = host;
-            }
-          }
-          
-          // cookies-next 라이브러리 사용
-          setCookie('sb-access-token', session.access_token, {
-            maxAge: 60 * 60 * 24 * 7, // 7일
-            path: '/',
-            domain: domain,
-            secure: window.location.protocol === 'https:',
-            sameSite: 'lax'
-          });
-          
-          if (session.refresh_token) {
-            setCookie('sb-refresh-token', session.refresh_token, {
-              maxAge: 60 * 60 * 24 * 30, // 30일
-              path: '/',
-              domain: domain,
-              secure: window.location.protocol === 'https:',
-              sameSite: 'lax'
-            });
-          }
-          
-          console.log('AuthForm: 쿠키에 인증 정보 저장됨', {
-            호스트: host,
-            도메인설정: domain || '없음'
-          });
-        }
-        
-        toast.success('로그인 성공!');
-      } else {
-        await signUp(email, password, name);
-        toast.success('회원가입 성공! 이메일을 확인해주세요.');
-      }
-      
-      // 성공 후 리디렉션 또는 상태 업데이트
-      window.location.href = '/board';
-    } catch (error: any) {
-      console.error('인증 오류:', error);
-      toast.error(error.message || '인증 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    
-    try {
-      await signInWithGoogle();
-      // 리디렉션은 Google OAuth 콜백 처리에서 이루어집니다.
-    } catch (error: any) {
-      console.error('Google 로그인 오류:', error);
-      toast.error(error.message || 'Google 로그인 중 오류가 발생했습니다.');
-      setIsGoogleLoading(false);
-    }
-  };
-
-  return (
-    <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-md">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">
-          {mode === 'login' ? '로그인' : '회원가입'}
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          {mode === 'login'
-            ? '백야드에 오신 것을 환영합니다!'
-            : '새 계정을 만들어 시작하세요.'}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4">
-          {mode === 'register' && (
-            <div className="space-y-2">
-              <Label htmlFor="name">이름</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="이름을 입력하세요"
-              />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">비밀번호</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호를 입력하세요"
-              required
-            />
-          </div>
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading
-            ? '처리 중...'
-            : mode === 'login'
-            ? '로그인'
-            : '회원가입'}
-        </Button>
-
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">또는</span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full flex items-center justify-center gap-2"
-          onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          {isGoogleLoading ? "처리 중..." : "Google로 계속하기"}
-        </Button>
-
-        <div className="text-center mt-4">
-          <button
-            type="button"
-            onClick={toggleMode}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            {mode === 'login'
-              ? '계정이 없으신가요? 회원가입'
-              : '이미 계정이 있으신가요? 로그인'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-} 
-```
-
-src/components/auth/UserProfile.tsx
-```
-'use client';
-
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuTrigger, 
-  DropdownMenuContent, 
-  DropdownMenuItem,
-  DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
-import { getCurrentUser, signOut } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-
-type User = {
-  id: string;
-  email: string;
-  dbUser?: {
-    name: string | null;
-  } | null;
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-  };
-};
-
-export default function UserProfile() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error('사용자 정보 로드 오류:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('로그아웃 되었습니다.');
-      router.push('/login');
-    } catch (error) {
-      toast.error('로그아웃 중 오류가 발생했습니다.');
-    }
-  };
-
-  // 사용자 이름을 가져오는 헬퍼 함수
-  const getUserName = () => {
-    if (!user) return '';
-    
-    // 우선순위: 1. Google 프로필 이름, 2. DB에 저장된 이름, 3. 이메일 앞부분
-    return user.user_metadata?.full_name || 
-           user.dbUser?.name || 
-           (user.email ? user.email.split('@')[0] : '사용자');
-  };
-
-  // 아바타 이미지 URL 또는 이니셜을 가져오는 헬퍼 함수
-  const getAvatar = () => {
-    if (!user) return '';
-    
-    return user.user_metadata?.avatar_url || '';
-  };
-
-  // 이니셜 생성 헬퍼 함수
-  const getInitials = () => {
-    const name = getUserName();
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  if (isLoading) {
-    return <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />;
-  }
-
-  if (!user) {
-    return (
-      <Button variant="outline" size="sm" onClick={() => router.push('/login')}>
-        로그인
-      </Button>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            {getAvatar() ? (
-              <AvatarImage src={getAvatar()} alt={getUserName()} />
-            ) : (
-              <AvatarFallback>{getInitials()}</AvatarFallback>
-            )}
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex flex-col space-y-1 p-2">
-          <p className="text-sm font-medium">{getUserName()}</p>
-          <p className="text-xs text-gray-500">{user.email}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/board')}>
-          보드
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push('/cards')}>
-          카드
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push('/tags')}>
-          태그
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600" onClick={handleSignOut}>
-          로그아웃
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-} 
 ```
 
 src/app/board/page.test.tsx
@@ -6648,9 +6163,13 @@ import {
   NodeChange,
   EdgeChange,
   Connection,
-  applyNodeChanges
+  applyNodeChanges,
+  OnConnectStart,
+  OnConnectEnd,
+  XYPosition
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+// reactflow 스타일 버그 픽스 
+// import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6658,10 +6177,21 @@ import CreateCardButton from '@/components/cards/CreateCardButton';
 import LayoutControls from '@/components/board/LayoutControls';
 import BoardSettingsControl from '@/components/board/BoardSettingsControl';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSettings, applyEdgeSettings } from '@/lib/board-utils';
+import { 
+  BoardSettings, 
+  DEFAULT_BOARD_SETTINGS, 
+  loadBoardSettings, 
+  saveBoardSettings, 
+  applyEdgeSettings, 
+  saveBoardSettingsToServer, 
+  loadBoardSettingsFromServer 
+} from '@/lib/board-utils';
 import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 import DevTools, { useChangeLoggerHooks } from '@/components/debug/DevTools';
+import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+import { CreateCardModal } from '@/components/cards/CreateCardModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 새 카드의 중앙 위치를 계산하는 함수
 const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
@@ -6681,6 +6211,15 @@ function BoardContent() {
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChanges = useRef(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  
+  // 엣지 드롭 기능을 위한 상태
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalInfo, setCreateModalInfo] = useState<{
+    position: XYPosition;
+    connectingNodeId: string;
+    handleType: 'source' | 'target';
+  } | null>(null);
   
   // 변경 로거 이벤트 핸들러
   const { onNodesChangeLogger, onEdgesChangeLogger } = useChangeLoggerHooks();
@@ -6693,7 +6232,7 @@ function BoardContent() {
   const updateNodeInternals = useUpdateNodeInternals();
   
   // ReactFlow 인스턴스 참조
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
   
   // 뷰포트 중앙 계산
   const updateViewportCenter = useCallback(() => {
@@ -6783,6 +6322,63 @@ function BoardContent() {
     return false;
   }, [nodes, saveLayout, saveEdges]);
 
+  // 보드 설정 변경 핸들러
+  const handleBoardSettingsChange = useCallback(async (newSettings: BoardSettings) => {
+    setBoardSettings(newSettings);
+    
+    // 로컬 스토리지에 저장
+    saveBoardSettings(newSettings);
+    
+    // 새 설정을 엣지에 적용
+    const updatedEdges = applyEdgeSettings(edges, newSettings);
+    setEdges(updatedEdges);
+    
+    // 인증된 사용자인 경우 서버에도 저장
+    if (isAuthenticated && user?.id) {
+      const saved = await saveBoardSettingsToServer(user.id, newSettings);
+      if (saved) {
+        console.log('보드 설정이 서버에 저장되었습니다.');
+      } else {
+        console.error('보드 설정 서버 저장 실패');
+      }
+    }
+  }, [edges, setEdges, isAuthenticated, user?.id]);
+
+  // 서버에서 보드 설정 로드
+  const loadBoardSettingsFromServerIfAuthenticated = useCallback(async () => {
+    if (isAuthenticated && user?.id) {
+      try {
+        const settings = await loadBoardSettingsFromServer(user.id);
+        if (settings) {
+          console.log('서버에서 보드 설정을 불러왔습니다.');
+          setBoardSettings(settings);
+          
+          // 새 설정을 엣지에 적용
+          const updatedEdges = applyEdgeSettings(edges, settings);
+          setEdges(updatedEdges);
+        } else {
+          // 서버에 설정이 없으면 로컬 설정 사용
+          const localSettings = loadBoardSettings();
+          setBoardSettings(localSettings);
+          
+          // 로컬 설정을 서버에 저장
+          if (localSettings !== DEFAULT_BOARD_SETTINGS) {
+            await saveBoardSettingsToServer(user.id, localSettings);
+          }
+        }
+      } catch (error) {
+        console.error('보드 설정 로드 오류:', error);
+        // 오류 발생 시 로컬 설정 사용
+        const localSettings = loadBoardSettings();
+        setBoardSettings(localSettings);
+      }
+    } else {
+      // 인증되지 않은 경우 로컬 설정만 로드
+      const localSettings = loadBoardSettings();
+      setBoardSettings(localSettings);
+    }
+  }, [isAuthenticated, user?.id, edges, setEdges]);
+
   // 수동으로 현재 레이아웃 저장
   const handleSaveLayout = useCallback(() => {
     if (saveAllLayoutData()) {
@@ -6822,6 +6418,13 @@ function BoardContent() {
     };
   }, [nodes, saveAllLayoutData]);
 
+  // 인증 상태가 변경되면 보드 설정 다시 로드
+  useEffect(() => {
+    if (!isAuthLoading) {
+      loadBoardSettingsFromServerIfAuthenticated();
+    }
+  }, [isAuthLoading, loadBoardSettingsFromServerIfAuthenticated]);
+
   // 페이지 언로드 전 저장되지 않은 변경사항 저장
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -6835,6 +6438,118 @@ function BoardContent() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [saveAllLayoutData]);
+  
+  // 카드 및 설정 데이터 로드
+  const fetchCards = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // API에서 카드 데이터 가져오기
+      const response = await fetch('/api/cards');
+      
+      if (!response.ok) {
+        throw new Error('카드 목록을 불러오는데 실패했습니다.');
+      }
+      
+      const cardsData = await response.json();
+      
+      // 로컬 스토리지에서 노드 위치 불러오기
+      let savedNodesData: Record<string, { position: { x: number, y: number } }> = {};
+      try {
+        const savedLayout = localStorage.getItem(STORAGE_KEY);
+        if (savedLayout) {
+          savedNodesData = JSON.parse(savedLayout);
+        }
+      } catch (err) {
+        console.error('레이아웃 불러오기 실패:', err);
+      }
+      
+      // 로컬 스토리지에서 엣지 데이터 불러오기
+      let savedEdges: Edge[] = [];
+      try {
+        const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
+        if (savedEdgesData) {
+          // 로컬 스토리지에서 보드 설정 불러오기
+          const loadedSettings = loadBoardSettings();
+          
+          // 엣지 데이터 변환 및 타입 확인
+          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => {
+            // 기본 타입 설정
+            const updatedEdge = {
+              ...edge,
+              type: 'custom', // 모든 엣지에 커스텀 타입 적용
+            };
+            
+            // 엣지의 data.edgeType이 없으면 초기화
+            if (!edge.data?.edgeType) {
+              updatedEdge.data = {
+                ...(edge.data || {}),
+                edgeType: loadedSettings.connectionLineType,
+                settings: { ...loadedSettings }
+              };
+            }
+            
+            // style이 없으면 초기화
+            if (!edge.style) {
+              updatedEdge.style = {
+                strokeWidth: loadedSettings.strokeWidth,
+                stroke: edge.selected ? loadedSettings.selectedEdgeColor : loadedSettings.edgeColor
+              };
+            }
+            
+            return updatedEdge;
+          });
+        }
+      } catch (err) {
+        console.error('엣지 데이터 불러오기 실패:', err);
+      }
+      
+      // 노드 및 엣지 데이터 설정
+      const nodes = cardsData.map((card: any) => {
+        // 저장된 위치가 있으면 사용, 없으면 기본 위치 생성
+        const savedNode = savedNodesData[card.id];
+        const position = savedNode ? savedNode.position : { 
+          x: Math.random() * 500, 
+          y: Math.random() * 300 
+        };
+        
+        return {
+          id: card.id,
+          type: 'card',
+          position,
+          data: {
+            ...card,
+            tags: card.cardTags?.map((ct: any) => ct.tag.name) || []
+          }
+        };
+      });
+      
+      // 설정에 따라 엣지 스타일 적용
+      const styledEdges = applyEdgeSettings(savedEdges, boardSettings);
+      
+      setNodes(nodes);
+      setEdges(styledEdges);
+      setLastSavedAt(new Date());  // 초기 로드 시간을 마지막 저장 시간으로 설정
+    } catch (err) {
+      console.error('카드 데이터 불러오기 실패:', err);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setNodes, setEdges, boardSettings]);
+  
+  // 컴포넌트 마운트 시 카드 데이터 로드
+  useEffect(() => {
+    fetchCards();
+    updateViewportCenter();
+    
+    // 창 크기 변경 시 뷰포트 중앙 업데이트
+    window.addEventListener('resize', updateViewportCenter);
+    return () => {
+      window.removeEventListener('resize', updateViewportCenter);
+    };
+  }, [fetchCards, updateViewportCenter]);
 
   // 저장된 레이아웃 적용
   const applyStoredLayout = useCallback((cardsData: any[], storedLayout: any[]) => {
@@ -6935,7 +6650,7 @@ function BoardContent() {
     },
     [nodes, setEdges, boardSettings]
   );
-
+  
   // 카드 생성 후 콜백
   const handleCardCreated = useCallback(async (cardData: any) => {
     try {
@@ -6961,6 +6676,73 @@ function BoardContent() {
       toast.error("카드를 보드에 추가하는데 실패했습니다.");
     }
   }, [nodes, setNodes, viewportCenter, saveLayout]);
+
+  // 엣지 드롭으로 노드 생성 시 호출되는 함수
+  const handleCreateNodeOnEdgeDrop = useCallback((
+    position: XYPosition,
+    connectingNodeId: string,
+    handleType: 'source' | 'target'
+  ) => {
+    setCreateModalInfo({ position, connectingNodeId, handleType });
+    setShowCreateModal(true);
+  }, []);
+  
+  // useAddNodeOnEdgeDrop 훅 사용
+  const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
+    onCreateNode: handleCreateNodeOnEdgeDrop
+  });
+  
+  // 노드를 추가하고 엣지로 연결하는 함수
+  const handleCardCreatedWithConnection = useCallback((
+    cardData: any,
+    position: XYPosition,
+    connectingNodeId: string,
+    handleType: 'source' | 'target'
+  ) => {
+    try {
+      // 새 카드 노드 생성
+      const newCard = {
+        id: cardData.id.toString(),
+        type: 'card',
+        data: { 
+          ...cardData,
+          tags: cardData.cardTags?.map((ct: any) => ct.tag.name) || []
+        },
+        position: position,
+      };
+      
+      // 노드 추가
+      setNodes(nds => [...nds, newCard]);
+      
+      // 연결 파라미터 생성
+      const connection: Connection = {
+        source: handleType === 'source' ? connectingNodeId : newCard.id,
+        target: handleType === 'source' ? newCard.id : connectingNodeId,
+        // 필요한 경우 sourceHandle과 targetHandle 지정
+      };
+      
+      // 엣지 추가
+      onConnect(connection);
+      
+      // 저장
+      saveLayout([...nodes, newCard]);
+      
+      // 모달 닫기
+      setShowCreateModal(false);
+      setCreateModalInfo(null);
+      
+      toast.success("새 카드가 추가되고 연결되었습니다.");
+    } catch (error) {
+      console.error("Error creating connected card:", error);
+      toast.error("카드 생성 및 연결에 실패했습니다.");
+    }
+  }, [nodes, setNodes, onConnect, saveLayout]);
+  
+  // 모달 닫기 함수
+  const handleCloseModal = useCallback(() => {
+    setShowCreateModal(false);
+    setCreateModalInfo(null);
+  }, []);
 
   // 노드 자동 배치 (기존 함수 수정)
   const handleAutoLayout = useCallback(() => {
@@ -7002,190 +6784,6 @@ function BoardContent() {
     toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
   }, [nodes, edges, setNodes, setEdges, updateNodeInternals]);
 
-  // 보드 설정 변경 핸들러
-  const handleSettingsChange = useCallback((newSettings: BoardSettings) => {
-    // 설정 변경 내용을 상태와 로컬 스토리지에 저장
-    setBoardSettings(newSettings);
-    saveBoardSettings(newSettings);
-    
-    // 모든 엣지에 새 설정 적용 (항상 실행) - 즉시 반영을 위해 강제로 업데이트
-    console.log("설정 변경 적용 중...", newSettings);
-    
-    // 1. 현재 엣지의 복사본 생성 (참조 변경)
-    const currentEdgesCopy = JSON.parse(JSON.stringify(edges));
-    
-    // 2. 설정 적용
-    const updatedEdges = applyEdgeSettings(currentEdgesCopy, newSettings);
-    
-    // 3. 새로운 엣지 배열로 상태 업데이트
-    setEdges(updatedEdges);
-    
-    // 4. 즉시 저장하여 변경 내용이 유지되도록 함
-    try {
-      localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
-    } catch (error) {
-      console.error('엣지 저장 중 오류:', error);
-    }
-    
-    // 변경된 설정에 대한 알림 메시지
-    const changes: string[] = [];
-    
-    // 연결선 스타일 변경 확인
-    if (newSettings.connectionLineType !== boardSettings.connectionLineType) {
-      changes.push('연결선 유형');
-    }
-    
-    if (newSettings.markerEnd !== boardSettings.markerEnd) {
-      changes.push('화살표 유형');
-    }
-    
-    if (newSettings.strokeWidth !== boardSettings.strokeWidth) {
-      changes.push('선 굵기');
-    }
-    
-    if (newSettings.markerSize !== boardSettings.markerSize) {
-      changes.push('화살표 크기');
-    }
-    
-    if (newSettings.edgeColor !== boardSettings.edgeColor || 
-        newSettings.selectedEdgeColor !== boardSettings.selectedEdgeColor) {
-      changes.push('선 색상');
-    }
-    
-    if (newSettings.animated !== boardSettings.animated) {
-      changes.push('애니메이션 ' + (newSettings.animated ? '활성화' : '비활성화'));
-    }
-    
-    if (changes.length > 0) {
-      toast.success(`연결선 설정이 변경되었습니다: ${changes.join(', ')}`);
-    }
-    
-    // 스냅 그리드 변경 확인
-    if (newSettings.snapToGrid !== boardSettings.snapToGrid || 
-        newSettings.snapGrid[0] !== boardSettings.snapGrid[0]) {
-      toast.success(
-        newSettings.snapToGrid 
-          ? `격자에 맞추기가 활성화되었습니다 (${newSettings.snapGrid[0]}px)` 
-          : "격자에 맞추기가 비활성화되었습니다"
-      );
-    }
-  }, [boardSettings, edges, setEdges]);
-
-  // 카드 및 설정 데이터 로드
-  const fetchCards = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // API에서 카드 데이터 가져오기
-      const response = await fetch('/api/cards');
-      
-      if (!response.ok) {
-        throw new Error('카드 목록을 불러오는데 실패했습니다.');
-      }
-      
-      const cardsData = await response.json();
-      
-      // 로컬 스토리지에서 노드 위치 불러오기
-      let savedNodesData: Record<string, { position: { x: number, y: number } }> = {};
-      try {
-        const savedLayout = localStorage.getItem(STORAGE_KEY);
-        if (savedLayout) {
-          savedNodesData = JSON.parse(savedLayout);
-        }
-      } catch (err) {
-        console.error('레이아웃 불러오기 실패:', err);
-      }
-      
-      // 로컬 스토리지에서 엣지 데이터 불러오기
-      let savedEdges: Edge[] = [];
-      try {
-        const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
-        if (savedEdgesData) {
-          // 로컬 스토리지에서 보드 설정 불러오기
-          const loadedSettings = loadBoardSettings();
-          
-          // 엣지 데이터 변환 및 타입 확인
-          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => {
-            // 기본 타입 설정
-            const updatedEdge = {
-              ...edge,
-              type: 'custom', // 모든 엣지에 커스텀 타입 적용
-            };
-            
-            // 엣지의 data.edgeType이 없으면 초기화
-            if (!edge.data?.edgeType) {
-              updatedEdge.data = {
-                ...(edge.data || {}),
-                edgeType: loadedSettings.connectionLineType,
-                settings: { ...loadedSettings }
-              };
-            }
-            
-            // style이 없으면 초기화
-            if (!edge.style) {
-              updatedEdge.style = {
-                strokeWidth: loadedSettings.strokeWidth,
-                stroke: edge.selected ? loadedSettings.selectedEdgeColor : loadedSettings.edgeColor
-              };
-            }
-            
-            return updatedEdge;
-          });
-        }
-      } catch (err) {
-        console.error('엣지 데이터 불러오기 실패:', err);
-      }
-      
-      // 로컬 스토리지에서 보드 설정 불러오기
-      const loadedSettings = loadBoardSettings();
-      setBoardSettings(loadedSettings);
-      
-      // 노드 및 엣지 데이터 설정
-      const nodes = cardsData.map((card: any) => {
-        // 저장된 위치가 있으면 사용, 없으면 기본 위치 생성
-        const savedNode = savedNodesData[card.id];
-        const position = savedNode ? savedNode.position : { 
-          x: Math.random() * 500, 
-          y: Math.random() * 300 
-        };
-        
-        return {
-          id: card.id,
-          type: 'card',
-          position,
-          data: {
-            ...card,
-            tags: card.cardTags?.map((ct: any) => ct.tag.name) || []
-          }
-        };
-      });
-      
-      // 설정에 따라 엣지 스타일 적용
-      const styledEdges = applyEdgeSettings(savedEdges, loadedSettings);
-      
-      setNodes(nodes);
-      setEdges(styledEdges);
-      setLastSavedAt(new Date());  // 초기 로드 시간을 마지막 저장 시간으로 설정
-    } catch (err) {
-      console.error('카드 데이터 불러오기 실패:', err);
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setNodes, setEdges]);
-
-  useEffect(() => {
-    fetchCards();
-    updateViewportCenter();
-    
-    // 창 크기 변경 시 뷰포트 중앙 업데이트
-    window.addEventListener('resize', updateViewportCenter);
-    return () => {
-      window.removeEventListener('resize', updateViewportCenter);
-    };
-  }, [fetchCards, updateViewportCenter]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -7215,6 +6813,8 @@ function BoardContent() {
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onInit={flow => {
           updateViewportCenter();
           console.log('ReactFlow initialized', flow);
@@ -7255,17 +6855,24 @@ function BoardContent() {
         </Panel>
         
         {/* 오른쪽 상단에 레이아웃 및 설정 컨트롤 패널 추가 */}
-        <Panel position="top-right" className="mr-2 mt-2 flex gap-2">
-          <BoardSettingsControl
-            settings={boardSettings}
-            onSettingsChange={handleSettingsChange}
-          />
-          <LayoutControls
-            onLayoutChange={handleLayoutChange}
-            onAutoLayout={handleAutoLayout}
-            onSaveLayout={handleSaveLayout}
+        <Panel position="top-right" className="space-y-2">
+          <LayoutControls onLayoutChange={handleLayoutChange} />
+          <BoardSettingsControl 
+            settings={boardSettings} 
+            onSettingsChange={handleBoardSettingsChange}
           />
         </Panel>
+        
+        {/* 카드 생성 모달 */}
+        {showCreateModal && createModalInfo && (
+          <CreateCardModal
+            position={createModalInfo.position}
+            connectingNodeId={createModalInfo.connectingNodeId}
+            handleType={createModalInfo.handleType}
+            onClose={handleCloseModal}
+            onCardCreated={handleCardCreatedWithConnection}
+          />
+        )}
       </ReactFlow>
     </div>
   );
@@ -7277,6 +6884,262 @@ export default function BoardPage() {
     <ReactFlowProvider>
       <BoardContent />
     </ReactFlowProvider>
+  );
+} 
+```
+
+src/app/login/page.tsx
+```
+import AuthForm from "@/components/auth/AuthForm";
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <AuthForm />
+    </div>
+  );
+} 
+```
+
+src/app/cards/page.test.tsx
+```
+/**
+ * @vitest-environment jsdom
+ */
+
+import { render, screen } from '@testing-library/react';
+import CardsPage from './page';
+import '@testing-library/jest-dom/vitest';
+import React from 'react';
+import { describe, it, expect, vi } from 'vitest';
+
+// React.Suspense 모킹
+vi.mock('react', () => {
+  const originalReact = vi.importActual('react');
+  return {
+    ...originalReact,
+    Suspense: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => {
+      return (
+        <>
+          <div data-testid="suspense-fallback">{fallback}</div>
+          <div data-testid="suspense-children">{children}</div>
+        </>
+      );
+    },
+  };
+});
+
+// 테스트용 CardListSkeleton (page 모듈에서 가져오지 않고 테스트에서 직접 정의)
+const CardListSkeleton = () => (
+  <div data-testid="skeleton-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {Array(6).fill(0).map((_, index) => (
+      <div key={index} className="border rounded-md p-4 space-y-4">
+        <div data-testid="skeleton" className="h-6 w-3/4" />
+        <div data-testid="skeleton" className="h-24" />
+        <div className="flex justify-between">
+          <div data-testid="skeleton" className="h-4 w-1/4" />
+          <div data-testid="skeleton" className="h-8 w-1/4" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Suspense 내부 컴포넌트 모킹
+vi.mock('@/components/cards/CardList', () => {
+  return {
+    default: vi.fn(() => <div data-testid="card-list">카드 목록 컴포넌트</div>)
+  };
+});
+
+vi.mock('@/components/cards/CreateCardButton', () => {
+  return {
+    default: vi.fn(() => <button data-testid="create-card-button">새 카드 만들기</button>)
+  };
+});
+
+// UI 컴포넌트 모킹
+vi.mock('@/components/ui/skeleton', () => ({
+  Skeleton: vi.fn(({ className }: { className?: string }) => <div data-testid="skeleton" className={className} />),
+}));
+
+describe('Cards Page', () => {
+  it('페이지 제목이 올바르게 렌더링되는지 확인한다', () => {
+    render(<CardsPage />);
+    
+    const heading = screen.getByRole('heading', { name: /카드 목록/i });
+    expect(heading).toBeInTheDocument();
+  });
+  
+  it('카드 목록 컴포넌트가 렌더링되는지 확인한다', () => {
+    render(<CardsPage />);
+    
+    const cardListContainer = screen.getByTestId('suspense-children');
+    expect(cardListContainer).toBeInTheDocument();
+    
+    const cardList = screen.getByTestId('card-list');
+    expect(cardList).toBeInTheDocument();
+  });
+  
+  it('새 카드 만들기 버튼이 렌더링되는지 확인한다', () => {
+    render(<CardsPage />);
+    
+    const createButton = screen.getByTestId('create-card-button');
+    expect(createButton).toBeInTheDocument();
+  });
+  
+  it('Suspense fallback이 스켈레톤을 사용하는지 확인한다', () => {
+    render(<CardsPage />);
+    
+    const fallbackContainer = screen.getByTestId('suspense-fallback');
+    expect(fallbackContainer).toBeInTheDocument();
+  });
+});
+
+describe('CardListSkeleton', () => {
+  it('6개의 스켈레톤 카드를 렌더링한다', () => {
+    render(<CardListSkeleton />);
+    
+    const skeletons = screen.getAllByTestId('skeleton');
+    // 각 카드는 4개의 스켈레톤 요소를 가짐 (제목, 내용, 날짜, 버튼)
+    expect(skeletons.length).toBe(6 * 4);
+  });
+  
+  it('그리드 레이아웃을 사용한다', () => {
+    render(<CardListSkeleton />);
+    
+    const gridContainer = screen.getByTestId('skeleton-grid');
+    expect(gridContainer).toHaveClass('grid');
+    expect(gridContainer).toHaveClass('grid-cols-1');
+    expect(gridContainer).toHaveClass('md:grid-cols-2');
+    expect(gridContainer).toHaveClass('lg:grid-cols-3');
+  });
+}); 
+```
+
+src/app/cards/page.tsx
+```
+import { Metadata } from "next";
+import { Suspense } from 'react';
+import CardList from "../../components/cards/CardList";
+import CreateCardButton from "../../components/cards/CreateCardButton";
+import { Skeleton } from '@/components/ui/skeleton';
+
+export const metadata: Metadata = {
+  title: "카드 목록 | Backyard",
+  description: "백야드 카드 목록 페이지입니다.",
+};
+
+// 카드 목록 로딩 스켈레톤
+function CardListSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array(6).fill(0).map((_, index) => (
+        <div key={index} className="border rounded-md p-4 space-y-4">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-24" />
+          <div className="flex justify-between">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-8 w-1/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function CardsPage() {
+  return (
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">카드 목록</h1>
+        <CreateCardButton />
+      </div>
+      
+      <Suspense fallback={<CardListSkeleton />}>
+        <CardList />
+      </Suspense>
+    </div>
+  );
+} 
+```
+
+src/app/test-db/page.tsx
+```
+import React from 'react';
+import prisma from '@/lib/prisma';
+import type { Tag } from '@prisma/client';
+
+// 태그와 연결된 카드 수를 포함하는 타입 정의
+type TagWithCount = Tag & {
+  _count: {
+    cardTags: number;
+  };
+};
+
+export default async function TestDatabasePage() {
+  let tags: TagWithCount[] = [];
+  let error: string | null = null;
+  
+  try {
+    // Prisma를 사용하여 태그 목록을 가져옵니다
+    tags = await prisma.tag.findMany({
+      include: {
+        _count: {
+          select: {
+            cardTags: true,
+          },
+        },
+      },
+    });
+  } catch (e) {
+    console.error('데이터베이스 연결 오류:', e);
+    error = e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">데이터베이스 연결 테스트</h1>
+      
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-2xl font-semibold mb-4">태그 목록</h2>
+        
+        {error ? (
+          <div className="p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded">
+            <p className="text-red-700 dark:text-red-400">
+              데이터베이스 연결 오류: {error}
+            </p>
+            <p className="mt-2 text-sm text-red-600 dark:text-red-300">
+              Vercel 환경 변수가 올바르게 설정되었는지 확인하세요.
+            </p>
+          </div>
+        ) : tags.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400">등록된 태그가 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {tags.map((tag) => (
+              <li 
+                key={tag.id}
+                className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded"
+              >
+                <span className="font-medium">{tag.name}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  연결된 카드: {tag._count.cardTags}개
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        
+        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded">
+          <p className="text-green-700 dark:text-green-400">
+            {!error 
+              ? '이 페이지가 정상적으로 로드되었다면 Prisma와 Supabase 연결이 성공적으로 구성된 것입니다!' 
+              : '로컬 환경에서는 연결 오류가 발생할 수 있습니다. Vercel 배포 환경에서 다시 테스트해보세요.'}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 } 
 ```
@@ -7496,6 +7359,662 @@ export default async function TagsPage() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+} 
+```
+
+src/components/board/BoardComponent.tsx
+```
+'use client';
+
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  ReactFlow,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Panel,
+  ConnectionLineType,
+  Position,
+  MarkerType,
+  useReactFlow,
+  useUpdateNodeInternals,
+  Node,
+  Edge,
+  NodeChange,
+  EdgeChange,
+  Connection,
+  applyNodeChanges,
+  OnConnectStart,
+  OnConnectEnd,
+  XYPosition
+} from '@xyflow/react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
+import CreateCardButton from '@/components/cards/CreateCardButton';
+import LayoutControls from '@/components/board/LayoutControls';
+import BoardSettingsControl from '@/components/board/BoardSettingsControl';
+import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
+import { 
+  BoardSettings, 
+  DEFAULT_BOARD_SETTINGS, 
+  loadBoardSettings, 
+  saveBoardSettings, 
+  applyEdgeSettings, 
+  saveBoardSettingsToServer, 
+  loadBoardSettingsFromServer 
+} from '@/lib/board-utils';
+import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
+import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
+import DevTools from '@/components/debug/DevTools';
+import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+import { CreateCardModal } from '@/components/cards/CreateCardModal';
+import { useAuth } from '@/contexts/AuthContext';
+
+// 타입 정의
+interface BoardComponentProps {
+  onSelectCard?: (cardId: string | null) => void;
+  className?: string;
+  showControls?: boolean;
+}
+
+export default function BoardComponent({ 
+  onSelectCard,
+  className = "",
+  showControls = true 
+}: BoardComponentProps) {
+  const [nodes, setNodes] = useNodesState<any>([]);
+  const [edges, setEdges] = useEdgesState<any>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [boardSettings, setBoardSettings] = useState<BoardSettings>(DEFAULT_BOARD_SETTINGS);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  // 인증 상태 가져오기
+  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
+  
+  // 레퍼런스 및 기타 훅
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const reactFlowInstance = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
+  const hasUnsavedChanges = useRef(false);
+  
+  // 커넥팅 노드 관련 상태
+  const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+  const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
+  const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
+  
+  // 엣지에 새 노드 추가 기능
+  const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
+    onCreateNode: (position, connectingNodeId, handleType) => {
+      // 새 노드 생성 및 추가 로직
+      const newNode = {
+        id: `card-${Date.now()}`,
+        type: 'card',
+        data: { title: '새 카드', content: '' },
+        position,
+      };
+      setNodes((nds) => [...nds, newNode]);
+    }
+  });
+  
+  // 노드 변경 핸들러
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // 기존 노드 정보를 변경
+    setNodes(changes as any);
+    
+    // 위치 변경이 있는 경우에만 저장 상태로 표시
+    const positionChanges = changes.filter(
+      (change) => change.type === 'position' && change.dragging === false
+    );
+    
+    if (positionChanges.length > 0) {
+      hasUnsavedChanges.current = true;
+    }
+  }, [setNodes]);
+  
+  // 엣지 변경 핸들러
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    // 기본 변경 적용
+    setEdges(changes as any);
+    
+    // 변경이 있을 때마다 저장 대기 상태로 설정
+    hasUnsavedChanges.current = true;
+  }, [setEdges]);
+  
+  // 레이아웃 저장
+  const saveLayout = useCallback((nodesToSave = nodes) => {
+    try {
+      // 노드 ID와 위치만 저장
+      const nodePositions = nodesToSave.reduce((acc: Record<string, { position: XYPosition }>, node: Node) => {
+        acc[node.id] = { position: node.position };
+        return acc;
+      }, {});
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nodePositions));
+      setLastSavedAt(new Date());
+      
+      return true;
+    } catch (err) {
+      console.error('레이아웃 저장 실패:', err);
+      return false;
+    }
+  }, [nodes]);
+  
+  // 엣지 저장
+  const saveEdges = useCallback((edgesToSave = edges) => {
+    try {
+      localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edgesToSave));
+      return true;
+    } catch (err) {
+      console.error('엣지 저장 실패:', err);
+      return false;
+    }
+  }, [edges]);
+  
+  // 모든 레이아웃 데이터 저장
+  const saveAllLayoutData = useCallback(() => {
+    const layoutSaved = saveLayout();
+    const edgesSaved = saveEdges();
+    
+    if (layoutSaved && edgesSaved) {
+      hasUnsavedChanges.current = false;
+      toast.success('레이아웃이 저장되었습니다');
+      return true;
+    }
+    
+    return false;
+  }, [saveLayout, saveEdges]);
+  
+  // 수동 저장
+  const handleSaveLayout = useCallback(() => {
+    if (saveAllLayoutData()) {
+      toast.success('레이아웃이 저장되었습니다');
+    } else {
+      toast.error('레이아웃 저장에 실패했습니다');
+    }
+  }, [saveAllLayoutData]);
+  
+  // 보드 설정 변경 핸들러
+  const handleBoardSettingsChange = useCallback((newSettings: BoardSettings) => {
+    saveBoardSettings(newSettings);
+    setBoardSettings(newSettings);
+    
+    // 새 설정을 엣지에 적용
+    const updatedEdges = applyEdgeSettings(edges, newSettings);
+    setEdges(updatedEdges);
+    
+    // 인증된 사용자인 경우 서버에도 저장
+    if (isAuthenticated && user?.id) {
+      saveBoardSettingsToServer(newSettings, user.id)
+        .then(() => toast.success('보드 설정이 저장되었습니다'))
+        .catch(err => {
+          console.error('서버에 보드 설정 저장 실패:', err);
+          toast.error('서버에 설정 저장 실패');
+        });
+    }
+  }, [edges, setEdges, isAuthenticated, user?.id]);
+  
+  // 인증 상태에 따라 서버에서 설정 불러오기
+  const loadBoardSettingsFromServerIfAuthenticated = useCallback(async () => {
+    if (isAuthenticated && user?.id) {
+      try {
+        const settings = await loadBoardSettingsFromServer(user.id);
+        if (settings) {
+          setBoardSettings(settings);
+          saveBoardSettings(settings);
+          
+          // 새 설정을 엣지에 적용
+          const updatedEdges = applyEdgeSettings(edges, settings);
+          setEdges(updatedEdges);
+        } else {
+          // 서버에 설정이 없으면 로컬 설정 사용
+          const localSettings = loadBoardSettings();
+          setBoardSettings(localSettings);
+        }
+      } catch (err) {
+        console.error('서버에서 보드 설정 불러오기 실패:', err);
+        
+        // 에러 시 로컬 설정 사용
+        const localSettings = loadBoardSettings();
+        setBoardSettings(localSettings);
+      }
+    } else {
+      // 로그인하지 않은 경우 로컬 설정 사용
+      const localSettings = loadBoardSettings();
+      setBoardSettings(localSettings);
+    }
+  }, [isAuthenticated, user?.id]);
+  
+  // 뷰포트 중앙 업데이트
+  const updateViewportCenter = useCallback((instance = reactFlowInstance) => {
+    if (reactFlowWrapper.current && instance) {
+      try {
+        const rect = reactFlowWrapper.current.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        // 캔버스 중앙을 뷰포트에 맞추기
+        // screenToFlowPosition 함수는 화면 좌표를 캔버스 좌표로 변환
+        const centerPosition = instance.screenToFlowPosition({ x: centerX, y: centerY });
+        console.log('Viewport center updated:', centerPosition);
+      } catch (error) {
+        console.error('Viewport center update failed:', error);
+      }
+    }
+  }, []);
+  
+  // 페이지 언로드 전 저장되지 않은 변경사항 저장
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges.current) {
+        saveAllLayoutData();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [saveAllLayoutData]);
+  
+  // 카드 및 설정 데이터 로드
+  const fetchCards = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // API에서 카드 데이터 가져오기
+      const response = await fetch('/api/cards');
+      
+      if (!response.ok) {
+        throw new Error('카드 목록을 불러오는데 실패했습니다.');
+      }
+      
+      const cardsData = await response.json();
+      
+      // 로컬 스토리지에서 노드 위치 불러오기
+      let savedNodesData: Record<string, { position: { x: number, y: number } }> = {};
+      try {
+        const savedLayout = localStorage.getItem(STORAGE_KEY);
+        if (savedLayout) {
+          savedNodesData = JSON.parse(savedLayout);
+        }
+      } catch (err) {
+        console.error('레이아웃 불러오기 실패:', err);
+      }
+      
+      // 로컬 스토리지에서 엣지 데이터 불러오기
+      let savedEdges: Edge[] = [];
+      try {
+        const savedEdgesData = localStorage.getItem(EDGES_STORAGE_KEY);
+        if (savedEdgesData) {
+          // 로컬 스토리지에서 보드 설정 불러오기
+          const loadedSettings = loadBoardSettings();
+          
+          // 엣지 데이터 변환 및 타입 확인
+          savedEdges = JSON.parse(savedEdgesData).map((edge: Edge) => {
+            // 기본 타입 설정
+            const updatedEdge = {
+              ...edge,
+              type: 'custom', // 모든 엣지에 커스텀 타입 적용
+            };
+            
+            // 엣지의 data.edgeType이 없으면 초기화
+            if (!edge.data?.edgeType) {
+              updatedEdge.data = {
+                ...(edge.data || {}),
+                edgeType: loadedSettings.connectionLineType,
+                settings: { ...loadedSettings }
+              };
+            }
+            
+            // style이 없으면 초기화
+            if (!edge.style) {
+              updatedEdge.style = {
+                strokeWidth: loadedSettings.strokeWidth,
+                stroke: edge.selected ? loadedSettings.selectedEdgeColor : loadedSettings.edgeColor
+              };
+            }
+            
+            return updatedEdge;
+          });
+        }
+      } catch (err) {
+        console.error('엣지 데이터 불러오기 실패:', err);
+      }
+      
+      // 노드 및 엣지 데이터 설정
+      const nodes = cardsData.map((card: any) => {
+        // 저장된 위치가 있으면 사용, 없으면 기본 위치 생성
+        const savedNode = savedNodesData[card.id];
+        const position = savedNode ? savedNode.position : { 
+          x: Math.random() * 500, 
+          y: Math.random() * 300 
+        };
+        
+        return {
+          id: card.id,
+          type: 'card',
+          position,
+          data: {
+            ...card,
+            tags: card.cardTags?.map((ct: any) => ct.tag.name) || []
+          }
+        };
+      });
+      
+      // 설정에 따라 엣지 스타일 적용
+      const styledEdges = applyEdgeSettings(savedEdges, boardSettings);
+      
+      setNodes(nodes);
+      setEdges(styledEdges);
+      setLastSavedAt(new Date());  // 초기 로드 시간을 마지막 저장 시간으로 설정
+    } catch (err) {
+      console.error('카드 데이터 불러오기 실패:', err);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  // 컴포넌트 마운트 시 카드 데이터 로드
+  useEffect(() => {
+    fetchCards();
+    
+    // 창 크기 변경 시 뷰포트 중앙 업데이트
+    const handleResize = () => {
+      updateViewportCenter();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+  // 인증 상태가 변경되면 보드 설정 다시 로드
+  useEffect(() => {
+    if (!isAuthLoading) {
+      loadBoardSettingsFromServerIfAuthenticated();
+    }
+  }, [isAuthLoading]);
+  
+  // 저장된 레이아웃 적용
+  const applyStoredLayout = useCallback((cardsData: any[], storedLayout: any[]) => {
+    return cardsData.map((card: any, index: number) => {
+      const cardId = card.id.toString();
+      // 저장된 레이아웃에서 해당 카드의 위치 정보 찾기
+      const storedPosition = storedLayout.find(item => item.id === cardId)?.position;
+      
+      // 저장된 위치가 있으면 사용, 없으면 기본 그리드 위치 사용
+      const position = storedPosition || {
+        x: (index % 3) * 350 + 50,
+        y: Math.floor(index / 3) * 250 + 50,
+      };
+      
+      // 카드 태그 준비
+      const tags = card.cardTags && card.cardTags.length > 0
+        ? card.cardTags.map((cardTag: any) => cardTag.tag.name)
+        : [];
+      
+      return {
+        id: cardId,
+        type: 'card',
+        data: { 
+          ...card,
+          tags: tags
+        },
+        position,
+      };
+    });
+  }, []);
+  
+  // 노드 연결 핸들러
+  const onConnect = useCallback((params: Connection) => {
+    // 소스 노드와 타겟 노드가 같은 경우 연결 방지
+    if (params.source === params.target) {
+      toast.error('같은 카드에 연결할 수 없습니다.');
+      return;
+    }
+    
+    // 기존 노드 정보
+    const sourceNode = nodes.find(node => node.id === params.source);
+    const targetNode = nodes.find(node => node.id === params.target);
+    
+    if (sourceNode && targetNode) {
+      // 현재 레이아웃 방향 판단 (노드의 targetPosition으로 확인)
+      const firstNode = nodes[0];
+      const isHorizontal = firstNode?.targetPosition === Position.Left;
+      
+      // 핸들 ID 설정
+      let sourceHandle = params.sourceHandle;
+      let targetHandle = params.targetHandle;
+      
+      // 핸들 ID가 없는 경우 기본값 설정
+      if (!sourceHandle) {
+        sourceHandle = isHorizontal ? 'right' : 'bottom';
+      }
+      if (!targetHandle) {
+        targetHandle = isHorizontal ? 'left' : 'top';
+      }
+      
+      // 엣지 ID 생성 - 소스ID-타겟ID-타임스탬프
+      const edgeId = `${params.source}-${params.target}-${Date.now()}`;
+      
+      // 기본 에지 스타일과 데이터 설정
+      const newEdge = {
+        ...params,
+        id: edgeId,
+        sourceHandle,
+        targetHandle,
+        type: 'custom', // 커스텀 엣지 타입 사용
+        animated: boardSettings.animated,
+        style: {
+          strokeWidth: boardSettings.strokeWidth,
+          stroke: boardSettings.edgeColor,
+        },
+        // 방향 표시가 활성화된 경우에만 마커 추가
+        markerEnd: boardSettings.showArrowhead ? {
+          type: MarkerType.ArrowClosed,
+          width: boardSettings.strokeWidth * 2,
+          height: boardSettings.strokeWidth * 2,
+          color: boardSettings.edgeColor,
+        } : undefined,
+        data: {
+          edgeType: boardSettings.connectionLineType,
+          settings: { ...boardSettings }
+        },
+      };
+      
+      // 새 Edge 추가 및 로컬 스토리지에 저장
+      setEdges((eds) => {
+        const newEdges = addEdge(newEdge, eds);
+        
+        // 엣지 저장
+        saveEdges(newEdges);
+        
+        return newEdges;
+      });
+      
+      // 저장 상태로 표시
+      hasUnsavedChanges.current = true;
+      
+      // 성공 메시지
+      toast.success('카드가 연결되었습니다.');
+    }
+  }, [nodes, boardSettings, saveEdges, setEdges]);
+  
+  // 카드 선택 핸들러
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    if (onSelectCard) {
+      onSelectCard(node.id);
+    }
+  }, [onSelectCard]);
+  
+  // 카드 생성 완료 핸들러
+  const handleCardCreated = useCallback((cardData: any) => {
+    // 뷰포트 중앙 또는 기본 위치에 새 카드 추가
+    const centerPosition = reactFlowWrapper.current ? {
+      x: reactFlowWrapper.current.offsetWidth / 2,
+      y: reactFlowWrapper.current.offsetHeight / 2
+    } : { x: 50, y: 50 };
+      
+    const newCard = {
+      id: cardData.id,
+      type: 'card',
+      data: cardData,
+      position: centerPosition
+    };
+      
+    setNodes((nds) => [...nds, newCard]);
+      
+    // 노드 위치 저장
+    saveLayout([...nodes, newCard]);
+    
+    toast.success('새 카드가 생성되었습니다.');
+  }, [nodes, saveLayout, setNodes, reactFlowWrapper]);
+  
+  // 자동 저장 
+  useEffect(() => {
+    // 자동 저장이 비활성화된 경우 리턴
+    if (BOARD_CONFIG.autoSaveInterval <= 0) return;
+    
+    const autoSaveTimer = setInterval(() => {
+      if (hasUnsavedChanges.current) {
+        saveAllLayoutData();
+        console.log('자동 저장 완료');
+      }
+    }, BOARD_CONFIG.autoSaveInterval * 60 * 1000); // 분 단위를 밀리초로 변환
+    
+    return () => {
+      clearInterval(autoSaveTimer);
+    };
+  }, [saveAllLayoutData]);
+  
+  // 그리드 레이아웃 자동 배치
+  const handleAutoLayout = useCallback(() => {
+    const layoutedNodes = getGridLayout(nodes);
+    setNodes(layoutedNodes);
+    saveLayout(layoutedNodes);
+    toast.success("카드가 격자 형태로 배치되었습니다.");
+  }, [nodes, setNodes, saveLayout]);
+  
+  // 레이아웃 변경 핸들러
+  const handleLayoutChange = useCallback((direction: 'horizontal' | 'vertical') => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, direction);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    
+    // 레이아웃 변경 후 저장 상태로 표시
+    hasUnsavedChanges.current = true;
+    
+    // 모든 노드의 내부 구조 업데이트 - 핸들 위치를 반영하기 위해
+    // 즉시 업데이트
+    layoutedNodes.forEach(node => {
+      updateNodeInternals(node.id);
+    });
+    
+    // 약간의 지연 후 다시 업데이트 (레이아웃 변경 완료 후)
+    setTimeout(() => {
+      layoutedNodes.forEach(node => {
+        updateNodeInternals(node.id);
+      });
+    }, 50);
+    
+    // 애니메이션 완료 후 최종 업데이트
+    setTimeout(() => {
+      layoutedNodes.forEach(node => {
+        updateNodeInternals(node.id);
+      });
+    }, 300);
+    
+    toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
+  }, [nodes, edges, setNodes, setEdges, updateNodeInternals]);
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">보드를 불러오는 중...</span>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <p className="text-destructive mb-4">{error}</p>
+        <Button onClick={fetchCards}>다시 시도</Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className={`w-full h-full ${className}`} ref={reactFlowWrapper}>
+      <ReactFlow
+        nodes={nodes}
+        nodeTypes={NODE_TYPES}
+        edges={edges}
+        edgeTypes={EDGE_TYPES}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
+        onNodeClick={handleNodeClick}
+        onInit={flow => {
+          // flow 인스턴스를 직접 전달하여 updateViewportCenter 호출
+          updateViewportCenter(flow);
+          console.log('ReactFlow initialized', flow);
+        }}
+        fitView
+        minZoom={0.1}
+        maxZoom={1.5}
+        connectionLineType={ConnectionLineType.Step}
+        fitViewOptions={{ padding: 0.2 }}
+        snapToGrid={boardSettings.snapToGrid}
+        snapGrid={boardSettings.snapGrid}
+        deleteKeyCode={['Backspace', 'Delete']}
+      >
+        {showControls && <DevTools />}
+        <Controls />
+        <Background />
+        
+        {showControls && (
+          <>
+            {/* 컨트롤 패널 */}
+            <Panel position="top-right" className="space-y-2">
+              <LayoutControls 
+                onLayoutChange={handleLayoutChange} 
+                onAutoLayout={handleAutoLayout}
+                onSaveLayout={handleSaveLayout}
+              />
+              <BoardSettingsControl 
+                settings={boardSettings} 
+                onSettingsChange={handleBoardSettingsChange}
+              />
+            </Panel>
+            
+            {/* 새 카드 생성 버튼 */}
+            <Panel position="bottom-right" className="mb-20 mr-2">
+              <CreateCardButton onCardCreated={handleCardCreated} />
+            </Panel>
+          </>
+        )}
+      </ReactFlow>
+      
+      {/* 카드 생성 모달 */}
+      <CreateCardModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onCardCreated={handleCardCreated}
+      />
     </div>
   );
 } 
@@ -8779,6 +9298,375 @@ export default function LayoutControls({
 } 
 ```
 
+src/components/auth/AuthForm.tsx
+```
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { signIn, signUp, signInWithGoogle } from '@/lib/auth';
+import { toast } from 'sonner';
+import { setCookie } from 'cookies-next';
+
+type AuthMode = 'login' | 'register';
+
+export default function AuthForm() {
+  const [mode, setMode] = useState<AuthMode>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const toggleMode = () => {
+    setMode(mode === 'login' ? 'register' : 'login');
+    // 폼 초기화
+    setEmail('');
+    setPassword('');
+    setName('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (mode === 'login') {
+        const { session } = await signIn(email, password);
+        
+        // 추가: 쿠키를 여기서도 직접 설정 (보완책)
+        if (session) {
+          // 현재 호스트 가져오기
+          const host = window.location.hostname;
+          const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+          
+          // 도메인 설정 (로컬호스트가 아닌 경우에만)
+          let domain = undefined;
+          if (!isLocalhost) {
+            // 서브도메인 포함하기 위해 최상위 도메인만 설정
+            const hostParts = host.split('.');
+            if (hostParts.length > 1) {
+              // vercel.app 또는 yoursite.com 형태일 경우
+              domain = '.' + hostParts.slice(-2).join('.');
+            } else {
+              domain = host;
+            }
+          }
+          
+          // cookies-next 라이브러리 사용
+          setCookie('sb-access-token', session.access_token, {
+            maxAge: 60 * 60 * 24 * 7, // 7일
+            path: '/',
+            domain: domain,
+            secure: window.location.protocol === 'https:',
+            sameSite: 'lax'
+          });
+          
+          if (session.refresh_token) {
+            setCookie('sb-refresh-token', session.refresh_token, {
+              maxAge: 60 * 60 * 24 * 30, // 30일
+              path: '/',
+              domain: domain,
+              secure: window.location.protocol === 'https:',
+              sameSite: 'lax'
+            });
+          }
+          
+          console.log('AuthForm: 쿠키에 인증 정보 저장됨', {
+            호스트: host,
+            도메인설정: domain || '없음'
+          });
+        }
+        
+        toast.success('로그인 성공!');
+      } else {
+        await signUp(email, password, name);
+        toast.success('회원가입 성공! 이메일을 확인해주세요.');
+      }
+      
+      // 성공 후 리디렉션 또는 상태 업데이트
+      window.location.href = '/';
+    } catch (error: any) {
+      console.error('인증 오류:', error);
+      toast.error(error.message || '인증 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    
+    try {
+      await signInWithGoogle();
+      // 리디렉션은 Google OAuth 콜백 처리에서 이루어집니다.
+    } catch (error: any) {
+      console.error('Google 로그인 오류:', error);
+      toast.error(error.message || 'Google 로그인 중 오류가 발생했습니다.');
+      setIsGoogleLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-xl shadow-md">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">
+          {mode === 'login' ? '로그인' : '회원가입'}
+        </h1>
+        <p className="mt-2 text-sm text-gray-600">
+          {mode === 'login'
+            ? '백야드에 오신 것을 환영합니다!'
+            : '새 계정을 만들어 시작하세요.'}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          {mode === 'register' && (
+            <div className="space-y-2">
+              <Label htmlFor="name">이름</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="이름을 입력하세요"
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email">이메일</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="이메일을 입력하세요"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">비밀번호</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호를 입력하세요"
+              required
+            />
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading
+            ? '처리 중...'
+            : mode === 'login'
+            ? '로그인'
+            : '회원가입'}
+        </Button>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">또는</span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2"
+          onClick={handleGoogleSignIn}
+          disabled={isGoogleLoading}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+          </svg>
+          {isGoogleLoading ? "처리 중..." : "Google로 계속하기"}
+        </Button>
+
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={toggleMode}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {mode === 'login'
+              ? '계정이 없으신가요? 회원가입'
+              : '이미 계정이 있으신가요? 로그인'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+} 
+```
+
+src/components/auth/UserProfile.tsx
+```
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuTrigger, 
+  DropdownMenuContent, 
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { getCurrentUser, signOut } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+type User = {
+  id: string;
+  email: string;
+  dbUser?: {
+    name: string | null;
+  } | null;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+};
+
+export default function UserProfile() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('사용자 정보 로드 오류:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('로그아웃 되었습니다.');
+      router.push('/login');
+    } catch (error) {
+      toast.error('로그아웃 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 사용자 이름을 가져오는 헬퍼 함수
+  const getUserName = () => {
+    if (!user) return '';
+    
+    // 우선순위: 1. Google 프로필 이름, 2. DB에 저장된 이름, 3. 이메일 앞부분
+    return user.user_metadata?.full_name || 
+           user.dbUser?.name || 
+           (user.email ? user.email.split('@')[0] : '사용자');
+  };
+
+  // 아바타 이미지 URL 또는 이니셜을 가져오는 헬퍼 함수
+  const getAvatar = () => {
+    if (!user) return '';
+    
+    return user.user_metadata?.avatar_url || '';
+  };
+
+  // 이니셜 생성 헬퍼 함수
+  const getInitials = () => {
+    const name = getUserName();
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  if (isLoading) {
+    return <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />;
+  }
+
+  if (!user) {
+    return (
+      <Button variant="outline" size="sm" onClick={() => router.push('/login')}>
+        로그인
+      </Button>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            {getAvatar() ? (
+              <AvatarImage src={getAvatar()} alt={getUserName()} />
+            ) : (
+              <AvatarFallback>{getInitials()}</AvatarFallback>
+            )}
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <div className="flex flex-col space-y-1 p-2">
+          <p className="text-sm font-medium">{getUserName()}</p>
+          <p className="text-xs text-gray-500">{user.email}</p>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push('/board')}>
+          보드
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push('/cards')}>
+          카드
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push('/tags')}>
+          태그
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-red-600" onClick={handleSignOut}>
+          로그아웃
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+} 
+```
+
 src/components/debug/DevTools.tsx
 ```
 import { useState } from 'react';
@@ -9014,1242 +9902,6 @@ export function ViewportLogger() {
     </div>
   );
 } 
-```
-
-src/components/ui/alert-dialog.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
-
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
-
-function AlertDialog({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
-}
-
-function AlertDialogTrigger({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
-  return (
-    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
-  )
-}
-
-function AlertDialogPortal({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
-  return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
-  )
-}
-
-function AlertDialogOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
-  return (
-    <AlertDialogPrimitive.Overlay
-      data-slot="alert-dialog-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function AlertDialogContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
-  return (
-    <AlertDialogPortal>
-      <AlertDialogOverlay />
-      <AlertDialogPrimitive.Content
-        data-slot="alert-dialog-content"
-        className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
-          className
-        )}
-        {...props}
-      />
-    </AlertDialogPortal>
-  )
-}
-
-function AlertDialogHeader({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
-      {...props}
-    />
-  )
-}
-
-function AlertDialogFooter({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function AlertDialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
-  return (
-    <AlertDialogPrimitive.Title
-      data-slot="alert-dialog-title"
-      className={cn("text-lg font-semibold", className)}
-      {...props}
-    />
-  )
-}
-
-function AlertDialogDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
-  return (
-    <AlertDialogPrimitive.Description
-      data-slot="alert-dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props}
-    />
-  )
-}
-
-function AlertDialogAction({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
-  return (
-    <AlertDialogPrimitive.Action
-      className={cn(buttonVariants(), className)}
-      {...props}
-    />
-  )
-}
-
-function AlertDialogCancel({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
-  return (
-    <AlertDialogPrimitive.Cancel
-      className={cn(buttonVariants({ variant: "outline" }), className)}
-      {...props}
-    />
-  )
-}
-
-export {
-  AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-}
-```
-
-src/components/ui/badge.tsx
-```
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "@/lib/utils"
-
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
-
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  )
-}
-
-export { Badge, badgeVariants } 
-```
-
-src/components/ui/button.tsx
-```
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "@/lib/utils"
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
-        outline:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
-}
-
-export { Button, buttonVariants }
-```
-
-src/components/ui/card.tsx
-```
-import * as React from "react"
-
-import { cn } from "@/lib/utils"
-
-function Card({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-header"
-      className={cn("flex flex-col gap-1.5 px-6", className)}
-      {...props}
-    />
-  )
-}
-
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
-      {...props}
-    />
-  )
-}
-
-function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props}
-    />
-  )
-}
-
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-content"
-      className={cn("px-6", className)}
-      {...props}
-    />
-  )
-}
-
-function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-footer"
-      className={cn("flex items-center px-6", className)}
-      {...props}
-    />
-  )
-}
-
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
-```
-
-src/components/ui/checkbox.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { CheckIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-
-function Checkbox({
-  className,
-  ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
-  return (
-    <CheckboxPrimitive.Root
-      data-slot="checkbox"
-      className={cn(
-        "peer border-input data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="flex items-center justify-center text-current transition-none"
-      >
-        <CheckIcon className="size-3.5" />
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
-  )
-}
-
-export { Checkbox }
-```
-
-src/components/ui/dialog.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { XIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-
-function Dialog({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
-}
-
-function DialogTrigger({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
-}
-
-function DialogPortal({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
-}
-
-function DialogClose({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
-}
-
-function DialogOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
-  return (
-    <DialogPrimitive.Overlay
-      data-slot="dialog-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function DialogContent({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
-  return (
-    <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        data-slot="dialog-content"
-        className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
-          <XIcon />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      </DialogPrimitive.Content>
-    </DialogPortal>
-  )
-}
-
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
-      {...props}
-    />
-  )
-}
-
-function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function DialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
-  return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
-      {...props}
-    />
-  )
-}
-
-function DialogDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
-  return (
-    <DialogPrimitive.Description
-      data-slot="dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props}
-    />
-  )
-}
-
-export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-}
-```
-
-src/components/ui/dropdown-menu.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-
-function DropdownMenu({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
-}
-
-function DropdownMenuPortal({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
-  return (
-    <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
-  )
-}
-
-function DropdownMenuTrigger({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  return (
-    <DropdownMenuPrimitive.Trigger
-      data-slot="dropdown-menu-trigger"
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuContent({
-  className,
-  sideOffset = 4,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
-  return (
-    <DropdownMenuPrimitive.Portal>
-      <DropdownMenuPrimitive.Content
-        data-slot="dropdown-menu-content"
-        sideOffset={sideOffset}
-        className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
-          className
-        )}
-        {...props}
-      />
-    </DropdownMenuPrimitive.Portal>
-  )
-}
-
-function DropdownMenuGroup({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
-  return (
-    <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
-  )
-}
-
-function DropdownMenuItem({
-  className,
-  inset,
-  variant = "default",
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
-  inset?: boolean
-  variant?: "default" | "destructive"
-}) {
-  return (
-    <DropdownMenuPrimitive.Item
-      data-slot="dropdown-menu-item"
-      data-inset={inset}
-      data-variant={variant}
-      className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive-foreground data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/40 data-[variant=destructive]:focus:text-destructive-foreground data-[variant=destructive]:*:[svg]:!text-destructive-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuCheckboxItem({
-  className,
-  children,
-  checked,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
-  return (
-    <DropdownMenuPrimitive.CheckboxItem
-      data-slot="dropdown-menu-checkbox-item"
-      className={cn(
-        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      checked={checked}
-      {...props}
-    >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <DropdownMenuPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
-        </DropdownMenuPrimitive.ItemIndicator>
-      </span>
-      {children}
-    </DropdownMenuPrimitive.CheckboxItem>
-  )
-}
-
-function DropdownMenuRadioGroup({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
-  return (
-    <DropdownMenuPrimitive.RadioGroup
-      data-slot="dropdown-menu-radio-group"
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuRadioItem({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
-  return (
-    <DropdownMenuPrimitive.RadioItem
-      data-slot="dropdown-menu-radio-item"
-      className={cn(
-        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <DropdownMenuPrimitive.ItemIndicator>
-          <CircleIcon className="size-2 fill-current" />
-        </DropdownMenuPrimitive.ItemIndicator>
-      </span>
-      {children}
-    </DropdownMenuPrimitive.RadioItem>
-  )
-}
-
-function DropdownMenuLabel({
-  className,
-  inset,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
-  inset?: boolean
-}) {
-  return (
-    <DropdownMenuPrimitive.Label
-      data-slot="dropdown-menu-label"
-      data-inset={inset}
-      className={cn(
-        "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
-  return (
-    <DropdownMenuPrimitive.Separator
-      data-slot="dropdown-menu-separator"
-      className={cn("bg-border -mx-1 my-1 h-px", className)}
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuShortcut({
-  className,
-  ...props
-}: React.ComponentProps<"span">) {
-  return (
-    <span
-      data-slot="dropdown-menu-shortcut"
-      className={cn(
-        "text-muted-foreground ml-auto text-xs tracking-widest",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuSub({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
-  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
-}
-
-function DropdownMenuSubTrigger({
-  className,
-  inset,
-  children,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
-  inset?: boolean
-}) {
-  return (
-    <DropdownMenuPrimitive.SubTrigger
-      data-slot="dropdown-menu-sub-trigger"
-      data-inset={inset}
-      className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <ChevronRightIcon className="ml-auto size-4" />
-    </DropdownMenuPrimitive.SubTrigger>
-  )
-}
-
-function DropdownMenuSubContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
-  return (
-    <DropdownMenuPrimitive.SubContent
-      data-slot="dropdown-menu-sub-content"
-      className={cn(
-        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-export {
-  DropdownMenu,
-  DropdownMenuPortal,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-}
-```
-
-src/components/ui/form.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
-import { Slot } from "@radix-ui/react-slot"
-import {
-  Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
-  FormProvider,
-  useFormContext,
-  useFormState,
-} from "react-hook-form"
-
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
-
-const Form = FormProvider
-
-type FormFieldContextValue<
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
-  name: TName
-}
-
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
-)
-
-const FormField = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->({
-  ...props
-}: ControllerProps<TFieldValues, TName>) => {
-  return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...props} />
-    </FormFieldContext.Provider>
-  )
-}
-
-const useFormField = () => {
-  const fieldContext = React.useContext(FormFieldContext)
-  const itemContext = React.useContext(FormItemContext)
-  const { getFieldState } = useFormContext()
-  const formState = useFormState({ name: fieldContext.name })
-  const fieldState = getFieldState(fieldContext.name, formState)
-
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
-  }
-
-  const { id } = itemContext
-
-  return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState,
-  }
-}
-
-type FormItemContextValue = {
-  id: string
-}
-
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
-
-function FormItem({ className, ...props }: React.ComponentProps<"div">) {
-  const id = React.useId()
-
-  return (
-    <FormItemContext.Provider value={{ id }}>
-      <div
-        data-slot="form-item"
-        className={cn("grid gap-2", className)}
-        {...props}
-      />
-    </FormItemContext.Provider>
-  )
-}
-
-function FormLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
-  const { error, formItemId } = useFormField()
-
-  return (
-    <Label
-      data-slot="form-label"
-      data-error={!!error}
-      className={cn("data-[error=true]:text-destructive-foreground", className)}
-      htmlFor={formItemId}
-      {...props}
-    />
-  )
-}
-
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
-
-  return (
-    <Slot
-      data-slot="form-control"
-      id={formItemId}
-      aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={!!error}
-      {...props}
-    />
-  )
-}
-
-function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
-  const { formDescriptionId } = useFormField()
-
-  return (
-    <p
-      data-slot="form-description"
-      id={formDescriptionId}
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props}
-    />
-  )
-}
-
-function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
-  const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message) : props.children
-
-  if (!body) {
-    return null
-  }
-
-  return (
-    <p
-      data-slot="form-message"
-      id={formMessageId}
-      className={cn("text-destructive-foreground text-sm", className)}
-      {...props}
-    >
-      {body}
-    </p>
-  )
-}
-
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
-}
-```
-
-src/components/ui/input.tsx
-```
-import * as React from "react"
-
-import { cn } from "@/lib/utils"
-
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
-  return (
-    <input
-      type={type}
-      data-slot="input"
-      className={cn(
-        "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-export { Input }
-```
-
-src/components/ui/label.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
-
-import { cn } from "@/lib/utils"
-
-function Label({
-  className,
-  ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
-  return (
-    <LabelPrimitive.Root
-      data-slot="label"
-      className={cn(
-        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-export { Label }
-```
-
-src/components/ui/radio-group.tsx
-```
-"use client"
-
-import * as React from "react"
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
-import { CircleIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-
-function RadioGroup({
-  className,
-  ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
-  return (
-    <RadioGroupPrimitive.Root
-      data-slot="radio-group"
-      className={cn("grid gap-3", className)}
-      {...props}
-    />
-  )
-}
-
-function RadioGroupItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
-  return (
-    <RadioGroupPrimitive.Item
-      data-slot="radio-group-item"
-      className={cn(
-        "border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    >
-      <RadioGroupPrimitive.Indicator
-        data-slot="radio-group-indicator"
-        className="relative flex items-center justify-center"
-      >
-        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
-  )
-}
-
-export { RadioGroup, RadioGroupItem }
-```
-
-src/components/ui/skeleton.tsx
-```
-import { cn } from "@/lib/utils"
-
-function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="skeleton"
-      className={cn("bg-primary/10 animate-pulse rounded-md", className)}
-      {...props}
-    />
-  )
-}
-
-export { Skeleton }
-```
-
-src/components/ui/sonner.tsx
-```
-"use client"
-
-import { useTheme } from "next-themes"
-import { Toaster as Sonner, ToasterProps } from "sonner"
-
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
-  return (
-    <Sonner
-      theme={theme as ToasterProps["theme"]}
-      className="toaster group"
-      toastOptions={{
-        classNames: {
-          toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium",
-          cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground font-medium",
-        },
-      }}
-      {...props}
-    />
-  )
-}
-
-export { Toaster }
-```
-
-src/components/ui/table.tsx
-```
-"use client"
-
-import * as React from "react"
-
-import { cn } from "@/lib/utils"
-
-function Table({ className, ...props }: React.ComponentProps<"table">) {
-  return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
-    </div>
-  )
-}
-
-function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
-  return (
-    <thead
-      data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
-      {...props}
-    />
-  )
-}
-
-function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
-  return (
-    <tbody
-      data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
-      {...props}
-    />
-  )
-}
-
-function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
-  return (
-    <tfoot
-      data-slot="table-footer"
-      className={cn(
-        "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
-  return (
-    <tr
-      data-slot="table-row"
-      className={cn(
-        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
-  return (
-    <th
-      data-slot="table-head"
-      className={cn(
-        "text-muted-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
-  return (
-    <td
-      data-slot="table-cell"
-      className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function TableCaption({
-  className,
-  ...props
-}: React.ComponentProps<"caption">) {
-  return (
-    <caption
-      data-slot="table-caption"
-      className={cn("text-muted-foreground mt-4 text-sm", className)}
-      {...props}
-    />
-  )
-}
-
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-}
-```
-
-src/components/ui/textarea.tsx
-```
-import * as React from "react"
-
-import { cn } from "@/lib/utils"
-
-function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
-  return (
-    <textarea
-      data-slot="textarea"
-      className={cn(
-        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-export { Textarea }
 ```
 
 src/components/cards/CardList.test.tsx
@@ -11538,9 +11190,15 @@ import { DEFAULT_USER_ID } from "@/lib/constants";
 // 컴포넌트에 props 타입 정의
 interface CreateCardButtonProps {
   onCardCreated?: (cardData: any) => void;
+  autoOpen?: boolean; // 자동으로 모달을 열지 여부
+  onClose?: () => void; // 모달이 닫힐 때 콜백
 }
 
-export default function CreateCardButton({ onCardCreated }: CreateCardButtonProps) {
+export default function CreateCardButton({ 
+  onCardCreated, 
+  autoOpen = false,
+  onClose 
+}: CreateCardButtonProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -11549,6 +11207,23 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [firstUserId, setFirstUserId] = useState<string>("");
   const isComposing = useRef(false);
+
+  // 자동으로 모달 열기
+  useEffect(() => {
+    if (autoOpen) {
+      setOpen(true);
+    }
+  }, [autoOpen]);
+
+  // 모달 상태 변경 처리 핸들러
+  const handleOpenChange = (newOpenState: boolean) => {
+    setOpen(newOpenState);
+    
+    // 모달이 닫힐 때 onClose 콜백 호출
+    if (!newOpenState && onClose) {
+      onClose();
+    }
+  };
 
   // 사용자 ID 가져오기
   useEffect(() => {
@@ -11703,7 +11378,7 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>새 카드 만들기</Button>
       </DialogTrigger>
@@ -11763,7 +11438,10 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
           </div>
           <div className="flex justify-between pt-4">
             <DialogClose asChild>
-              <Button variant="outline" type="button">닫기</Button>
+              <Button variant="outline" type="button" onClick={() => {
+                // 닫기 버튼 클릭 시 onClose 콜백 호출
+                if (onClose) onClose();
+              }}>닫기</Button>
             </DialogClose>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "생성 중..." : "생성하기"}
@@ -11772,6 +11450,63 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
         </form>
       </DialogContent>
     </Dialog>
+  );
+} 
+```
+
+src/components/cards/CreateCardModal.tsx
+```
+import React, { useEffect, useState } from 'react';
+import { XYPosition } from '@xyflow/react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import CreateCardButton from '@/components/cards/CreateCardButton';
+
+interface CreateCardModalProps {
+  position: XYPosition;
+  connectingNodeId: string;
+  handleType: 'source' | 'target';
+  onClose: () => void;
+  onCardCreated: (cardData: any, position: XYPosition, connectingNodeId: string, handleType: 'source' | 'target') => void;
+}
+
+/**
+ * 엣지 드래그 드롭으로 새 카드를 생성하기 위한 모달 컴포넌트
+ */
+export function CreateCardModal({
+  position,
+  connectingNodeId,
+  handleType,
+  onClose,
+  onCardCreated
+}: CreateCardModalProps) {
+  // 카드 생성 콜백
+  const handleCardCreated = (cardData: any) => {
+    onCardCreated(cardData, position, connectingNodeId, handleType);
+  };
+
+  // 클릭 이벤트 전파 방지
+  const handleModalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="relative bg-card rounded-lg shadow-lg max-w-[700px] w-full mx-4" onClick={handleModalClick}>
+        <div className="absolute top-2 right-2">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="p-4">
+          <CreateCardButton 
+            onCardCreated={handleCardCreated} 
+            autoOpen={true} 
+            onClose={onClose}
+          />
+        </div>
+      </div>
+    </div>
   );
 } 
 ```
@@ -12152,13 +11887,8 @@ src/components/editor/TiptapEditor.tsx
 import React, { useCallback, useEffect } from 'react'
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Bold from '@tiptap/extension-bold'
-import Italic from '@tiptap/extension-italic'
 import Link from '@tiptap/extension-link'
 import Heading from '@tiptap/extension-heading'
-import BulletList from '@tiptap/extension-bullet-list'
-import OrderedList from '@tiptap/extension-ordered-list'
-import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
 import { Button } from '@/components/ui/button'
 import { 
@@ -12171,6 +11901,7 @@ import {
   ListOrdered as OrderedListIcon,
   Image as ImageIcon
 } from 'lucide-react'
+import Placeholder from '@tiptap/extension-placeholder'
 
 interface TiptapEditorProps {
   content: string
@@ -12187,21 +11918,30 @@ export default function TiptapEditor({
 }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Bold,
-      Italic,
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        heading: false,
+      }),
       Link.configure({
         openOnClick: false,
       }),
       Heading.configure({
-        levels: [1, 2],
+        levels: [1, 2, 3],
       }),
-      BulletList,
-      OrderedList,
-      ListItem,
       Image,
+      Placeholder.configure({
+        placeholder: placeholder || '내용을 입력하세요...',
+      }),
     ],
     content: content,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -12400,13 +12140,8 @@ src/components/editor/TiptapViewer.tsx
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
 import Link from '@tiptap/extension-link';
 import Heading from '@tiptap/extension-heading';
-import BulletList from '@tiptap/extension-bullet-list';
-import OrderedList from '@tiptap/extension-ordered-list';
-import ListItem from '@tiptap/extension-list-item';
 import Image from '@tiptap/extension-image';
 
 interface TiptapViewerProps {
@@ -12416,22 +12151,20 @@ interface TiptapViewerProps {
 export default function TiptapViewer({ content }: TiptapViewerProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Bold,
-      Italic,
+      StarterKit.configure({
+        heading: false,
+      }),
       Link.configure({
         openOnClick: true,
       }),
       Heading.configure({
         levels: [1, 2],
       }),
-      BulletList,
-      OrderedList,
-      ListItem,
       Image,
     ],
     content,
     editable: false,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: 'prose dark:prose-invert max-w-none',
@@ -12440,6 +12173,523 @@ export default function TiptapViewer({ content }: TiptapViewerProps) {
   });
 
   return <EditorContent editor={editor} />;
+} 
+```
+
+src/components/layout/BottomToolbar.tsx
+```
+'use client';
+
+import { PlusCircle, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter, PanelRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAppStore } from '@/store/useAppStore';
+
+export function BottomToolbar() {
+  const { layoutDirection, setLayoutDirection, toggleSidebar } = useAppStore();
+  
+  return (
+    <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-full shadow-md border p-1 px-2 z-10">
+      {/* 새 카드 추가 */}
+      <Button variant="ghost" size="icon" title="새 카드 추가" className="rounded-full h-[60px] w-[60px]">
+        <PlusCircle className="h-8 w-8" />
+        <span className="sr-only">새 카드</span>
+      </Button>
+      
+      {/* 수평 정렬 */}
+      <Button 
+        variant={layoutDirection === 'horizontal' ? 'default' : 'ghost'} 
+        size="icon" 
+        title="수평 정렬"
+        className="rounded-full h-[60px] w-[60px]"
+        onClick={() => setLayoutDirection('horizontal')}
+      >
+        <AlignHorizontalJustifyCenter className="h-8 w-8" />
+        <span className="sr-only">수평 정렬</span>
+      </Button>
+      
+      {/* 수직 정렬 */}
+      <Button 
+        variant={layoutDirection === 'vertical' ? 'default' : 'ghost'} 
+        size="icon" 
+        title="수직 정렬"
+        className="rounded-full h-[60px] w-[60px]"
+        onClick={() => setLayoutDirection('vertical')}
+      >
+        <AlignVerticalJustifyCenter className="h-8 w-8" />
+        <span className="sr-only">수직 정렬</span>
+      </Button>
+      
+      {/* 자동 배치 */}
+      <Button 
+        variant={layoutDirection === 'auto' ? 'default' : 'ghost'} 
+        size="icon" 
+        title="자동 배치"
+        className="rounded-full h-[60px] w-[60px]"
+        onClick={() => setLayoutDirection('auto')}
+      >
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 9L17 9M21 15H11M7 15H3M3 9L13 9M17 15L21 15M7 9H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M17 21V17M17 7V3M7 3V7M7 21V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="17" cy="9" r="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="7" cy="15" r="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span className="sr-only">자동 배치</span>
+      </Button>
+      
+      {/* 사이드바 토글 */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        title="사이드바 토글"
+        className="rounded-full h-[60px] w-[60px]"
+        onClick={toggleSidebar}
+      >
+        <PanelRight className="h-8 w-8" />
+        <span className="sr-only">사이드바 토글</span>
+      </Button>
+    </div>
+  );
+} 
+```
+
+src/components/layout/DashboardLayout.tsx
+```
+'use client';
+
+import { useEffect } from 'react';
+import { useAppStore } from '@/store/useAppStore';
+import { TopToolbar } from './TopToolbar';
+import { MainCanvas } from './MainCanvas';
+import { BottomToolbar } from './BottomToolbar';
+import { Sidebar } from './Sidebar';
+import { ReactFlowProvider } from '@xyflow/react';
+// React Flow 스타일은 MainCanvas에서 import 합니다
+
+export function DashboardLayout() {
+  const { isSidebarOpen } = useAppStore();
+
+  // 클라이언트 측에서만 실행되는 코드
+  useEffect(() => {
+    // 여기에 필요한 초기화 코드 추가
+    console.log('DashboardLayout 마운트됨');
+    
+    return () => {
+      console.log('DashboardLayout 언마운트됨');
+    };
+  }, []);
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* 상단 툴바 */}
+      <TopToolbar />
+      
+      {/* 메인 콘텐츠 영역 */}
+      <div className="flex flex-1 relative">
+        {/* 메인 캔버스 */}
+        <div className={`flex-1 h-full transition-all duration-300 ${isSidebarOpen ? 'mr-80' : ''}`}>
+          <ReactFlowProvider>
+            <MainCanvas />
+          </ReactFlowProvider>
+        </div>
+        
+        {/* 사이드바 */}
+        <Sidebar />
+      </div>
+      
+      {/* 하단 툴바 */}
+      <BottomToolbar />
+    </div>
+  );
+} 
+```
+
+src/components/layout/MainCanvas.tsx
+```
+'use client';
+
+import { useAppStore } from '@/store/useAppStore';
+import { ReactFlowProvider } from '@xyflow/react';
+import { Loader2 } from 'lucide-react';
+import BoardComponent from '@/components/board/BoardComponent';
+import '@xyflow/react/dist/style.css';
+
+// 외부 내보내기 컴포넌트
+export function MainCanvas() {
+  const { selectCard } = useAppStore();
+  
+  return (
+    <ReactFlowProvider>
+      <div className="w-full h-full pt-14">
+        <BoardComponent
+          onSelectCard={selectCard}
+          className="bg-background"
+          showControls={true}
+        />
+      </div>
+    </ReactFlowProvider>
+  );
+} 
+```
+
+src/components/layout/Sidebar.tsx
+```
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAppStore } from '@/store/useAppStore';
+import { ChevronRight, Eye, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import TiptapViewer from '@/components/editor/TiptapViewer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+
+// 카드 인터페이스 정의
+interface Tag {
+  id: string;
+  name: string;
+}
+
+interface CardTag {
+  id: string;
+  tag: Tag;
+}
+
+interface CardItem {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  cardTags?: CardTag[];
+}
+
+export function Sidebar() {
+  const { isSidebarOpen, setSidebarOpen, selectedCardId, selectCard } = useAppStore();
+  const [cards, setCards] = useState<CardItem[]>([]);
+  const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // 카드 목록 불러오기
+  useEffect(() => {
+    if (isSidebarOpen) {
+      fetchCards();
+    }
+  }, [isSidebarOpen]);
+
+  // 선택된 카드 정보 불러오기
+  useEffect(() => {
+    if (selectedCardId) {
+      fetchCardDetails(selectedCardId);
+    } else {
+      setSelectedCard(null);
+    }
+  }, [selectedCardId]);
+
+  async function fetchCards() {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/cards');
+      if (!response.ok) {
+        throw new Error('카드 목록을 불러오는데 실패했습니다.');
+      }
+      const data = await response.json();
+      setCards(data);
+    } catch (error) {
+      console.error('Error fetching cards:', error);
+      toast.error('카드 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchCardDetails(cardId: string) {
+    try {
+      const response = await fetch(`/api/cards/${cardId}`);
+      if (!response.ok) {
+        throw new Error('카드 정보를 불러오는데 실패했습니다.');
+      }
+      const data = await response.json();
+      setSelectedCard(data);
+    } catch (error) {
+      console.error('Error fetching card details:', error);
+      toast.error('카드 정보를 불러오는데 실패했습니다.');
+      selectCard(null); // 에러 발생 시 선택 해제
+    }
+  }
+
+  // 카드 삭제 처리
+  const handleDeleteCard = async (cardId: string) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/cards/${cardId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "카드 삭제에 실패했습니다.");
+      }
+
+      toast.success("카드가 성공적으로 삭제되었습니다.");
+      // 삭제 후 목록 갱신
+      fetchCards();
+      if (selectedCardId === cardId) {
+        selectCard(null);
+      }
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting card:", error);
+      toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(false);
+      setDeletingCardId(null);
+    }
+  };
+
+  const openDeleteDialog = (cardId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingCardId(cardId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  return (
+    <AnimatePresence>
+      {isSidebarOpen && (
+        <motion.div
+          initial={{ x: '100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '100%' }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="fixed top-0 right-0 bottom-0 w-80 bg-background border-l shadow-lg pt-14 z-0"
+        >
+          {/* 사이드바 접기 버튼 */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="absolute top-[calc(50%-20px)] -left-10 h-10 w-10 rounded-full bg-background border shadow-md"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+          
+          {/* 삭제 확인 다이얼로그 */}
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>카드 삭제</DialogTitle>
+                <DialogDescription>
+                  이 카드를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex gap-2 justify-end pt-4">
+                <DialogClose asChild>
+                  <Button variant="outline">취소</Button>
+                </DialogClose>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deletingCardId && handleDeleteCard(deletingCardId)} 
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "삭제 중..." : "삭제"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {selectedCardId && selectedCard ? (
+            // 카드 콘텐츠 뷰어
+            <div className="h-full flex flex-col">
+              {/* 카드 헤더 */}
+              <div className="border-b p-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold truncate">{selectedCard.title}</h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => selectCard(null)}
+                  >
+                    목록으로
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm text-muted-foreground">작성일</span>
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(selectedCard.createdAt)}
+                  </span>
+                </div>
+              </div>
+              
+              {/* 카드 콘텐츠 */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {selectedCard.content ? (
+                  <TiptapViewer content={selectedCard.content} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">내용이 없습니다.</p>
+                )}
+                
+                {/* 태그 표시 */}
+                {selectedCard.cardTags && selectedCard.cardTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-4">
+                    {selectedCard.cardTags.map((cardTag) => (
+                      <Badge 
+                        key={cardTag.id} 
+                        variant="secondary"
+                      >
+                        #{cardTag.tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            // 카드 목록
+            <div className="h-full flex flex-col">
+              <div className="border-b p-4">
+                <h2 className="text-xl font-semibold">카드 목록</h2>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                {loading ? (
+                  <div className="flex justify-center items-center h-20">
+                    <p className="text-sm text-muted-foreground">로딩 중...</p>
+                  </div>
+                ) : cards.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">카드가 없습니다. 새 카드를 추가해보세요!</p>
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-2">
+                    {cards.map((card) => (
+                      <div 
+                        key={card.id}
+                        className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => selectCard(card.id)}
+                      >
+                        <div className="flex justify-between">
+                          <h3 className="font-medium">{card.title}</h3>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6" 
+                            onClick={(e) => openDeleteDialog(card.id, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          <TiptapViewer content={card.content} />
+                        </div>
+                        <div className="flex justify-between mt-2">
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(card.createdAt)}
+                          </span>
+                          {card.cardTags && card.cardTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {card.cardTags.slice(0, 2).map((cardTag) => (
+                                <Badge 
+                                  key={cardTag.id} 
+                                  variant="outline"
+                                  className="text-xs px-1"
+                                >
+                                  #{cardTag.tag.name}
+                                </Badge>
+                              ))}
+                              {card.cardTags.length > 2 && (
+                                <Badge variant="outline" className="text-xs px-1">
+                                  +{card.cardTags.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+} 
+```
+
+src/components/layout/TopToolbar.tsx
+```
+'use client';
+
+import { useState } from 'react';
+import { Menu, Share2, LogOut, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+export function TopToolbar() {
+  const [projectName, setProjectName] = useState('프로젝트 이름');
+  
+  return (
+    <div className="fixed top-0 left-0 right-0 flex justify-between items-center px-3 py-2 bg-background/80 backdrop-blur-sm border-b z-10">
+      {/* 좌측: 메뉴 아이콘 및 프로젝트 제목 */}
+      <div className="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">메뉴</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem>내보내기</DropdownMenuItem>
+            <DropdownMenuItem>가져오기</DropdownMenuItem>
+            <DropdownMenuItem>저장</DropdownMenuItem>
+            <DropdownMenuItem>옵션</DropdownMenuItem>
+            <DropdownMenuItem>로그아웃</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <h1 className="text-xl font-semibold">{projectName}</h1>
+      </div>
+      
+      {/* 우측: 기능 아이콘들 */}
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon">
+          <Share2 className="h-5 w-5" />
+          <span className="sr-only">공유</span>
+        </Button>
+        
+        <Button variant="ghost" size="icon">
+          <Settings className="h-5 w-5" />
+          <span className="sr-only">설정</span>
+        </Button>
+        
+        <Button variant="ghost" size="icon">
+          <LogOut className="h-5 w-5" />
+          <span className="sr-only">로그아웃</span>
+        </Button>
+      </div>
+    </div>
+  );
 } 
 ```
 
@@ -13242,6 +13492,1322 @@ export default function TagList({ initialTags }: TagListProps) {
       )}
     </div>
   );
+} 
+```
+
+src/components/ui/alert-dialog.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
+
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
+
+function AlertDialog({
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+}
+
+function AlertDialogTrigger({
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
+  return (
+    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
+  )
+}
+
+function AlertDialogPortal({
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+  return (
+    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+  )
+}
+
+function AlertDialogOverlay({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+  return (
+    <AlertDialogPrimitive.Overlay
+      data-slot="alert-dialog-overlay"
+      className={cn(
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AlertDialogContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        data-slot="alert-dialog-content"
+        className={cn(
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          className
+        )}
+        {...props}
+      />
+    </AlertDialogPortal>
+  )
+}
+
+function AlertDialogHeader({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-dialog-header"
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      {...props}
+    />
+  )
+}
+
+function AlertDialogFooter({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-dialog-footer"
+      className={cn(
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AlertDialogTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+  return (
+    <AlertDialogPrimitive.Title
+      data-slot="alert-dialog-title"
+      className={cn("text-lg font-semibold", className)}
+      {...props}
+    />
+  )
+}
+
+function AlertDialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  return (
+    <AlertDialogPrimitive.Description
+      data-slot="alert-dialog-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+function AlertDialogAction({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+  return (
+    <AlertDialogPrimitive.Action
+      className={cn(buttonVariants(), className)}
+      {...props}
+    />
+  )
+}
+
+function AlertDialogCancel({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+  return (
+    <AlertDialogPrimitive.Cancel
+      className={cn(buttonVariants({ variant: "outline" }), className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+}
+```
+
+src/components/ui/badge.tsx
+```
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+  )
+}
+
+export { Badge, badgeVariants } 
+```
+
+src/components/ui/button.tsx
+```
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+        outline:
+          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+  }) {
+  const Comp = asChild ? Slot : "button"
+
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+export { Button, buttonVariants }
+```
+
+src/components/ui/card.tsx
+```
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn(
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn("flex flex-col gap-1.5 px-6", className)}
+      {...props}
+    />
+  )
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("leading-none font-semibold", className)}
+      {...props}
+    />
+  )
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6", className)}
+      {...props}
+    />
+  )
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("flex items-center px-6", className)}
+      {...props}
+    />
+  )
+}
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+```
+
+src/components/ui/checkbox.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { CheckIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+function Checkbox({
+  className,
+  ...props
+}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        "peer border-input data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    >
+      <CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className="flex items-center justify-center text-current transition-none"
+      >
+        <CheckIcon className="size-3.5" />
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  )
+}
+
+export { Checkbox }
+```
+
+src/components/ui/dialog.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { XIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+function Dialog({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+}
+
+function DialogTrigger({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+}
+
+function DialogPortal({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+}
+
+function DialogClose({
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Close>) {
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+}
+
+function DialogOverlay({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  return (
+    <DialogPrimitive.Overlay
+      data-slot="dialog-overlay"
+      className={cn(
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DialogContent({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+  return (
+    <DialogPortal data-slot="dialog-portal">
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        data-slot="dialog-content"
+        className={cn(
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+          <XIcon />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  )
+}
+
+function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-header"
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      {...props}
+    />
+  )
+}
+
+function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-footer"
+      className={cn(
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DialogTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+  return (
+    <DialogPrimitive.Title
+      data-slot="dialog-title"
+      className={cn("text-lg leading-none font-semibold", className)}
+      {...props}
+    />
+  )
+}
+
+function DialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  return (
+    <DialogPrimitive.Description
+      data-slot="dialog-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+}
+```
+
+src/components/ui/dropdown-menu.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+function DropdownMenu({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+}
+
+function DropdownMenuPortal({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
+  return (
+    <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+  )
+}
+
+function DropdownMenuTrigger({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  return (
+    <DropdownMenuPrimitive.Trigger
+      data-slot="dropdown-menu-trigger"
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuContent({
+  className,
+  sideOffset = 4,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  return (
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.Content
+        data-slot="dropdown-menu-content"
+        sideOffset={sideOffset}
+        className={cn(
+          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+          className
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  )
+}
+
+function DropdownMenuGroup({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
+  return (
+    <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+  )
+}
+
+function DropdownMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
+  inset?: boolean
+  variant?: "default" | "destructive"
+}) {
+  return (
+    <DropdownMenuPrimitive.Item
+      data-slot="dropdown-menu-item"
+      data-inset={inset}
+      data-variant={variant}
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive-foreground data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/40 data-[variant=destructive]:focus:text-destructive-foreground data-[variant=destructive]:*:[svg]:!text-destructive-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuCheckboxItem({
+  className,
+  children,
+  checked,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      data-slot="dropdown-menu-checkbox-item"
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      checked={checked}
+      {...props}
+    >
+      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <CheckIcon className="size-4" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.CheckboxItem>
+  )
+}
+
+function DropdownMenuRadioGroup({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
+  return (
+    <DropdownMenuPrimitive.RadioGroup
+      data-slot="dropdown-menu-radio-group"
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuRadioItem({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+  return (
+    <DropdownMenuPrimitive.RadioItem
+      data-slot="dropdown-menu-radio-item"
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    >
+      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <CircleIcon className="size-2 fill-current" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.RadioItem>
+  )
+}
+
+function DropdownMenuLabel({
+  className,
+  inset,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
+  inset?: boolean
+}) {
+  return (
+    <DropdownMenuPrimitive.Label
+      data-slot="dropdown-menu-label"
+      data-inset={inset}
+      className={cn(
+        "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+  return (
+    <DropdownMenuPrimitive.Separator
+      data-slot="dropdown-menu-separator"
+      className={cn("bg-border -mx-1 my-1 h-px", className)}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuShortcut({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="dropdown-menu-shortcut"
+      className={cn(
+        "text-muted-foreground ml-auto text-xs tracking-widest",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuSub({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
+  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
+}
+
+function DropdownMenuSubTrigger({
+  className,
+  inset,
+  children,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
+  inset?: boolean
+}) {
+  return (
+    <DropdownMenuPrimitive.SubTrigger
+      data-slot="dropdown-menu-sub-trigger"
+      data-inset={inset}
+      className={cn(
+        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronRightIcon className="ml-auto size-4" />
+    </DropdownMenuPrimitive.SubTrigger>
+  )
+}
+
+function DropdownMenuSubContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+  return (
+    <DropdownMenuPrimitive.SubContent
+      data-slot="dropdown-menu-sub-content"
+      className={cn(
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  DropdownMenu,
+  DropdownMenuPortal,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+}
+```
+
+src/components/ui/form.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { Slot } from "@radix-ui/react-slot"
+import {
+  Controller,
+  ControllerProps,
+  FieldPath,
+  FieldValues,
+  FormProvider,
+  useFormContext,
+  useFormState,
+} from "react-hook-form"
+
+import { cn } from "@/lib/utils"
+import { Label } from "@/components/ui/label"
+
+const Form = FormProvider
+
+type FormFieldContextValue<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> = {
+  name: TName
+}
+
+const FormFieldContext = React.createContext<FormFieldContextValue>(
+  {} as FormFieldContextValue
+)
+
+const FormField = <
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  ...props
+}: ControllerProps<TFieldValues, TName>) => {
+  return (
+    <FormFieldContext.Provider value={{ name: props.name }}>
+      <Controller {...props} />
+    </FormFieldContext.Provider>
+  )
+}
+
+const useFormField = () => {
+  const fieldContext = React.useContext(FormFieldContext)
+  const itemContext = React.useContext(FormItemContext)
+  const { getFieldState } = useFormContext()
+  const formState = useFormState({ name: fieldContext.name })
+  const fieldState = getFieldState(fieldContext.name, formState)
+
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>")
+  }
+
+  const { id } = itemContext
+
+  return {
+    id,
+    name: fieldContext.name,
+    formItemId: `${id}-form-item`,
+    formDescriptionId: `${id}-form-item-description`,
+    formMessageId: `${id}-form-item-message`,
+    ...fieldState,
+  }
+}
+
+type FormItemContextValue = {
+  id: string
+}
+
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue
+)
+
+function FormItem({ className, ...props }: React.ComponentProps<"div">) {
+  const id = React.useId()
+
+  return (
+    <FormItemContext.Provider value={{ id }}>
+      <div
+        data-slot="form-item"
+        className={cn("grid gap-2", className)}
+        {...props}
+      />
+    </FormItemContext.Provider>
+  )
+}
+
+function FormLabel({
+  className,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  const { error, formItemId } = useFormField()
+
+  return (
+    <Label
+      data-slot="form-label"
+      data-error={!!error}
+      className={cn("data-[error=true]:text-destructive-foreground", className)}
+      htmlFor={formItemId}
+      {...props}
+    />
+  )
+}
+
+function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+
+  return (
+    <Slot
+      data-slot="form-control"
+      id={formItemId}
+      aria-describedby={
+        !error
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`
+      }
+      aria-invalid={!!error}
+      {...props}
+    />
+  )
+}
+
+function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
+  const { formDescriptionId } = useFormField()
+
+  return (
+    <p
+      data-slot="form-description"
+      id={formDescriptionId}
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
+  const { error, formMessageId } = useFormField()
+  const body = error ? String(error?.message) : props.children
+
+  if (!body) {
+    return null
+  }
+
+  return (
+    <p
+      data-slot="form-message"
+      id={formMessageId}
+      className={cn("text-destructive-foreground text-sm", className)}
+      {...props}
+    >
+      {body}
+    </p>
+  )
+}
+
+export {
+  useFormField,
+  Form,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+  FormField,
+}
+```
+
+src/components/ui/input.tsx
+```
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Input }
+```
+
+src/components/ui/label.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+
+import { cn } from "@/lib/utils"
+
+function Label({
+  className,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  return (
+    <LabelPrimitive.Root
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Label }
+```
+
+src/components/ui/radio-group.tsx
+```
+"use client"
+
+import * as React from "react"
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import { CircleIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+function RadioGroup({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+  return (
+    <RadioGroupPrimitive.Root
+      data-slot="radio-group"
+      className={cn("grid gap-3", className)}
+      {...props}
+    />
+  )
+}
+
+function RadioGroupItem({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+  return (
+    <RadioGroupPrimitive.Item
+      data-slot="radio-group-item"
+      className={cn(
+        "border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    >
+      <RadioGroupPrimitive.Indicator
+        data-slot="radio-group-indicator"
+        className="relative flex items-center justify-center"
+      >
+        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
+      </RadioGroupPrimitive.Indicator>
+    </RadioGroupPrimitive.Item>
+  )
+}
+
+export { RadioGroup, RadioGroupItem }
+```
+
+src/components/ui/skeleton.tsx
+```
+import { cn } from "@/lib/utils"
+
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={cn("bg-primary/10 animate-pulse rounded-md", className)}
+      {...props}
+    />
+  )
+}
+
+export { Skeleton }
+```
+
+src/components/ui/sonner.tsx
+```
+"use client"
+
+import { useTheme } from "next-themes"
+import { Toaster as Sonner, ToasterProps } from "sonner"
+
+const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme()
+
+  return (
+    <Sonner
+      theme={theme as ToasterProps["theme"]}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground font-medium",
+        },
+      }}
+      {...props}
+    />
+  )
+}
+
+export { Toaster }
+```
+
+src/components/ui/table.tsx
+```
+"use client"
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Table({ className, ...props }: React.ComponentProps<"table">) {
+  return (
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto"
+    >
+      <table
+        data-slot="table"
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      />
+    </div>
+  )
+}
+
+function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+  return (
+    <thead
+      data-slot="table-header"
+      className={cn("[&_tr]:border-b", className)}
+      {...props}
+    />
+  )
+}
+
+function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+  return (
+    <tbody
+      data-slot="table-body"
+      className={cn("[&_tr:last-child]:border-0", className)}
+      {...props}
+    />
+  )
+}
+
+function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+  return (
+    <tfoot
+      data-slot="table-footer"
+      className={cn(
+        "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+  return (
+    <tr
+      data-slot="table-row"
+      className={cn(
+        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+  return (
+    <th
+      data-slot="table-head"
+      className={cn(
+        "text-muted-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+  return (
+    <td
+      data-slot="table-cell"
+      className={cn(
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TableCaption({
+  className,
+  ...props
+}: React.ComponentProps<"caption">) {
+  return (
+    <caption
+      data-slot="table-caption"
+      className={cn("text-muted-foreground mt-4 text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+}
+```
+
+src/components/ui/textarea.tsx
+```
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      data-slot="textarea"
+      className={cn(
+        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Textarea }
+```
+
+src/app/api/board-settings/route.ts
+```
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import prisma from '@/lib/prisma';
+
+// 보드 설정 스키마
+const boardSettingsSchema = z.object({
+  userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
+  settings: z.object({
+    snapToGrid: z.boolean(),
+    snapGrid: z.tuple([z.number(), z.number()]),
+    connectionLineType: z.string(),
+    markerEnd: z.string().nullable(),
+    strokeWidth: z.number(),
+    markerSize: z.number()
+  })
+});
+
+// 보드 설정 저장 API
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { userId, settings } = boardSettingsSchema.parse(body);
+
+    // 기존 설정이 있는지 확인
+    const existingSettings = await prisma.boardSettings.findUnique({
+      where: { userId }
+    });
+
+    // 설정 업데이트 또는 생성
+    if (existingSettings) {
+      await prisma.boardSettings.update({
+        where: { userId },
+        data: {
+          settings: settings
+        }
+      });
+    } else {
+      await prisma.boardSettings.create({
+        data: {
+          userId,
+          settings
+        }
+      });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error('보드 설정 저장 실패:', error);
+    return NextResponse.json({ error: '보드 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
+  }
+}
+
+// 보드 설정 조회 API
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = request.nextUrl;
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ error: '사용자 ID가 필요합니다.' }, { status: 400 });
+    }
+
+    const boardSettings = await prisma.boardSettings.findUnique({
+      where: { userId }
+    });
+
+    if (!boardSettings) {
+      return NextResponse.json({ settings: null }, { status: 200 });
+    }
+
+    return NextResponse.json({ settings: boardSettings.settings }, { status: 200 });
+  } catch (error) {
+    console.error('보드 설정 조회 실패:', error);
+    return NextResponse.json({ error: '보드 설정을 조회하는 데 실패했습니다.' }, { status: 500 });
+  }
 } 
 ```
 
@@ -14468,46 +16034,6 @@ export async function GET(request: NextRequest) {
 } 
 ```
 
-src/app/api/db-init/route.ts
-```
-import { NextRequest, NextResponse } from 'next/server';
-import { initDatabase } from '@/lib/db-init';
-
-/**
- * DB 초기화 API 엔드포인트
- * 개발 환경에서만 사용 가능
- */
-export async function GET(request: NextRequest) {
-  // 개발 환경인지 확인
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json(
-      { error: '이 API는 개발 환경에서만 사용 가능합니다.' },
-      { status: 403 }
-    );
-  }
-
-  try {
-    await initDatabase();
-    
-    return NextResponse.json(
-      { success: true, message: '데이터베이스 초기화가 완료되었습니다.' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('DB 초기화 API 오류:', error);
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        message: '데이터베이스 초기화 중 오류가 발생했습니다.', 
-        error: error instanceof Error ? error.message : String(error) 
-      },
-      { status: 500 }
-    );
-  }
-} 
-```
-
 src/app/api/health-check/route.ts
 ```
 import { NextRequest, NextResponse } from 'next/server';
@@ -14547,82 +16073,42 @@ export async function GET(request: NextRequest) {
 } 
 ```
 
-src/app/api/board-settings/route.ts
+src/app/api/db-init/route.ts
 ```
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import prisma from '@/lib/prisma';
+import { initDatabase } from '@/lib/db-init';
 
-// 보드 설정 스키마
-const boardSettingsSchema = z.object({
-  userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
-  settings: z.object({
-    snapToGrid: z.boolean(),
-    snapGrid: z.tuple([z.number(), z.number()]),
-    connectionLineType: z.string(),
-    markerEnd: z.string().nullable(),
-    strokeWidth: z.number(),
-    markerSize: z.number()
-  })
-});
-
-// 보드 설정 저장 API
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { userId, settings } = boardSettingsSchema.parse(body);
-
-    // 기존 설정이 있는지 확인
-    const existingSettings = await prisma.boardSettings.findUnique({
-      where: { userId }
-    });
-
-    // 설정 업데이트 또는 생성
-    if (existingSettings) {
-      await prisma.boardSettings.update({
-        where: { userId },
-        data: {
-          settings: settings
-        }
-      });
-    } else {
-      await prisma.boardSettings.create({
-        data: {
-          userId,
-          settings
-        }
-      });
-    }
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error('보드 설정 저장 실패:', error);
-    return NextResponse.json({ error: '보드 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
-  }
-}
-
-// 보드 설정 조회 API
+/**
+ * DB 초기화 API 엔드포인트
+ * 개발 환경에서만 사용 가능
+ */
 export async function GET(request: NextRequest) {
+  // 개발 환경인지 확인
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json(
+      { error: '이 API는 개발 환경에서만 사용 가능합니다.' },
+      { status: 403 }
+    );
+  }
+
   try {
-    const { searchParams } = request.nextUrl;
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: '사용자 ID가 필요합니다.' }, { status: 400 });
-    }
-
-    const boardSettings = await prisma.boardSettings.findUnique({
-      where: { userId }
-    });
-
-    if (!boardSettings) {
-      return NextResponse.json({ settings: null }, { status: 200 });
-    }
-
-    return NextResponse.json({ settings: boardSettings.settings }, { status: 200 });
+    await initDatabase();
+    
+    return NextResponse.json(
+      { success: true, message: '데이터베이스 초기화가 완료되었습니다.' },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('보드 설정 조회 실패:', error);
-    return NextResponse.json({ error: '보드 설정을 조회하는 데 실패했습니다.' }, { status: 500 });
+    console.error('DB 초기화 API 오류:', error);
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: '데이터베이스 초기화 중 오류가 발생했습니다.', 
+        error: error instanceof Error ? error.message : String(error) 
+      },
+      { status: 500 }
+    );
   }
 } 
 ```
@@ -15111,298 +16597,147 @@ src/app/auth/callback/page.tsx
 ```
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getBrowserClient } from '@/lib/auth';
-import { setCookie, getCookie } from 'cookies-next';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
-export default function AuthCallbackPage() {
+// 실제 콜백 처리를 담당하는 컴포넌트
+function CallbackHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string>('');
-  const [countdown, setCountdown] = useState<number>(10); // 카운트다운 추가
-
+  
   useEffect(() => {
-    async function handleAuthCallback() {
+    const handleCallback = async () => {
       try {
-        // URL에서 오류 패러미터 확인
-        const searchParams = new URLSearchParams(window.location.search);
-        const errorParam = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
         const code = searchParams.get('code');
         
-        // 현재 URL과 사용자 환경 정보 기록
-        const debugStartInfo = `
-현재 URL: ${window.location.href}
-호스트: ${window.location.host}
-환경: ${process.env.NODE_ENV}
-리디렉션 URL 환경변수: ${process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL || '설정되지 않음'}
-        `;
-        setDebugInfo(debugStartInfo + `\n\n체크 1: URL 파라미터 - code: ${code ? '있음' : '없음'}, error: ${errorParam || '없음'}`);
+        console.log('[Callback] 인증 콜백 처리 시작');
         
-        if (errorParam) {
-          console.error('OAuth 에러:', errorParam, errorDescription);
-          setError(`인증 오류: ${errorParam}${errorDescription ? ` - ${errorDescription}` : ''}`);
-          setLoading(false);
-          return;
-        }
-
-        console.log('클라이언트 측 인증 콜백 처리 시작');
-        console.log('현재 URL:', window.location.href);
-        setDebugInfo(prev => prev + `\n체크 2: 콜백 처리 시작, URL: ${window.location.href}`);
-        
-        // Supabase 클라이언트 가져오기
-        const supabase = getBrowserClient();
-        console.log('Supabase 클라이언트 초기화 완료');
-        setDebugInfo(prev => prev + '\n체크 3: Supabase 클라이언트 초기화');
-        
-        // 세션 상태 확인 (Supabase가 자동으로 URL의 코드를 처리)
-        console.log('세션 상태 확인 시작');
-        setDebugInfo(prev => prev + '\n체크 4: 세션 확인 시작');
-        
-        // 쿠키 확인
-        const existingCookies = document.cookie;
-        console.log('현재 쿠키:', existingCookies);
-        setDebugInfo(prev => prev + `\n체크 5: 현재 쿠키 - ${existingCookies ? existingCookies.length + '바이트' : '없음'}`);
-        
-        // 직접 세션 가져오기 시도
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        
-        // 세션 디버그 정보 추가
-        const sessionDebugInfo = data?.session 
-          ? `세션 있음, 사용자 ID: ${data.session.user?.id || '없음'}, 이메일: ${data.session.user?.email || '없음'}`
-          : '세션 없음';
-        setDebugInfo(prev => prev + `\n체크 6: 세션 데이터 - ${sessionDebugInfo}`);
-        console.log('세션 데이터:', sessionDebugInfo);
-        
-        if (sessionError) {
-          console.error('세션 확인 오류:', sessionError);
-          setError(`세션 확인 중 오류: ${sessionError.message}`);
-          setDebugInfo(prev => prev + `\n체크 7: 세션 오류 - ${sessionError.message}`);
-          setLoading(false);
-          return;
-        }
-
-        if (data?.session) {
-          console.log('인증 성공, 세션 생성됨');
-          setDebugInfo(prev => prev + '\n체크 8: 인증 성공, 세션 생성됨');
+        // 디버깅: 로컬 스토리지 상태 확인
+        if (typeof window !== 'undefined') {
+          const verifier = localStorage.getItem('supabase.auth.code_verifier');
+          const backupVerifier = sessionStorage.getItem('auth.code_verifier.backup');
           
-          // 현재 호스트 이름 가져오기
-          const hostname = window.location.hostname;
-          const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-          
-          // 도메인 설정 개선
-          let cookieOptions: {
-            maxAge: number;
-            path: string;
-            secure: boolean;
-            sameSite: 'lax' | 'strict' | 'none';
-            domain?: string;
-          } = {
-            maxAge: 60 * 60 * 24 * 7, // 7일
-            path: '/',
-            secure: true, // production에서는 항상 true
-            sameSite: 'lax'
-          };
-          
-          // localhost가 아닌 경우에만 도메인 설정
-          if (!isLocalhost) {
-            cookieOptions = {
-              ...cookieOptions,
-              domain: hostname // 전체 호스트네임 사용
-            };
-          }
-          
-          // 쿠키 설정 시도 1: cookies-next 라이브러리
-          try {
-            setCookie('sb-access-token', data.session.access_token, cookieOptions);
-            
-            if (data.session.refresh_token) {
-              setCookie('sb-refresh-token', data.session.refresh_token, {
-                ...cookieOptions,
-                maxAge: 60 * 60 * 24 * 30 // 30일
-              });
-            }
-          } catch (cookieError) {
-            console.error('cookies-next 설정 실패:', cookieError);
-            setDebugInfo(prev => prev + `\n쿠키 설정 실패 (cookies-next): ${cookieError}`);
-          }
-          
-          // 쿠키 설정 시도 2: document.cookie (백업)
-          try {
-            const cookieStr = `sb-access-token=${data.session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
-            document.cookie = cookieStr;
-            
-            if (data.session.refresh_token) {
-              document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax; Secure`;
-            }
-          } catch (docCookieError) {
-            console.error('document.cookie 설정 실패:', docCookieError);
-            setDebugInfo(prev => prev + `\n쿠키 설정 실패 (document.cookie): ${docCookieError}`);
-          }
-          
-          // localStorage 백업 (이미 존재하는 코드)
-          try {
-            localStorage.setItem('supabase.auth.token', JSON.stringify({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              expires_at: data.session.expires_at
-            }));
-            setDebugInfo(prev => prev + '\n로컬 스토리지 백업 완료');
-          } catch (storageError) {
-            console.error('로컬 스토리지 저장 오류:', storageError);
-            setDebugInfo(prev => prev + `\n로컬 스토리지 오류: ${storageError}`);
-          }
-          
-          console.log('세션 토큰을 쿠키에 저장함', {
-            환경: process.env.NODE_ENV,
-            호스트: hostname,
-            도메인: cookieOptions.domain || '없음',
-            보안: cookieOptions.secure ? 'HTTPS' : 'HTTP'
+          console.log('[Callback] 로컬 스토리지 상태:', {
+            code: code ? `${code.substring(0, 10)}...` : '없음',
+            code_verifier: verifier ? `${verifier.substring(0, 5)}...${verifier.substring(verifier.length - 5)} (길이: ${verifier.length})` : '없음',
+            backup_verifier: backupVerifier ? `${backupVerifier.substring(0, 5)}...${backupVerifier.substring(backupVerifier.length - 5)} (길이: ${backupVerifier.length})` : '없음',
+            localStorage_keys: Object.keys(localStorage).filter(key => key.startsWith('supabase')),
+            sessionStorage_keys: Object.keys(sessionStorage)
           });
           
-          // 설정된 쿠키 확인
-          const accessCookie = getCookie('sb-access-token');
-          const refreshCookie = getCookie('sb-refresh-token');
-          console.log('쿠키 확인 - 액세스 토큰:', accessCookie ? '존재함' : '없음');
-          console.log('쿠키 확인 - 리프레시 토큰:', refreshCookie ? '존재함' : '없음');
-          setDebugInfo(prev => prev + `\n체크 11: 쿠키 설정 확인 - 액세스: ${accessCookie ? '있음' : '없음'}, 리프레시: ${refreshCookie ? '있음' : '없음'}`);
-          
-          // 사용자 정보를 데이터베이스에 저장 또는 업데이트
-          try {
-            const userId = data.session.user.id;
-            const userEmail = data.session.user.email;
-            const userName = data.session.user.user_metadata?.full_name || 
-                            (userEmail ? userEmail.split('@')[0] : '사용자');
-            
-            // 사용자 정보 저장 API 호출
-            const response = await fetch('/api/user/register', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${data.session.access_token}`,
-              },
-              body: JSON.stringify({
-                id: userId,
-                email: userEmail,
-                name: userName,
-              }),
-            });
-            
-            if (!response.ok) {
-              console.warn('사용자 정보 저장 실패:', await response.text());
-              setDebugInfo(prev => prev + '\n체크 12: 사용자 정보 저장 실패');
-            } else {
-              console.log('사용자 정보 저장 성공');
-              setDebugInfo(prev => prev + '\n체크 12: 사용자 정보 저장 성공');
-            }
-          } catch (dbError) {
-            console.error('사용자 정보 처리 오류:', dbError);
-            setDebugInfo(prev => prev + `\n체크 12-오류: 사용자 정보 처리 오류 - ${dbError}`);
-            // 사용자 정보 저장 실패해도 인증은 계속 진행
+          // 백업에서 복원 시도
+          if (!verifier && backupVerifier) {
+            console.log('[Callback] 백업에서 code_verifier 복원 시도');
+            localStorage.setItem('supabase.auth.code_verifier', backupVerifier);
           }
-          
-          // 페이지 이동 전 Supabase 세션 다시 한 번 확인
-          console.log('인증 완료, 보드 페이지로 이동 준비');
-          setDebugInfo(prev => prev + '\n체크 13: 보드 페이지로 이동 준비');
-          
-          // 카운트다운 시작
-          setLoading(false);
-          const countdownInterval = setInterval(() => {
-            setCountdown(prev => {
-              if (prev <= 1) {
-                clearInterval(countdownInterval);
-                
-                // 카운트다운 완료 후 페이지 이동
-                console.log('보드 페이지로 최종 이동');
-                setDebugInfo(prev => prev + '\n체크 14: 보드 페이지로 최종 이동');
-                
-                // 리디렉션 방법 1: window.location.href (페이지 새로고침)
-                window.location.href = '/board';
-                
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-          
-        } else {
-          // 세션이 없으면 에러 표시
-          console.error('세션 없음');
-          setError('인증은 성공했지만 세션이 생성되지 않았습니다.');
-          setDebugInfo(prev => prev + '\n체크 15: 세션 없음');
-          setLoading(false);
         }
-      } catch (error: any) {
-        console.error('인증 콜백 처리 오류:', error);
-        setError(`인증 처리 중 오류: ${error?.message || '알 수 없는 오류'}`);
-        setDebugInfo(prev => prev + `\n체크 16: 인증 콜백 처리 오류 - ${error?.message || '알 수 없는 오류'}`);
+        
+        if (!code) {
+          console.error('[Callback] 인증 코드가 없습니다.');
+          setError('인증 코드가 없습니다.');
+          router.push('/login?error=missing_code');
+          return;
+        }
+        
+        // Supabase 클라이언트 생성
+        const supabase = createBrowserSupabaseClient();
+        
+        // 코드 교환 시도
+        console.log('[Callback] 코드를 세션으로 교환 시도 중...');
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (exchangeError) {
+          console.error('[Callback] 세션 교환 오류:', exchangeError.message);
+          setError(exchangeError.message);
+          router.push(`/login?error=auth_error&message=${encodeURIComponent(exchangeError.message)}`);
+          return;
+        }
+        
+        if (!data.session) {
+          console.error('[Callback] 세션이 생성되지 않았습니다.');
+          setError('세션이 생성되지 않았습니다.');
+          router.push('/login?error=no_session');
+          return;
+        }
+        
+        // 쿠키 확인
+        const allCookies = document.cookie.split(';').map(cookie => cookie.trim());
+        console.log('[Callback] 세션 생성 후 쿠키 확인:', {
+          allCookies,
+          accessTokenExists: allCookies.some(c => c.startsWith('sb-access-token=')),
+          refreshTokenExists: allCookies.some(c => c.startsWith('sb-refresh-token='))
+        });
+        
+        // 세션 스토리지 정리
+        sessionStorage.removeItem('auth.code_verifier.backup');
+        
+        console.log('[Callback] 인증 성공. 유저 정보:', {
+          userId: data.session.user.id,
+          email: data.session.user.email
+        });
+        
+        // 성공 시 보드 페이지로 리디렉션
         setLoading(false);
+        router.push('/board');
+      } catch (err: any) {
+        console.error('[Callback] 예상치 못한 오류:', err.message);
+        setError(err.message || '알 수 없는 오류가 발생했습니다.');
+        router.push(`/login?error=unexpected&message=${encodeURIComponent(err.message || '알 수 없는 오류')}`);
       }
-    }
-
-    handleAuthCallback();
-  }, [router]);
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="p-6 max-w-md bg-white rounded-lg border border-red-200 shadow-lg">
-          <h2 className="text-xl font-bold text-red-600 mb-4">인증 오류</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
-          <details className="mb-4">
-            <summary className="text-sm text-blue-500 cursor-pointer">디버그 정보 보기</summary>
-            <pre className="text-xs bg-gray-100 p-2 mt-2 rounded overflow-auto max-h-60 whitespace-pre-wrap">
-              {debugInfo || '디버그 정보 없음'}
-            </pre>
-          </details>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => window.location.href = '/login'}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              로그인으로 돌아가기
-            </button>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-            >
-              새로고침
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+    };
+    
+    handleCallback();
+  }, [router, searchParams]);
+  
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
       {loading ? (
         <>
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
-          <p className="text-gray-600 mb-4">잠시만 기다려 주세요.</p>
+          <h2 className="text-2xl font-semibold mb-4">인증 처리 중...</h2>
+          <p className="text-gray-600 mb-4">잠시만 기다려주세요.</p>
+          <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
+        </>
+      ) : error ? (
+        <>
+          <h2 className="text-2xl font-semibold mb-4 text-red-500">오류 발생</h2>
+          <p className="text-gray-700">{error}</p>
+          <button 
+            onClick={() => router.push('/login')}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            로그인 페이지로 돌아가기
+          </button>
         </>
       ) : (
         <>
-          <div className="text-2xl text-green-500 mb-4">✓</div>
-          <h2 className="text-xl font-semibold mb-2">인증 성공!</h2>
-          <p className="text-gray-600 mb-4">{countdown}초 후 자동으로 이동합니다...</p>
-          <button 
-            onClick={() => {window.location.href = '/board'}}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
-          >
-            지금 이동하기
-          </button>
+          <h2 className="text-2xl font-semibold mb-4 text-green-500">인증 성공!</h2>
+          <p className="text-gray-700">로그인되었습니다. 리디렉션 중...</p>
         </>
       )}
-      <details className="w-full max-w-md mt-4">
-        <summary className="text-sm text-blue-500 cursor-pointer">디버그 정보 보기</summary>
-        <pre className="text-xs bg-gray-100 p-3 mt-2 rounded overflow-auto max-h-60 whitespace-pre-wrap">
-          {debugInfo || '디버그 정보 없음'}
-        </pre>
-      </details>
+    </div>
+  );
+}
+
+// 로딩 표시 컴포넌트
+function LoadingFallback() {
+  return (
+    <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
+      <h2 className="text-2xl font-semibold mb-4">로딩 중...</h2>
+      <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
+    </div>
+  );
+}
+
+// 메인 페이지 컴포넌트
+export default function AuthCallbackPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Suspense fallback={<LoadingFallback />}>
+        <CallbackHandler />
+      </Suspense>
     </div>
   );
 } 
@@ -16681,176 +18016,6 @@ export async function DELETE(
 } 
 ```
 
-src/app/api/user/[id]/route.ts
-```
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Next.js 15에서는 params가 Promise이므로 await 사용
-    const paramsResolved = await params;
-    const id = paramsResolved.id;
-    
-    if (!id) {
-      return NextResponse.json(
-        { error: '사용자 ID가 필요합니다.' },
-        { status: 400 }
-      );
-    }
-    
-    try {
-      // 사용자 조회
-      const user = await prisma.user.findUnique({
-        where: { id },
-      });
-      
-      if (!user) {
-        return NextResponse.json(
-          { error: '사용자를 찾을 수 없습니다.' },
-          { status: 404 }
-        );
-      }
-      
-      return NextResponse.json({ user });
-    } catch (dbError: any) {
-      console.error('DB 조회 오류:', dbError);
-      
-      // DB 오류가 발생하면 더미 사용자 데이터 반환
-      // 실제 환경에서는 적절한 오류 처리 필요
-      return NextResponse.json({
-        user: {
-          id,
-          email: 'user@example.com',
-          name: '사용자',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }
-      });
-    }
-  } catch (error: any) {
-    console.error('사용자 조회 API 오류:', error);
-    return NextResponse.json(
-      { error: `사용자 조회 실패: ${error.message}` },
-      { status: 500 }
-    );
-  }
-} 
-```
-
-src/app/api/user/register/route.ts
-```
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, email, name } = body;
-    
-    // 필수 필드 확인
-    if (!id || !email) {
-      return NextResponse.json(
-        { error: '사용자 ID와 이메일은 필수입니다.' },
-        { status: 400 }
-      );
-    }
-    
-    try {
-      // 이미 등록된 사용자인지 확인
-      const existingUser = await prisma.user.findUnique({
-        where: { id },
-      });
-      
-      if (existingUser) {
-        // 이미 존재하는 사용자이면 업데이트 (필요시)
-        console.log('기존 사용자 확인:', existingUser.email);
-        return NextResponse.json({ message: '기존 사용자 확인됨', user: existingUser });
-      }
-      
-      // 새 사용자 생성
-      const newUser = await prisma.user.create({
-        data: {
-          id,
-          email,
-          name: name || email.split('@')[0],
-        },
-      });
-      
-      console.log('새 사용자 생성됨:', newUser.email);
-      
-      return NextResponse.json({ message: '사용자 등록 성공', user: newUser });
-    } catch (dbError: any) {
-      console.error('데이터베이스 오류:', dbError);
-      
-      // 데이터베이스 연결 오류 시 더미 데이터 반환
-      const dummyUser = {
-        id,
-        email,
-        name: name || email.split('@')[0],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return NextResponse.json({ 
-        message: '사용자 등록은 성공했으나 데이터베이스 연결 실패', 
-        user: dummyUser 
-      });
-    }
-  } catch (error: any) {
-    console.error('사용자 등록 오류:', error);
-    return NextResponse.json(
-      { error: `사용자 등록 실패: ${error.message}` },
-      { status: 500 }
-    );
-  }
-} 
-```
-
-src/app/api/users/first/route.ts
-```
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-
-/**
- * 첫 번째 사용자를 가져오는 API 엔드포인트
- */
-export async function GET(request: NextRequest) {
-  try {
-    // 첫 번째 사용자를 가져옴 (가장 먼저 생성된 사용자)
-    const firstUser = await prisma.user.findFirst({
-      orderBy: {
-        createdAt: 'asc'
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true
-      }
-    });
-    
-    if (!firstUser) {
-      return NextResponse.json(
-        { error: '사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(firstUser);
-  } catch (error) {
-    console.error('사용자 조회 오류:', error);
-    
-    return NextResponse.json(
-      { error: '사용자 조회 중 오류가 발생했습니다.' },
-      { status: 500 }
-    );
-  }
-} 
-```
-
 src/app/api/tags/[id]/route.test.ts
 ```
 /// <reference types="vitest" />
@@ -17150,6 +18315,176 @@ export async function DELETE(
     console.error('태그 삭제 오류:', error);
     return NextResponse.json(
       { error: '태그를 삭제하는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+} 
+```
+
+src/app/api/users/first/route.ts
+```
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+
+/**
+ * 첫 번째 사용자를 가져오는 API 엔드포인트
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // 첫 번째 사용자를 가져옴 (가장 먼저 생성된 사용자)
+    const firstUser = await prisma.user.findFirst({
+      orderBy: {
+        createdAt: 'asc'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    });
+    
+    if (!firstUser) {
+      return NextResponse.json(
+        { error: '사용자를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(firstUser);
+  } catch (error) {
+    console.error('사용자 조회 오류:', error);
+    
+    return NextResponse.json(
+      { error: '사용자 조회 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+} 
+```
+
+src/app/api/user/[id]/route.ts
+```
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Next.js 15에서는 params가 Promise이므로 await 사용
+    const paramsResolved = await params;
+    const id = paramsResolved.id;
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: '사용자 ID가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+    
+    try {
+      // 사용자 조회
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+      
+      if (!user) {
+        return NextResponse.json(
+          { error: '사용자를 찾을 수 없습니다.' },
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json({ user });
+    } catch (dbError: any) {
+      console.error('DB 조회 오류:', dbError);
+      
+      // DB 오류가 발생하면 더미 사용자 데이터 반환
+      // 실제 환경에서는 적절한 오류 처리 필요
+      return NextResponse.json({
+        user: {
+          id,
+          email: 'user@example.com',
+          name: '사용자',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      });
+    }
+  } catch (error: any) {
+    console.error('사용자 조회 API 오류:', error);
+    return NextResponse.json(
+      { error: `사용자 조회 실패: ${error.message}` },
+      { status: 500 }
+    );
+  }
+} 
+```
+
+src/app/api/user/register/route.ts
+```
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, email, name } = body;
+    
+    // 필수 필드 확인
+    if (!id || !email) {
+      return NextResponse.json(
+        { error: '사용자 ID와 이메일은 필수입니다.' },
+        { status: 400 }
+      );
+    }
+    
+    try {
+      // 이미 등록된 사용자인지 확인
+      const existingUser = await prisma.user.findUnique({
+        where: { id },
+      });
+      
+      if (existingUser) {
+        // 이미 존재하는 사용자이면 업데이트 (필요시)
+        console.log('기존 사용자 확인:', existingUser.email);
+        return NextResponse.json({ message: '기존 사용자 확인됨', user: existingUser });
+      }
+      
+      // 새 사용자 생성
+      const newUser = await prisma.user.create({
+        data: {
+          id,
+          email,
+          name: name || email.split('@')[0],
+        },
+      });
+      
+      console.log('새 사용자 생성됨:', newUser.email);
+      
+      return NextResponse.json({ message: '사용자 등록 성공', user: newUser });
+    } catch (dbError: any) {
+      console.error('데이터베이스 오류:', dbError);
+      
+      // 데이터베이스 연결 오류 시 더미 데이터 반환
+      const dummyUser = {
+        id,
+        email,
+        name: name || email.split('@')[0],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      return NextResponse.json({ 
+        message: '사용자 등록은 성공했으나 데이터베이스 연결 실패', 
+        user: dummyUser 
+      });
+    }
+  } catch (error: any) {
+    console.error('사용자 등록 오류:', error);
+    return NextResponse.json(
+      { error: `사용자 등록 실패: ${error.message}` },
       { status: 500 }
     );
   }
