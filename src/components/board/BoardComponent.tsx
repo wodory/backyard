@@ -820,7 +820,9 @@ export default function BoardComponent({
             if (flow && typeof flow.screenToFlowPosition === 'function') {
               // flow 인스턴스를 직접 전달하여 updateViewportCenter 호출
               updateViewportCenter(flow);
-              console.log('ReactFlow initialized', flow);
+              // 전역 상태에 ReactFlow 인스턴스 저장
+              useAppStore.getState().setReactFlowInstance(flow);
+              console.log('ReactFlow initialized and stored in global state', flow);
             } else {
               console.warn('Flow instance is not fully initialized');
             }
@@ -846,18 +848,6 @@ export default function BoardComponent({
           <>
             <Panel position="top-right" className="mt-3 mr-2">
               <Controls />
-            </Panel>
-            
-            <Panel position="bottom-left" className="mb-20 ml-2">
-              <LayoutControls 
-                onLayoutChange={handleLayoutChange} 
-                onAutoLayout={handleAutoLayout}
-                onSaveLayout={handleSaveLayout}
-              />
-              <BoardSettingsControl 
-                settings={boardSettings} 
-                onSettingsChange={handleBoardSettingsChange}
-              />
             </Panel>
           </>
         )}

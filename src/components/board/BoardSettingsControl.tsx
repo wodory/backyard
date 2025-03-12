@@ -26,6 +26,7 @@ import {
   EDGE_ANIMATION_OPTIONS
 } from '@/lib/board-constants';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
+import { toast } from 'sonner';
 
 interface BoardSettingsControlProps {
   settings: BoardSettings;
@@ -45,6 +46,7 @@ export default function BoardSettingsControl({
       snapToGrid: gridSize > 0, // 그리드 크기가 0보다 크면 스냅 활성화
     };
     onSettingsChange(newSettings);
+    toast.success('격자 크기가 변경되었습니다.');
   };
 
   // 연결선 타입 변경 핸들러
@@ -54,6 +56,7 @@ export default function BoardSettingsControl({
       connectionLineType: value as ConnectionLineType,
     };
     onSettingsChange(newSettings);
+    toast.success('연결선 스타일이 변경되었습니다.');
   };
 
   // 마커 타입 변경 핸들러
@@ -63,6 +66,7 @@ export default function BoardSettingsControl({
       markerEnd: value === 'null' ? null : value as MarkerType,
     };
     onSettingsChange(newSettings);
+    toast.success('화살표 스타일이 변경되었습니다.');
   };
 
   // 스냅 그리드 토글 핸들러
@@ -72,6 +76,7 @@ export default function BoardSettingsControl({
       snapToGrid: !settings.snapToGrid,
     };
     onSettingsChange(newSettings);
+    toast.success(`격자에 맞추기가 ${newSettings.snapToGrid ? '활성화' : '비활성화'}되었습니다.`);
   };
   
   // 연결선 두께 변경 핸들러
@@ -81,6 +86,7 @@ export default function BoardSettingsControl({
       strokeWidth: parseInt(value, 10),
     };
     onSettingsChange(newSettings);
+    toast.success('연결선 두께가 변경되었습니다.');
   };
   
   // 마커 크기 변경 핸들러
@@ -90,6 +96,7 @@ export default function BoardSettingsControl({
       markerSize: parseInt(value, 10),
     };
     onSettingsChange(newSettings);
+    toast.success('화살표 크기가 변경되었습니다.');
   };
   
   // 연결선 색상 변경 핸들러
@@ -99,6 +106,7 @@ export default function BoardSettingsControl({
       edgeColor: value,
     };
     onSettingsChange(newSettings);
+    toast.success('연결선 색상이 변경되었습니다.');
   };
   
   // 선택된 연결선 색상 변경 핸들러
@@ -108,6 +116,7 @@ export default function BoardSettingsControl({
       selectedEdgeColor: value,
     };
     onSettingsChange(newSettings);
+    toast.success('선택된 연결선 색상이 변경되었습니다.');
   };
   
   // 연결선 애니메이션 변경 핸들러
@@ -117,6 +126,7 @@ export default function BoardSettingsControl({
       animated: value === 'true',
     };
     onSettingsChange(newSettings);
+    toast.success(`연결선 애니메이션이 ${newSettings.animated ? '활성화' : '비활성화'}되었습니다.`);
   };
 
   return (

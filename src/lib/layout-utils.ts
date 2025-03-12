@@ -9,9 +9,12 @@ const NODE_HEIGHT = defaultConfig.card.nodeSize.height;
 // 그래프 간격 설정 - 설정 파일에서 가져오기
 const GRAPH_SETTINGS = {
   rankdir: 'LR', // 방향: LR(수평) 또는 TB(수직)
-  nodesep: defaultConfig.layout.graphSettings.nodesep, // 같은 레벨의 노드 간 거리 (픽셀)
-  ranksep: defaultConfig.layout.graphSettings.ranksep, // 레벨 간 거리 (픽셀)
-  edgesep: defaultConfig.layout.graphSettings.edgesep, // 엣지 간 거리
+  nodesep: defaultConfig.layout.graphSettings.nodesep * 1.5, // 같은 레벨의 노드 간 거리 (픽셀) - 더 넓게 조정
+  ranksep: defaultConfig.layout.graphSettings.ranksep * 2, // 레벨 간 거리 (픽셀) - 더 넓게 조정
+  edgesep: defaultConfig.layout.graphSettings.edgesep,
+  align: 'DL', // 더 나은 정렬을 위해 추가
+  marginx: 50, // 가로 마진 추가
+  marginy: 50, // 세로 마진 추가
 };
 
 /**
@@ -39,6 +42,10 @@ export function getLayoutedElements(
   const settings = {
     ...GRAPH_SETTINGS,
     rankdir: isHorizontal ? 'LR' : 'TB',
+    // 수직 레이아웃일 때는 노드 간격을 더 넓게 설정
+    nodesep: isHorizontal ? GRAPH_SETTINGS.nodesep : GRAPH_SETTINGS.nodesep * 1.2,
+    // 수평 레이아웃일 때는 계층 간격을 더 넓게 설정
+    ranksep: !isHorizontal ? GRAPH_SETTINGS.ranksep : GRAPH_SETTINGS.ranksep * 1.2,
   };
   
   dagreGraph.setGraph(settings);
@@ -59,17 +66,20 @@ export function getLayoutedElements(
   // 계산된 위치로 노드 업데이트
   const layoutedNodes = nodes.map(node => {
     const nodeWithPosition = dagreGraph.node(node.id);
-
+    
+    // 방향에 따라 위치 미세 조정
+    const position = {
+      x: nodeWithPosition.x - NODE_WIDTH / 2,
+      y: nodeWithPosition.y - NODE_HEIGHT / 2,
+    };
+    
     // 방향에 따라 handle 위치 조정
     return {
       ...node,
       // handle 위치: 수평 레이아웃이면 좌우, 수직 레이아웃이면 상하
       targetPosition: isHorizontal ? Position.Left : Position.Top,
       sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
-      position: {
-        x: nodeWithPosition.x - NODE_WIDTH / 2,
-        y: nodeWithPosition.y - NODE_HEIGHT / 2,
-      },
+      position,
     };
   });
 

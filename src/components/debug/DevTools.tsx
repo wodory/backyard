@@ -17,7 +17,6 @@ export default function DevTools() {
     <Panel 
       position="top-left" 
       className="bg-card shadow p-3 rounded-md z-50"
-      style={{ top: '200px' }}
     >
       <div className="flex flex-col gap-2">
         <div className="flex gap-2 justify-center items-center">

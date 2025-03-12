@@ -117,13 +117,13 @@ export function NodeInspect(props: NodeProps) {
       className="nodrag bg-card shadow-md rounded p-2 text-xs max-w-xs" 
       isVisible={true}
     >
-      <div className="font-bold mb-1 border-b pb-1">노드 정보</div>
+      {/* <div className="font-bold mb-1 border-b pb-1">노드 정보</div> */}
       <div className="space-y-1">
         <div><span className="font-medium">제목:</span> {data?.title || data?.label || '제목 없음'}</div>
         <div><span className="font-medium">ID:</span> {id}</div>
         <div><span className="font-medium">타입:</span> {type || '기본'}</div>
         <div><span className="font-medium">선택됨:</span> {nodeState.selected ? '예' : '아니오'}</div>
-        <div className="mt-1">
+        {/* <div className="mt-1">
           <div className="font-medium">핸들 정보:</div>
           <ul className="ml-2">
             <li>좌측 상단: {handleInfo.leftTop.position} + Top</li>
@@ -131,7 +131,7 @@ export function NodeInspect(props: NodeProps) {
             <li>우측 상단: {handleInfo.rightTop.position} + Top</li>
             <li>우측 하단: {handleInfo.rightBottom.position} + Bottom</li>
           </ul>
-        </div>
+        </div> */}
       </div>
     </NodeToolbar>
   );

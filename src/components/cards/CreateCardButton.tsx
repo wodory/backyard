@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,12 +25,14 @@ interface CreateCardButtonProps {
   onCardCreated?: (cardData: any) => void;
   autoOpen?: boolean; // 자동으로 모달을 열지 여부
   onClose?: () => void; // 모달이 닫힐 때 콜백
+  customTrigger?: React.ReactNode; // 커스텀 트리거 버튼
 }
 
 export default function CreateCardButton({ 
   onCardCreated, 
   autoOpen = false,
-  onClose 
+  onClose,
+  customTrigger
 }: CreateCardButtonProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -212,7 +215,11 @@ export default function CreateCardButton({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>새 카드 만들기</Button>
+        {customTrigger ? (
+          customTrigger
+        ) : (
+          <Button>새 카드 만들기</Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
