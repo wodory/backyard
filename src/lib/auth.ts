@@ -1,6 +1,6 @@
 'use client';
 
-import { createBrowserClient } from './supabase';
+import { createBrowserSupabaseClient } from './supabase-browser';
 import { deleteCookie } from 'cookies-next';
 import { User } from '@supabase/supabase-js';
 
@@ -9,7 +9,9 @@ export const getBrowserClient = () => {
   if (typeof window === 'undefined') {
     throw new Error('브라우저 환경에서만 사용 가능합니다.');
   }
-  return createBrowserClient();
+  
+  // createBrowserClient 대신 createBrowserSupabaseClient 사용
+  return createBrowserSupabaseClient();
 };
 
 // ExtendedUser 타입 정의
@@ -144,52 +146,70 @@ export async function signIn(email: string, password: string) {
 
 // Google 로그인 함수
 export async function signInWithGoogle() {
-  const supabase = getBrowserClient();
-  
-  // 환경 변수에서 리디렉션 URL 가져오기
-  // 프로덕션에서는 환경 변수를 사용하고, 로컬에서는 현재 호스트 기반으로 URL 생성
-  const baseUrl = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
-    ? `${window.location.protocol}//${window.location.host}`
-    : process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
-    
-  const redirectTo = `${baseUrl}/auth/callback`;
-  
-  console.log('Google 로그인 시작, 리디렉션 URL:', redirectTo);
-  
   try {
-    // 쿠키 정리 - 간소화하고 표준 방식으로 변경
-    localStorage.removeItem('supabase.auth.token');
+    // 브라우저 환경 확인
+    if (typeof window === 'undefined') {
+      throw new Error('브라우저 환경에서만 실행 가능합니다.');
+    }
     
-    // 기존 Supabase 인증 쿠키 삭제
-    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;`;
-    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;`;
+    // 브라우저 클라이언트 생성
+    const supabase = getBrowserClient();
     
-    console.log('인증 쿠키 및 로컬 스토리지 정리 완료');
+    // 리디렉션 URL 설정
+    const redirectTo = `${window.location.origin}/auth/callback`;
     
+    console.log('[Auth] Google 로그인 시작:', {
+      리디렉션URL: redirectTo
+    });
+    
+    // 디버깅: 로그인 시도 전 로컬 스토리지 상태 확인
+    const beforeVerifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Auth] 로그인 전 code_verifier 상태:', 
+      beforeVerifier ? `존재함 (길이: ${beforeVerifier.length})` : '없음');
+    
+    // OAuth 로그인 시작 (Supabase가 PKCE 흐름을 자동으로 처리)
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
-        },
-        skipBrowserRedirect: false,
-      },
+          prompt: 'consent'
+        }
+      }
     });
     
     if (error) {
-      console.error('Google OAuth 초기화 오류:', error);
+      console.error('[Auth] Google OAuth 초기화 오류:', error);
       throw error;
     }
     
-    console.log('Google OAuth 시작됨, 리디렉션 URL:', data.url);
+    if (!data?.url) {
+      console.error('[Auth] OAuth URL이 생성되지 않았습니다.');
+      throw new Error('인증 URL을 생성할 수 없습니다.');
+    }
     
-    // 명시적 리디렉션 수행
+    // 디버깅: 로그인 시도 후 로컬 스토리지 상태 확인
+    const afterVerifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Auth] 로그인 후 code_verifier 상태:', {
+      존재여부: afterVerifier ? '존재함' : '없음',
+      길이: afterVerifier?.length || 0,
+      값: afterVerifier ? `${afterVerifier.substring(0, 5)}...${afterVerifier.substring(afterVerifier.length - 5)}` : '없음'
+    });
+    
+    // 로컬 스토리지에 백업 (디버깅용)
+    if (afterVerifier) {
+      sessionStorage.setItem('auth.code_verifier.backup', afterVerifier);
+      console.log('[Auth] code_verifier를 세션 스토리지에 백업했습니다.');
+    }
+    
+    // URL로 리디렉션
+    console.log('[Auth] OAuth URL로 리디렉션:', data.url);
     window.location.href = data.url;
+    
     return data;
   } catch (error) {
-    console.error('Google 로그인 오류:', error);
+    console.error('[Auth] Google 로그인 오류:', error);
     throw error;
   }
 }
@@ -217,15 +237,32 @@ export async function signOut() {
 export async function getCurrentUser(): Promise<ExtendedUser | null> {
   try {
     const client = getBrowserClient();
-    const { data: { session }, error } = await client.auth.getSession();
+    const { data, error } = await client.auth.getSession();
     
     if (error) {
-      throw error;
-    }
-    
-    if (!session) {
+      console.error('세션 가져오기 오류:', error.message);
       return null;
     }
+    
+    const session = data.session;
+    
+    if (!session) {
+      console.log('세션 없음, 로그인되지 않음');
+      return null;
+    }
+    
+    const user = session.user;
+    
+    if (!user) {
+      console.error('세션에 사용자 정보 없음');
+      return null;
+    }
+    
+    console.log('세션 사용자 정보 확인:', {
+      id: user.id,
+      email: user.email,
+      auth_provider: user.app_metadata?.provider
+    });
     
     // 브라우저 환경에서는 API를 통해 사용자 정보 가져오기
     if (typeof window !== 'undefined') {
@@ -235,8 +272,12 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
         
         // API 호출을 통해 사용자 정보 가져오기
-        let response = await fetch(`/api/user/${session.user.id}`, {
-          signal: controller.signal
+        let response = await fetch(`/api/user/${user.id}`, {
+          signal: controller.signal,
+          // 인증 헤더 추가
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
         }).catch(error => {
           console.error('사용자 정보 가져오기 오류:', error);
           return null;
@@ -248,13 +289,13 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
         if (!response) {
           console.log('API 요청 실패, 기본 사용자 정보 반환');
           return {
-            ...session.user,
+            ...user,
             dbUser: {
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name || 
-                    session.user.user_metadata?.name || 
-                    (session.user.email ? session.user.email.split('@')[0] : '사용자'),
+              id: user.id,
+              email: user.email,
+              name: user.user_metadata?.full_name || 
+                    user.user_metadata?.name || 
+                    (user.email ? user.email.split('@')[0] : '사용자'),
               createdAt: new Date(),
               updatedAt: new Date()
             }
@@ -272,13 +313,16 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
             // 사용자 동기화 시도
             const registerResponse = await fetch('/api/user/register', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
               body: JSON.stringify({
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.user_metadata?.full_name || 
-                     session.user.user_metadata?.name || 
-                     (session.user.email ? session.user.email.split('@')[0] : '사용자')
+                id: user.id,
+                email: user.email,
+                name: user.user_metadata?.full_name || 
+                     user.user_metadata?.name || 
+                     (user.email ? user.email.split('@')[0] : '사용자')
               }),
               signal: syncController.signal
             });
@@ -288,7 +332,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
             if (registerResponse.ok) {
               const userData = await registerResponse.json();
               return {
-                ...session.user,
+                ...user,
                 dbUser: userData.user
               } as ExtendedUser;
             }
@@ -299,7 +343,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
         } else if (response.ok) {
           const data = await response.json();
           return {
-            ...session.user,
+            ...user,
             dbUser: data.user
           } as ExtendedUser;
         }
@@ -310,7 +354,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
     
     // API 요청 실패 시 Supabase 사용자 정보만 반환
     console.log('기본 사용자 정보 반환');
-    return session.user as ExtendedUser;
+    return user as ExtendedUser;
   } catch (error) {
     console.error('사용자 정보 가져오기 오류:', error);
     return null;

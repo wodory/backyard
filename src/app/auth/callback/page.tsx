@@ -1,311 +1,146 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getBrowserClient } from '@/lib/auth';
-import { setCookie, getCookie } from 'cookies-next';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
-export default function AuthCallbackPage() {
+// 실제 콜백 처리를 담당하는 컴포넌트
+function CallbackHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string>('');
-  const [countdown, setCountdown] = useState<number>(10); // 카운트다운 추가
-
+  
   useEffect(() => {
-    async function handleAuthCallback() {
+    const handleCallback = async () => {
       try {
-        // URL에서 오류 패러미터 확인
-        const searchParams = new URLSearchParams(window.location.search);
-        const errorParam = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
         const code = searchParams.get('code');
         
-        // 현재 URL과 사용자 환경 정보 기록
-        const debugStartInfo = `
-현재 URL: ${window.location.href}
-호스트: ${window.location.host}
-환경: ${process.env.NODE_ENV}
-리디렉션 URL 환경변수: ${process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL || '설정되지 않음'}
-        `;
-        setDebugInfo(debugStartInfo + `\n\n체크 1: URL 파라미터 - code: ${code ? '있음' : '없음'}, error: ${errorParam || '없음'}`);
+        console.log('[Callback] 인증 콜백 처리 시작');
         
-        if (errorParam) {
-          console.error('OAuth 에러:', errorParam, errorDescription);
-          setError(`인증 오류: ${errorParam}${errorDescription ? ` - ${errorDescription}` : ''}`);
-          setLoading(false);
-          return;
-        }
-
-        console.log('클라이언트 측 인증 콜백 처리 시작');
-        console.log('현재 URL:', window.location.href);
-        setDebugInfo(prev => prev + `\n체크 2: 콜백 처리 시작, URL: ${window.location.href}`);
-        
-        // Supabase 클라이언트 가져오기
-        const supabase = getBrowserClient();
-        console.log('Supabase 클라이언트 초기화 완료');
-        setDebugInfo(prev => prev + '\n체크 3: Supabase 클라이언트 초기화');
-        
-        // 세션 상태 확인 (Supabase가 자동으로 URL의 코드를 처리)
-        console.log('세션 상태 확인 시작');
-        setDebugInfo(prev => prev + '\n체크 4: 세션 확인 시작');
-        
-        // 쿠키 확인
-        const existingCookies = document.cookie;
-        console.log('현재 쿠키:', existingCookies);
-        setDebugInfo(prev => prev + `\n체크 5: 현재 쿠키 - ${existingCookies ? existingCookies.length + '바이트' : '없음'}`);
-        
-        // 직접 세션 가져오기 시도
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        
-        // 세션 디버그 정보 추가
-        const sessionDebugInfo = data?.session 
-          ? `세션 있음, 사용자 ID: ${data.session.user?.id || '없음'}, 이메일: ${data.session.user?.email || '없음'}`
-          : '세션 없음';
-        setDebugInfo(prev => prev + `\n체크 6: 세션 데이터 - ${sessionDebugInfo}`);
-        console.log('세션 데이터:', sessionDebugInfo);
-        
-        if (sessionError) {
-          console.error('세션 확인 오류:', sessionError);
-          setError(`세션 확인 중 오류: ${sessionError.message}`);
-          setDebugInfo(prev => prev + `\n체크 7: 세션 오류 - ${sessionError.message}`);
-          setLoading(false);
-          return;
-        }
-
-        if (data?.session) {
-          console.log('인증 성공, 세션 생성됨');
-          setDebugInfo(prev => prev + '\n체크 8: 인증 성공, 세션 생성됨');
+        // 디버깅: 로컬 스토리지 상태 확인
+        if (typeof window !== 'undefined') {
+          const verifier = localStorage.getItem('supabase.auth.code_verifier');
+          const backupVerifier = sessionStorage.getItem('auth.code_verifier.backup');
           
-          // 현재 호스트 이름 가져오기
-          const hostname = window.location.hostname;
-          const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-          
-          // 도메인 설정 개선 - 사용자가 제공한 커밋(7263262)의 방식 적용
-          // 도메인 설정 (로컬호스트가 아닌 경우에만)
-          let domain = '';
-          if (!isLocalhost) {
-            // 서브도메인 포함하기 위해 최상위 도메인만 설정
-            const hostParts = hostname.split('.');
-            if (hostParts.length > 1) {
-              // vercel.app 또는 yoursite.com 형태일 경우
-              domain = hostParts.slice(-2).join('.');
-            } else {
-              domain = hostname;
-            }
-          }
-          
-          const domainStr = domain ? `domain=.${domain}; ` : '';
-          const secureStr = 'Secure; '; // 프로덕션에서는 항상 Secure 사용
-          
-          // 쿠키 설정 시도 1: 직접 document.cookie 사용 (가장 우선)
-          try {
-            // 액세스 토큰 저장
-            document.cookie = `sb-access-token=${data.session.access_token}; ${domainStr} path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; ${secureStr}`;
-            
-            // 리프레시 토큰 저장
-            if (data.session.refresh_token) {
-              document.cookie = `sb-refresh-token=${data.session.refresh_token}; ${domainStr} path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax; ${secureStr}`;
-            }
-            console.log('document.cookie 설정 완료', {
-              토큰: data.session.access_token.substring(0, 10) + '...',
-              도메인설정: domainStr,
-              보안설정: secureStr
-            });
-          } catch (docCookieError) {
-            console.error('document.cookie 설정 실패:', docCookieError);
-            setDebugInfo(prev => prev + `\n쿠키 설정 실패 (document.cookie): ${docCookieError}`);
-          }
-          
-          // 쿠키 설정 시도 2: cookies-next 라이브러리 (백업)
-          try {
-            const cookieOptions: any = {
-              maxAge: 60 * 60 * 24 * 7, // 7일
-              path: '/',
-              secure: true,
-              sameSite: 'lax'
-            };
-            
-            // 로컬호스트가 아닌 경우에만 도메인 설정 추가
-            if (!isLocalhost) {
-              cookieOptions.domain = '.' + domain; // 점으로 시작하는 도메인 설정
-            }
-            
-            setCookie('sb-access-token', data.session.access_token, cookieOptions);
-            
-            if (data.session.refresh_token) {
-              setCookie('sb-refresh-token', data.session.refresh_token, {
-                ...cookieOptions,
-                maxAge: 60 * 60 * 24 * 30 // 30일
-              });
-            }
-            console.log('cookies-next 설정 완료', cookieOptions);
-          } catch (cookieError) {
-            console.error('cookies-next 설정 실패:', cookieError);
-            setDebugInfo(prev => prev + `\n쿠키 설정 실패 (cookies-next): ${cookieError}`);
-          }
-          
-          // localStorage 백업 (이미 존재하는 코드)
-          try {
-            localStorage.setItem('supabase.auth.token', JSON.stringify({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              expires_at: data.session.expires_at
-            }));
-            setDebugInfo(prev => prev + '\n로컬 스토리지 백업 완료');
-          } catch (storageError) {
-            console.error('로컬 스토리지 저장 오류:', storageError);
-            setDebugInfo(prev => prev + `\n로컬 스토리지 오류: ${storageError}`);
-          }
-          
-          console.log('세션 토큰을 쿠키에 저장함', {
-            환경: process.env.NODE_ENV,
-            호스트: hostname,
-            도메인: domain ? '.' + domain : '없음',
-            보안: 'HTTPS (Secure=true)'
+          console.log('[Callback] 로컬 스토리지 상태:', {
+            code: code ? `${code.substring(0, 10)}...` : '없음',
+            code_verifier: verifier ? `${verifier.substring(0, 5)}...${verifier.substring(verifier.length - 5)} (길이: ${verifier.length})` : '없음',
+            backup_verifier: backupVerifier ? `${backupVerifier.substring(0, 5)}...${backupVerifier.substring(backupVerifier.length - 5)} (길이: ${backupVerifier.length})` : '없음',
+            localStorage_keys: Object.keys(localStorage).filter(key => key.startsWith('supabase')),
+            sessionStorage_keys: Object.keys(sessionStorage)
           });
           
-          // 설정된 쿠키 확인
-          const accessCookie = getCookie('sb-access-token');
-          const refreshCookie = getCookie('sb-refresh-token');
-          console.log('쿠키 확인 - 액세스 토큰:', accessCookie ? '존재함' : '없음');
-          console.log('쿠키 확인 - 리프레시 토큰:', refreshCookie ? '존재함' : '없음');
-          setDebugInfo(prev => prev + `\n체크 11: 쿠키 설정 확인 - 액세스: ${accessCookie ? '있음' : '없음'}, 리프레시: ${refreshCookie ? '있음' : '없음'}`);
-          
-          // 사용자 정보를 데이터베이스에 저장 또는 업데이트
-          try {
-            const userId = data.session.user.id;
-            const userEmail = data.session.user.email;
-            const userName = data.session.user.user_metadata?.full_name || 
-                            (userEmail ? userEmail.split('@')[0] : '사용자');
-            
-            // 사용자 정보 저장 API 호출
-            const response = await fetch('/api/user/register', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${data.session.access_token}`,
-              },
-              body: JSON.stringify({
-                id: userId,
-                email: userEmail,
-                name: userName,
-              }),
-            });
-            
-            if (!response.ok) {
-              console.warn('사용자 정보 저장 실패:', await response.text());
-              setDebugInfo(prev => prev + '\n체크 12: 사용자 정보 저장 실패');
-            } else {
-              console.log('사용자 정보 저장 성공');
-              setDebugInfo(prev => prev + '\n체크 12: 사용자 정보 저장 성공');
-            }
-          } catch (dbError) {
-            console.error('사용자 정보 처리 오류:', dbError);
-            setDebugInfo(prev => prev + `\n체크 12-오류: 사용자 정보 처리 오류 - ${dbError}`);
-            // 사용자 정보 저장 실패해도 인증은 계속 진행
+          // 백업에서 복원 시도
+          if (!verifier && backupVerifier) {
+            console.log('[Callback] 백업에서 code_verifier 복원 시도');
+            localStorage.setItem('supabase.auth.code_verifier', backupVerifier);
           }
-          
-          // 페이지 이동 전 Supabase 세션 다시 한 번 확인
-          console.log('인증 완료, 보드 페이지로 이동 준비');
-          setDebugInfo(prev => prev + '\n체크 13: 보드 페이지로 이동 준비');
-          
-          // 카운트다운 시작
-          setLoading(false);
-          const countdownInterval = setInterval(() => {
-            setCountdown(prev => {
-              if (prev <= 1) {
-                clearInterval(countdownInterval);
-                
-                // 카운트다운 완료 후 페이지 이동
-                console.log('보드 페이지로 최종 이동');
-                setDebugInfo(prev => prev + '\n체크 14: 보드 페이지로 최종 이동');
-                
-                // 리디렉션 방법 1: window.location.href (페이지 새로고침)
-                window.location.href = '/board';
-                
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-          
-        } else {
-          // 세션이 없으면 에러 표시
-          console.error('세션 없음');
-          setError('인증은 성공했지만 세션이 생성되지 않았습니다.');
-          setDebugInfo(prev => prev + '\n체크 15: 세션 없음');
-          setLoading(false);
         }
-      } catch (error: any) {
-        console.error('인증 콜백 처리 오류:', error);
-        setError(`인증 처리 중 오류: ${error?.message || '알 수 없는 오류'}`);
-        setDebugInfo(prev => prev + `\n체크 16: 인증 콜백 처리 오류 - ${error?.message || '알 수 없는 오류'}`);
+        
+        if (!code) {
+          console.error('[Callback] 인증 코드가 없습니다.');
+          setError('인증 코드가 없습니다.');
+          router.push('/login?error=missing_code');
+          return;
+        }
+        
+        // Supabase 클라이언트 생성
+        const supabase = createBrowserSupabaseClient();
+        
+        // 코드 교환 시도
+        console.log('[Callback] 코드를 세션으로 교환 시도 중...');
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (exchangeError) {
+          console.error('[Callback] 세션 교환 오류:', exchangeError.message);
+          setError(exchangeError.message);
+          router.push(`/login?error=auth_error&message=${encodeURIComponent(exchangeError.message)}`);
+          return;
+        }
+        
+        if (!data.session) {
+          console.error('[Callback] 세션이 생성되지 않았습니다.');
+          setError('세션이 생성되지 않았습니다.');
+          router.push('/login?error=no_session');
+          return;
+        }
+        
+        // 쿠키 확인
+        const allCookies = document.cookie.split(';').map(cookie => cookie.trim());
+        console.log('[Callback] 세션 생성 후 쿠키 확인:', {
+          allCookies,
+          accessTokenExists: allCookies.some(c => c.startsWith('sb-access-token=')),
+          refreshTokenExists: allCookies.some(c => c.startsWith('sb-refresh-token='))
+        });
+        
+        // 세션 스토리지 정리
+        sessionStorage.removeItem('auth.code_verifier.backup');
+        
+        console.log('[Callback] 인증 성공. 유저 정보:', {
+          userId: data.session.user.id,
+          email: data.session.user.email
+        });
+        
+        // 성공 시 보드 페이지로 리디렉션
         setLoading(false);
+        router.push('/board');
+      } catch (err: any) {
+        console.error('[Callback] 예상치 못한 오류:', err.message);
+        setError(err.message || '알 수 없는 오류가 발생했습니다.');
+        router.push(`/login?error=unexpected&message=${encodeURIComponent(err.message || '알 수 없는 오류')}`);
       }
-    }
-
-    handleAuthCallback();
-  }, [router]);
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="p-6 max-w-md bg-white rounded-lg border border-red-200 shadow-lg">
-          <h2 className="text-xl font-bold text-red-600 mb-4">인증 오류</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
-          <details className="mb-4">
-            <summary className="text-sm text-blue-500 cursor-pointer">디버그 정보 보기</summary>
-            <pre className="text-xs bg-gray-100 p-2 mt-2 rounded overflow-auto max-h-60 whitespace-pre-wrap">
-              {debugInfo || '디버그 정보 없음'}
-            </pre>
-          </details>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => window.location.href = '/login'}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              로그인으로 돌아가기
-            </button>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-            >
-              새로고침
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+    };
+    
+    handleCallback();
+  }, [router, searchParams]);
+  
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
       {loading ? (
         <>
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
-          <p className="text-gray-600 mb-4">잠시만 기다려 주세요.</p>
+          <h2 className="text-2xl font-semibold mb-4">인증 처리 중...</h2>
+          <p className="text-gray-600 mb-4">잠시만 기다려주세요.</p>
+          <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
+        </>
+      ) : error ? (
+        <>
+          <h2 className="text-2xl font-semibold mb-4 text-red-500">오류 발생</h2>
+          <p className="text-gray-700">{error}</p>
+          <button 
+            onClick={() => router.push('/login')}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            로그인 페이지로 돌아가기
+          </button>
         </>
       ) : (
         <>
-          <div className="text-2xl text-green-500 mb-4">✓</div>
-          <h2 className="text-xl font-semibold mb-2">인증 성공!</h2>
-          <p className="text-gray-600 mb-4">{countdown}초 후 자동으로 이동합니다...</p>
-          <button 
-            onClick={() => {window.location.href = '/board'}}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors mb-4"
-          >
-            지금 이동하기
-          </button>
+          <h2 className="text-2xl font-semibold mb-4 text-green-500">인증 성공!</h2>
+          <p className="text-gray-700">로그인되었습니다. 리디렉션 중...</p>
         </>
       )}
-      <details className="w-full max-w-md mt-4">
-        <summary className="text-sm text-blue-500 cursor-pointer">디버그 정보 보기</summary>
-        <pre className="text-xs bg-gray-100 p-3 mt-2 rounded overflow-auto max-h-60 whitespace-pre-wrap">
-          {debugInfo || '디버그 정보 없음'}
-        </pre>
-      </details>
+    </div>
+  );
+}
+
+// 로딩 표시 컴포넌트
+function LoadingFallback() {
+  return (
+    <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
+      <h2 className="text-2xl font-semibold mb-4">로딩 중...</h2>
+      <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
+    </div>
+  );
+}
+
+// 메인 페이지 컴포넌트
+export default function AuthCallbackPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Suspense fallback={<LoadingFallback />}>
+        <CallbackHandler />
+      </Suspense>
     </div>
   );
 } 
