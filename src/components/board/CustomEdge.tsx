@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
 import { loadBoardSettings } from '@/lib/board-utils';
+import { useAppStore } from '@/store/useAppStore';
 
 // 확장된 엣지 Props 인터페이스
 interface CustomEdgeProps extends EdgeProps {
@@ -34,8 +35,15 @@ function CustomEdge({
   data,
   ...restProps
 }: CustomEdgeProps) {
-  // 보드 설정 불러오기 - 기본값으로만 사용하고 props를 우선시
-  const boardSettings = useMemo(() => loadBoardSettings(), []);
+  // Zustand 스토어에서 boardSettings 가져오기
+  const { boardSettings } = useAppStore();
+  
+  // 글로벌 설정과 로컬 설정 결합
+  const effectiveSettings = useMemo(() => {
+    // 로컬 설정이 있으면 우선적으로 사용, 없으면 글로벌 설정 사용
+    const localSettings = data?.settings;
+    return localSettings ? { ...boardSettings, ...localSettings } : boardSettings;
+  }, [boardSettings, data?.settings]);
 
   // 엣지 연결 좌표 계산 (useMemo로 최적화)
   const edgeParams = useMemo(() => ({
@@ -47,19 +55,19 @@ function CustomEdge({
     targetPosition,
   }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
 
-  // 엣지 타입 결정: data.edgeType > type prop > 기본값
+  // 엣지 타입 결정: data.edgeType > boardSettings.connectionLineType > 기본값
   const effectiveEdgeType = useMemo(() => {
     // data.edgeType이 있으면 우선 사용
     if (data?.edgeType) {
       return data.edgeType;
     }
-    // 없으면 type prop 사용 (기본값은 'bezier')
-    return type || 'bezier';
-  }, [data, type]);
+    // 글로벌 설정의 connectionLineType 사용
+    return effectiveSettings.connectionLineType || 'bezier';
+  }, [data?.edgeType, effectiveSettings.connectionLineType]);
 
   // 엣지 패스 계산 (연결선 타입에 따라)
   const [edgePath] = useMemo(() => {
-    //console.log(`엣지 ${id}의 타입: ${effectiveEdgeType}`);
+    console.log(`엣지 ${id}의 타입 업데이트:`, effectiveEdgeType);
     
     // 타입에 따라 적절한 경로 생성 함수 사용
     switch (effectiveEdgeType) {
@@ -87,16 +95,16 @@ function CustomEdge({
   }, [effectiveEdgeType, edgeParams, id]);
 
   // 실제 애니메이션 여부는 보드 설정과 컴포넌트 prop 결합
-  const isAnimated = animated !== undefined ? animated : boardSettings.animated;
+  const isAnimated = animated !== undefined ? animated : effectiveSettings.animated;
 
   // 스타일 적용 우선순위 변경 - props로 전달된 style을 우선시
   const edgeStyle = useMemo(() => {
     // 1. 기본 스타일 (보드 설정에서 가져옴)
     const baseStyle = {
-      strokeWidth: boardSettings.strokeWidth,
+      strokeWidth: effectiveSettings.strokeWidth,
       stroke: selected 
-        ? boardSettings.selectedEdgeColor 
-        : boardSettings.edgeColor,
+        ? effectiveSettings.selectedEdgeColor 
+        : effectiveSettings.edgeColor,
       transition: 'stroke 0.2s, stroke-width 0.2s',
     };
 
@@ -109,8 +117,8 @@ function CustomEdge({
 
     // 3. 선택 상태에 따른 스타일
     const selectedStyle = selected ? {
-      strokeWidth: (style.strokeWidth as number || boardSettings.strokeWidth) + 1,
-      stroke: style.stroke || boardSettings.selectedEdgeColor,
+      strokeWidth: (style.strokeWidth as number || effectiveSettings.strokeWidth) + 1,
+      stroke: style.stroke || effectiveSettings.selectedEdgeColor,
     } : {};
 
     // 4. 스타일 병합 (props의 style이 가장 우선)
@@ -120,7 +128,17 @@ function CustomEdge({
       ...selectedStyle,
       ...style, // props의 style을 마지막에 적용하여 우선시
     };
-  }, [style, selected, boardSettings, isAnimated]);
+  }, [style, selected, effectiveSettings, isAnimated]);
+
+  // 엣지 컴포넌트에서 변경 내용 로깅 (개발 모드에서만)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`엣지 ${id} 렌더링:`, {
+        edgeType: effectiveEdgeType,
+        selected
+      });
+    }
+  }, [id, effectiveEdgeType, selected]);
 
   return (
     <BaseEdge 
@@ -140,4 +158,4 @@ function CustomEdge({
   );
 }
 
-export default CustomEdge; 
+export default React.memo(CustomEdge); 
