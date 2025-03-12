@@ -22,9 +22,15 @@ import { DEFAULT_USER_ID } from "@/lib/constants";
 // 컴포넌트에 props 타입 정의
 interface CreateCardButtonProps {
   onCardCreated?: (cardData: any) => void;
+  autoOpen?: boolean; // 자동으로 모달을 열지 여부
+  onClose?: () => void; // 모달이 닫힐 때 콜백
 }
 
-export default function CreateCardButton({ onCardCreated }: CreateCardButtonProps) {
+export default function CreateCardButton({ 
+  onCardCreated, 
+  autoOpen = false,
+  onClose 
+}: CreateCardButtonProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -33,6 +39,23 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [firstUserId, setFirstUserId] = useState<string>("");
   const isComposing = useRef(false);
+
+  // 자동으로 모달 열기
+  useEffect(() => {
+    if (autoOpen) {
+      setOpen(true);
+    }
+  }, [autoOpen]);
+
+  // 모달 상태 변경 처리 핸들러
+  const handleOpenChange = (newOpenState: boolean) => {
+    setOpen(newOpenState);
+    
+    // 모달이 닫힐 때 onClose 콜백 호출
+    if (!newOpenState && onClose) {
+      onClose();
+    }
+  };
 
   // 사용자 ID 가져오기
   useEffect(() => {
@@ -187,7 +210,7 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>새 카드 만들기</Button>
       </DialogTrigger>
@@ -247,7 +270,10 @@ export default function CreateCardButton({ onCardCreated }: CreateCardButtonProp
           </div>
           <div className="flex justify-between pt-4">
             <DialogClose asChild>
-              <Button variant="outline" type="button">닫기</Button>
+              <Button variant="outline" type="button" onClick={() => {
+                // 닫기 버튼 클릭 시 onClose 콜백 호출
+                if (onClose) onClose();
+              }}>닫기</Button>
             </DialogClose>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "생성 중..." : "생성하기"}

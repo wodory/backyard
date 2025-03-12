@@ -20,7 +20,10 @@ import {
   NodeChange,
   EdgeChange,
   Connection,
-  applyNodeChanges
+  applyNodeChanges,
+  OnConnectStart,
+  OnConnectEnd,
+  XYPosition
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
@@ -34,6 +37,8 @@ import { BoardSettings, DEFAULT_BOARD_SETTINGS, loadBoardSettings, saveBoardSett
 import { STORAGE_KEY, EDGES_STORAGE_KEY, BOARD_CONFIG } from '@/lib/board-constants';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 import DevTools, { useChangeLoggerHooks } from '@/components/debug/DevTools';
+import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+import { CreateCardModal } from '@/components/cards/CreateCardModal';
 
 // 새 카드의 중앙 위치를 계산하는 함수
 const getNewCardPosition = (viewportCenter?: { x: number, y: number }) => {
@@ -54,6 +59,14 @@ function BoardContent() {
   const hasUnsavedChanges = useRef(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   
+  // 엣지 드롭 기능을 위한 상태
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalInfo, setCreateModalInfo] = useState<{
+    position: XYPosition;
+    connectingNodeId: string;
+    handleType: 'source' | 'target';
+  } | null>(null);
+  
   // 변경 로거 이벤트 핸들러
   const { onNodesChangeLogger, onEdgesChangeLogger } = useChangeLoggerHooks();
   
@@ -65,7 +78,7 @@ function BoardContent() {
   const updateNodeInternals = useUpdateNodeInternals();
   
   // ReactFlow 인스턴스 참조
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
   
   // 뷰포트 중앙 계산
   const updateViewportCenter = useCallback(() => {
@@ -307,7 +320,7 @@ function BoardContent() {
     },
     [nodes, setEdges, boardSettings]
   );
-
+  
   // 카드 생성 후 콜백
   const handleCardCreated = useCallback(async (cardData: any) => {
     try {
@@ -333,6 +346,73 @@ function BoardContent() {
       toast.error("카드를 보드에 추가하는데 실패했습니다.");
     }
   }, [nodes, setNodes, viewportCenter, saveLayout]);
+
+  // 엣지 드롭으로 노드 생성 시 호출되는 함수
+  const handleCreateNodeOnEdgeDrop = useCallback((
+    position: XYPosition,
+    connectingNodeId: string,
+    handleType: 'source' | 'target'
+  ) => {
+    setCreateModalInfo({ position, connectingNodeId, handleType });
+    setShowCreateModal(true);
+  }, []);
+  
+  // useAddNodeOnEdgeDrop 훅 사용
+  const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
+    onCreateNode: handleCreateNodeOnEdgeDrop
+  });
+  
+  // 노드를 추가하고 엣지로 연결하는 함수
+  const handleCardCreatedWithConnection = useCallback((
+    cardData: any,
+    position: XYPosition,
+    connectingNodeId: string,
+    handleType: 'source' | 'target'
+  ) => {
+    try {
+      // 새 카드 노드 생성
+      const newCard = {
+        id: cardData.id.toString(),
+        type: 'card',
+        data: { 
+          ...cardData,
+          tags: cardData.cardTags?.map((ct: any) => ct.tag.name) || []
+        },
+        position: position,
+      };
+      
+      // 노드 추가
+      setNodes(nds => [...nds, newCard]);
+      
+      // 연결 파라미터 생성
+      const connection: Connection = {
+        source: handleType === 'source' ? connectingNodeId : newCard.id,
+        target: handleType === 'source' ? newCard.id : connectingNodeId,
+        // 필요한 경우 sourceHandle과 targetHandle 지정
+      };
+      
+      // 엣지 추가
+      onConnect(connection);
+      
+      // 저장
+      saveLayout([...nodes, newCard]);
+      
+      // 모달 닫기
+      setShowCreateModal(false);
+      setCreateModalInfo(null);
+      
+      toast.success("새 카드가 추가되고 연결되었습니다.");
+    } catch (error) {
+      console.error("Error creating connected card:", error);
+      toast.error("카드 생성 및 연결에 실패했습니다.");
+    }
+  }, [nodes, setNodes, onConnect, saveLayout]);
+  
+  // 모달 닫기 함수
+  const handleCloseModal = useCallback(() => {
+    setShowCreateModal(false);
+    setCreateModalInfo(null);
+  }, []);
 
   // 노드 자동 배치 (기존 함수 수정)
   const handleAutoLayout = useCallback(() => {
@@ -587,6 +667,8 @@ function BoardContent() {
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onInit={flow => {
           updateViewportCenter();
           console.log('ReactFlow initialized', flow);
@@ -627,17 +709,24 @@ function BoardContent() {
         </Panel>
         
         {/* 오른쪽 상단에 레이아웃 및 설정 컨트롤 패널 추가 */}
-        <Panel position="top-right" className="mr-2 mt-2 flex gap-2">
-          <BoardSettingsControl
-            settings={boardSettings}
+        <Panel position="top-right" className="space-y-2">
+          <LayoutControls onLayoutChange={handleLayoutChange} />
+          <BoardSettingsControl 
+            settings={boardSettings} 
             onSettingsChange={handleSettingsChange}
           />
-          <LayoutControls
-            onLayoutChange={handleLayoutChange}
-            onAutoLayout={handleAutoLayout}
-            onSaveLayout={handleSaveLayout}
-          />
         </Panel>
+        
+        {/* 카드 생성 모달 */}
+        {showCreateModal && createModalInfo && (
+          <CreateCardModal
+            position={createModalInfo.position}
+            connectingNodeId={createModalInfo.connectingNodeId}
+            handleType={createModalInfo.handleType}
+            onClose={handleCloseModal}
+            onCardCreated={handleCardCreatedWithConnection}
+          />
+        )}
       </ReactFlow>
     </div>
   );
