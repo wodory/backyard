@@ -191,7 +191,6 @@ const { user, session, error } = await supabase.auth.signIn({
 ### 버그 : 수평/수직 레이아웃
 - [x] 간격이 너무 벌어지는 문제
 - [x] 이 값도 옵션으로 설정
-- [ ] z-index 문제 https://reactflow.dev/learn/advanced-use/state-management
 
 ## todo
 - [x] env 파일 정리 (특히 .env, .env.development)
@@ -200,25 +199,26 @@ const { user, session, error } = await supabase.auth.signIn({
 - [ ] vercel 배포 후 로그인 실패 문제
 - [ ] vercel 및 supabase 설정도 readme 추가 
 
-## Computing
-- [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows
-
 ** 수요일 - 전체 UI 변경  ** 
 
 ## react flow 기능 추가 
-- [x] https://reactflow.dev/examples/nodes/add-node-on-edge-drop
 - [x] Toast 위치는 top-center
-- [ ] https://reactflow.dev/examples/nodes/delete-middle-node
-- [ ] 컴포넌트 이름 변경
-  - [ ] toptoobar를 두 개로 분리. left : Project Toolbar, right :shoutcut toolbar
-  - [ ] BottomToolbar -> MainToolbar
-- [ ] sidebar는 드래그로 크기 변경 가능 (환경 저장 필요)
-- [ ] Project Toolbar와 Shotcut Toolbar에 기능 연동하기.
-  - [ ] 오른쪽 아래의 [새 카드 만들기]는 MainToobar에 연동
-- [ ] Sidebar의 "지우기" 단추는 호버할 때만 보이기.
+- [x] https://reactflow.dev/examples/nodes/add-node-on-edge-drop
+  - [ ] 새로 생성한 카드가 사이드바에 안 보이는 문제
+- [x] 컴포넌트 이름 변경
+  - [x] toptoobar를 두 개로 분리. left : Project Toolbar, right :shoutcut toolbar
+  - [x] BottomToolbar -> MainToolbar
 - [ ] 모든 UI 요소는 플로팅 패널로 구현하여 시각적 일관성 유지 
 - [ ] 도구 막대와 패널은 3px 마진으로 간격 유지
+- [ ] sidebar는 드래그로 크기 변경 가능 (환경 저장 필요)
+- [ ] Project Toolbar와 Shotcut Toolbar에 기능 연동하기.
+  - [ ] 오른쪽 아래의 [새 카드 만들기]는 MainToobar 첫 단추
+  - [ ] 수평/수직 레이아웃
+  - [ ] 각종 색/스타일 옵션 설정
+- [ ] Sidebar의 "지우기" 단추는 호버할 때만 보이기.
+
 - [ ] MainCanvas에서 카드 더블 클릭 -> 카드 정보 수정하기
+- [ ] https://reactflow.dev/examples/nodes/delete-middle-node
 
 ## 특별 고려사항
 
@@ -326,3 +326,8 @@ const { user, session, error } = await supabase.auth.signIn({
 
 
 
+** Todo **
+- [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows
+- [ ] z-index 문제 -> https://reactflow.dev/learn/advanced-use/state-management
+- [ ] Sidebar 필터 
+- [ ] 찾기 

@@ -139,18 +139,8 @@ export function Sidebar() {
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ duration: 0.3, ease: 'easeInOut' }}
-          className="fixed top-0 right-0 bottom-0 w-80 bg-background border-l shadow-lg pt-14 z-0"
+          className="fixed top-[calc(3rem+12px+0.75rem)] right-3 bottom-3 w-80 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border z-10"
         >
-          {/* 사이드바 접기 버튼 */}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="absolute top-[calc(50%-20px)] -left-10 h-10 w-10 rounded-full bg-background border shadow-md"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-          
           {/* 삭제 확인 다이얼로그 */}
           <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogContent>

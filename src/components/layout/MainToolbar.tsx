@@ -4,11 +4,11 @@ import { PlusCircle, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter, P
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
 
-export function BottomToolbar() {
+export function MainToolbar() {
   const { layoutDirection, setLayoutDirection, toggleSidebar } = useAppStore();
   
   return (
-    <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-full shadow-md border p-1 px-2 z-10">
+    <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-lg shadow-md border p-1 px-2 z-10">
       {/* 새 카드 추가 */}
       <Button variant="ghost" size="icon" title="새 카드 추가" className="rounded-full h-[60px] w-[60px]">
         <PlusCircle className="h-8 w-8" />

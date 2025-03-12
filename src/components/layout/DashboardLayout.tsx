@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { TopToolbar } from './TopToolbar';
+import { ProjectToolbar } from './ProjectToolbar';
+import { ShortcutToolbar } from './ShortcutToolbar';
 import { MainCanvas } from './MainCanvas';
-import { BottomToolbar } from './BottomToolbar';
+import { MainToolbar } from './MainToolbar';
 import { Sidebar } from './Sidebar';
 import { ReactFlowProvider } from '@xyflow/react';
 // React Flow 스타일은 MainCanvas에서 import 합니다
@@ -24,8 +25,11 @@ export function DashboardLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* 상단 툴바 */}
-      <TopToolbar />
+      {/* 프로젝트 툴바 (좌측 상단) */}
+      <ProjectToolbar />
+      
+      {/* 단축키 툴바 (우측 상단) */}
+      <ShortcutToolbar />
       
       {/* 메인 콘텐츠 영역 */}
       <div className="flex flex-1 relative">
@@ -40,8 +44,8 @@ export function DashboardLayout() {
         <Sidebar />
       </div>
       
-      {/* 하단 툴바 */}
-      <BottomToolbar />
+      {/* 메인 툴바 (하단 센터) */}
+      <MainToolbar />
     </div>
   );
 } 
