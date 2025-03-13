@@ -379,25 +379,25 @@ export default function BoardComponent({
         console.error('저장된 엣지 불러오기 실패:', err);
       }
       
-      // layoutDirection에 따라 레이아웃 적용
+      // 저장된 위치 그대로 사용
       let layoutedNodes = [...initialNodes];
       let layoutedEdges = [...initialEdges];
       
-      if (layoutDirection === 'horizontal' || layoutDirection === 'vertical') {
-        // 수평/수직 레이아웃 적용
-        const result = getLayoutedElements(initialNodes, initialEdges, layoutDirection);
-        layoutedNodes = result.nodes;
-        layoutedEdges = result.edges;
-      } else if (layoutDirection === 'auto') {
-        // 자동 배치 레이아웃 적용
-        layoutedNodes = getGridLayout(initialNodes);
-      }
+      console.log('[BoardComponent] 저장된 노드 위치를 사용합니다.');
       
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
       
       setIsLoading(false);
       setError(null);
+      
+      // 모든 노드가 뷰에 맞도록 조정 (Fit to View)
+      setTimeout(() => {
+        if (reactFlowInstance) {
+          reactFlowInstance.fitView({ padding: 0.2, includeHiddenNodes: false });
+          console.log('[BoardComponent] 뷰에 맞게 화면을 조정했습니다');
+        }
+      }, 100);
       
       return { nodes: layoutedNodes, edges: layoutedEdges };
     } catch (error) {
@@ -406,7 +406,7 @@ export default function BoardComponent({
       setIsLoading(false);
       return { nodes: [], edges: [] };
     }
-  }, [onSelectCard, setNodes, setEdges, layoutDirection]);
+  }, [onSelectCard, setNodes, setEdges, reactFlowInstance]);
   
   // 컴포넌트 마운트 시 카드 데이터 로드
   useEffect(() => {
@@ -710,28 +710,6 @@ export default function BoardComponent({
       fetchCards();
     }, 500);
   }, [nodes, edges, setNodes, setEdges, saveEdges, saveLayout, boardSettings, fetchCards]);
-  
-  // layoutDirection이 변경될 때마다 레이아웃 업데이트
-  useEffect(() => {
-    if (nodes.length === 0 || isLoading) return;
-    
-    let layoutedNodes = [...nodes];
-    let layoutedEdges = [...edges];
-    
-    if (layoutDirection === 'horizontal' || layoutDirection === 'vertical') {
-      // 수평/수직 레이아웃 적용
-      const result = getLayoutedElements(nodes, edges, layoutDirection);
-      layoutedNodes = result.nodes;
-      layoutedEdges = result.edges;
-    } else if (layoutDirection === 'auto') {
-      // 자동 배치 레이아웃 적용
-      layoutedNodes = getGridLayout(nodes);
-    }
-    
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-    
-  }, [layoutDirection, nodes.length, isLoading]);
   
   // 컴포넌트 내 useEffect 추가 (다른 useEffect와 함께 배치)
   // 이 useEffect는 디버깅 용도로 컴포넌트 마운트 시 보드 설정 상태를 로깅합니다

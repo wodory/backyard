@@ -353,3 +353,4 @@ const { user, session, error } = await supabase.auth.signIn({
 - [ ] Sidebar 필터 
 - [ ] 찾기 
 - [ ] 색상이나 사이즈 시맨틱 + 프리미티브 정리 
+- [ ] 오토 레이아웃에서 노드 크기를 유지하기

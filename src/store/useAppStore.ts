@@ -13,9 +13,9 @@ export interface AppState {
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   
-  // 레이아웃 옵션 (수평/수직/자동배치)
-  layoutDirection: 'horizontal' | 'vertical' | 'auto';
-  setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto') => void;
+  // 레이아웃 옵션 (수평/수직/자동배치/없음)
+  layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
+  setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto' | 'none') => void;
   
   // 사이드바 너비
   sidebarWidth: number;
@@ -80,17 +80,15 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => {
         console.log('[Zustand] persist에 저장될 상태:', {
           isSidebarOpen: state.isSidebarOpen,
-          layoutDirection: state.layoutDirection,
           sidebarWidth: state.sidebarWidth,
           boardSettings: state.boardSettings,
         });
         return {
           // 영구 저장할 상태만 선택
           isSidebarOpen: state.isSidebarOpen,
-          layoutDirection: state.layoutDirection,
           sidebarWidth: state.sidebarWidth,
           boardSettings: state.boardSettings,
-          // selectedCardId와 reactFlowInstance는 세션별로 달라질 수 있으므로 저장하지 않음
+          // layoutDirection과 selectedCardId, reactFlowInstance는 세션별로 달라질 수 있으므로 저장하지 않음
         };
       },
     }

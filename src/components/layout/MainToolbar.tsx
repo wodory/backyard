@@ -12,6 +12,7 @@ import { useCallback, useState } from 'react';
 import { SimpleCreateCardModal } from '@/components/cards/SimpleCreateCardModal';
 import { toast } from 'sonner';
 import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 
 export function MainToolbar() {
   const { layoutDirection, setLayoutDirection, reactFlowInstance } = useAppStore();
@@ -25,6 +26,82 @@ export function MainToolbar() {
     // 새로운 카드가 생성되었으므로 페이지를 새로고침하여 보드에 표시
     window.location.reload();
   }, []);
+  
+  // 수평 레이아웃 적용 핸들러
+  const applyHorizontalLayout = useCallback(() => {
+    if (!reactFlowInstance) {
+      toast.error('React Flow 인스턴스를 찾을 수 없습니다');
+      return;
+    }
+    
+    // React Flow 인스턴스에서 현재 노드와 엣지 가져오기
+    const nodes = reactFlowInstance.getNodes();
+    const edges = reactFlowInstance.getEdges();
+    
+    if (!nodes.length) {
+      toast.error('적용할 노드가 없습니다');
+      return;
+    }
+    
+    // 수평 레이아웃 적용
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'horizontal');
+    
+    // 변경된 노드와 엣지 적용
+    reactFlowInstance.setNodes(layoutedNodes);
+    reactFlowInstance.setEdges(layoutedEdges);
+    
+    toast.success('수평 레이아웃이 적용되었습니다');
+  }, [reactFlowInstance]);
+  
+  // 수직 레이아웃 적용 핸들러
+  const applyVerticalLayout = useCallback(() => {
+    if (!reactFlowInstance) {
+      toast.error('React Flow 인스턴스를 찾을 수 없습니다');
+      return;
+    }
+    
+    // React Flow 인스턴스에서 현재 노드와 엣지 가져오기
+    const nodes = reactFlowInstance.getNodes();
+    const edges = reactFlowInstance.getEdges();
+    
+    if (!nodes.length) {
+      toast.error('적용할 노드가 없습니다');
+      return;
+    }
+    
+    // 수직 레이아웃 적용
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'vertical');
+    
+    // 변경된 노드와 엣지 적용
+    reactFlowInstance.setNodes(layoutedNodes);
+    reactFlowInstance.setEdges(layoutedEdges);
+    
+    toast.success('수직 레이아웃이 적용되었습니다');
+  }, [reactFlowInstance]);
+  
+  // 자동 배치 레이아웃 적용 핸들러
+  const applyAutoLayout = useCallback(() => {
+    if (!reactFlowInstance) {
+      toast.error('React Flow 인스턴스를 찾을 수 없습니다');
+      return;
+    }
+    
+    // React Flow 인스턴스에서 현재 노드와 엣지 가져오기
+    const nodes = reactFlowInstance.getNodes();
+    
+    if (!nodes.length) {
+      toast.error('적용할 노드가 없습니다');
+      return;
+    }
+    
+    // 자동 배치 레이아웃 적용
+    const layoutedNodes = getGridLayout(nodes);
+    
+    // 변경된 노드 적용
+    reactFlowInstance.setNodes(layoutedNodes);
+    
+    toast.success('자동 배치 레이아웃이 적용되었습니다');
+  }, [reactFlowInstance]);
   
   // 레이아웃 저장 핸들러
   const handleSaveLayout = useCallback(() => {
@@ -71,11 +148,11 @@ export function MainToolbar() {
       
       {/* 수평 정렬 */}
       <Button 
-        variant={layoutDirection === 'horizontal' ? 'default' : 'ghost'} 
+        variant="ghost" 
         size="icon" 
         title="수평 정렬"
         className="rounded-full h-[60px] w-[60px]"
-        onClick={() => setLayoutDirection('horizontal')}
+        onClick={applyHorizontalLayout}
       >
         <AlignHorizontalJustifyCenter className="h-8 w-8" />
         <span className="sr-only">수평 정렬</span>
@@ -83,11 +160,11 @@ export function MainToolbar() {
       
       {/* 수직 정렬 */}
       <Button 
-        variant={layoutDirection === 'vertical' ? 'default' : 'ghost'} 
+        variant="ghost" 
         size="icon" 
         title="수직 정렬"
         className="rounded-full h-[60px] w-[60px]"
-        onClick={() => setLayoutDirection('vertical')}
+        onClick={applyVerticalLayout}
       >
         <AlignVerticalJustifyCenter className="h-8 w-8" />
         <span className="sr-only">수직 정렬</span>
@@ -95,11 +172,11 @@ export function MainToolbar() {
       
       {/* 자동 배치 */}
       <Button 
-        variant={layoutDirection === 'auto' ? 'default' : 'ghost'} 
+        variant="ghost" 
         size="icon" 
         title="자동 배치"
         className="rounded-full h-[60px] w-[60px]"
-        onClick={() => setLayoutDirection('auto')}
+        onClick={applyAutoLayout}
       >
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M21 9L17 9M21 15H11M7 15H3M3 9L13 9M17 15L21 15M7 9H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

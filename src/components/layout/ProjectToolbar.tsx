@@ -56,20 +56,19 @@ export function ProjectToolbar() {
     layoutDirection, 
     setLayoutDirection,
     boardSettings,
-    updateBoardSettings
+    updateBoardSettings,
+    reactFlowInstance
   } = useAppStore();
   
-  // 레이아웃 저장 함수
+  // 저장 핸들러 (임시)
   const handleSaveLayout = useCallback(() => {
     try {
-      const { reactFlowInstance } = useAppStore.getState();
-      
       if (!reactFlowInstance) {
         toast.error('React Flow 인스턴스를 찾을 수 없습니다');
         return;
       }
       
-      // React Flow 인스턴스에서 직접 노드와 엣지 데이터 가져오기
+      // React Flow 인스턴스에서 노드와 엣지 데이터 가져오기
       const nodes = reactFlowInstance.getNodes();
       const edges = reactFlowInstance.getEdges();
       
@@ -83,12 +82,11 @@ export function ProjectToolbar() {
       localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
       
       toast.success('레이아웃이 저장되었습니다');
-      console.log('레이아웃 저장 완료:', { nodes: nodes.length, edges: edges.length });
     } catch (error) {
       console.error('레이아웃 저장 실패:', error);
       toast.error('레이아웃 저장에 실패했습니다');
     }
-  }, []);
+  }, [reactFlowInstance]);
   
   // 스냅 그리드 값 변경 핸들러
   const handleSnapGridChange = useCallback((value: string) => {
