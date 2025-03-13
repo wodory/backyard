@@ -50,6 +50,7 @@ import { CreateCardModal } from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/useAppStore';
 import { logCurrentBoardSettings, resetAllStorage } from '@/lib/debug-utils';
+import { cn } from '@/lib/utils';
 
 // 타입 정의
 interface BoardComponentProps {
@@ -91,7 +92,11 @@ export default function BoardComponent({
   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
   
   // useAppStore에서 layoutDirection과 boardSettings 가져오기
-  const { layoutDirection, boardSettings, setBoardSettings } = useAppStore();
+  const layoutDirection = useAppStore(state => state.layoutDirection);
+  const boardSettings = useAppStore(state => state.boardSettings);
+  const setBoardSettings = useAppStore(state => state.setBoardSettings);
+  const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
+  const { selectCards } = useAppStore();
   
   // 엣지에 새 노드 추가 기능
   const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
@@ -537,8 +542,99 @@ export default function BoardComponent({
   
   // 카드 선택 핸들러
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    // useAppStore의 상태와 함수를 한 번만 가져옴 (캐싱)
+    const appState = useAppStore.getState();
+    const { 
+      isSidebarOpen, 
+      setSidebarOpen, 
+      selectedCardIds, 
+      toggleSelectedCard, 
+      selectCard 
+    } = appState;
+    
+    // 사이드바가 닫혀있으면 열기
+    if (!isSidebarOpen) {
+      setSidebarOpen(true);
+    }
+    
+    // Ctrl(macOS에서는 Meta) 키가 눌려있는지 확인
+    const isMultiSelectMode = event.ctrlKey || event.metaKey;
+    
+    if (isMultiSelectMode) {
+      // 다중 선택 모드: 선택된 카드 목록에 추가/제거
+      console.log('다중 선택 모드로 노드 클릭:', node.id);
+      
+      // 토스트 메시지 결정을 위해 현재 선택 상태 미리 확인
+      const isCurrentlySelected = selectedCardIds.includes(node.id);
+      
+      // 상태 업데이트
+      toggleSelectedCard(node.id);
+      
+      // 성공 메시지 표시 - 다중 선택 모드
+      if (isCurrentlySelected) {
+        toast.success(`'${(node.data as any).title}'가 선택에서 제거되었습니다.`, {
+          duration: 1500,
+          position: 'bottom-center',
+        });
+      } else {
+        toast.success(`'${(node.data as any).title}'가 선택에 추가되었습니다.`, {
+          duration: 1500,
+          position: 'bottom-center',
+        });
+      }
+    } else {
+      // 단일 선택 모드: 하나만 선택
+      console.log('단일 선택 모드로 노드 클릭:', node.id);
+      
+      // 이미 선택된 카드를 다시 클릭하는 경우 처리
+      if (selectedCardIds.length === 1 && selectedCardIds[0] === node.id) {
+        // 동일한 카드 재선택 - 아무것도 하지 않음
+        console.log('이미 선택된 카드 재선택:', node.id);
+      } else {
+        // 새로운 카드 선택
+        selectCard(node.id);
+        
+        // 성공 메시지 표시 - 단일 선택 모드
+        toast.success(`'${(node.data as any).title}'가 선택되었습니다.`, {
+          duration: 1500,
+          position: 'bottom-center',
+        });
+      }
+    }
+    
+    // props로 전달된 콜백이 있다면 실행
     if (onSelectCard) {
       onSelectCard(node.id);
+    }
+  }, [onSelectCard]);
+  
+  // 페인 클릭 핸들러 (빈 공간 클릭)
+  const handlePaneClick = useCallback((event: React.MouseEvent) => {
+    // Ctrl/Meta 키가 눌려있지 않은 경우에만 모든 선택 해제
+    if (!(event.ctrlKey || event.metaKey)) {
+      const appState = useAppStore.getState();
+      const { selectedCardIds, clearSelectedCards } = appState;
+      
+      // 선택된 카드가 있을 때만 토스트 표시
+      if (selectedCardIds.length > 0) {
+        if (selectedCardIds.length > 1) {
+          toast.info(`${selectedCardIds.length}개 카드 선택이 해제되었습니다.`, {
+            duration: 1500,
+            position: 'bottom-center',
+          });
+        } else {
+          toast.info('카드 선택이 해제되었습니다.', {
+            duration: 1500,
+            position: 'bottom-center',
+          });
+        }
+        
+        // 선택 해제
+        clearSelectedCards();
+        if (onSelectCard) {
+          onSelectCard(null);
+        }
+      }
     }
   }, [onSelectCard]);
   
@@ -725,42 +821,195 @@ export default function BoardComponent({
     }
   }, [boardSettings]);
   
-  // boardSettings가 변경될 때마다 엣지 스타일 업데이트
+  // ==================== 보드 설정 최적화 ====================
+  // boardSettings 변경 감지 및 엣지 스타일 업데이트
+  // 이 부분에서 무한 루프가 발생할 가능성이 높음
   const prevBoardSettingsRef = useRef(boardSettings);
+  const prevEdgesRef = useRef(edges);
 
   useEffect(() => {
-    if (edges.length === 0 || isLoading) return;
+    // 1. 무한 루프 방지를 위한 다중 조건 체크
+    if (edges.length === 0 || isLoading) {
+      return; // 엣지가 없거나 로딩 중이면 처리하지 않음
+    }
     
-    // 이전 설정과 현재 설정이 같으면 불필요한 업데이트 방지
-    const settingsChanged = JSON.stringify(prevBoardSettingsRef.current) !== JSON.stringify(boardSettings);
+    // 2. 불필요한 업데이트 방지를 위한 설정 및 엣지 변경 감지
+    // 직접 비교 대신 JSON 문자열로 변환하여 깊은 비교 수행
+    const settingsJSON = JSON.stringify(boardSettings);
+    const prevSettingsJSON = JSON.stringify(prevBoardSettingsRef.current);
+    const settingsChanged = settingsJSON !== prevSettingsJSON;
     
-    if (!settingsChanged) {
-      console.log('[BoardComponent] 보드 설정 변경 없음, 업데이트 생략');
+    // 엣지 배열 자체가 변경되었는지 확인 (참조 비교만으로는 부족)
+    const edgesChanged = edges !== prevEdgesRef.current;
+    
+    if (!settingsChanged && !edgesChanged) {
+      // 설정과 엣지가 모두 변경되지 않았으면 업데이트 건너뛰기
       return;
     }
     
-    console.log('[BoardComponent] boardSettings 변경 감지, 엣지 스타일 업데이트 시작', boardSettings);
+    // 3. 디버깅 정보 로깅
+    console.log(
+      '[BoardComponent] 설정 또는 엣지 변경 감지. 설정 변경:', 
+      settingsChanged, 
+      '엣지 변경:', 
+      edgesChanged
+    );
     
-    // 엣지에 새 설정 적용
-    const updatedEdges = applyEdgeSettings(edges, boardSettings);
-    console.log('[BoardComponent] 업데이트된 엣지 수:', updatedEdges.length);
-    
-    // 변경된 엣지 적용 (setTimeout으로 래핑하여 무한 루프 방지)
-    setTimeout(() => {
-      setEdges(updatedEdges);
-      
-      // 현재 설정을 이전 설정으로 저장
-      prevBoardSettingsRef.current = { ...boardSettings };
-      
-      // 커스텀 이벤트 발생 (디버깅용)
-      if (typeof window !== 'undefined') {
-        const event = new CustomEvent('board-settings-applied', { detail: { boardSettings } });
-        window.dispatchEvent(event);
-        console.log('[BoardComponent] 보드 설정 적용 이벤트 발생');
+    // 4. 엣지 업데이트 처리를 requestAnimationFrame으로 래핑
+    // 이렇게 하면 여러 업데이트가 단일 렌더링 사이클로 일괄 처리됨
+    const frameId = requestAnimationFrame(() => {
+      try {
+        // 5. 설정이 변경된 경우에만 엣지 스타일 업데이트
+        if (settingsChanged) {
+          // applyEdgeSettings 함수는 새 엣지 배열을 반환함
+          const updatedEdges = applyEdgeSettings(edges, boardSettings);
+          
+          // 엣지 배열 자체가 변경된 경우에만 setEdges 호출
+          if (JSON.stringify(updatedEdges) !== JSON.stringify(edges)) {
+            // 함수형 업데이트를 통해 상태 업데이트
+            setEdges(updatedEdges);
+            console.log('[BoardComponent] 엣지 스타일 업데이트 완료');
+          }
+        }
+        
+        // 6. 현재 값을 이전 값으로 저장
+        prevBoardSettingsRef.current = boardSettings;
+        prevEdgesRef.current = edges;
+      } catch (error) {
+        console.error('[BoardComponent] 엣지 스타일 업데이트 중 오류:', error);
       }
-    }, 0);
+    });
     
-  }, [boardSettings, isLoading]);
+    // 7. 정리 함수에서 애니메이션 프레임 취소
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  // 8. 의존성 배열에는 꼭 필요한 값만 포함
+  // boardSettings와 edges만 포함하고, 다른 함수나 객체는 제외
+  }, [boardSettings, edges, isLoading]);
+  
+  // ==================== ReactFlow 초기화 최적화 ====================
+  // ReactFlow 인스턴스를 초기화하는 함수
+  const handleReactFlowInit = useCallback((flow: any) => {
+    // 무한 루프 방지를 위한 안전 장치
+    try {
+      if (!flow) {
+        console.warn('[BoardComponent] ReactFlow 초기화: 인스턴스가 null입니다');
+        return;
+      }
+      
+      if (typeof flow.screenToFlowPosition !== 'function') {
+        console.warn('[BoardComponent] ReactFlow 초기화: screenToFlowPosition 함수가 없습니다');
+        return;
+      }
+      
+      // viewport 중앙 업데이트 (초기화 직후 1회만 수행)
+      if (flow && typeof flow.screenToFlowPosition === 'function') {
+        updateViewportCenter(flow);
+      }
+      
+      // 전역 상태에 인스턴스 저장 (필요 시 사용)
+      // 중요: 이미 저장된 경우 중복 저장하지 않음
+      const currentInstance = useAppStore.getState().reactFlowInstance;
+      if (currentInstance !== flow) {
+        setReactFlowInstance(flow);
+        console.log('[BoardComponent] ReactFlow 인스턴스 초기화 및 전역 상태 저장 완료');
+      }
+    } catch (error) {
+      console.error('[BoardComponent] ReactFlow 초기화 중 오류:', error);
+    }
+  }, [updateViewportCenter, setReactFlowInstance]);
+  
+  // 드래그 오버 이벤트 핸들러 추가
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  // 드롭 이벤트 핸들러 추가
+  const onDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+
+    // React Flow 래퍼 요소가 없으면 중단
+    if (!reactFlowWrapper.current || !reactFlowInstance) {
+      return;
+    }
+
+    // 드래그된 데이터 확인
+    const reactFlowData = event.dataTransfer.getData('application/reactflow');
+    if (!reactFlowData) return;
+
+    try {
+      // 데이터 파싱
+      const cardData = JSON.parse(reactFlowData);
+      
+      // 드롭된 위치 계산
+      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      });
+
+      // 노드 중복 확인
+      const existingNode = nodes.find(n => n.id === cardData.id);
+      if (existingNode) {
+        // 이미 캔버스에 해당 카드가 있으면 위치만 업데이트
+        const updatedNodes = nodes.map(n => {
+          if (n.id === cardData.id) {
+            return {
+              ...n,
+              position
+            };
+          }
+          return n;
+        });
+        setNodes(updatedNodes);
+        saveLayout(updatedNodes); // 레이아웃 저장
+        toast.info('카드 위치가 업데이트되었습니다.');
+      } else {
+        // 새로운 노드 생성
+        const newNode = {
+          id: cardData.id,
+          type: 'card',
+          position,
+          data: cardData.data,
+        };
+
+        // 노드 추가
+        setNodes(nodes => [...nodes, newNode]);
+        saveLayout([...nodes, newNode]); // 레이아웃 저장
+        toast.success('카드가 캔버스에 추가되었습니다.');
+      }
+    } catch (error) {
+      console.error('드롭된 데이터 처리 중 오류 발생:', error);
+      toast.error('카드를 캔버스에 추가하는 중 오류가 발생했습니다.');
+    }
+  }, [reactFlowInstance, nodes, setNodes, saveLayout]);
+  
+  // React Flow에서의 선택 변경 이벤트 핸들러
+  const handleSelectionChange = useCallback(({ nodes, edges }: { nodes: Node[]; edges: Edge[] }) => {
+    console.log('[BoardComponent] 선택 변경 감지:', { 
+      선택된_노드_수: nodes.length,
+      선택된_엣지_수: edges.length,
+      선택된_노드_ID: nodes.map(node => node.id)
+    });
+
+    // 선택된 노드 ID 배열 추출
+    const selectedNodeIds = nodes.map(node => node.id);
+    
+    // 전역 상태 업데이트
+    if (selectedNodeIds.length > 0) {
+      selectCards(selectedNodeIds);
+      
+      // 선택된 노드가 있는 경우 토스트 메시지 표시
+      if (selectedNodeIds.length > 1) {
+        toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`, {
+          duration: 2000,
+          position: 'bottom-center',
+        });
+      }
+    }
+  }, [selectCards]);
   
   if (isLoading) {
     return (
@@ -781,33 +1030,28 @@ export default function BoardComponent({
   }
   
   return (
-    <div className={`w-full h-full ${className}`} ref={reactFlowWrapper}>
+    <div 
+      className={cn("w-full h-full bg-white relative", className)} 
+      ref={reactFlowWrapper}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <ReactFlow
         nodes={nodes}
-        nodeTypes={NODE_TYPES}
         edges={edges}
-        edgeTypes={EDGE_TYPES}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onNodeClick={handleNodeClick}
-        onInit={flow => {
-          try {
-            if (flow && typeof flow.screenToFlowPosition === 'function') {
-              // flow 인스턴스를 직접 전달하여 updateViewportCenter 호출
-              updateViewportCenter(flow);
-              // 전역 상태에 ReactFlow 인스턴스 저장
-              useAppStore.getState().setReactFlowInstance(flow);
-              console.log('ReactFlow initialized and stored in global state', flow);
-            } else {
-              console.warn('Flow instance is not fully initialized');
-            }
-          } catch (error) {
-            console.error('Error during ReactFlow initialization:', error);
-          }
-        }}
+        onPaneClick={handlePaneClick}
+        onInit={handleReactFlowInit}
+        onSelectionChange={handleSelectionChange}
         fitView
         minZoom={0.1}
         maxZoom={1.5}

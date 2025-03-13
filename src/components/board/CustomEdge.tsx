@@ -146,14 +146,11 @@ function CustomEdge({
       markerEnd={markerEnd} 
       style={edgeStyle}
       data-selected={selected ? 'true' : 'false'}
-      {...{
-        ...restProps,
-        selectable: undefined,
-        deletable: undefined,
-        sourceHandleId: undefined,
-        targetHandleId: undefined,
-        pathOptions: undefined
-      }}
+      {...(() => {
+        // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
+        const { sourceHandleId, targetHandleId, pathOptions, selectable, deletable, ...cleanProps } = restProps;
+        return cleanProps;
+      })()}
     />
   );
 }

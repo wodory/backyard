@@ -14,9 +14,10 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
+    console.log(`카드 상세 조회 요청: ID=${context.params.id}`);
     const id = context.params.id;
     
-    // 카드 조회
+    // 카드 조회 (태그 정보 포함)
     const card = await prisma.card.findUnique({
       where: { id },
       include: {
@@ -25,20 +26,27 @@ export async function GET(
             id: true,
             name: true
           }
+        },
+        cardTags: {
+          include: {
+            tag: true
+          }
         }
       }
     });
     
     if (!card) {
+      console.log(`카드 찾을 수 없음: ID=${id}`);
       return NextResponse.json(
         { error: '카드를 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
     
+    console.log(`카드 조회 성공: ID=${id}`);
     return NextResponse.json(card);
   } catch (error) {
-    console.error('카드 조회 오류:', error);
+    console.error(`카드 조회 오류 (ID=${context.params.id}):`, error);
     return NextResponse.json(
       { error: '카드를 조회하는 중 오류가 발생했습니다.' },
       { status: 500 }

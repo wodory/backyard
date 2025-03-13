@@ -24,13 +24,15 @@ interface TiptapEditorProps {
   onChange: (content: string) => void
   placeholder?: string
   showToolbar?: boolean
+  id?: string
 }
 
 export default function TiptapEditor({ 
   content, 
   onChange, 
   placeholder = '내용을 입력하세요...', 
-  showToolbar = true 
+  showToolbar = true,
+  id = 'tiptap-editor'
 }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -106,14 +108,14 @@ export default function TiptapEditor({
   }
 
   return (
-    <div className="tiptap-editor">
-      {showToolbar && (
-        <div className="toolbar border rounded-md mb-2 p-1 flex flex-wrap gap-1">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+    <div className="tiptap-editor-wrapper">
+      {editor && showToolbar && (
+        <div className="border rounded-md mb-2 p-1 flex flex-wrap gap-1">
+          <Button
+            variant="outline" 
+            size="sm"
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={editor.isActive('bold') ? 'bg-secondary' : ''}
+            className={editor.isActive('bold') ? 'bg-accent' : ''}
           >
             <BoldIcon className="h-4 w-4" />
           </Button>
@@ -243,7 +245,7 @@ export default function TiptapEditor({
         </FloatingMenu>
       )}
 
-      <EditorContent editor={editor} placeholder={placeholder} />
+      <EditorContent editor={editor} id={id} placeholder={placeholder} />
     </div>
   )
 } 

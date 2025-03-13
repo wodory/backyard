@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { ChevronRight, Eye, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,9 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useResizable } from '@/hooks/useResizable';
+import DocumentViewer from '../editor/DocumentViewer';
+import CardList from '@/components/cards/CardList';
+import type { Card as CardType } from '@/types/card';
 
 // 카드 인터페이스 정의
 interface Tag {
@@ -39,6 +42,10 @@ interface CardItem {
   content: string;
   createdAt: string;
   cardTags?: CardTag[];
+  // 엣지 정보를 통해 계층 구조 파악을 위한 필드
+  parents?: string[];
+  children?: string[];
+  depth?: number;
 }
 
 interface SidebarProps {
@@ -46,13 +53,31 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const { isSidebarOpen, setSidebarOpen, selectedCardId, selectCard, sidebarWidth, setSidebarWidth } = useAppStore();
+  const { 
+    isSidebarOpen, 
+    setSidebarOpen, 
+    selectedCardId, 
+    selectedCardIds, 
+    selectCard, 
+    sidebarWidth, 
+    setSidebarWidth,
+    reactFlowInstance
+  } = useAppStore();
+  
   const [cards, setCards] = useState<CardItem[]>([]);
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+  const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  // 카드 정보 로드 상태 - Hook 순서 문제 해결을 위해 여기로 이동
+  const [selectedCardsInfo, setSelectedCardsInfo] = useState<Array<{ id: string, title: string, content: string }>>([]);
+  const [hierarchyLoading, setHierarchyLoading] = useState(false);
+  
+  // 제목 표시 부분의 ref 추가
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  
   const { width, startResize } = useResizable({
     initialWidth: sidebarWidth,
     minWidth: 240,
@@ -76,10 +101,100 @@ export function Sidebar({ className }: SidebarProps) {
       setSelectedCard(null);
     }
   }, [selectedCardId]);
+  
+  // 다중 선택된 카드 정보 불러오기
+  useEffect(() => {
+    if (selectedCardIds.length > 0) {
+      fetchSelectedCards(selectedCardIds);
+    } else {
+      setSelectedCards([]);
+    }
+  }, [selectedCardIds]);
 
   useEffect(() => {
     setSidebarWidth(width);
   }, [width, setSidebarWidth]);
+  
+  // 선택된 카드 정보를 콘솔에 표시
+  useEffect(() => {
+    if (selectedCardIds.length >= 2) {
+      console.group('다중 선택된 카드 정보');
+      console.log('선택된 카드 ID 목록:', selectedCardIds);
+      console.log('현재 계층 구조 정렬된 선택 카드:', selectedCards);
+      console.log('다중 선택 모드:', isMultiSelectMode);
+      console.groupEnd();
+    }
+  }, [selectedCardIds, selectedCards]);
+  
+  // 선택된 카드의 카드 데이터 가져오기 (다중 선택 모드)
+  useEffect(() => {
+    if (selectedCardIds.length > 1) {
+      console.log("여러 카드 선택됨:", selectedCardIds);
+      setHierarchyLoading(true);
+      
+      const fetchSelectedCardsInfo = async () => {
+        try {
+          // ReactFlow의 노드와 엣지 가져오기
+          const nodes = reactFlowInstance?.getNodes() || [];
+          const edges = reactFlowInstance?.getEdges() || [];
+          
+          // 계층 구조 분석
+          const orderedNodeIds = analyzeHierarchy(selectedCardIds, nodes, edges);
+          
+          // 선택된 카드 정보 로드
+          const cardsInfo = await Promise.all(
+            orderedNodeIds.map(async (id) => {
+              // 로컬 캐시에서 카드 정보 확인
+              const cachedNode = nodes.find(node => node.id === id);
+              if (cachedNode?.data) {
+                return {
+                  id,
+                  title: String(cachedNode.data.title || cachedNode.data.label || '제목 없음'),
+                  content: String(cachedNode.data.content || '')
+                };
+              }
+              
+              // 캐시에 없으면 API에서 로드 (필요시 구현)
+              try {
+                const response = await fetch(`/api/cards/${id}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  return {
+                    id: data.id,
+                    title: data.title || '제목 없음',
+                    content: data.content || ''
+                  };
+                }
+              } catch (error) {
+                console.error(`카드 ${id} 로드 중 오류:`, error);
+              }
+              
+              return { 
+                id, 
+                title: String(id), 
+                content: '내용을 불러올 수 없습니다.' 
+              };
+            })
+          );
+          
+          console.log("로드된 카드 정보:", cardsInfo);
+          if (cardsInfo.length > 0) {
+            setSelectedCardsInfo(cardsInfo);
+          }
+        } catch (error) {
+          console.error("카드 정보 로드 중 오류:", error);
+          toast.error("카드 정보를 불러오는데 실패했습니다.");
+          setSelectedCardsInfo([]);
+        } finally {
+          setHierarchyLoading(false);
+        }
+      };
+      
+      fetchSelectedCardsInfo();
+    } else {
+      setSelectedCardsInfo([]);
+    }
+  }, [selectedCardIds, reactFlowInstance]);
 
   async function fetchCards() {
     setLoading(true);
@@ -100,16 +215,159 @@ export function Sidebar({ className }: SidebarProps) {
 
   async function fetchCardDetails(cardId: string) {
     try {
-      const response = await fetch(`/api/cards/${cardId}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃 설정
+      
+      const response = await fetch(`/api/cards/${cardId}`, {
+        signal: controller.signal,
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error('카드 정보를 불러오는데 실패했습니다.');
+        const errorText = await response.text();
+        console.error(`카드 조회 실패 (상태 코드: ${response.status}): ${errorText}`);
+        throw new Error(`카드 정보를 불러오는데 실패했습니다. 상태 코드: ${response.status}`);
       }
+      
       const data = await response.json();
       setSelectedCard(data);
     } catch (error) {
       console.error('Error fetching card details:', error);
-      toast.error('카드 정보를 불러오는데 실패했습니다.');
+      
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('요청 시간이 초과되었습니다.');
+      } else {
+        toast.error('카드 정보를 불러오는데 실패했습니다.');
+      }
+      
       selectCard(null); // 에러 발생 시 선택 해제
+    }
+  }
+  
+  // 엣지 정보를 기반으로 카드의 계층 구조 분석
+  const analyzeHierarchy = (selectedIds: string[], nodes: any[], edges: any[]) => {
+    console.log("계층 구조 분석 중...", selectedIds);
+    
+    // 선택된 카드 간의 관계를 파악하기 위한 그래프 생성
+    const graph: Record<string, string[]> = {};
+    const reverseGraph: Record<string, string[]> = {};
+    
+    // 모든 노드 ID에 대한 인접 목록 초기화
+    nodes.forEach(node => {
+      graph[node.id] = [];
+      reverseGraph[node.id] = [];
+    });
+    
+    // 엣지 정보를 기반으로 그래프 구성
+    edges.forEach(edge => {
+      const source = edge.source;
+      const target = edge.target;
+      
+      if (graph[source]) graph[source].push(target);
+      if (reverseGraph[target]) reverseGraph[target].push(source);
+    });
+    
+    // 선택된 노드들 중 루트 노드(들) 찾기 (들어오는 엣지가 없거나 선택되지 않은 노드에서만 들어오는 엣지)
+    const rootNodes = selectedIds.filter(id => {
+      const parents = reverseGraph[id] || [];
+      return parents.length === 0 || !parents.some(parent => selectedIds.includes(parent));
+    });
+    
+    console.log("루트 노드:", rootNodes);
+    
+    // 방문 여부 추적
+    const visited = new Set<string>();
+    
+    // 계층 순서대로 노드 수집
+    const orderedNodes: string[] = [];
+    
+    // DFS로 계층 구조 탐색
+    const dfs = (nodeId: string) => {
+      if (visited.has(nodeId)) return;
+      visited.add(nodeId);
+      orderedNodes.push(nodeId);
+      
+      // 해당 노드의 자식 중 선택된 카드만 탐색
+      const children = graph[nodeId] || [];
+      children.forEach(child => {
+        if (selectedIds.includes(child)) {
+          dfs(child);
+        }
+      });
+    };
+    
+    // 모든 루트 노드에서 시작하여 DFS 실행
+    rootNodes.forEach(root => dfs(root));
+    
+    // 만약 선택된 모든 노드가 루트에서 접근되지 않았다면 (연결되지 않은 컴포넌트)
+    // 방문하지 않은 선택된 노드로 추가 DFS 실행
+    selectedIds.forEach(id => {
+      if (!visited.has(id)) {
+        dfs(id);
+      }
+    });
+    
+    console.log("계층 순서 노드:", orderedNodes);
+    return orderedNodes;
+  };
+  
+  // 다중 선택된 카드 정보 불러오기
+  async function fetchSelectedCards(cardIds: string[]) {
+    if (!cardIds.length) return;
+    
+    console.log('fetchSelectedCards 호출됨 - 선택된 카드:', cardIds);
+    
+    try {
+      const fetchedCards: CardItem[] = [];
+      
+      // 카드 목록에서 선택된 카드 정보 찾기
+      for (const cardId of cardIds) {
+        const foundCard = cards.find(card => card.id === cardId);
+        if (foundCard) {
+          fetchedCards.push(foundCard);
+          console.log(`카드 ID ${cardId} - 로컬 캐시에서 찾음`);
+        } else {
+          // 카드 목록에 없는 경우 API로 상세 정보 조회
+          console.log(`카드 ID ${cardId} - API 호출로 조회`);
+          const response = await fetch(`/api/cards/${cardId}`);
+          if (response.ok) {
+            const cardData = await response.json();
+            fetchedCards.push(cardData);
+          } else {
+            console.error(`카드 ID ${cardId} - API 조회 실패: ${response.status}`);
+          }
+        }
+      }
+      
+      // 계층 구조 분석
+      const hierarchy = analyzeHierarchy(cardIds, reactFlowInstance?.getNodes() || [], reactFlowInstance?.getEdges() || []);
+      console.log('계층 구조 분석 결과:', hierarchy);
+      
+      // 계층 구조 순서로 카드 정렬
+      const sortedCards = hierarchy
+        .map(h => {
+          const card = fetchedCards.find(c => c.id === h);
+          if (card) {
+            return {
+              ...card,
+              depth: 0
+            };
+          }
+          return null;
+        })
+        .filter(card => card !== null) as CardItem[];
+      
+      console.log('정렬된 카드 목록:', sortedCards);
+      setSelectedCards(sortedCards);
+    } catch (error) {
+      console.error('다중 선택 카드 정보 조회 실패:', error);
+      toast.error('다중 선택된 카드 정보를 불러오는데 실패했습니다.');
     }
   }
 
@@ -147,14 +405,60 @@ export function Sidebar({ className }: SidebarProps) {
     setDeletingCardId(cardId);
     setIsDeleteDialogOpen(true);
   };
-
-  if (!isSidebarOpen) return null;
+  
+  // 다중 선택된 카들의 모든 태그를 합쳐서 중복 제거하여 반환
+  const getMultiCardTags = () => {
+    const allTags: CardTag[] = [];
+    selectedCards.forEach(card => {
+      if (card.cardTags && card.cardTags.length > 0) {
+        allTags.push(...card.cardTags);
+      }
+    });
+    
+    // 중복 태그 제거 (태그 ID 기준)
+    const uniqueTags = allTags.filter((tag, index, self) => 
+      index === self.findIndex(t => t.tag.id === tag.tag.id)
+    );
+    
+    return uniqueTags;
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation(); // React Flow 드래그 이벤트 중지
     startResize(e);
   };
+  
+  // 다중 선택 모드인지 확인 - 이 변수는 항상 useMemo 후에 계산되어야 합니다
+  const isMultiSelectMode = selectedCardIds.length > 1;
+  
+  // DocumentViewer 컴포넌트에 전달할 데이터 처리 - 이제 간소화됨
+  const documentViewerProps = useMemo(() => {
+    if (selectedCardIds.length > 1) {
+      // 다중 선택 모드
+      return {
+        cards: selectedCardsInfo,
+        isMultiSelection: true,
+        loading: hierarchyLoading
+      };
+    } else if (selectedCardIds.length === 1 && selectedCard) {
+      // 단일 선택 모드
+      return {
+        cards: [selectedCard],
+        isMultiSelection: false,
+        loading: false
+      };
+    } else {
+      // 선택된 카드 없음
+      return {
+        cards: [],
+        isMultiSelection: false,
+        loading: false
+      };
+    }
+  }, [selectedCardIds, selectedCard, selectedCardsInfo, hierarchyLoading]);
 
+  if (!isSidebarOpen) return null;
+  
   return (
     <AnimatePresence>
       <motion.div
@@ -192,8 +496,8 @@ export function Sidebar({ className }: SidebarProps) {
           </DialogContent>
         </Dialog>
         
-        {selectedCardId && selectedCard ? (
-          // 카드 콘텐츠 뷰어
+        {selectedCardId && selectedCard && !isMultiSelectMode ? (
+          // 단일 카드 선택 모드
           <div className="h-full flex flex-col">
             {/* 카드 헤더 */}
             <div className="border-b p-4">
@@ -215,31 +519,60 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             </div>
             
-            {/* 카드 콘텐츠 */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {selectedCard.content ? (
-                <TiptapViewer content={selectedCard.content} />
-              ) : (
-                <p className="text-sm text-muted-foreground">내용이 없습니다.</p>
-              )}
-              
-              {/* 태그 표시 */}
-              {selectedCard.cardTags && selectedCard.cardTags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-4">
-                  {selectedCard.cardTags.map((cardTag) => (
-                    <Badge 
-                      key={cardTag.id} 
-                      variant="secondary"
-                    >
-                      #{cardTag.tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+            {/* DocumentViewer를 사용하여 단일 카드 내용 표시 */}
+            <div className="flex-1 overflow-y-auto">
+              <DocumentViewer
+                cards={[selectedCard]}
+                isMultiSelection={false}
+                loading={loading}
+              />
+            </div>
+          </div>
+        ) : isMultiSelectMode ? (
+          // 다중 선택 모드
+          <div className="h-full flex flex-col">
+            {/* 카드 헤더 - 다중 선택 모드 */}
+            <div className="border-b p-4 bg-muted/30">
+              <div className="flex justify-between items-center">
+                <h2 
+                  ref={titleRef}
+                  className="text-l font-semibold truncate max-w-[calc(100%-70px)]"
+                  title={selectedCardsInfo.map(card => card.title).join(', ')}
+                >
+                  <span className="text-green-500 mr-1">📑</span>
+                  {selectedCardsInfo.length > 1 
+                    ? (selectedCardsInfo.map(card => card.title).join(', ').length > 50 
+                        ? selectedCardsInfo.map(card => card.title).join(', ').substring(0, 50) + '...' 
+                        : selectedCardsInfo.map(card => card.title).join(', '))
+                    : '선택된 카드들'}
+                </h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => selectCard(null)}
+                >
+                  목록으로
+                </Button>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-sm text-green-600 font-medium">다중 선택 모드</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedCardsInfo.length}개 카드
+                </span>
+              </div>
+            </div>
+            
+            {/* DocumentViewer를 사용하여 다중 선택 모드의 내용 표시 */}
+            <div className="flex-1 overflow-y-auto">
+              <DocumentViewer
+                cards={documentViewerProps.cards}
+                isMultiSelection={documentViewerProps.isMultiSelection}
+                loading={documentViewerProps.loading}
+              />
             </div>
           </div>
         ) : (
-          // 카드 목록
+          // 카드 목록 (선택된 카드 없음)
           <div className="h-full flex flex-col">
             <div className="border-b p-4">
               <h2 className="text-l font-semibold">카드 목록</h2>
@@ -259,8 +592,24 @@ export function Sidebar({ className }: SidebarProps) {
                   {cards.map((card) => (
                     <div 
                       key={card.id}
-                      className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group"
+                      className={cn(
+                        "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group",
+                        selectedCardIds.includes(card.id) && "bg-muted border-primary"
+                      )}
                       onClick={() => selectCard(card.id)}
+                      draggable
+                      onDragStart={(e) => {
+                        // 캔버스에 노드로 추가하기 위한 데이터 설정
+                        e.dataTransfer.setData('application/reactflow', JSON.stringify({
+                          type: 'card',
+                          id: card.id,
+                          data: {
+                            ...card,
+                            tags: card.cardTags ? card.cardTags.map((ct: any) => ct.tag.name) : []
+                          }
+                        }));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
                     >
                       <div className="flex justify-between">
                         <h3 className="font-medium">{card.title}</h3>

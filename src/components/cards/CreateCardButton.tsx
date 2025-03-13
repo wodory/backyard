@@ -242,6 +242,7 @@ export default function CreateCardButton({
           <div className="space-y-2">
             <Label htmlFor="content">내용</Label>
             <TiptapEditor
+              id="content"
               content={content}
               onChange={setContent}
               placeholder="카드 내용을 입력하세요"

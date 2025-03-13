@@ -5,8 +5,16 @@ import { ReactFlowInstance } from '@xyflow/react';
 
 export interface AppState {
   // 선택된 카드 상태
-  selectedCardId: string | null;
-  selectCard: (cardId: string | null) => void;
+  selectedCardId: string | null; // 이전 단일 선택 방식 (하위 호환성 유지)
+  selectCard: (cardId: string | null) => void; // 이전 단일 선택 방식 (하위 호환성 유지)
+  
+  // 다중 선택 카드 상태
+  selectedCardIds: string[];
+  selectCards: (cardIds: string[]) => void;
+  addSelectedCard: (cardId: string) => void;
+  removeSelectedCard: (cardId: string) => void;
+  toggleSelectedCard: (cardId: string) => void;
+  clearSelectedCards: () => void;
   
   // 사이드바 상태
   isSidebarOpen: boolean;
@@ -34,9 +42,61 @@ export interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      // 선택된 카드 상태 초기값 및 액션
+      // 이전 단일 선택 방식 (하위 호환성 유지)
       selectedCardId: null,
-      selectCard: (cardId) => set({ selectedCardId: cardId }),
+      selectCard: (cardId) => {
+        set({ 
+          selectedCardId: cardId,
+          // 단일 선택 시 다중 선택 배열도 업데이트
+          selectedCardIds: cardId ? [cardId] : []
+        });
+      },
+      
+      // 다중 선택 카드 상태 초기값 및 액션
+      selectedCardIds: [],
+      selectCards: (cardIds) => {
+        set({ 
+          selectedCardIds: cardIds,
+          // 다중 선택 시 첫 번째 카드를 단일 선택 상태로 설정 (하위 호환성)
+          selectedCardId: cardIds.length > 0 ? cardIds[0] : null
+        });
+      },
+      addSelectedCard: (cardId) => 
+        set((state) => {
+          if (!cardId || state.selectedCardIds.includes(cardId)) return state;
+          const newSelectedIds = [...state.selectedCardIds, cardId];
+          return { 
+            selectedCardIds: newSelectedIds,
+            selectedCardId: newSelectedIds[0] // 첫 번째 카드를 단일 선택 상태로 설정
+          };
+        }),
+      removeSelectedCard: (cardId) => 
+        set((state) => {
+          const newSelectedIds = state.selectedCardIds.filter(id => id !== cardId);
+          return { 
+            selectedCardIds: newSelectedIds,
+            selectedCardId: newSelectedIds.length > 0 ? newSelectedIds[0] : null
+          };
+        }),
+      toggleSelectedCard: (cardId) => 
+        set((state) => {
+          if (!cardId) return state;
+          
+          const isSelected = state.selectedCardIds.includes(cardId);
+          let newSelectedIds;
+          
+          if (isSelected) {
+            newSelectedIds = state.selectedCardIds.filter(id => id !== cardId);
+          } else {
+            newSelectedIds = [...state.selectedCardIds, cardId];
+          }
+          
+          return { 
+            selectedCardIds: newSelectedIds,
+            selectedCardId: newSelectedIds.length > 0 ? newSelectedIds[0] : null
+          };
+        }),
+      clearSelectedCards: () => set({ selectedCardIds: [], selectedCardId: null }),
       
       // 사이드바 상태 초기값 및 액션
       isSidebarOpen: false,
@@ -88,7 +148,7 @@ export const useAppStore = create<AppState>()(
           isSidebarOpen: state.isSidebarOpen,
           sidebarWidth: state.sidebarWidth,
           boardSettings: state.boardSettings,
-          // layoutDirection과 selectedCardId, reactFlowInstance는 세션별로 달라질 수 있으므로 저장하지 않음
+          // 선택 상태와 layoutDirection, reactFlowInstance는 세션별로 달라질 수 있으므로 저장하지 않음
         };
       },
     }
