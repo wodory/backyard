@@ -96,7 +96,44 @@ export default function BoardComponent({
   const boardSettings = useAppStore(state => state.boardSettings);
   const setBoardSettings = useAppStore(state => state.setBoardSettings);
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
+  const setCards = useAppStore(state => state.setCards);
   const { selectCards } = useAppStore();
+  
+  // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
+  const storeCards = useAppStore(state => state.cards);
+
+  // 전역 상태의 카드가 업데이트되면 노드 데이터 업데이트
+  useEffect(() => {
+    if (storeCards.length === 0 || nodes.length === 0 || isLoading) return;
+    
+    console.log('[BoardComponent] 전역 카드 상태 변경 감지, 노드 데이터 업데이트');
+    
+    // 노드 데이터 업데이트 (카드 ID가 일치하는 노드들만)
+    setNodes(currentNodes => 
+      currentNodes.map(node => {
+        // 대응되는 카드 데이터 찾기
+        const cardData = storeCards.find(card => card.id === node.id);
+        
+        // 카드 데이터가 존재하면 노드 데이터 업데이트
+        if (cardData) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              title: cardData.title,
+              content: cardData.content,
+              // 태그 처리 (카드에 cardTags가 있는 경우와 없는 경우 모두 처리)
+              tags: cardData.cardTags 
+                ? cardData.cardTags.map((cardTag: any) => cardTag.tag.name) 
+                : (cardData.tags || [])
+            }
+          };
+        }
+        
+        return node;
+      })
+    );
+  }, [storeCards, setNodes, isLoading, nodes.length]);
   
   // 엣지에 새 노드 추가 기능
   const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
@@ -345,6 +382,9 @@ export default function BoardComponent({
       }
       
       const cards = await response.json();
+      
+      // 전역 상태에 카드 목록 저장
+      setCards(cards);
       
       // 이전에 저장된 위치 정보 가져오기
       let nodePositions: Record<string, { position: { x: number, y: number } }> = {};

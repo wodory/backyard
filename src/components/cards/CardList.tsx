@@ -21,6 +21,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import TiptapViewer from "@/components/editor/TiptapViewer";
+import { useAppStore } from "@/store/useAppStore";
 
 interface Tag {
   id: string;
@@ -41,30 +42,50 @@ interface CardItem {
 }
 
 export default function CardList() {
-  const [cards, setCards] = useState<CardItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { cards, setCards } = useAppStore();
+  const [loading, setLoading] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const searchParams = useSearchParams();
 
+  const filteredCards = React.useMemo(() => {
+    const q = searchParams.get('q')?.toLowerCase();
+    const tag = searchParams.get('tag')?.toLowerCase();
+    
+    if (!q && !tag) return cards as CardItem[];
+    
+    return (cards as CardItem[]).filter(card => {
+      const matchesQuery = !q || 
+        card.title.toLowerCase().includes(q) || 
+        (card.content && card.content.toLowerCase().includes(q));
+      
+      const matchesTag = !tag || 
+        card.cardTags?.some(cardTag => 
+          cardTag.tag.name.toLowerCase() === tag
+        );
+      
+      return matchesQuery && matchesTag;
+    });
+  }, [cards, searchParams]);
+
   useEffect(() => {
-    fetchCards();
-  }, [searchParams]);
+    if (cards.length === 0) {
+      fetchCards();
+    }
+  }, [cards.length, searchParams]);
 
   async function fetchCards() {
+    setLoading(true);
     try {
-      // 현재 검색 파라미터를 가져와서 API 요청에 사용
       const q = searchParams.get('q');
       const tag = searchParams.get('tag');
       
-      // 쿼리 파라미터 구성
       const params = new URLSearchParams();
       if (q) params.append('q', q);
       if (tag) params.append('tag', tag);
       
-      // API 요청
       const queryString = params.toString();
       const endpoint = `/api/cards${queryString ? `?${queryString}` : ''}`;
       
@@ -73,6 +94,7 @@ export default function CardList() {
         throw new Error('카드 목록을 불러오는데 실패했습니다.');
       }
       const data = await response.json();
+      
       setCards(data);
     } catch (error) {
       console.error('Error fetching cards:', error);
@@ -99,7 +121,6 @@ export default function CardList() {
       }
 
       toast.success("카드가 성공적으로 삭제되었습니다.");
-      // 삭제 후 목록 갱신
       fetchCards();
       setIsDeleteDialogOpen(false);
     } catch (error) {
@@ -125,7 +146,6 @@ export default function CardList() {
     <div className="space-y-6">
       <SearchBar />
       
-      {/* 삭제 확인 다이얼로그 */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -149,7 +169,7 @@ export default function CardList() {
         </DialogContent>
       </Dialog>
       
-      {cards.length === 0 ? (
+      {filteredCards.length === 0 ? (
         <div className="text-center py-10">
           {searchParams.toString() 
             ? '검색 결과가 없습니다.' 
@@ -157,14 +177,14 @@ export default function CardList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cards.map((card) => (
+          {filteredCards.map((card) => (
             <Card key={card.id} className="flex flex-col">
               <CardHeader>
                 <CardTitle>{card.title}</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
                 <div className="line-clamp-3">
-                  <TiptapViewer content={card.content} />
+                  <TiptapViewer content={card.content || ''} />
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col items-start gap-2">
@@ -189,7 +209,7 @@ export default function CardList() {
                         </DialogHeader>
                         <div className="py-4">
                           <div className="whitespace-pre-wrap">
-                            <TiptapViewer content={card.content} />
+                            <TiptapViewer content={card.content || ''} />
                           </div>
                           
                           {card.cardTags && card.cardTags.length > 0 && (
@@ -222,7 +242,6 @@ export default function CardList() {
                   </div>
                 </div>
                 
-                {/* 태그 표시 */}
                 {card.cardTags && card.cardTags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {card.cardTags.map((cardTag) => (

@@ -3,6 +3,15 @@ import { persist } from 'zustand/middleware'
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, saveBoardSettings as saveSettingsToLocalStorage } from '@/lib/board-utils';
 import { ReactFlowInstance } from '@xyflow/react';
 
+// 카드 타입 정의
+export interface Card {
+  id: string;
+  title: string;
+  content: string;
+  tags?: string[];
+  [key: string]: any;
+}
+
 export interface AppState {
   // 선택된 카드 상태
   selectedCardId: string | null; // 이전 단일 선택 방식 (하위 호환성 유지)
@@ -15,6 +24,11 @@ export interface AppState {
   removeSelectedCard: (cardId: string) => void;
   toggleSelectedCard: (cardId: string) => void;
   clearSelectedCards: () => void;
+  
+  // 카드 데이터 상태
+  cards: Card[]; // 현재 로드된 카드 목록
+  setCards: (cards: Card[]) => void; // 카드 목록 설정
+  updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
   
   // 사이드바 상태
   isSidebarOpen: boolean;
@@ -97,6 +111,20 @@ export const useAppStore = create<AppState>()(
           };
         }),
       clearSelectedCards: () => set({ selectedCardIds: [], selectedCardId: null }),
+      
+      // 카드 데이터 상태 초기값 및 액션
+      cards: [],
+      setCards: (cards) => set({ cards }),
+      updateCard: (updatedCard) => 
+        set((state) => {
+          // 카드 목록에서 해당 카드를 찾아 업데이트
+          const updatedCards = state.cards.map(card => 
+            card.id === updatedCard.id ? { ...card, ...updatedCard } : card
+          );
+          
+          console.log('[AppStore] 카드 업데이트:', updatedCard.id);
+          return { cards: updatedCards };
+        }),
       
       // 사이드바 상태 초기값 및 액션
       isSidebarOpen: false,

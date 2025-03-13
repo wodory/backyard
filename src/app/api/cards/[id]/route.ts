@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 
 // 카드 수정 스키마
 const updateCardSchema = z.object({
   title: z.string().min(1, '제목은 필수입니다.').optional(),
   content: z.string().optional(),
+  userId: z.string().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 // 개별 카드 조회 API
@@ -14,8 +17,8 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
-    console.log(`카드 상세 조회 요청: ID=${context.params.id}`);
-    const id = context.params.id;
+    const { id } = context.params;
+    console.log(`카드 상세 조회 요청: ID=${id}`);
     
     // 카드 조회 (태그 정보 포함)
     const card = await prisma.card.findUnique({
@@ -60,7 +63,7 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const { id } = context.params;
     const body = await request.json();
     
     // 데이터 유효성 검사
@@ -74,7 +77,14 @@ export async function PUT(
     
     // 카드 존재 여부 확인
     const existingCard = await prisma.card.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        cardTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
     });
     
     if (!existingCard) {
@@ -84,10 +94,75 @@ export async function PUT(
       );
     }
     
-    // 카드 수정
-    const updatedCard = await prisma.card.update({
-      where: { id },
-      data: validation.data
+    // 데이터 준비
+    const { tags, ...cardData } = validation.data;
+    
+    // 트랜잭션으로 카드 및 태그 업데이트
+    const updatedCard = await prisma.$transaction(async (tx) => {
+      const client = tx as PrismaClient;
+      
+      // 1. 기본 카드 정보 업데이트
+      const updated = await client.card.update({
+        where: { id },
+        data: cardData,
+        include: {
+          cardTags: {
+            include: {
+              tag: true
+            }
+          }
+        }
+      });
+      
+      // 2. 태그 처리
+      if (tags) {
+        // 2.1. 기존 카드-태그 연결 모두 삭제
+        await client.cardTag.deleteMany({
+          where: { cardId: id }
+        });
+        
+        // 2.2. 새 태그 처리
+        for (const tagName of tags) {
+          // 태그가 있는지 확인하고 없으면 생성
+          let tag = await client.tag.findUnique({
+            where: { name: tagName }
+          });
+          
+          if (!tag) {
+            tag = await client.tag.create({
+              data: { name: tagName }
+            });
+          }
+          
+          // 카드와 태그 연결
+          await client.cardTag.create({
+            data: {
+              cardId: id,
+              tagId: tag.id
+            }
+          });
+        }
+        
+        // 2.3. 업데이트된 카드 정보 다시 조회
+        return await client.card.findUnique({
+          where: { id },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            cardTags: {
+              include: {
+                tag: true
+              }
+            }
+          }
+        });
+      }
+      
+      return updated;
     });
     
     return NextResponse.json(updatedCard);
@@ -106,7 +181,7 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const { id } = context.params;
     
     // 카드 존재 여부 확인
     const existingCard = await prisma.card.findUnique({

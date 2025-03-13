@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { ChevronRight, Eye, Trash2, GripVertical } from 'lucide-react';
+import { ChevronRight, Eye, Trash2, GripVertical, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDate } from '@/lib/utils';
@@ -21,9 +21,11 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useResizable } from '@/hooks/useResizable';
-import DocumentViewer from '../editor/DocumentViewer';
+import DocumentViewer from '@/components/editor/DocumentViewer';
 import CardList from '@/components/cards/CardList';
-import type { Card as CardType } from '@/types/card';
+import type { Card } from '@/types/card';
+import { EditCardModal } from '@/components/cards/EditCardModal';
+import { Portal } from '@/components/ui/portal';
 
 // 카드 인터페이스 정의
 interface Tag {
@@ -36,11 +38,7 @@ interface CardTag {
   tag: Tag;
 }
 
-interface CardItem {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
+interface CardItem extends Card {
   cardTags?: CardTag[];
   // 엣지 정보를 통해 계층 구조 파악을 위한 필드
   parents?: string[];
@@ -61,19 +59,24 @@ export function Sidebar({ className }: SidebarProps) {
     selectCard, 
     sidebarWidth, 
     setSidebarWidth,
-    reactFlowInstance
+    reactFlowInstance,
+    cards
   } = useAppStore();
   
-  const [cards, setCards] = useState<CardItem[]>([]);
+  // 전역 상태의 cards를 CardItem 타입으로 캐스팅하여 사용
+  const cardsWithType = cards as CardItem[];
+  
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   // 카드 정보 로드 상태 - Hook 순서 문제 해결을 위해 여기로 이동
   const [selectedCardsInfo, setSelectedCardsInfo] = useState<Array<{ id: string, title: string, content: string }>>([]);
   const [hierarchyLoading, setHierarchyLoading] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
   
   // 제목 표시 부분의 ref 추가
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -88,10 +91,10 @@ export function Sidebar({ className }: SidebarProps) {
 
   // 카드 목록 불러오기
   useEffect(() => {
-    if (isSidebarOpen) {
+    if (isSidebarOpen && cards.length === 0) {
       fetchCards();
     }
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, cards.length]);
 
   // 선택된 카드 정보 불러오기
   useEffect(() => {
@@ -110,6 +113,23 @@ export function Sidebar({ className }: SidebarProps) {
       setSelectedCards([]);
     }
   }, [selectedCardIds]);
+
+  // 전역 상태의 카드 목록이 변경될 때마다 현재 선택된 카드 정보 다시 불러오기
+  useEffect(() => {
+    if (cards.length > 0) {
+      // 단일 선택된 카드가 있으면 해당 카드 정보 다시 로드
+      if (selectedCardId) {
+        console.log('전역 카드 상태 변경, 선택된 카드 정보 다시 조회:', selectedCardId);
+        fetchCardDetails(selectedCardId);
+      }
+      
+      // 다중 선택된 카드가 있으면 선택된 카드 정보 다시 로드
+      if (selectedCardIds.length > 1) {
+        console.log('전역 카드 상태 변경, 다중 선택된 카드 정보 다시 조회:', selectedCardIds);
+        fetchSelectedCards(selectedCardIds);
+      }
+    }
+  }, [cards, selectedCardId, selectedCardIds]);
 
   useEffect(() => {
     setSidebarWidth(width);
@@ -204,7 +224,7 @@ export function Sidebar({ className }: SidebarProps) {
         throw new Error('카드 목록을 불러오는데 실패했습니다.');
       }
       const data = await response.json();
-      setCards(data);
+      useAppStore.getState().setCards(data);
     } catch (error) {
       console.error('Error fetching cards:', error);
       toast.error('카드 목록을 불러오는데 실패했습니다.');
@@ -215,6 +235,15 @@ export function Sidebar({ className }: SidebarProps) {
 
   async function fetchCardDetails(cardId: string) {
     try {
+      // 먼저 전역 상태에서 카드 찾기 (캐시 활용)
+      const cachedCard = cards.find(card => card.id === cardId);
+      if (cachedCard) {
+        console.log(`카드 ID ${cardId} - 전역 상태에서 찾음`);
+        setSelectedCard(cachedCard as CardItem);
+        return;
+      }
+      
+      console.log(`카드 ID ${cardId} - API 호출로 조회`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃 설정
       
@@ -325,27 +354,54 @@ export function Sidebar({ className }: SidebarProps) {
     
     try {
       const fetchedCards: CardItem[] = [];
+      const cardsToFetch: string[] = [];
       
-      // 카드 목록에서 선택된 카드 정보 찾기
+      // 1단계: 전역 상태에서 먼저 카드 찾기 (캐시 활용)
       for (const cardId of cardIds) {
-        const foundCard = cards.find(card => card.id === cardId);
-        if (foundCard) {
-          fetchedCards.push(foundCard);
-          console.log(`카드 ID ${cardId} - 로컬 캐시에서 찾음`);
+        const cachedCard = cards.find(card => card.id === cardId);
+        if (cachedCard) {
+          fetchedCards.push(cachedCard as CardItem);
+          console.log(`카드 ID ${cardId} - 전역 상태에서 찾음`);
         } else {
-          // 카드 목록에 없는 경우 API로 상세 정보 조회
-          console.log(`카드 ID ${cardId} - API 호출로 조회`);
-          const response = await fetch(`/api/cards/${cardId}`);
-          if (response.ok) {
-            const cardData = await response.json();
-            fetchedCards.push(cardData);
-          } else {
-            console.error(`카드 ID ${cardId} - API 조회 실패: ${response.status}`);
-          }
+          // 캐시에 없는 카드만 API 호출 목록에 추가
+          cardsToFetch.push(cardId);
+          console.log(`카드 ID ${cardId} - API 호출 필요`);
         }
       }
       
-      // 계층 구조 분석
+      // 2단계: 캐시에 없는 카드만 API로 조회
+      if (cardsToFetch.length > 0) {
+        console.log(`${cardsToFetch.length}개 카드를 API로 조회합니다.`);
+        
+        // 여러 카드를 병렬로 조회
+        const promises = cardsToFetch.map(async (cardId) => {
+          try {
+            const response = await fetch(`/api/cards/${cardId}`);
+            if (response.ok) {
+              const cardData = await response.json();
+              return cardData;
+            } else {
+              console.error(`카드 ID ${cardId} - API 조회 실패: ${response.status}`);
+              return null;
+            }
+          } catch (error) {
+            console.error(`카드 ID ${cardId} - API 조회 중 오류:`, error);
+            return null;
+          }
+        });
+        
+        // 병렬 요청 결과 처리
+        const results = await Promise.all(promises);
+        
+        // 유효한 결과만 추가
+        results.forEach(cardData => {
+          if (cardData) {
+            fetchedCards.push(cardData);
+          }
+        });
+      }
+      
+      // 3단계: 계층 구조 분석 및 정렬
       const hierarchy = analyzeHierarchy(cardIds, reactFlowInstance?.getNodes() || [], reactFlowInstance?.getEdges() || []);
       console.log('계층 구조 분석 결과:', hierarchy);
       
@@ -457,6 +513,47 @@ export function Sidebar({ className }: SidebarProps) {
     }
   }, [selectedCardIds, selectedCard, selectedCardsInfo, hierarchyLoading]);
 
+  // 카드 수정 모달 열기
+  const openEditModal = (cardId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    console.log('카드 수정 모달 열기 요청:', cardId);
+    setEditingCardId(cardId);
+    setIsEditModalOpen(true);
+  };
+
+  // 카드 수정 성공 시 호출될 콜백
+  const handleCardUpdated = (updatedCard: any) => {
+    console.log('카드 업데이트 완료:', updatedCard);
+    if (updatedCard) {
+      // 전역 상태 업데이트 (Canvas 노드도 업데이트되도록)
+      useAppStore.getState().updateCard(updatedCard);
+      
+      // 현재 선택된 카드가 업데이트된 카드인 경우 로컬 상태도 즉시 업데이트
+      if (selectedCardId === updatedCard.id) {
+        console.log('선택된 카드 정보 즉시 업데이트');
+        setSelectedCard(updatedCard as CardItem);
+      }
+      
+      // 다중 선택 모드에서 업데이트된 카드가 포함되어 있는 경우 선택된 카드 목록도 업데이트
+      if (selectedCardIds.includes(updatedCard.id) && selectedCardIds.length > 1) {
+        console.log('다중 선택 모드에서 카드 정보 업데이트');
+        setSelectedCards(prev => 
+          prev.map(card => 
+            card.id === updatedCard.id ? { ...card, ...updatedCard, depth: card.depth } : card
+          )
+        );
+      }
+      
+      // 카드 목록 갱신
+      fetchCards();
+      toast.success("카드가 성공적으로 수정되었습니다.");
+    }
+    setIsEditModalOpen(false);
+    setEditingCardId(null);
+  };
+
   if (!isSidebarOpen) return null;
   
   return (
@@ -495,6 +592,21 @@ export function Sidebar({ className }: SidebarProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        {/* 카드 수정 모달 - Portal을 사용하여 body에 직접 렌더링 */}
+        {isEditModalOpen && editingCardId && (
+          <Portal>
+            <EditCardModal
+              cardId={editingCardId}
+              onClose={() => {
+                console.log('수정 모달 닫기');
+                setIsEditModalOpen(false);
+                setEditingCardId(null);
+              }}
+              onCardUpdated={handleCardUpdated}
+            />
+          </Portal>
+        )}
         
         {selectedCardId && selectedCard && !isMultiSelectMode ? (
           // 단일 카드 선택 모드
@@ -593,10 +705,19 @@ export function Sidebar({ className }: SidebarProps) {
                     <div 
                       key={card.id}
                       className={cn(
-                        "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group",
+                        "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group relative",
                         selectedCardIds.includes(card.id) && "bg-muted border-primary"
                       )}
-                      onClick={() => selectCard(card.id)}
+                      onClick={(e) => {
+                        // 이벤트 전파 중지하지 않음 - 클릭은 카드 선택으로 처리
+                        selectCard(card.id);
+                      }}
+                      onDoubleClick={(e) => {
+                        // 더블클릭은 전파 중지 - 카드 선택 이벤트가 발생하지 않도록
+                        e.stopPropagation();
+                        console.log('카드 더블클릭됨:', card.id);
+                        openEditModal(card.id);
+                      }}
                       draggable
                       onDragStart={(e) => {
                         // 캔버스에 노드로 추가하기 위한 데이터 설정
@@ -613,40 +734,29 @@ export function Sidebar({ className }: SidebarProps) {
                     >
                       <div className="flex justify-between">
                         <h3 className="font-medium">{card.title}</h3>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" 
-                          onClick={(e) => openDeleteDialog(card.id, e)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center space-x-1">
+                          {/* 수정 버튼 */}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" 
+                            onClick={(e) => openEditModal(card.id, e)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {/* 삭제 버튼 */}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" 
+                            onClick={(e) => openDeleteDialog(card.id, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
                         <TiptapViewer content={card.content} />
-                      </div>
-                      <div className="flex justify-between mt-2">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(card.createdAt)}
-                        </span>
-                        {card.cardTags && card.cardTags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {card.cardTags.slice(0, 2).map((cardTag) => (
-                              <Badge 
-                                key={cardTag.id} 
-                                variant="outline"
-                                className="text-xs px-1"
-                              >
-                                #{cardTag.tag.name}
-                              </Badge>
-                            ))}
-                            {card.cardTags.length > 2 && (
-                              <Badge variant="outline" className="text-xs px-1">
-                                +{card.cardTags.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
