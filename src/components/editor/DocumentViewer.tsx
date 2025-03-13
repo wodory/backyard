@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { formatDate } from '@/lib/utils';
 import TiptapViewer from './TiptapViewer';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,19 @@ export default function DocumentViewer({
   isMultiSelection,
   loading
 }: DocumentViewerProps) {
+  // 디버깅용 로그 추가
+  useEffect(() => {
+    // 카드 내용이 변경되면 로그 출력
+    if (cards && cards.length > 0) {
+      console.log('DocumentViewer 카드 업데이트됨:', {
+        카드수: cards.length,
+        첫번째카드: cards[0]?.id,
+        내용길이: cards[0]?.content?.length || 0,
+        다중선택: isMultiSelection
+      });
+    }
+  }, [cards, isMultiSelection]);
+
   // 데이터 가공 로직을 컴포넌트 내부로 이동
   const { title, content, date, tags } = useMemo(() => {
     if (!cards || cards.length === 0) {
@@ -98,15 +111,14 @@ export default function DocumentViewer({
       {contentIsEmpty ? (
         <div className="text-gray-400 italic">내용이 없습니다.</div>
       ) : isMultiSelection ? (
-        // 다중 선택 시 HTML 내용 직접 렌더링
-        <div 
-          className="prose prose-sm max-w-full"
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
+        // 다중 선택 시에도 TiptapViewer 사용하도록 변경
+        <div className="prose prose-sm max-w-full">
+          <TiptapViewer key={"multi-" + cards.map(c => c.id).join("-")} content={content} />
+        </div>
       ) : (
         // 단일 선택 시 TiptapViewer 사용
         <div className="prose prose-sm max-w-full">
-          <TiptapViewer content={content} />
+          <TiptapViewer key={cards[0]?.id} content={content} />
         </div>
       )}
 

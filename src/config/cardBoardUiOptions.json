@@ -12,20 +12,15 @@
     "selectedEdgeColor": "#000000"
   },
   "card": {
-    "defaultWidth": 280,
+    "defaultWidth": 130,
     "backgroundColor": "#FFFFFF",
     "borderRadius": 8,
     "tagBackgroundColor": "#F2F2F2",
     "fontSizes": {
       "default": 16,
       "title": 16,
-      "content": 16,
-      "tags": 10
-    },
-    "nodeSize": {
-      "width": 150,
-      "height": 48,
-      "maxHeight": 180
+      "content": 14,
+      "tags": 12
     }
   },
   "handles": {
@@ -39,6 +34,11 @@
     "defaultSpacing": {
       "horizontal": 30,
       "vertical": 30
+    },
+    "nodeSize": {
+      "width": 130,
+      "height": 48,
+      "maxHeight": 180
     },
     "graphSettings": {
       "nodesep": 60,

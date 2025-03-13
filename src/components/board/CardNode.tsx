@@ -113,15 +113,15 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   // 보드 설정 가져오기
   const uiConfig = loadDefaultBoardUIConfig();
   
-  // 필요한 값들 추출
-  const defaultCardWidth = uiConfig.card.defaultWidth || 280;
-  const cardHeaderHeight = uiConfig.layout.nodeSize?.height || 40;
-  const cardMaxHeight = 240; // 최대 높이 기본값
+  // 필요한 값들 추출 - 설정 파일에서 일관되게 가져오기
+  const defaultCardWidth = uiConfig.layout.nodeSize?.width || 130;
+  const cardHeaderHeight = uiConfig.layout.nodeSize?.height || 48;
+  const cardMaxHeight = uiConfig.layout.nodeSize?.maxHeight || 180;
   
-  // 폰트 크기
-  const titleFontSize = 16;
-  const contentFontSize = 14;
-  const tagsFontSize = 12;
+  // 폰트 크기 - 설정 파일에서 가져오기
+  const titleFontSize = uiConfig.card.fontSizes?.title || 16;
+  const contentFontSize = uiConfig.card.fontSizes?.content || 14;
+  const tagsFontSize = uiConfig.card.fontSizes?.tags || 12;
   
   // 핸들 관련 설정
   const handleSize = uiConfig.handles.size || 10;
@@ -159,7 +159,9 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       width: handleSize,
       height: handleSize,
       background: connectionLineColor,
-      border: `1px solid ${connectionLineColor}`,
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: connectionLineColor,
       opacity: isHovered ? 1 : 0.3,
       transition: 'opacity 0.3s ease',
     };
@@ -191,7 +193,6 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     // 기본 카드 크기 설정
     const nodeData = data as NodeData;
     const cardWidth = nodeData.width || defaultCardWidth;
-    const borderWidth = 1;
     
     // 카드 높이 계산 - 확장 상태에 따라 달라짐
     const cardHeight = isExpanded 
@@ -202,7 +203,9 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     const style: CSSProperties = {
       width: cardWidth,
       height: cardHeight,
-      border: `${borderWidth}px solid ${selected ? connectionLineColor : isMultiSelected ? '#4CAF50' : '#e2e8f0'}`,
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: selected ? connectionLineColor : isMultiSelected ? '#4CAF50' : '#e2e8f0',
       backgroundColor: selected ? selectedBackgroundColor : isMultiSelected ? '#E8F5E9' : '#fff',
       transition: 'height 0.2s ease-in-out, background-color 0.2s ease',
       overflow: 'visible', // 핸들이 잘리지 않도록 오버플로우 설정
@@ -211,31 +214,12 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       isolation: 'isolate', // 새로운 쌓임 맥락 생성
       transformStyle: 'preserve-3d', // 3D 공간에서의 렌더링 최적화
       willChange: 'transform, height', // 변환 및 높이 변경 최적화
+      boxShadow: selected ? '0 0 0 2px rgb(59, 130, 246)' : 'none', // 선택 시 외부 그림자로 강조
     };
-    
-    // 다중 선택된 경우 테두리 색상 변경
-    if (isMultiSelected) {
-      style.borderColor = '#4CAF50'; // 다중 선택 시 녹색 테두리
-      style.borderWidth = 3; // 다중 선택 시 테두리 두께 증가
-    }
     
     return style;
   }, [data, isExpanded, selected, isMultiSelected, isActive, defaultCardWidth, cardMaxHeight, cardHeaderHeight, connectionLineColor, selectedBackgroundColor]);
 
-  // 스타일 계산 최적화 (메모이제이션 적용)
-  const cardStyle = useMemo(() => {
-    const nodeData = data as NodeData;
-    return {
-      background: nodeData.backgroundColor ? hexToHsl(nodeData.backgroundColor) : null,
-      borderColor: isMultiSelected 
-        ? 'rgb(37, 99, 235)' // 다중 선택 시 진한 파란색
-        : selected 
-          ? 'rgb(59, 130, 246)' // 단일 선택 시 파란색
-          : 'transparent',
-      borderWidth: (isMultiSelected || selected) ? '2px' : '1px'
-    };
-  }, [data, isMultiSelected, selected]);
-  
   // 노드 데이터 안전하게 타입 변환
   const nodeData = data as NodeData;
   
@@ -324,7 +308,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         onMouseLeave={handleMouseLeave}
         onClick={handleCardClick}
         onTransitionEnd={handleTransitionEnd}
-        className={`card-node-container card-node bg-white rounded-md ${selected ? 'ring-2 ring-blue-400' : ''} ${isHovered ? 'hovered' : ''} ${isMultiSelected ? 'multi-selected' : ''}`}
+        className={`card-node-container card-node bg-white rounded-md ${isHovered ? 'hovered' : ''} ${isMultiSelected ? 'multi-selected' : ''}`}
         style={getNodeStyle()}
       >
         {/* 카드 헤더 */}

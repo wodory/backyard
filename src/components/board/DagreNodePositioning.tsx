@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useStore, useReactFlow, Node, Edge, ReactFlowState } from '@xyflow/react';
+import { useReactFlow, Node, Edge, Position } from '@xyflow/react';
 import dagre from 'dagre';
 import defaultConfig from '../../config/cardBoardUiOptions.json';
 
@@ -11,18 +11,16 @@ interface DagreNodePositioningProps {
   SetViewIsFit: (value: boolean) => void;
 }
 
-// 기본 CardNode의 크기 - 설정 파일에서 가져오기
-const nodeWidth = defaultConfig.card.nodeSize.width;
-const nodeHeight = defaultConfig.card.nodeSize.height;
+// 기본 CardNode의 크기 - 설정 파일에서 일관되게 가져오기
+const nodeWidth = defaultConfig.layout.nodeSize?.width || 130;
+const nodeHeight = defaultConfig.layout.nodeSize?.height || 48;
 
 const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
   const [nodesPositioned, setNodesPositioned] = useState(false);
-  const { fitView } = useReactFlow();
+  const { fitView, getNodes } = useReactFlow();
   
-  // 제네릭 타입 명시하여 Store 타입 오류 해결
-  const store = useStore();
-  const nodeInternals = store.getState().nodeInternals;
-  const flattenedNodes = Array.from(nodeInternals.values()) as Node[];
+  // React Flow 인스턴스에서 노드 직접 가져오기
+  const flattenedNodes = getNodes();
 
   useEffect(() => {
     // 노드가 존재하는지 확인

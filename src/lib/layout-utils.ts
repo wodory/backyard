@@ -2,19 +2,18 @@ import dagre from 'dagre';
 import { Node, Edge, Position } from '@xyflow/react';
 import defaultConfig from '../config/cardBoardUiOptions.json';
 
-// 노드 크기 설정 - 설정 파일에서 가져오기
-const NODE_WIDTH = defaultConfig.card.nodeSize.width;
-const NODE_HEIGHT = defaultConfig.card.nodeSize.height;
+// 노드 크기 설정 - 설정 파일에서 일관되게 가져오기
+const NODE_WIDTH = defaultConfig.layout.nodeSize?.width || 130; // layout.nodeSize에서 가져오기
+const NODE_HEIGHT = defaultConfig.layout.nodeSize?.height || 48;
 
 // 그래프 간격 설정 - 설정 파일에서 가져오기
 const GRAPH_SETTINGS = {
   rankdir: 'LR', // 방향: LR(수평) 또는 TB(수직)
-  nodesep: defaultConfig.layout.graphSettings.nodesep * 1.5, // 같은 레벨의 노드 간 거리 (픽셀) - 더 넓게 조정
-  ranksep: defaultConfig.layout.graphSettings.ranksep * 2, // 레벨 간 거리 (픽셀) - 더 넓게 조정
-  edgesep: defaultConfig.layout.graphSettings.edgesep,
-  align: 'DL', // 더 나은 정렬을 위해 추가
-  marginx: 50, // 가로 마진 추가
-  marginy: 50, // 세로 마진 추가
+  nodesep: defaultConfig.layout.graphSettings.nodesep, // 같은 레벨의 노드 간 거리 (픽셀)
+  ranksep: defaultConfig.layout.graphSettings.ranksep, // 레벨 간 거리 (픽셀)
+  edgesep: defaultConfig.layout.graphSettings.edgesep, // 엣지 간 거리
+  marginx: defaultConfig.layout.defaultPadding || 20, // 가로 마진은 defaultPadding 사용
+  marginy: defaultConfig.layout.defaultPadding || 20  // 세로 마진은 defaultPadding 사용
 };
 
 /**
@@ -42,10 +41,6 @@ export function getLayoutedElements(
   const settings = {
     ...GRAPH_SETTINGS,
     rankdir: isHorizontal ? 'LR' : 'TB',
-    // 수직 레이아웃일 때는 노드 간격을 더 넓게 설정
-    nodesep: isHorizontal ? GRAPH_SETTINGS.nodesep : GRAPH_SETTINGS.nodesep * 1.2,
-    // 수평 레이아웃일 때는 계층 간격을 더 넓게 설정
-    ranksep: !isHorizontal ? GRAPH_SETTINGS.ranksep : GRAPH_SETTINGS.ranksep * 1.2,
   };
   
   dagreGraph.setGraph(settings);
@@ -66,20 +61,17 @@ export function getLayoutedElements(
   // 계산된 위치로 노드 업데이트
   const layoutedNodes = nodes.map(node => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    
-    // 방향에 따라 위치 미세 조정
-    const position = {
-      x: nodeWithPosition.x - NODE_WIDTH / 2,
-      y: nodeWithPosition.y - NODE_HEIGHT / 2,
-    };
-    
+
     // 방향에 따라 handle 위치 조정
     return {
       ...node,
       // handle 위치: 수평 레이아웃이면 좌우, 수직 레이아웃이면 상하
       targetPosition: isHorizontal ? Position.Left : Position.Top,
       sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
-      position,
+      position: {
+        x: nodeWithPosition.x - NODE_WIDTH / 2,
+        y: nodeWithPosition.y - NODE_HEIGHT / 2,
+      },
     };
   });
 
@@ -114,9 +106,16 @@ export function getLayoutedElements(
  * @returns 배치된 노드 배열
  */
 export function getGridLayout(nodes: Node[], cardsPerRow: number = 3) {
-  // 간격 값을 설정 파일에서 가져옴
-  const HORIZONTAL_GAP = NODE_WIDTH * 1.5;  // 노드 너비의 1.5배
-  const VERTICAL_GAP = NODE_HEIGHT * 6;     // 노드 높이의 6배
+  // 설정 파일에서 간격 값 가져오기
+  const horizontalSpacing = defaultConfig.layout.defaultSpacing?.horizontal || 30;
+  const verticalSpacing = defaultConfig.layout.defaultSpacing?.vertical || 30;
+  
+  // 간격 계산 - 상수 값 대신 설정 파일의 값을 기반으로 계산
+  const HORIZONTAL_GAP = NODE_WIDTH + horizontalSpacing;
+  const VERTICAL_GAP = NODE_HEIGHT + verticalSpacing * 3;
+  
+  // 기본 마진 값
+  const baseMargin = defaultConfig.layout.defaultPadding || 20;
   
   return nodes.map((node, index) => ({
     ...node,
@@ -124,8 +123,8 @@ export function getGridLayout(nodes: Node[], cardsPerRow: number = 3) {
     targetPosition: Position.Top,
     sourcePosition: Position.Bottom,
     position: {
-      x: (index % cardsPerRow) * HORIZONTAL_GAP + 50,
-      y: Math.floor(index / cardsPerRow) * VERTICAL_GAP + 50,
+      x: (index % cardsPerRow) * HORIZONTAL_GAP + baseMargin,
+      y: Math.floor(index / cardsPerRow) * VERTICAL_GAP + baseMargin,
     }
   }));
 } 

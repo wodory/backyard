@@ -3,9 +3,10 @@ import defaultConfig from '../config/cardBoardUiOptions.json';
 
 // 카드 보드 UI 설정 타입 정의
 export interface BoardUIConfig {
+  autoSaveIntervalMinutes: number;
   board: {
     snapToGrid: boolean;
-    snapGrid: [number, number];
+    snapGrid: number[];
     connectionLineType: string;
     markerEnd: string | null;
     strokeWidth: number;
@@ -19,6 +20,12 @@ export interface BoardUIConfig {
     backgroundColor: string;
     borderRadius: number;
     tagBackgroundColor: string;
+    fontSizes?: {
+      default: number;
+      title: number;
+      content: number;
+      tags: number;
+    };
   };
   handles: {
     size: number;
@@ -35,13 +42,13 @@ export interface BoardUIConfig {
     nodeSize?: {
       width: number;
       height: number;
+      maxHeight?: number;
     };
     graphSettings?: {
       nodesep: number;
       ranksep: number;
       edgesep: number;
     };
-    autoSaveIntervalMinutes: number;
   };
 }
 
@@ -53,7 +60,7 @@ export const DEFAULT_UI_CONFIG: BoardUIConfig = {
     connectionLineType: defaultConfig.board.connectionLineType as ConnectionLineType,
     markerEnd: defaultConfig.board.markerEnd as MarkerType,
     selectedEdgeColor: '#000000',
-    snapGrid: defaultConfig.board.snapGrid as [number, number],
+    snapGrid: defaultConfig.board.snapGrid as number[],
   }
 };
 
@@ -69,6 +76,7 @@ export function loadDefaultBoardUIConfig(): BoardUIConfig {
     
     // 대체 기본값 (하드코딩된 fallback)
     return {
+      autoSaveIntervalMinutes: 1,
       board: {
         snapToGrid: false,
         snapGrid: [15, 15],
@@ -106,8 +114,7 @@ export function loadDefaultBoardUIConfig(): BoardUIConfig {
           nodesep: 30,
           ranksep: 30,
           edgesep: 10
-        },
-        autoSaveIntervalMinutes: 1
+        }
       }
     };
   }
