@@ -13,74 +13,289 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.869 0.022 252.894);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #0071e3;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f7;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f5f5f7;
+  --muted-foreground: #6e6e73;
+  --accent: #f5f5f7;
+  --accent-foreground: #1a1a1a;
+  --destructive: #ff3b30;
+  --destructive-foreground: #ff3b30;
+  --border: #d2d2d7;
+  --input: #d2d2d7;
+  --ring: #c7c7cc;
+  --chart-1: #ff9500;
+  --chart-2: #00c7be;
+  --chart-3: #32ade6;
+  --chart-4: #ff9500;
+  --chart-5: #ff3b30;
   --radius: 0.625rem;
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.869 0.022 252.894);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #0071e3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f7;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #d2d2d7;
+  --sidebar-ring: #c7c7cc;
+  
+  /* Apple theme Light */
+  --theme-color-labelPrimary: rgba(0,0,0,0.88);
+  --theme-color-labelSecondary: rgba(0,0,0,0.56);
+  --theme-color-labelTertiary: rgba(0,0,0,0.48);
+  --theme-color-labelQuaternary: rgba(0,0,0,0.32);
+  --theme-color-fillPrimary: rgba(120,120,128,0.2);
+  --theme-color-fillSecondary: rgba(120,120,128,0.16);
+  --theme-color-fillTertiary: rgba(118,118,128,0.12);
+  --theme-color-fillQuaternary: rgba(120,120,128,0.08);
+  --theme-color-gray1-h: 240;
+  --theme-color-gray1-s: 2.3%;
+  --theme-color-gray1-l: 56.7%;
+  --theme-color-gray1: hsl(var(--theme-color-gray1-h),var(--theme-color-gray1-s),var(--theme-color-gray1-l));
+  --theme-color-gray2: #aeaeb2;
+  --theme-color-gray3-h: 240;
+  --theme-color-gray3-s: 4.7%;
+  --theme-color-gray3-l: 79.0%;
+  --theme-color-gray3: hsl(var(--theme-color-gray3-h),var(--theme-color-gray3-s),var(--theme-color-gray3-l));
+  --theme-color-gray4-h: 240;
+  --theme-color-gray4-s: 5.7%;
+  --theme-color-gray4-l: 82.9%;
+  --theme-color-gray4: hsl(var(--theme-color-gray4-h),var(--theme-color-gray4-s),var(--theme-color-gray4-l));
+  --theme-color-gray5-h: 240;
+  --theme-color-gray5-s: 10.6%;
+  --theme-color-gray5-l: 90.8%;
+  --theme-color-gray5: hsl(var(--theme-color-gray5-h),var(--theme-color-gray5-s),var(--theme-color-gray5-l));
+  --theme-color-gray6: #f2f2f7;
+  --theme-color-systemPink: #ff2d55;
+  --theme-color-systemRed-h: 0;
+  --theme-color-systemRed-s: 100.0%;
+  --theme-color-systemRed-l: 44.5%;
+  --theme-color-systemRed: hsl(var(--theme-color-systemRed-h),var(--theme-color-systemRed-s),var(--theme-color-systemRed-l));
+  --theme-color-systemOrange: #ff9500;
+  --theme-color-systemYellow: #fc0;
+  --theme-color-systemGreen: #03a10e;
+  --theme-color-systemMint: #00c7be;
+  --theme-color-systemTeal: #30b0c7;
+  --theme-color-systemCyan: #32ade6;
+  --theme-color-systemBlue: #0071e3;
+  --theme-color-systemIndio: #5856d6;
+  --theme-color-systemPurple: #af52de;
+  --theme-color-systemBrown: #a2845e;
+  --theme-color-systemBlack: #000;
+  --theme-color-systemWhite-h: 0;
+  --theme-color-systemWhite-s: 0.0%;
+  --theme-color-systemWhite-l: 100.0%;
+  --theme-color-systemWhite: hsl(var(--theme-color-systemWhite-h),var(--theme-color-systemWhite-s),var(--theme-color-systemWhite-l));
+  --theme-color-tintNotes: #ebb800;
+  --theme-color-tintFindMy: #03a10e;
+  --theme-color-tintCyan: rgba(50,173,230,0.1);
+  --theme-color-tintCyanOpaque: #eaf7fc;
+  --theme-color-tintBlue: rgba(0,113,227,0.7);
+  --theme-color-tintBlueOpaque: #4b9beb;
+  --theme-color-tintRed: rgba(227,0,0,0.32);
+  --theme-color-tintRedOpaque: #f6adad;
+  --theme-color-tintBlueSecondary: rgba(0,113,227,0.28);
+  --theme-color-tintBlueSecondaryOpaque: #b8d7f7;
+  --theme-color-tintBlueTertiary: rgba(0,113,227,0.12);
+  --theme-color-tintBlueTertiaryOpaque: #e1eefc;
+  --theme-color-backgroundPrimary-h: 0;
+  --theme-color-backgroundPrimary-s: 0.0%;
+  --theme-color-backgroundPrimary-l: 100.0%;
+  --theme-color-backgroundPrimary: hsl(var(--theme-color-backgroundPrimary-h),var(--theme-color-backgroundPrimary-s),var(--theme-color-backgroundPrimary-l));
+  --theme-color-backgroundLayer1: #f2f2f7;
+  --theme-color-backgroundLayer2: #fff;
+  --theme-opacity-text-active: 0.3;
+  --theme-opacity-background-active: 0.16;
+  --theme-darken-background-hover: 8%;
+  --theme-darken-background-active: 16%;
+  --theme-color-boxShadow: rgba(0,0,0,0.16);
+  --theme-boxShadow-blurRadius: 34px;
+  --theme-boxShadow-standard: 0 11px var(--theme-boxShadow-blurRadius) var(--theme-color-boxShadow);
+  --theme-color-focusRing: var(--theme-color-tintBlue);
+  --theme-color-backdrop: rgba(245,245,247,0.85);
+  --theme-color-sidebar: #fbfbfd;
+  --theme-color-divider: #d1d1d6;
+  --theme-color-separator: #d1d1d6;
+
+
+  /* ReactFlow 관련 변수 */
+  --card-bg: #FFFFFF;
+  --card-border: #C1C1C1;
+  --card-border-width: 1px;
+  --card-radius: var(--radius);
+  
+  /* 선택 상태 통합 변수 */
+  --selection-color: var(--primary);
+  --selection-bg: var(--theme-color-systemBlue);
+  --selection-border: var(--theme-color-systemBlue);
+  --selection-font-color: var(--theme-color-systemWhite);
+  
+  /* 엣지 관련 변수 */
+  --edge-color: #C1C1C1;
+  --edge-selected-color: #000000;
+  --edge-width: 2px;
+  --edge-selected-width: 3px;
+  --edge-connection-color: #FF0072;
+  
+  /* 핸들 관련 변수 */
+  --handle-size: 12px;
+  --handle-bg: white;
+  --handle-border: var(--edge-color);
+  --handle-border-width: 2px;
+  
+  /* 카드 레이아웃 변수 */
+  --card-header-height: 48px;
+  --card-max-height: 180px;
+  --card-default-width: 130px;
+  
+  /* 카드 여백 변수 */
+  --card-padding-x: 12px;
+  --card-padding-y: 8px;
+  --card-content-padding-x: 12px;
+  --card-content-padding-y: 8px;
+  
+  /* 폰트 크기 변수 */
+  --font-size-title: 16px;
+  --font-size-content: 14px;
+  --font-size-tags: 12px;
+  --font-size-tiptap: 0.8rem;
+  
+  /* 간격 및 여백 변수 */
+  --gap-small: 4px;
+  --gap-medium: 8px;
+  --gap-large: 12px;
+  
+  /* 선택 상태 통일된 변수 */
+  --multi-selection-color: var(--primary);
+  --multi-selection-bg: rgba(var(--primary-rgb), 0.15);
+  --multi-selection-border: var(--primary);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.129 0.042 264.695);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.129 0.042 264.695);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.984 0.003 247.858);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.279 0.041 260.031);
-  --input: oklch(0.279 0.041 260.031);
-  --ring: oklch(0.446 0.043 257.281);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(0.279 0.041 260.031);
-  --sidebar-ring: oklch(0.446 0.043 257.281);
+  --background: #1c1c1e;
+  --foreground: #ffffff;
+  --card: #1c1c1e;
+  --card-foreground: #ffffff;
+  --popover: #1c1c1e;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #1c1c1e;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #ffffff;
+  --muted: #2c2c2e;
+  --muted-foreground: #a1a1a6;
+  --accent: #2c2c2e;
+  --accent-foreground: #ffffff;
+  --destructive: #ff453a;
+  --destructive-foreground: #ff6961;
+  --border: #2c2c2e;
+  --input: #2c2c2e;
+  --ring: #48484a;
+  --chart-1: #5e5ce6;
+  --chart-2: #63e6e2;
+  --chart-3: #64d2ff;
+  --chart-4: #bf5af2;
+  --chart-5: #ff9f0a;
+  --sidebar: #1c1c1e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #5e5ce6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2c2c2e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2c2c2e;
+  --sidebar-ring: #48484a;
+
+  /* Apple theme Dark */
+  --theme-color-labelPrimary:hsla(0,0%,100%,0.98);
+  --theme-color-labelSecondary: hsla(0,0%,100%,0.66);
+  --theme-color-labelTertiary: hsla(0,0%,100%,0.5);
+  --theme-color-labelQuaternary: hsla(0,0%,100%,0.42);
+  --theme-color-fillPrimary: hsla(0,0%,71.4%,0.3);
+  --theme-color-fillSecondary: rgba(120,120,128,0.36);
+  --theme-color-fillTertiary: rgba(118,118,128,0.3);
+  --theme-color-fillQuaternary: rgba(116,116,128,0.25);
+  --theme-color-gray1-h: 240;
+  --theme-color-gray1-s: 2.3%;
+  --theme-color-gray1-l: 56.7%;
+  --theme-color-gray1: hsl(var(--theme-color-gray1-h),var(--theme-color-gray1-s),var(--theme-color-gray1-l));
+  --theme-color-gray2: #636366;
+  --theme-color-gray3-h: 240;
+  --theme-color-gray3-s: 1.4%;
+  --theme-color-gray3-l: 29.0%;
+  --theme-color-gray3: hsl(var(--theme-color-gray3-h),var(--theme-color-gray3-s),var(--theme-color-gray3-l));
+  --theme-color-gray4-h: 240;
+  --theme-color-gray4-s: 1.6%;
+  --theme-color-gray4-l: 23.9%;
+  --theme-color-gray4: hsl(var(--theme-color-gray4-h),var(--theme-color-gray4-s),var(--theme-color-gray4-l));
+  --theme-color-gray5-h: 240;
+  --theme-color-gray5-s: 1.9%;
+  --theme-color-gray5-l: 20.8%;
+  --theme-color-gray5: hsl(var(--theme-color-gray5-h),var(--theme-color-gray5-s),var(--theme-color-gray5-l));
+  --theme-color-gray6: #2c2c2e;
+  --theme-color-systemPink: #ff375f;
+  --theme-color-systemRed-h: 358;
+  --theme-color-systemRed-s: 100.0%;
+  --theme-color-systemRed-l: 59.4%;
+  --theme-color-systemRed: hsl(var(--theme-color-systemRed-h),var(--theme-color-systemRed-s),var(--theme-color-systemRed-l));
+  --theme-color-systemOrange: #ff9f0a;
+  --theme-color-systemYellow: #ffd60a;
+  --theme-color-systemGreen: #32d158;
+  --theme-color-systemMint: #63e6e2;
+  --theme-color-systemTeal: #40c8e0;
+  --theme-color-systemCyan: #64d2ff;
+  --theme-color-systemBlue: #009aff;
+  --theme-color-systemIndio: #5e5ce6;
+  --theme-color-systemPurple: #bf5af2;
+  --theme-color-systemBrown: #ac8e68;
+  --theme-color-systemBlack: #fff;
+  --theme-color-tintCyan: rgba(100,210,255,0.14);
+  --theme-color-tintCyanOpaque: #26353e;
+  --theme-color-tintBlue: rgba(10,132,255,0.7);
+  --theme-color-tintBlueOpaque: #0f64bb;
+  --theme-color-tintRed: rgba(244,10,10,0.48);
+  --theme-color-tintRedOpaque: #4e0303;
+  --theme-color-tintBlueSecondary: rgba(10,132,255,0.28);
+  --theme-color-tintBlueSecondaryOpaque: #16395d;
+  --theme-color-tintBlueTertiary: rgba(10,132,255,0.12);
+  --theme-color-tintBlueTertiaryOpaque: #1b2939;
+  --theme-color-backgroundPrimary-h: 240;
+  --theme-color-backgroundPrimary-s: 3.4%;
+  --theme-color-backgroundPrimary-l: 11.4%;
+  --theme-color-backgroundPrimary: hsl(var(--theme-color-backgroundPrimary-h),var(--theme-color-backgroundPrimary-s),var(--theme-color-backgroundPrimary-l));
+  --theme-color-backgroundLayer1: #323236;
+  --theme-color-backgroundLayer2: #434349;
+  --theme-darken-background-hover: -8%;
+  --theme-darken-background-active: -16%;
+  --theme-color-boxShadow: rgba(0,0,0,0.65);
+  --theme-color-backdrop: rgba(10,10,10,0.8);
+  --theme-color-sidebar: #202023;
+  --theme-color-divider: #000;
+  --theme-color-separator: #343436
+  
+  /* 다크 모드 카드 관련 변수 */
+  --card-bg: hsl(var(--card));
+  --card-border: hsl(var(--border));
+  
+  /* 다크 모드 선택 상태 변수 */
+  --selection-color: var(--primary);
+  --selection-bg: rgba(255, 255, 255, 0.1);
+  --selection-border: var(--primary);
+  
+  /* 다크 모드 엣지 관련 변수 */
+  --edge-color: rgba(255, 255, 255, 0.5);
+  --edge-selected-color: #ff0072;
+  
+  /* 다크 모드 핸들 관련 변수 */
+  --handle-bg: hsl(var(--card));
+  --handle-border: hsl(var(--border));
 }
 
 @theme inline {
@@ -133,8 +348,8 @@
 
 /* React Flow 스타일 오버라이드 */
 .react-flow__connection-line {
-  stroke: #FF0072 !important;
-  stroke-width: 2px !important;
+  stroke: var(--edge-connection-color) !important;
+  stroke-width: var(--edge-width) !important;
   stroke-dasharray: none !important;
   z-index: 1;
 }
@@ -142,118 +357,185 @@
 .react-flow__edge-path {
   stroke-dasharray: none;
   z-index: 1;
+  stroke: var(--edge-color);
+  stroke-width: var(--edge-width);
 }
 
 .react-flow__connectionline {
   stroke-dasharray: none;
   z-index: 1;
-  stroke-width: 2px;
+  stroke-width: var(--edge-width);
 }
 
 /* React Flow 노드 컨테이너 */
 .card-node-container {
+  border-width: var(--card-border-width);
+  border-style: solid;
+  border-color: var(--card-border);
+  background-color: var(--card-bg);
+  transition: height 0.2s ease-in-out, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: visible;
   position: relative;
-  z-index: 10;
-  overflow: visible !important;
+  isolation: isolate;
+  transform-style: preserve-3d;
+  will-change: transform, height;
+  border-radius: var(--card-radius);
+}
+
+/* 카드 선택 상태 - 통일된 스타일 */
+.card-node-container.selected,
+.react-flow__node.selected .card-node-container,
+.react-flow__node.selected .card-node {
+  color: var(--selection-font-color);
+  border-color: var(--selection-border) !important;
+  background-color: var(--selection-bg) !important;
+  box-shadow: 0 0 0 2px var(--selection-color) !important;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+
+/* ReactFlow 선택된 노드 스타일 강화 - 통일된 스타일 사용 */
+.react-flow__node.selected {
+  outline: none !important;
+  z-index: 10 !important;
+}
+
+/* 카드 헤더 스타일 */
+.card-header {
+  padding: 0 var(--card-padding-x);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--card-header-height);
+  border-bottom: none;
+  transition: border-bottom 0.2s ease;
+}
+
+.card-header.expanded {
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  margin: 0;
+  line-height: var(--card-header-height);
+  align-items: center;
+  justify-content: center;
+  height: var(--card-header-height);
+  font-size: var(--font-size-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 var(--gap-small);
+  font-weight: 600;
+  flex-grow: 1;
+}
+
+.card-content {
+  padding: var(--card-content-padding-y) var(--card-content-padding-x);
+  font-size: var(--font-size-content);
+  max-height: var(--card-max-height);
+  overflow: auto;
+}
+
+.card-content .tiptap-content {
+  font-size: var(--font-size-tiptap);
+  line-height: 1.4;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-small);
+  margin-top: var(--gap-medium);
+}
+
+.card-tag {
+  padding: 2px 8px;
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border-radius: 12px;
+  font-size: var(--font-size-tags);
+  display: inline-flex;
+  align-items: center;
+}
+
+.card-footer {
+  margin-top: var(--gap-medium);
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* 카드 노드 기본 스타일 */
 .card-node {
-  background-color: #ffffff;
-  border-radius: 8px;
+  background-color: var(--card-bg);
+  border-radius: var(--card-radius);
   box-sizing: border-box;
-  border: 2px solid #C1C1C1;
+  border: var(--card-border-width) solid var(--card-border);
   transition: height 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
   overflow: hidden;
   position: relative;
   box-shadow: none !important;
 }
 
-/* 선택된 카드 노드 */
-.card-node.selected {
-  background-color: #FFD3E6;
-  border-color: #fdcbe1;
-}
-
-/* 핸들 스타일 - 기본값 수정 */
+/* 핸들 기본 스타일 */
 .react-flow__handle {
-  /* 기본 핸들러는 숨김 */
-  opacity: 0 !important;
-  pointer-events: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  width: var(--handle-size);
+  height: var(--handle-size);
+  background-color: var(--handle-bg);
+  border-width: var(--handle-border-width);
+  border-style: solid;
+  border-color: var(--handle-border);
+  transition: opacity 0.3s ease;
 }
 
-/* 커스텀 핸들 스타일 */
-.handle-top,
-.handle-right,
-.handle-bottom,
+/* 핸들 위치 스타일 */
+.handle-top {
+  top: calc((var(--handle-size) / -2) - (var(--card-border-width) / 2));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.handle-right {
+  top: 50%;
+  right: calc((var(--handle-size) / -2) - (var(--card-border-width) / 2));
+  transform: translateY(-50%);
+}
+
+.handle-bottom {
+  bottom: calc((var(--handle-size) / -2) - (var(--card-border-width) / 2));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .handle-left {
-  /* 기본 상태에서는 숨김 */
-  opacity: 0 !important; 
-  transition: opacity 0.2s ease !important;
-  position: absolute !important;
-  z-index: 20 !important;
-  pointer-events: none !important; /* 기본 상태에서는 마우스 이벤트 비활성화 */
-  /* 마진과 패딩 제거로 정확한 위치 계산 */
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
-  box-shadow: none !important;
-  /* 크기 정확하게 지정 - 12px로 증가 */
-  width: 12px !important;
-  height: 12px !important;
-  background-color: white !important;
-  /* 완벽한 원형 보장 */
-  border-radius: 50% !important;
-  /* transform 속성 제거 - JavaScript에서 계산된 위치를 사용 */
-  /* transform: none !important; */
-  /* 정확한 테두리 설정 */
-  border: 2px solid #696969 !important;
-  /* 픽셀 맞춤 보장 */
-  shape-rendering: geometricPrecision !important;
-  /* 서브픽셀 렌더링 개선 */
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
+  top: 50%;
+  left: calc((var(--handle-size) / -2) - (var(--card-border-width) / 2));
+  transform: translateY(-50%);
 }
 
-/* 호버 시 핸들 표시 */
-.card-node-container:hover .handle-top,
-.card-node-container:hover .handle-right,
-.card-node-container:hover .handle-bottom,
-.card-node-container:hover .handle-left,
-.card-node-container.selected .handle-top,
-.card-node-container.selected .handle-right,
-.card-node-container.selected .handle-bottom,
-.card-node-container.selected .handle-left,
-.card-node-container.hovered .handle-top,
-.card-node-container.hovered .handle-right,
-.card-node-container.hovered .handle-bottom,
-.card-node-container.hovered .handle-left,
-.react-flow__node.selected .handle-top,
-.react-flow__node.selected .handle-right,
-.react-flow__node.selected .handle-bottom,
-.react-flow__node.selected .handle-left {
-  opacity: 1 !important; /* 호버나 선택 시 표시 */
-  pointer-events: auto !important; /* 호버나 선택 시 마우스 이벤트 활성화 */
-  z-index: 25 !important;
-  display: block !important;
-  /* 크기 변화 - 12px로 증가 */
-  width: 12px !important;
-  height: 12px !important;
+/* 호버 시 핸들 스타일 */
+.card-node-container:hover .react-flow__handle {
+  opacity: 1;
 }
 
-/* 호버 효과 */
+/* 비호버 시 핸들 스타일 */
+.card-node-container .react-flow__handle {
+  opacity: 0;
+}
+
+/* 선택 시 핸들 스타일 */
+.react-flow__node.selected .react-flow__handle {
+  opacity: 1;
+}
+
+/* 호버 효과 - 크기 효과 대신 색상 변경으로 간소화 */
 .handle-top:hover,
 .handle-right:hover,
 .handle-bottom:hover,
 .handle-left:hover {
-  /* transform: none !important; /* transform 제거 */
   cursor: crosshair !important;
   z-index: 30 !important;
-  /* 크기 변화 - 12px로 증가 */
-  width: 12px !important;
-  height: 12px !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
 }
 
 /* TipTap 콘텐츠 스타일 */
@@ -264,15 +546,15 @@
 
 /* 다크 테마 대응 */
 .dark .card-node {
-  background-color: hsl(var(--card));
-  border-color: hsl(var(--border));
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
 }
 
 .dark .handle-top,
 .dark .handle-right,
 .dark .handle-bottom,
 .dark .handle-left {
-  background-color: hsl(var(--card)) !important;
+  background-color: var(--handle-bg) !important;
   box-shadow: none !important;
 }
 
@@ -284,7 +566,6 @@
   padding: 0 !important;
   border: none !important;
   box-shadow: none !important;
-  /* 오버플로우 속성 추가 - 핸들이 밖으로 나가도록 허용 */
   overflow: visible !important;
 }
 
@@ -302,7 +583,7 @@
 .tag {
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.6rem;
+  font-size: var(--font-size-tags);
   display: inline-flex;
   align-items: center;
   background-color: var(--secondary);
@@ -313,7 +594,7 @@
 .card-node.selected .card-title,
 .card-node.selected .card-description,
 .card-node.selected .card-content {
-  color: hsl(var(--foreground)) !important;
+  color: var(--foreground) !important;
 }
 
 /* React Flow 노드 스타일 오버라이드 */
@@ -343,19 +624,6 @@
   z-index: 6 !important;
 }
 
-/* ReactFlow 선택된 노드 스타일 강화 */
-.react-flow__node.selected {
-  outline: 2px solid hsl(var(--primary)) !important;
-  outline-offset: 2px !important;
-  z-index: 10 !important;
-}
-
-/* 노드 선택 상태 확실하게 표시 */
-.react-flow__node.selected .card-node {
-  box-shadow: 0 0 0 2px hsl(var(--primary)) !important;
-  transition: box-shadow 0.2s ease !important;
-}
-
 /* 노드 선택 가능성 표시 - 호버 효과 */
 .react-flow__node:not(.selected):hover .card-node {
   box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.3) !important;
@@ -372,8 +640,16 @@
 /* 연결선 선택 효과 - React Flow 공식 방식 사용 */
 .react-flow__edge.selected .react-flow__edge-path,
 .react-flow__edge path[data-selected="true"] {
-  stroke-width: 3px !important;
+  stroke-width: var(--edge-selected-width) !important;
+  stroke: var(--edge-selected-color) !important;
   filter: drop-shadow(0 0 2px rgba(255, 0, 114, 0.4));
+}
+
+/* 애니메이션된 엣지 스타일 */
+.edge-animated path {
+  stroke-dasharray: 5;
+  stroke-dashoffset: 0;
+  animation: dashdraw 0.5s linear infinite;
 }
 
 /* 연결선 호버 효과 */
@@ -383,12 +659,20 @@
 
 /* 다크 모드에서 연결선 색상 */
 .dark .react-flow__edge-path {
-  stroke: rgba(255, 255, 255, 0.5);
+  stroke: var(--edge-color);
 }
 
 /* 다크 모드에서 선택된 연결선 색상 */
 .dark .react-flow__edge.selected .react-flow__edge-path,
 .dark .react-flow__edge path[data-selected="true"] {
-  stroke: #ff0072 !important;
+  stroke: var(--edge-selected-color) !important;
   filter: drop-shadow(0 0 3px rgba(255, 0, 114, 0.5));
+}
+
+/* 사이드바 카드 아이템 선택 스타일 - 통일된 스타일 사용 */
+.sidebar-card-item.selected {
+  border-color: var(--selection-border) !important;
+  background-color: var(--selection-bg) !important;
+  box-shadow: 0 0 0 2px var(--selection-color) !important;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
