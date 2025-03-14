@@ -13,17 +13,18 @@ export interface Card {
 }
 
 export interface AppState {
-  // 선택된 카드 상태
-  selectedCardId: string | null; // 이전 단일 선택 방식 (하위 호환성 유지)
-  selectCard: (cardId: string | null) => void; // 이전 단일 선택 방식 (하위 호환성 유지)
-  
-  // 다중 선택 카드 상태
+  // 선택된 카드 상태 (통합된 단일 소스)
   selectedCardIds: string[];
-  selectCards: (cardIds: string[]) => void;
-  addSelectedCard: (cardId: string) => void;
-  removeSelectedCard: (cardId: string) => void;
-  toggleSelectedCard: (cardId: string) => void;
-  clearSelectedCards: () => void;
+  // 이전 단일 선택 상태 (내부적으로 selectedCardIds로 변환)
+  selectedCardId: string | null; // 하위 호환성 유지 (파생 값)
+  
+  // 선택 관련 액션들
+  selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
+  selectCards: (cardIds: string[]) => void; // 다중 카드 선택 (주요 액션)
+  addSelectedCard: (cardId: string) => void; // 선택된 카드 목록에 추가
+  removeSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 제거
+  toggleSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 토글
+  clearSelectedCards: () => void; // 모든 선택 해제
   
   // 카드 데이터 상태
   cards: Card[]; // 현재 로드된 카드 목록
@@ -55,26 +56,30 @@ export interface AppState {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
-      // 이전 단일 선택 방식 (하위 호환성 유지)
-      selectedCardId: null,
-      selectCard: (cardId) => {
-        set({ 
-          selectedCardId: cardId,
-          // 단일 선택 시 다중 선택 배열도 업데이트
-          selectedCardIds: cardId ? [cardId] : []
-        });
-      },
-      
-      // 다중 선택 카드 상태 초기값 및 액션
+    (set, get) => ({
+      // 다중 선택 카드 상태 초기값 및 액션 (기본 소스)
       selectedCardIds: [],
+      
+      // 단일 선택 상태 (파생 값)
+      selectedCardId: null,
+      
+      // 선택 관련 액션들
       selectCards: (cardIds) => {
-        set({ 
+        set({
           selectedCardIds: cardIds,
-          // 다중 선택 시 첫 번째 카드를 단일 선택 상태로 설정 (하위 호환성)
+          // 다중 선택의 첫 번째 카드를 단일 선택 상태로 설정 (하위 호환성)
           selectedCardId: cardIds.length > 0 ? cardIds[0] : null
         });
+        console.log('[AppStore] 카드 선택 변경:', cardIds);
       },
+      
+      // 단일 카드 선택 (내부적으로 selectCards 호출)
+      selectCard: (cardId) => {
+        const { selectCards } = get();
+        selectCards(cardId ? [cardId] : []);
+      },
+      
+      // 선택된 카드 목록에 추가
       addSelectedCard: (cardId) => 
         set((state) => {
           if (!cardId || state.selectedCardIds.includes(cardId)) return state;
@@ -84,6 +89,8 @@ export const useAppStore = create<AppState>()(
             selectedCardId: newSelectedIds[0] // 첫 번째 카드를 단일 선택 상태로 설정
           };
         }),
+      
+      // 선택된 카드 목록에서 제거
       removeSelectedCard: (cardId) => 
         set((state) => {
           const newSelectedIds = state.selectedCardIds.filter(id => id !== cardId);
@@ -92,6 +99,8 @@ export const useAppStore = create<AppState>()(
             selectedCardId: newSelectedIds.length > 0 ? newSelectedIds[0] : null
           };
         }),
+      
+      // 선택된 카드 목록에서 토글
       toggleSelectedCard: (cardId) => 
         set((state) => {
           if (!cardId) return state;
@@ -110,6 +119,8 @@ export const useAppStore = create<AppState>()(
             selectedCardId: newSelectedIds.length > 0 ? newSelectedIds[0] : null
           };
         }),
+      
+      // 모든 선택 해제
       clearSelectedCards: () => set({ selectedCardIds: [], selectedCardId: null }),
       
       // 카드 데이터 상태 초기값 및 액션
@@ -141,44 +152,29 @@ export const useAppStore = create<AppState>()(
       
       // 보드 설정 초기값 및 액션
       boardSettings: DEFAULT_BOARD_SETTINGS,
-      setBoardSettings: (settings) => {
-        console.log('[Zustand] setBoardSettings 호출됨:', settings);
-        // 로컬 스토리지에 저장
-        saveSettingsToLocalStorage(settings);
-        // 상태 업데이트
-        set({ boardSettings: settings });
-        console.log('[Zustand] 상태 업데이트 완료:', settings);
-      },
-      updateBoardSettings: (partialSettings) => 
-        set((state) => {
-          console.log('[Zustand] updateBoardSettings 호출됨:', partialSettings);
-          const newSettings = { ...state.boardSettings, ...partialSettings };
-          // 로컬 스토리지에 저장
-          saveSettingsToLocalStorage(newSettings);
-          console.log('[Zustand] 새 설정으로 업데이트:', newSettings);
-          return { boardSettings: newSettings };
-        }),
+      setBoardSettings: (settings) => set({ boardSettings: settings }),
+      updateBoardSettings: (settings) => 
+        set((state) => ({ 
+          boardSettings: { 
+            ...state.boardSettings, 
+            ...settings 
+          } 
+        })),
       
-      // React Flow 인스턴스 초기값 및 액션
+      // React Flow 인스턴스
       reactFlowInstance: null,
       setReactFlowInstance: (instance) => set({ reactFlowInstance: instance }),
     }),
     {
-      name: 'backyard-app-storage', // localStorage에 저장될 키 이름
-      partialize: (state) => {
-        console.log('[Zustand] persist에 저장될 상태:', {
-          isSidebarOpen: state.isSidebarOpen,
-          sidebarWidth: state.sidebarWidth,
-          boardSettings: state.boardSettings,
-        });
-        return {
-          // 영구 저장할 상태만 선택
-          isSidebarOpen: state.isSidebarOpen,
-          sidebarWidth: state.sidebarWidth,
-          boardSettings: state.boardSettings,
-          // 선택 상태와 layoutDirection, reactFlowInstance는 세션별로 달라질 수 있으므로 저장하지 않음
-        };
-      },
+      name: 'app-store',
+      // 민감한 정보는 LocalStorage에 저장하지 않도록 필터링
+      // 또한 함수 타입은 직렬화 불가능하므로 제외
+      partialize: (state) => ({
+        layoutDirection: state.layoutDirection,
+        sidebarWidth: state.sidebarWidth,
+        isSidebarOpen: state.isSidebarOpen,
+        boardSettings: state.boardSettings,
+      }),
     }
   )
-) 
+); 

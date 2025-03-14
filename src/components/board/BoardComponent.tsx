@@ -23,7 +23,8 @@ import {
   applyEdgeChanges,
   OnConnectStart,
   OnConnectEnd,
-  XYPosition
+  XYPosition,
+  ConnectionMode
 } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save } from 'lucide-react';
@@ -97,7 +98,7 @@ export default function BoardComponent({
   const setBoardSettings = useAppStore(state => state.setBoardSettings);
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
   const setCards = useAppStore(state => state.setCards);
-  const { selectCards } = useAppStore();
+  const { selectCards, selectedCardIds, toggleSelectedCard, selectCard } = useAppStore();
   
   // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
   const storeCards = useAppStore(state => state.cards);
@@ -582,33 +583,24 @@ export default function BoardComponent({
   
   // 카드 선택 핸들러
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    // useAppStore의 상태와 함수를 한 번만 가져옴 (캐싱)
-    const appState = useAppStore.getState();
-    const { 
-      isSidebarOpen, 
-      setSidebarOpen, 
-      selectedCardIds, 
-      toggleSelectedCard, 
-      selectCard 
-    } = appState;
-    
-    // 사이드바가 닫혀있으면 열기
-    if (!isSidebarOpen) {
-      setSidebarOpen(true);
-    }
-    
-    // Ctrl(macOS에서는 Meta) 키가 눌려있는지 확인
+    // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
     const isMultiSelectMode = event.ctrlKey || event.metaKey;
+    
+    // 노드 id 가져오기
+    const nodeId = node.id;
+    
+    // 기본 이벤트 관리
+    event.stopPropagation();
     
     if (isMultiSelectMode) {
       // 다중 선택 모드: 선택된 카드 목록에 추가/제거
       console.log('다중 선택 모드로 노드 클릭:', node.id);
       
       // 토스트 메시지 결정을 위해 현재 선택 상태 미리 확인
-      const isCurrentlySelected = selectedCardIds.includes(node.id);
+      const isCurrentlySelected = selectedCardIds.includes(nodeId);
       
       // 상태 업데이트
-      toggleSelectedCard(node.id);
+      toggleSelectedCard(nodeId);
       
       // 성공 메시지 표시 - 다중 선택 모드
       if (isCurrentlySelected) {
@@ -627,12 +619,12 @@ export default function BoardComponent({
       console.log('단일 선택 모드로 노드 클릭:', node.id);
       
       // 이미 선택된 카드를 다시 클릭하는 경우 처리
-      if (selectedCardIds.length === 1 && selectedCardIds[0] === node.id) {
+      if (selectedCardIds.length === 1 && selectedCardIds[0] === nodeId) {
         // 동일한 카드 재선택 - 아무것도 하지 않음
-        console.log('이미 선택된 카드 재선택:', node.id);
+        console.log('이미 선택된 카드 재선택:', nodeId);
       } else {
         // 새로운 카드 선택
-        selectCard(node.id);
+        selectCard(nodeId);
         
         // 성공 메시지 표시 - 단일 선택 모드
         toast.success(`'${(node.data as any).title}'가 선택되었습니다.`, {
@@ -644,9 +636,9 @@ export default function BoardComponent({
     
     // props로 전달된 콜백이 있다면 실행
     if (onSelectCard) {
-      onSelectCard(node.id);
+      onSelectCard(nodeId);
     }
-  }, [onSelectCard]);
+  }, [onSelectCard, selectedCardIds, selectCard, toggleSelectedCard]);
   
   // 페인 클릭 핸들러 (빈 공간 클릭)
   const handlePaneClick = useCallback((event: React.MouseEvent) => {
@@ -655,7 +647,7 @@ export default function BoardComponent({
       const appState = useAppStore.getState();
       const { selectedCardIds, clearSelectedCards } = appState;
       
-      // 선택된 카드가 있을 때만 토스트 표시
+      // 선택된 카드가 있을 때만 토스트 표시 및 선택 해제
       if (selectedCardIds.length > 0) {
         if (selectedCardIds.length > 1) {
           toast.info(`${selectedCardIds.length}개 카드 선택이 해제되었습니다.`, {
@@ -1037,8 +1029,11 @@ export default function BoardComponent({
     // 선택된 노드 ID 배열 추출
     const selectedNodeIds = nodes.map(node => node.id);
     
-    // 전역 상태 업데이트
-    if (selectedNodeIds.length > 0) {
+    // React Flow의 선택 상태를 Zustand 상태로 동기화
+    // 현재 선택된 ID 배열과 다를 때만 업데이트 (불필요한 리렌더링 방지)
+    const currentSelectedIds = useAppStore.getState().selectedCardIds;
+    if (!arraysEqual(currentSelectedIds, selectedNodeIds)) {
+      // 전역 상태 업데이트
       selectCards(selectedNodeIds);
       
       // 선택된 노드가 있는 경우 토스트 메시지 표시
@@ -1050,6 +1045,40 @@ export default function BoardComponent({
       }
     }
   }, [selectCards]);
+  
+  // 배열 비교 헬퍼 함수
+  const arraysEqual = (a: string[], b: string[]) => {
+    if (a.length !== b.length) return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.every((val, idx) => val === sortedB[idx]);
+  };
+  
+  // Zustand 상태 변경을 React Flow 선택 상태에 동기화
+  useEffect(() => {
+    if (reactFlowInstance) {
+      const rfNodes = reactFlowInstance.getNodes();
+      // 선택된 노드들만 업데이트하도록 최적화
+      const changedNodes = rfNodes.map(node => {
+        const isSelected = selectedCardIds.includes(node.id);
+        // 현재 선택 상태와 다를 때만 변경 (불필요한 리렌더링 방지)
+        if (node.selected !== isSelected) {
+          return {
+            ...node,
+            selected: isSelected
+          };
+        }
+        return node;
+      });
+      
+      // 노드 상태가 변경된 경우에만 setNodes 호출
+      const hasChanges = changedNodes.some((node, i) => node.selected !== rfNodes[i].selected);
+      if (hasChanges) {
+        console.log("[BoardComponent] 동기화: Zustand 상태 → React Flow 선택 상태");
+        setNodes(changedNodes);
+      }
+    }
+  }, [selectedCardIds, reactFlowInstance, setNodes]);
   
   if (isLoading) {
     return (
@@ -1082,24 +1111,39 @@ export default function BoardComponent({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
-        nodeTypes={NODE_TYPES}
-        edgeTypes={EDGE_TYPES}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        onNodeClick={handleNodeClick}
-        onPaneClick={handlePaneClick}
         onInit={handleReactFlowInit}
         onSelectionChange={handleSelectionChange}
+        onPaneClick={handlePaneClick}
+        onNodeClick={handleNodeClick}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
+        nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
+        deleteKeyCode={["Backspace", "Delete"]}
+        selectionKeyCode={["Meta", "Control"]}
+        multiSelectionKeyCode={["Meta", "Control", "Shift"]}
+        connectionLineStyle={{ 
+          stroke: boardSettings.edgeColor || '#C1C1C1',
+          strokeWidth: 2 
+        }}
+        className="react-flow-container"
         fitView
+        proOptions={{ hideAttribution: true }}
+        connectionMode={ConnectionMode.Loose}
         minZoom={0.1}
-        maxZoom={1.5}
-        connectionLineType={ConnectionLineType.Step}
-        fitViewOptions={{ padding: 0.2 }}
+        maxZoom={4}
         snapToGrid={boardSettings.snapToGrid}
         snapGrid={boardSettings.snapGrid}
-        deleteKeyCode={['Backspace', 'Delete']}
+        panOnScroll
+        selectionOnDrag
+        panOnDrag={[1, 2]}
+        elevateEdgesOnSelect
+        selectNodesOnDrag={false}
+        zoomOnDoubleClick={true}
+        fitViewOptions={{ padding: 0.3 }}
+        style={{ background: '#ffffff' }}
       >
         {showControls && <DevTools />}
         <Controls />

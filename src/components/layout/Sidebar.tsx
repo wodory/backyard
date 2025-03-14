@@ -705,12 +705,35 @@ export function Sidebar({ className }: SidebarProps) {
                     <div 
                       key={card.id}
                       className={cn(
-                        "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group relative",
-                        selectedCardIds.includes(card.id) && "bg-muted border-primary"
+                        "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group relative sidebar-card-item",
+                        selectedCardIds.includes(card.id) && "selected"
                       )}
                       onClick={(e) => {
-                        // 이벤트 전파 중지하지 않음 - 클릭은 카드 선택으로 처리
-                        selectCard(card.id);
+                        // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
+                        const isMultiSelection = e.ctrlKey || e.metaKey;
+                        
+                        if (isMultiSelection) {
+                          // 토글 선택: 이미 선택된 카드라면 제거, 아니면 추가
+                          const isSelected = selectedCardIds.includes(card.id);
+                          if (isSelected) {
+                            const appStore = useAppStore.getState();
+                            appStore.removeSelectedCard(card.id);
+                            toast.info(`'${card.title}' 선택 해제됨`, {
+                              duration: 1500,
+                              position: 'bottom-center',
+                            });
+                          } else {
+                            const appStore = useAppStore.getState();
+                            appStore.addSelectedCard(card.id);
+                            toast.info(`'${card.title}' 선택됨`, {
+                              duration: 1500,
+                              position: 'bottom-center',
+                            });
+                          }
+                        } else {
+                          // 일반 클릭: 단일 선택
+                          selectCard(card.id);
+                        }
                       }}
                       onDoubleClick={(e) => {
                         // 더블클릭은 전파 중지 - 카드 선택 이벤트가 발생하지 않도록

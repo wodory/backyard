@@ -124,9 +124,16 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const tagsFontSize = uiConfig.card.fontSizes?.tags || 12;
   
   // 핸들 관련 설정
-  const handleSize = uiConfig.handles.size || 10;
+  const handleSize = uiConfig.handles.size || 12;
   const connectionLineColor = uiConfig.board.edgeColor || '#C1C1C1';
-  const selectedBackgroundColor = "#FFD3E6"; // 선택된 카드 배경색
+
+  // CSS 변수를 가져오는 함수
+  const getCssVariable = (name: string): string => {
+    if (typeof window !== 'undefined') {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+    return '';
+  };
   
   // 노드가 변경될 때 ReactFlow에 알림
   useEffect(() => {
@@ -153,41 +160,6 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     updateNodeInternals(id);
   }, [id, updateNodeInternals]);
   
-  // 핸들 스타일 계산
-  const getHandleStyle = useCallback((position: string) => {
-    const style: React.CSSProperties = {
-      width: handleSize,
-      height: handleSize,
-      background: connectionLineColor,
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderColor: connectionLineColor,
-      opacity: isHovered ? 1 : 0.3,
-      transition: 'opacity 0.3s ease',
-    };
-    
-    // 핸들 위치별 추가 스타일
-    if (position === 'top') {
-      style.top = -handleSize / 2;
-      style.left = '50%';
-      style.transform = 'translateX(-50%)';
-    } else if (position === 'right') {
-      style.top = '50%';
-      style.right = -handleSize / 2;
-      style.transform = 'translateY(-50%)';
-    } else if (position === 'bottom') {
-      style.bottom = -handleSize / 2;
-      style.left = '50%';
-      style.transform = 'translateX(-50%)';
-    } else if (position === 'left') {
-      style.top = '50%';
-      style.left = -handleSize / 2;
-      style.transform = 'translateY(-50%)';
-    }
-    
-    return style;
-  }, [handleSize, connectionLineColor, isHovered]);
-  
   // 카드 크기 및 스타일 계산
   const getNodeStyle = useCallback(() => {
     // 기본 카드 크기 설정
@@ -199,47 +171,21 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       ? (nodeData.height || cardMaxHeight)
       : cardHeaderHeight + 2; // 헤더 높이 + 테두리
     
-    // 카드 스타일 생성
+    // 최소한의 동적 스타일만 포함
     const style: CSSProperties = {
       width: cardWidth,
       height: cardHeight,
-      borderWidth: '1px',
-      borderStyle: 'solid',
-      borderColor: selected ? connectionLineColor : isMultiSelected ? '#4CAF50' : '#e2e8f0',
-      backgroundColor: selected ? selectedBackgroundColor : isMultiSelected ? '#E8F5E9' : '#fff',
-      transition: 'height 0.2s ease-in-out, background-color 0.2s ease',
-      overflow: 'visible', // 핸들이 잘리지 않도록 오버플로우 설정
-      position: 'relative',
       zIndex: isActive ? 9999 : 1, // 활성화된 카드는 항상 최상위에 표시
-      isolation: 'isolate', // 새로운 쌓임 맥락 생성
-      transformStyle: 'preserve-3d', // 3D 공간에서의 렌더링 최적화
-      willChange: 'transform, height', // 변환 및 높이 변경 최적화
-      boxShadow: selected ? '0 0 0 2px rgb(59, 130, 246)' : 'none', // 선택 시 외부 그림자로 강조
     };
     
     return style;
-  }, [data, isExpanded, selected, isMultiSelected, isActive, defaultCardWidth, cardMaxHeight, cardHeaderHeight, connectionLineColor, selectedBackgroundColor]);
+  }, [data, isExpanded, isActive, defaultCardWidth, cardMaxHeight, cardHeaderHeight]);
 
   // 노드 데이터 안전하게 타입 변환
   const nodeData = data as NodeData;
   
   // 카드 클릭 핸들러 - 노드 선택 및 확장 토글 분리
   const handleCardClick = useCallback((event: React.MouseEvent) => {
-    // Cmd/Ctrl 키와 함께 클릭하면 다중 선택 처리
-    if (event.ctrlKey || event.metaKey) {
-      // ReactFlow 기본 선택 동작 중지
-      event.stopPropagation(); 
-      
-      if (isMultiSelected) {
-        // 이미 선택된 경우 선택 해제
-        removeSelectedCard(id);
-      } else {
-        // 선택되지 않은 경우 선택 추가
-        addSelectedCard(id);
-      }
-      return;
-    }
-    
     // 토글 버튼이나 링크 클릭 시에는 이벤트 전파 중지
     if (
       (event.target as HTMLElement).tagName === 'BUTTON' || 
@@ -261,10 +207,10 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       return;
     }
     
-    // 단일 클릭은 직접 카드 선택 (중간 단계 없이)
-    // ReactFlow의 기본 선택과 함께 작동하도록 전파 유지
-    selectCard(id);
-  }, [id, isMultiSelected, selectCard, addSelectedCard, removeSelectedCard]);
+    // 이후 처리는 BoardComponent의 onNodeClick에서 처리
+    // React Flow의 onNodeClick 이벤트를 통해 선택 상태 업데이트
+    // 이 함수에서는 특수 케이스만 처리하고 나머지는 상위 컴포넌트에 위임
+  }, []);
 
   // 카드 업데이트 핸들러
   const handleCardUpdated = useCallback((updatedCard: any) => {
@@ -308,33 +254,16 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         onMouseLeave={handleMouseLeave}
         onClick={handleCardClick}
         onTransitionEnd={handleTransitionEnd}
-        className={`card-node-container card-node bg-white rounded-md ${isHovered ? 'hovered' : ''} ${isMultiSelected ? 'multi-selected' : ''}`}
+        className={cn(
+          "card-node-container",
+          isHovered && "hovered",
+          (selected || isMultiSelected) && "selected",
+        )}
         style={getNodeStyle()}
       >
         {/* 카드 헤더 */}
-        <div className="card-header" style={{ 
-          padding: '0 12px',
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
-          height: `${cardHeaderHeight}px`
-        }}>
-          <h3 
-            className="text-md font-semibold text-center flex-grow"
-            style={{
-              margin: 0,
-              lineHeight: `${cardHeaderHeight}px`,
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: `${cardHeaderHeight}px`,
-              fontSize: `${titleFontSize}px`,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              padding: '0 4px'
-            }}
-          >
+        <div className={`card-header ${isExpanded ? 'expanded' : ''}`}>
+          <h3 className="card-title">
             {nodeData.title}
           </h3>
           <Button 
@@ -349,21 +278,16 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         
         {/* 카드 콘텐츠 - 펼쳐진 상태에서만 보임 */}
         {isExpanded && (
-          <div className="card-content" style={{ 
-            padding: '8px 12px',
-            fontSize: `${contentFontSize}px`,
-            maxHeight: `${cardMaxHeight}px`,
-            overflow: 'auto'
-          }}>
-            <div className="tiptap-content" style={{ fontSize: `${contentFontSize}px` }}>
+          <div className="card-content">
+            <div className="tiptap-content">
               <TiptapViewer content={nodeData.content || ''} />
             </div>
             
             {/* 태그 표시 */}
             {nodeData.tags && nodeData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="card-tags">
                 {(nodeData.tags || []).map((tag: string, index: number) => (
-                  <div key={index} className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs flex items-center" style={{ fontSize: `${tagsFontSize}px` }}>
+                  <div key={index} className="card-tag">
                     <Tag size={10} className="mr-1" />
                     {tag}
                   </div>
@@ -372,7 +296,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
             )}
             
             {/* 카드 푸터 */}
-            <div className="card-footer" style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="card-footer">
               <Link href={`/cards/${nodeData.id}`} passHref>
                 <Button size="sm" variant="outline">자세히 보기</Button>
               </Link>
@@ -387,8 +311,8 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           position={Position.Top}
           id="top-target"
           isConnectable={isConnectable}
-          className="nodrag handle-top" // visible-handle 클래스 제거
-          style={getHandleStyle('top')}
+          className="nodrag handle-top"
+          style={{ width: handleSize, height: handleSize }}
         />
         
         {/* 왼쪽 핸들러 */}
@@ -397,8 +321,8 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           position={Position.Left}
           id="left-target"
           isConnectable={isConnectable}
-          className="nodrag handle-left" // visible-handle 클래스 제거
-          style={getHandleStyle('left')}
+          className="nodrag handle-left"
+          style={{ width: handleSize, height: handleSize }}
         />
         
         {/* 오른쪽 핸들러 */}
@@ -407,8 +331,8 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           position={Position.Right}
           id="right-source"
           isConnectable={isConnectable}
-          className="nodrag handle-right" // visible-handle 클래스 제거
-          style={getHandleStyle('right')}
+          className="nodrag handle-right"
+          style={{ width: handleSize, height: handleSize }}
         />
         
         {/* 아래쪽 핸들러 */}
@@ -417,8 +341,8 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           position={Position.Bottom}
           id="bottom-source"
           isConnectable={isConnectable}
-          className="nodrag handle-bottom" // visible-handle 클래스 제거
-          style={getHandleStyle('bottom')}
+          className="nodrag handle-bottom"
+          style={{ width: handleSize, height: handleSize }}
         />
       </div>
       

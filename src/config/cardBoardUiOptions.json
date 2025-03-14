@@ -24,10 +24,10 @@
     }
   },
   "handles": {
-    "size": 10,
+    "size": 18,
     "backgroundColor": "#555555",
     "borderColor": "#FFFFFF",
-    "borderWidth": 1
+    "borderWidth": 2
   },
   "layout": {
     "defaultPadding": 20,

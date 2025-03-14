@@ -101,34 +101,29 @@ function CustomEdge({
   const edgeStyle = useMemo(() => {
     // 1. 기본 스타일 (보드 설정에서 가져옴)
     const baseStyle = {
-      strokeWidth: effectiveSettings.strokeWidth,
+      strokeWidth: `var(--edge-width)`,
       stroke: selected 
-        ? effectiveSettings.selectedEdgeColor 
-        : effectiveSettings.edgeColor,
+        ? `var(--edge-selected-color)` 
+        : `var(--edge-color)`,
       transition: 'stroke 0.2s, stroke-width 0.2s',
     };
 
-    // 2. 애니메이션 스타일
-    const animationStyle = isAnimated ? {
-      strokeDasharray: 5,
-      strokeDashoffset: 0,
-      animation: 'dashdraw 0.5s linear infinite',
-    } : {};
+    // 2. 애니메이션 스타일 - 이제 CSS 클래스로 처리
+    const animationClass = isAnimated ? 'edge-animated' : '';
 
     // 3. 선택 상태에 따른 스타일
     const selectedStyle = selected ? {
-      strokeWidth: (style.strokeWidth as number || effectiveSettings.strokeWidth) + 1,
-      stroke: style.stroke || effectiveSettings.selectedEdgeColor,
+      strokeWidth: `var(--edge-selected-width)`,
+      stroke: `var(--edge-selected-color)`,
     } : {};
 
     // 4. 스타일 병합 (props의 style이 가장 우선)
     return {
       ...baseStyle,
-      ...animationStyle,
       ...selectedStyle,
       ...style, // props의 style을 마지막에 적용하여 우선시
     };
-  }, [style, selected, effectiveSettings, isAnimated]);
+  }, [style, selected, isAnimated]);
 
   // 엣지 컴포넌트에서 변경 내용 로깅 (개발 모드에서만)
   useEffect(() => {
@@ -145,6 +140,7 @@ function CustomEdge({
       path={edgePath} 
       markerEnd={markerEnd} 
       style={edgeStyle}
+      className={isAnimated ? 'edge-animated' : ''}
       data-selected={selected ? 'true' : 'false'}
       {...(() => {
         // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
