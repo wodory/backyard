@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { ChevronRight, Eye, Trash2, GripVertical, Pencil } from 'lucide-react';
+import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDate } from '@/lib/utils';
@@ -26,6 +26,8 @@ import CardList from '@/components/cards/CardList';
 import type { Card } from '@/types/card';
 import { EditCardModal } from '@/components/cards/EditCardModal';
 import { Portal } from '@/components/ui/portal';
+import { signOut } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 // 카드 인터페이스 정의
 interface Tag {
@@ -51,6 +53,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
+  const router = useRouter();
   const { 
     isSidebarOpen, 
     setSidebarOpen, 
@@ -554,6 +557,18 @@ export function Sidebar({ className }: SidebarProps) {
     setEditingCardId(null);
   };
 
+  // 로그아웃 처리 함수
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('로그아웃되었습니다.');
+      router.push('/login');
+    } catch (error) {
+      console.error('로그아웃 중 오류 발생:', error);
+      toast.error('로그아웃 중 문제가 발생했습니다.');
+    }
+  };
+
   if (!isSidebarOpen) return null;
   
   return (
@@ -569,6 +584,29 @@ export function Sidebar({ className }: SidebarProps) {
         )}
         style={{ width: `${width}px` }}
       >
+        <div className="flex items-center justify-between p-3 border-b">
+          <h2 className="text-lg font-semibold">카드 목록</h2>
+          <div className="flex items-center space-x-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout} 
+              className="text-muted-foreground hover:text-foreground"
+              title="로그아웃"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
         {/* 삭제 확인 다이얼로그 */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>

@@ -4,7 +4,9 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "yarn env:dev && yarn db:setup:dev && NODE_ENV=development next dev",
+    "dev": "yarn env:dev && yarn db:setup:dev && NODE_ENV=development next dev -p 3000",
+    "dev:clean": "yarn port:check && yarn env:dev && yarn db:setup:dev && NODE_ENV=development next dev -p 3000",
+    "port:check": "node scripts/check-port.js",
     "prebuild": "node scripts/pre-deploy.js",
     "build": "NODE_ENV=production yarn db:setup:prod && prisma generate && next build",
     "build:local": "NODE_ENV=production yarn db:setup:prod && prisma generate && next build",
