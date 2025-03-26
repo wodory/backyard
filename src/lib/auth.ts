@@ -292,21 +292,78 @@ export async function signInWithGoogle() {
 
 // 로그아웃 함수
 export async function signOut() {
-  const supabase = getBrowserClient();
-  
-  // Supabase 로그아웃
-  const { error } = await supabase.auth.signOut();
-  
-  // 쿠키 삭제 (미들웨어가 사용하는 쿠키)
-  deleteCookie('sb-access-token');
-  deleteCookie('sb-refresh-token');
-  
-  if (error) {
-    console.error('로그아웃 처리 중 오류:', error);
+  console.log('[Auth][로그아웃] 시작');
+  try {
+    const supabase = getBrowserClient();
+    console.log('[Auth][로그아웃] Supabase 클라이언트 생성됨');
+    
+    // 로그아웃 전 상태 확인
+    if (typeof document !== 'undefined') {
+      const allCookies = document.cookie.split(';').map(cookie => cookie.trim());
+      console.log('[Auth][로그아웃] 로그아웃 전 쿠키 상태:', {
+        모든쿠키: allCookies,
+        쿠키개수: allCookies.length
+      });
+      
+      console.log('[Auth][로그아웃] 로그아웃 전 스토리지 상태:', {
+        localStorage: Object.keys(localStorage),
+        sessionStorage: Object.keys(sessionStorage)
+      });
+    }
+    
+    // Supabase 로그아웃
+    console.log('[Auth][로그아웃] Supabase 로그아웃 호출 시작');
+    const { error } = await supabase.auth.signOut();
+    console.log('[Auth][로그아웃] Supabase 로그아웃 호출 완료:', { 오류: error ? true : false });
+    
+    // 쿠키 삭제 (미들웨어가 사용하는 쿠키)
+    console.log('[Auth][로그아웃] 쿠키 삭제 시작');
+    deleteCookie('sb-access-token');
+    deleteCookie('sb-refresh-token');
+    
+    // supabase 관련 로컬 스토리지 항목 삭제
+    if (typeof window !== 'undefined') {
+      console.log('[Auth][로그아웃] 로컬 스토리지 정리 시작');
+      // Supabase 관련 항목 삭제
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase') || key.includes('auth')) {
+          console.log(`[Auth][로그아웃] 로컬 스토리지 항목 삭제: ${key}`);
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // 세션 스토리지 정리
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('auth') || key.includes('verifier')) {
+          console.log(`[Auth][로그아웃] 세션 스토리지 항목 삭제: ${key}`);
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      // 명시적으로 토큰 삭제
+      localStorage.removeItem('supabase.auth.token');
+    }
+    
+    if (error) {
+      console.error('[Auth][로그아웃] 오류:', error);
+      throw error;
+    }
+    
+    // 로그아웃 후 상태 확인
+    if (typeof document !== 'undefined') {
+      const afterCookies = document.cookie.split(';').map(cookie => cookie.trim());
+      console.log('[Auth][로그아웃] 로그아웃 후 쿠키 상태:', {
+        모든쿠키: afterCookies,
+        쿠키개수: afterCookies.length
+      });
+    }
+    
+    console.log('[Auth][로그아웃] 완료');
+    return true;
+  } catch (error) {
+    console.error('[Auth][로그아웃] 예외 발생:', error);
     throw error;
   }
-  
-  return true;
 }
 
 // 현재 사용자 정보 가져오기

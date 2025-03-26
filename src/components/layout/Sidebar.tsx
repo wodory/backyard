@@ -559,12 +559,37 @@ export function Sidebar({ className }: SidebarProps) {
 
   // 로그아웃 처리 함수
   const handleLogout = async () => {
+    console.log('[로그아웃] 로그아웃 버튼 클릭됨');
+    
     try {
+      console.log('[로그아웃] signOut 함수 호출 시작');
       await signOut();
+      console.log('[로그아웃] signOut 함수 완료');
+      
+      // 모든 쿠키 출력
+      if (typeof document !== 'undefined') {
+        const allCookies = document.cookie.split(';').map(cookie => cookie.trim());
+        console.log('[로그아웃] 로그아웃 후 쿠키 상태:', {
+          모든쿠키: allCookies,
+          쿠키개수: allCookies.length
+        });
+      }
+      
+      console.log('[로그아웃] 로그인 페이지로 리디렉션 시작');
       toast.success('로그아웃되었습니다.');
-      router.push('/login');
+      
+      // 로컬 스토리지 및 세션 스토리지 초기화 추가
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.removeItem('auth.code_verifier.backup');
+      sessionStorage.removeItem('auth.code_verifier.timestamp');
+      
+      // 약간의 지연 후 리디렉션 (토스트 메시지가 표시될 시간 확보)
+      setTimeout(() => {
+        console.log('[로그아웃] 리디렉션 실행');
+        router.push('/login');
+      }, 500);
     } catch (error) {
-      console.error('로그아웃 중 오류 발생:', error);
+      console.error('[로그아웃] 오류 발생:', error);
       toast.error('로그아웃 중 문제가 발생했습니다.');
     }
   };
