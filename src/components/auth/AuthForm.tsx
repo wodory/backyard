@@ -97,11 +97,24 @@ export default function AuthForm() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     
+    console.log('[AuthForm][1] Google 로그인 버튼 클릭됨', {
+      환경: process.env.NODE_ENV,
+      타임스탬프: new Date().toISOString(),
+      window_location: typeof window !== 'undefined' ? window.location.href : '알 수 없음'
+    });
+    
     try {
+      console.log('[AuthForm][2] signInWithGoogle 함수 호출 시작');
       await signInWithGoogle();
+      console.log('[AuthForm][3] signInWithGoogle 함수 호출 성공 - 리디렉션 대기 중...');
       // 리디렉션은 Google OAuth 콜백 처리에서 이루어집니다.
     } catch (error: any) {
-      console.error('Google 로그인 오류:', error);
+      console.error('[AuthForm][오류] Google 로그인 오류:', {
+        에러메시지: error.message,
+        스택: error.stack,
+        타입: typeof error,
+        객체: error
+      });
       toast.error(error.message || 'Google 로그인 중 오류가 발생했습니다.');
       setIsGoogleLoading(false);
     }

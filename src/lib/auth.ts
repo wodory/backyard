@@ -152,64 +152,140 @@ export async function signInWithGoogle() {
       throw new Error('브라우저 환경에서만 실행 가능합니다.');
     }
     
+    console.log('[Auth][1] Google 로그인 시작 - 환경 정보:', {
+      환경: process.env.NODE_ENV,
+      window_location: window.location.href,
+      user_agent: navigator.userAgent
+    });
+    
     // 브라우저 클라이언트 생성
     const supabase = getBrowserClient();
+    console.log('[Auth][2] Supabase 클라이언트 생성됨');
     
-    // 리디렉션 URL 설정
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    
-    console.log('[Auth] Google 로그인 시작:', {
-      리디렉션URL: redirectTo
-    });
+    // 환경 변수 기반 리디렉션 URL 설정
+    let redirectTo;
+    if (process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL) {
+      // 슬래시로 끝나는 경우 처리
+      const baseUrl = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL.endsWith('/')
+        ? process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL.slice(0, -1)
+        : process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL;
+      
+      redirectTo = `${baseUrl}/auth/callback`;
+      console.log('[Auth][3] 환경 변수에서 리디렉션 URL 설정:', {
+        원본_환경변수: process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL,
+        정규화된_URL: baseUrl,
+        최종_리디렉션URL: redirectTo
+      });
+    } else {
+      redirectTo = `${window.location.origin}/auth/callback`;
+      console.log('[Auth][3] 환경 변수 없음, 현재 오리진에서 리디렉션 URL 설정:', {
+        오리진: window.location.origin,
+        최종_리디렉션URL: redirectTo
+      });
+    }
     
     // 디버깅: 로그인 시도 전 로컬 스토리지 상태 확인
     const beforeVerifier = localStorage.getItem('supabase.auth.code_verifier');
-    console.log('[Auth] 로그인 전 code_verifier 상태:', 
-      beforeVerifier ? `존재함 (길이: ${beforeVerifier.length})` : '없음');
+    console.log('[Auth][4] 로그인 전 code_verifier 상태:', {
+      존재여부: beforeVerifier ? '존재함' : '없음',
+      길이: beforeVerifier?.length || 0,
+      첫_5글자: beforeVerifier ? beforeVerifier.substring(0, 5) : '없음',
+      마지막_5글자: beforeVerifier ? beforeVerifier.substring(beforeVerifier.length - 5) : '없음'
+    });
     
-    // OAuth 로그인 시작 (Supabase가 PKCE 흐름을 자동으로 처리)
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+    // localStorage 상태 전체 확인
+    console.log('[Auth][5] localStorage 키 목록:', {
+      supabase관련: Object.keys(localStorage).filter(key => key.startsWith('supabase')),
+      전체키: Object.keys(localStorage)
+    });
+    
+    // 백업 저장 시 타임스탬프 추가 (유효성 확인용)
+    if (beforeVerifier) {
+      sessionStorage.setItem('auth.code_verifier.backup', beforeVerifier);
+      sessionStorage.setItem('auth.code_verifier.timestamp', Date.now().toString());
+      console.log('[Auth][6] code_verifier 백업 완료');
+      
+      // 백업 확인
+      const backupCheck = sessionStorage.getItem('auth.code_verifier.backup');
+      console.log('[Auth][6-1] 백업 확인:', {
+        백업성공여부: backupCheck === beforeVerifier,
+        백업길이: backupCheck?.length || 0
+      });
+    }
+    
+    // OAuth 로그인 파라미터 구성
+    const oauthParams = {
+      provider: 'google' as const,
       options: {
         redirectTo,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent'
+          prompt: 'consent',
+          // 브라우저 캐시 방지용 파라미터 추가
+          nonce: Math.random().toString(36).substring(2)
         }
       }
+    };
+    
+    console.log('[Auth][7] OAuth 파라미터 구성 완료:', {
+      provider: oauthParams.provider,
+      redirectTo: oauthParams.options.redirectTo,
+      queryParams: oauthParams.options.queryParams
     });
     
+    // OAuth 로그인 시작 (Supabase가 PKCE 흐름을 자동으로 처리)
+    console.log('[Auth][8] signInWithOAuth 호출 시작...');
+    const { data, error } = await supabase.auth.signInWithOAuth(oauthParams);
+    
     if (error) {
-      console.error('[Auth] Google OAuth 초기화 오류:', error);
+      console.error('[Auth][9] Google OAuth 초기화 오류:', {
+        에러코드: error.code,
+        에러메시지: error.message,
+        상태코드: error.status
+      });
       throw error;
     }
     
     if (!data?.url) {
-      console.error('[Auth] OAuth URL이 생성되지 않았습니다.');
+      console.error('[Auth][10] OAuth URL이 생성되지 않았습니다.');
       throw new Error('인증 URL을 생성할 수 없습니다.');
     }
     
-    // 디버깅: 로그인 시도 후 로컬 스토리지 상태 확인
-    const afterVerifier = localStorage.getItem('supabase.auth.code_verifier');
-    console.log('[Auth] 로그인 후 code_verifier 상태:', {
-      존재여부: afterVerifier ? '존재함' : '없음',
-      길이: afterVerifier?.length || 0,
-      값: afterVerifier ? `${afterVerifier.substring(0, 5)}...${afterVerifier.substring(afterVerifier.length - 5)}` : '없음'
+    console.log('[Auth][11] OAuth URL 생성 성공:', {
+      url_시작부분: data.url.substring(0, 50) + '...',
+      url_길이: data.url.length
     });
     
-    // 로컬 스토리지에 백업 (디버깅용)
+    // 디버깅: 로그인 시도 후 로컬 스토리지 상태 확인
+    const afterVerifier = localStorage.getItem('supabase.auth.code_verifier');
+    console.log('[Auth][12] 로그인 후 code_verifier 상태:', {
+      존재여부: afterVerifier ? '존재함' : '없음',
+      길이: afterVerifier?.length || 0,
+      첫_5글자: afterVerifier ? afterVerifier.substring(0, 5) : '없음',
+      마지막_5글자: afterVerifier ? afterVerifier.substring(afterVerifier.length - 5) : '없음',
+      변경여부: beforeVerifier !== afterVerifier ? '변경됨' : '동일함'
+    });
+    
+    // 리디렉션 직전 다시 백업
     if (afterVerifier) {
       sessionStorage.setItem('auth.code_verifier.backup', afterVerifier);
-      console.log('[Auth] code_verifier를 세션 스토리지에 백업했습니다.');
+      sessionStorage.setItem('auth.code_verifier.timestamp', Date.now().toString());
+      console.log('[Auth][13] code_verifier 다시 백업 완료');
+      
+      // localStorage 상태 전체 확인
+      console.log('[Auth][13-1] 리디렉션 직전 localStorage 키 목록:', {
+        supabase관련: Object.keys(localStorage).filter(key => key.startsWith('supabase')),
+        sessionStorage관련: Object.keys(sessionStorage)
+      });
     }
     
     // URL로 리디렉션
-    console.log('[Auth] OAuth URL로 리디렉션:', data.url);
+    console.log('[Auth][14] OAuth URL로 리디렉션 직전. 이후 callback 페이지로 이동됩니다.');
     window.location.href = data.url;
     
     return data;
   } catch (error) {
-    console.error('[Auth] Google 로그인 오류:', error);
+    console.error('[Auth][오류] Google 로그인 오류:', error);
     throw error;
   }
 }
