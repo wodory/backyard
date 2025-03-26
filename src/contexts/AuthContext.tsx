@@ -124,11 +124,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 로그아웃
   const logout = async () => {
     try {
-      await signOut();
+      console.log('[AuthContext] 로그아웃 시작');
+      
+      // 먼저 상태를 초기화하여 UI가 즉시 반응하도록 함
       setUser(null);
       setUserDetails(null);
+      
+      console.log('[AuthContext] 상태 초기화 완료');
+      
+      // 로그아웃 처리
+      console.log('[AuthContext] signOut 함수 호출');
+      await signOut();
+      console.log('[AuthContext] signOut 함수 완료');
+      
+      console.log('[AuthContext] 로그아웃 완료, 로그인 페이지로 리디렉션');
+      
+      // 브라우저 리다이렉션 (router.push 대신 window.location 사용)
+      if (typeof window !== 'undefined') {
+        // 약간의 지연 후 리디렉션
+        setTimeout(() => {
+          console.log('[AuthContext] 페이지 리디렉션 실행');
+          window.location.href = '/login';
+        }, 100);
+      }
     } catch (error) {
-      console.error('로그아웃 오류:', error);
+      console.error('[AuthContext] 로그아웃 오류:', error);
+      
+      // 오류가 발생해도 로그인 페이지로 이동
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   };
 
