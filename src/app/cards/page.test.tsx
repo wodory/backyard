@@ -8,6 +8,26 @@ import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
+// Next.js의 router 훅 모킹
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    pathname: '/cards',
+  })),
+  useSearchParams: vi.fn(() => ({
+    get: vi.fn((key) => null),
+    has: vi.fn(() => false),
+    forEach: vi.fn(),
+  })),
+}));
+
+// TagFilter 컴포넌트 모킹
+vi.mock('@/components/cards/TagFilter', () => ({
+  TagFilter: vi.fn(() => <div data-testid="tag-filter">태그 필터</div>)
+}));
+
 // React.Suspense 모킹
 vi.mock('react', () => {
   const originalReact = vi.importActual('react');

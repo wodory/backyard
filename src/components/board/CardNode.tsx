@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { createPortal } from 'react-dom';
 import { EditCardModal } from '@/components/cards/EditCardModal';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // 노드 데이터 타입 정의
 export interface NodeData {
@@ -97,6 +98,9 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
   
+  // 테마 컨텍스트 가져오기
+  const { theme } = useTheme();
+  
   // 선택 관련 상태 및 함수들을 스토어에서 가져오기
   const selectCard = useAppStore((state) => state.selectCard);
   const addSelectedCard = useAppStore((state) => state.addSelectedCard);
@@ -110,22 +114,22 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     return selectedCardIds.join(',');
   }, [selectedCardIds]);
   
-  // 보드 설정 가져오기
+  // 보드 설정 가져오기 - 기존 설정 유지 (폴백용)
   const uiConfig = loadDefaultBoardUIConfig();
   
-  // 필요한 값들 추출 - 설정 파일에서 일관되게 가져오기
-  const defaultCardWidth = uiConfig.layout.nodeSize?.width || 130;
-  const cardHeaderHeight = uiConfig.layout.nodeSize?.height || 48;
-  const cardMaxHeight = uiConfig.layout.nodeSize?.maxHeight || 180;
+  // 필요한 값들 추출 - 테마 컨텍스트에서 가져오기
+  const defaultCardWidth = theme.node.width;
+  const cardHeaderHeight = theme.node.height;
+  const cardMaxHeight = theme.node.maxHeight;
   
-  // 폰트 크기 - 설정 파일에서 가져오기
-  const titleFontSize = uiConfig.card.fontSizes?.title || 16;
-  const contentFontSize = uiConfig.card.fontSizes?.content || 14;
-  const tagsFontSize = uiConfig.card.fontSizes?.tags || 12;
+  // 폰트 크기 - 테마 컨텍스트에서 가져오기
+  const titleFontSize = theme.node.font.titleSize;
+  const contentFontSize = theme.node.font.contentSize;
+  const tagsFontSize = theme.node.font.tagsSize;
   
-  // 핸들 관련 설정
-  const handleSize = uiConfig.handles.size || 12;
-  const connectionLineColor = uiConfig.board.edgeColor || '#C1C1C1';
+  // 핸들 관련 설정 - 테마 컨텍스트에서 가져오기
+  const handleSize = theme.handle.size;
+  const connectionLineColor = theme.edge.color;
 
   // CSS 변수를 가져오는 함수
   const getCssVariable = (name: string): string => {
@@ -176,10 +180,14 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       width: cardWidth,
       height: cardHeight,
       zIndex: isActive ? 9999 : 1, // 활성화된 카드는 항상 최상위에 표시
+      backgroundColor: theme.node.backgroundColor,
+      borderColor: selected || isMultiSelected ? theme.node.selectedBorderColor : theme.node.borderColor,
+      borderWidth: theme.node.borderWidth,
+      borderRadius: theme.node.borderRadius,
     };
     
     return style;
-  }, [data, isExpanded, isActive, defaultCardWidth, cardMaxHeight, cardHeaderHeight]);
+  }, [data, isExpanded, isActive, defaultCardWidth, cardMaxHeight, cardHeaderHeight, selected, isMultiSelected, theme]);
 
   // 노드 데이터 안전하게 타입 변환
   const nodeData = data as NodeData;
@@ -262,7 +270,13 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         style={getNodeStyle()}
       >
         {/* 카드 헤더 */}
-        <div className={`card-header ${isExpanded ? 'expanded' : ''}`}>
+        <div 
+          className={`card-header ${isExpanded ? 'expanded' : ''}`}
+          style={{ 
+            height: cardHeaderHeight,
+            fontSize: titleFontSize
+          }}
+        >
           <h3 className="card-title">
             {nodeData.title}
           </h3>
@@ -278,14 +292,14 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         
         {/* 카드 콘텐츠 - 펼쳐진 상태에서만 보임 */}
         {isExpanded && (
-          <div className="card-content">
+          <div className="card-content" style={{ fontSize: contentFontSize }}>
             <div className="tiptap-content">
               <TiptapViewer content={nodeData.content || ''} />
             </div>
             
             {/* 태그 표시 */}
             {nodeData.tags && nodeData.tags.length > 0 && (
-              <div className="card-tags">
+              <div className="card-tags" style={{ fontSize: tagsFontSize }}>
                 {(nodeData.tags || []).map((tag: string, index: number) => (
                   <div key={index} className="card-tag">
                     <Tag size={10} className="mr-1" />
@@ -312,7 +326,13 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           id="top-target"
           isConnectable={isConnectable}
           className="nodrag handle-top"
-          style={{ width: handleSize, height: handleSize }}
+          style={{ 
+            width: handleSize, 
+            height: handleSize,
+            backgroundColor: theme.handle.backgroundColor,
+            borderColor: theme.handle.borderColor,
+            borderWidth: theme.handle.borderWidth
+          }}
         />
         
         {/* 왼쪽 핸들러 */}
@@ -322,7 +342,13 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           id="left-target"
           isConnectable={isConnectable}
           className="nodrag handle-left"
-          style={{ width: handleSize, height: handleSize }}
+          style={{ 
+            width: handleSize, 
+            height: handleSize,
+            backgroundColor: theme.handle.backgroundColor,
+            borderColor: theme.handle.borderColor,
+            borderWidth: theme.handle.borderWidth
+          }}
         />
         
         {/* 오른쪽 핸들러 */}
@@ -332,7 +358,13 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           id="right-source"
           isConnectable={isConnectable}
           className="nodrag handle-right"
-          style={{ width: handleSize, height: handleSize }}
+          style={{ 
+            width: handleSize, 
+            height: handleSize,
+            backgroundColor: theme.handle.backgroundColor,
+            borderColor: theme.handle.borderColor,
+            borderWidth: theme.handle.borderWidth
+          }}
         />
         
         {/* 아래쪽 핸들러 */}
@@ -342,7 +374,13 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           id="bottom-source"
           isConnectable={isConnectable}
           className="nodrag handle-bottom"
-          style={{ width: handleSize, height: handleSize }}
+          style={{ 
+            width: handleSize, 
+            height: handleSize,
+            backgroundColor: theme.handle.backgroundColor,
+            borderColor: theme.handle.borderColor,
+            borderWidth: theme.handle.borderWidth
+          }}
         />
       </div>
       

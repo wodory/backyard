@@ -14,7 +14,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
-import { Settings, Grid3X3, ArrowRightIcon, Circle, SeparatorHorizontal, Paintbrush } from 'lucide-react';
+import { Settings, Grid3X3, ArrowRightIcon, Circle, SeparatorHorizontal, Paintbrush, Box } from 'lucide-react';
 import { BoardSettings } from '@/lib/board-utils';
 import { 
   SNAP_GRID_OPTIONS, 
@@ -27,6 +27,8 @@ import {
 } from '@/lib/board-constants';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { NodeSizeSettings } from '@/components/settings/NodeSizeSettings';
 
 interface BoardSettingsControlProps {
   settings: BoardSettings;
@@ -138,6 +140,21 @@ export default function BoardSettingsControl({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>보드 설정</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        
+        {/* 노드 크기 설정 */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <Box className="mr-2 h-4 w-4" />
+              <span>노드 크기 설정</span>
+            </DropdownMenuItem>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <NodeSizeSettings />
+          </DialogContent>
+        </Dialog>
+        
         <DropdownMenuSeparator />
         
         {/* 스냅 그리드 설정 */}

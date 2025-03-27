@@ -53,8 +53,22 @@ afterEach(() => {
 //   originalConsoleWarn(...args);
 // };
 
-// 모의 환경 객체 설정 (안전하게 체크)
+// ResizeObserver 모킹 (테스트 환경에서 사용할 수 있도록)
 if (typeof window !== 'undefined') {
+  // ResizeObserver가 정의되어 있지 않은 경우에만 모킹
+  if (!window.ResizeObserver) {
+    window.ResizeObserver = class ResizeObserver {
+      constructor(callback: any) {
+        this.callback = callback;
+      }
+      private callback: any;
+      observe() { return null; }
+      unobserve() { return null; }
+      disconnect() { return null; }
+    };
+  }
+
+  // 모의 환경 객체 설정 (안전하게 체크)
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation(query => ({

@@ -9,6 +9,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Toaster } from "sonner";
 import { InitDatabase } from "@/components/InitDatabase";
 import createLogger from '@/lib/logger';
@@ -48,13 +49,15 @@ export function ClientLayout({ children }: { children: ReactNode }) {
 
   return (
     <AuthProvider>
-      <main>
-        {children}
-        
-        {/* DB 초기화 스크립트 */}
-        <InitDatabase />
-      </main>
-      <Toaster position="top-center" />
+      <ThemeProvider>
+        <main>
+          {children}
+          
+          {/* DB 초기화 스크립트 */}
+          <InitDatabase />
+        </main>
+        <Toaster position="top-center" />
+      </ThemeProvider>
     </AuthProvider>
   );
 } 

@@ -211,35 +211,30 @@ export function ProjectToolbar() {
             <span className="sr-only">메뉴</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className="w-56" sideOffset={12} align="start" alignOffset={-12}>
           <DropdownMenuLabel>프로젝트</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSaveLayout}>
-            <Save className="mr-2 h-4 w-4" />
+            <Save className="mr-1.5 h-4 w-4" />
             레이아웃 저장
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleExport}>
-            <ArrowRightIcon className="mr-2 h-4 w-4" />
+            <ArrowRightIcon className="mr-1.5 h-4 w-4" />
             내보내기
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            로그아웃
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          
+          </DropdownMenuItem>      
+          <DropdownMenuSeparator />   
           {/* 보드 설정 서브메뉴 */}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>보드 설정</span>
+              <Settings className="mr-1.5 h-4 w-4" />
+              보드 설정
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                 {/* 스냅 그리드 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Grid3X3 className="mr-2 h-4 w-4" />
+                    <Grid3X3 className="mr-1.5 h-4 w-4" />
                     <span>격자에 맞추기</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -266,7 +261,7 @@ export function ProjectToolbar() {
                 {/* 연결선 타입 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M3 17C8 17 8 7 13 7C18 7 18 17 21 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     <span>연결선 스타일</span>
@@ -288,7 +283,7 @@ export function ProjectToolbar() {
                 {/* 화살표 마커 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <ArrowRightIcon className="mr-2 h-4 w-4" />
+                    <ArrowRightIcon className="mr-1.5 h-4 w-4" />
                     <span>화살표 스타일</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -308,7 +303,7 @@ export function ProjectToolbar() {
                 {/* 연결선 두께 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <SeparatorHorizontal className="mr-2 h-4 w-4" />
+                    <SeparatorHorizontal className="mr-1.5 h-4 w-4" />
                     <span>연결선 두께</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -328,7 +323,7 @@ export function ProjectToolbar() {
                 {/* 마커 크기 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Circle className="mr-2 h-4 w-4" />
+                    <Circle className="mr-1.5 h-4 w-4" />
                     <span>화살표 크기</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -348,7 +343,7 @@ export function ProjectToolbar() {
                 {/* 연결선 색상 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Paintbrush className="mr-2 h-4 w-4" />
+                    <Paintbrush className="mr-1.5 h-4 w-4" />
                     <span>연결선 색상</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -369,7 +364,7 @@ export function ProjectToolbar() {
                 {/* 선택된 연결선 색상 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <Paintbrush className="mr-2 h-4 w-4" />
+                    <Paintbrush className="mr-1.5 h-4 w-4" />
                     <span>선택된 연결선 색상</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -390,7 +385,7 @@ export function ProjectToolbar() {
                 {/* 연결선 애니메이션 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12Z" stroke="currentColor" strokeWidth="2"/>
                       <path d="M14 10L19 12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -413,7 +408,12 @@ export function ProjectToolbar() {
             </DropdownMenuPortal>
           </DropdownMenuSub>
           
-          <DropdownMenuItem>옵션</DropdownMenuItem>
+          {/* <DropdownMenuItem>옵션</DropdownMenuItem> */}
+
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-1.5 h-4 w-4" />
+            로그아웃
+          </DropdownMenuItem> 
         </DropdownMenuContent>
       </DropdownMenu>
       

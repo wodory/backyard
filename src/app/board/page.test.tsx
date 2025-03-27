@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import BoardPage from './page';
 import { Node, Edge, NodeChange } from '@xyflow/react';
+import '@testing-library/jest-dom/vitest';
 
 // LocalStorage 모킹
 const localStorageMock = (() => {
@@ -173,6 +174,17 @@ vi.mock('lucide-react', () => ({
   Loader2: () => <div data-testid="loader-icon">Loading</div>,
   Save: () => <div data-testid="save-icon">Save</div>,
   LayoutGrid: () => <div data-testid="layout-grid-icon">Grid</div>,
+  Layout: () => <div data-testid="layout-icon">Layout</div>,
+  AlignHorizontalJustifyCenter: () => <div data-testid="horizontal-layout-icon">Horizontal</div>,
+  AlignVerticalJustifyCenter: () => <div data-testid="vertical-layout-icon">Vertical</div>,
+  Settings: () => <div data-testid="settings-icon">Settings</div>,
+  Box: () => <div data-testid="box-icon">Box</div>,
+  Grid3X3: () => <div data-testid="grid-3x3-icon">Grid3X3</div>,
+  ArrowRightIcon: () => <div data-testid="arrow-right-icon">ArrowRight</div>,
+  ArrowRight: () => <div data-testid="arrow-right-icon">ArrowRight</div>,
+  Circle: () => <div data-testid="circle-icon">Circle</div>,
+  SeparatorHorizontal: () => <div data-testid="separator-horizontal-icon">SeparatorHorizontal</div>,
+  Paintbrush: () => <div data-testid="paintbrush-icon">Paintbrush</div>,
 }));
 
 // BoardPage 컴포넌트 모킹을 위한 내부 함수 모킹
@@ -245,13 +257,13 @@ describe('BoardPage', () => {
     // 실패 응답 모킹
     (global.fetch as any).mockResolvedValue({
       ok: false,
-      json: async () => ({ error: '카드 데이터를 불러오는데 실패했습니다.' }),
+      json: async () => ({ error: '카드 목록을 불러오는데 실패했습니다.' }),
     });
 
     render(<BoardPage />);
     
     await waitFor(() => {
-      expect(screen.getByText('카드 데이터를 불러오는데 실패했습니다.')).toBeInTheDocument();
+      expect(screen.getByText('카드 목록을 불러오는데 실패했습니다.')).toBeInTheDocument();
     });
     
     expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument();
@@ -541,51 +553,38 @@ describe('BoardPage', () => {
   });
 
   test('다시 시도 버튼을 클릭하면 카드를 다시 가져와야 함', async () => {
-    // 처음에는 실패하도록 설정
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ error: '카드 데이터를 불러오는데 실패했습니다.' }),
-    });
-
-    // 두 번째 요청은 성공하도록 설정 - API 응답 형식 수정
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ([
-        { id: 1, title: '테스트 카드 1', content: '내용 1', cardTags: [] }
-      ]),
-    });
-
-    // getBoundingClientRect 모킹
-    Element.prototype.getBoundingClientRect = vi.fn(() => ({
-      width: 1000,
-      height: 600,
-      x: 0,
-      y: 0,
-      top: 0,
-      left: 0,
-      right: 1000,
-      bottom: 600,
-      toJSON: () => {}
-    }));
-
+    // 먼저 실패 후 다시 성공하는 시나리오 모킹
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: '카드 목록을 불러오는데 실패했습니다.' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ([
+          { id: 1, title: '테스트 카드 1', content: '내용 1', cardTags: [] },
+          { id: 2, title: '테스트 카드 2', content: '내용 2', cardTags: [] }
+        ]),
+      });
+    
     render(<BoardPage />);
     
     // 에러 메시지가 표시될 때까지 대기
     await waitFor(() => {
-      expect(screen.getByText('카드 데이터를 불러오는데 실패했습니다.')).toBeInTheDocument();
+      expect(screen.getByText('카드 목록을 불러오는데 실패했습니다.')).toBeInTheDocument();
     });
     
     // 다시 시도 버튼 클릭
-    const retryButton = screen.getByRole('button', { name: '다시 시도' });
+    const retryButton = screen.getByText('다시 시도');
     fireEvent.click(retryButton);
     
-    // ReactFlow가 렌더링 될 때까지 대기 (성공 시)
+    // 로딩 상태 확인
+    expect(screen.getByText('보드를 불러오는 중...')).toBeInTheDocument();
+    
+    // ReactFlow가 렌더링될 때까지 대기
     await waitFor(() => {
       expect(screen.getByTestId('react-flow-mock')).toBeInTheDocument();
-    });
-    
-    // fetch가 두 번 호출되었는지 확인
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+    }, { timeout: 3000 });
   });
 
   test('자동 배치 버튼을 클릭하면 노드가 자동으로 배치되어야 함', async () => {

@@ -590,15 +590,6 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="flex items-center justify-between p-3 border-b">
           <h2 className="text-lg font-semibold">카드 목록</h2>
           <div className="flex items-center space-x-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLogout} 
-              className="text-muted-foreground hover:text-foreground"
-              title="로그아웃"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -726,11 +717,7 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         ) : (
           // 카드 목록 (선택된 카드 없음)
-          <div className="h-full flex flex-col">
-            <div className="border-b p-4">
-              <h2 className="text-l font-semibold">카드 목록</h2>
-            </div>
-            
+          <div className="h-full flex flex-col">            
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="flex justify-center items-center h-20">
