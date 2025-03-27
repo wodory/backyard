@@ -1,0 +1,17 @@
+
+ RUN  v1.6.1 /Users/wodory/Development/apps/backyard
+
+ ✓ src/tests/auth/auth-integration.test.ts  (7 tests) 38ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  23:27:52
+   Duration  756ms (transform 54ms, setup 88ms, collect 45ms, tests 38ms, environment 239ms, prepare 42ms)
+
+JSON report written to /Users/wodory/Development/apps/backyard/src/tests/results/test-results.json
+
+==================================================
+테스트 요약
+==================================================
+테스트 파일: src/tests/auth/auth-integration.test.ts
+실행 시간: 2 초

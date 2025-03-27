@@ -1,0 +1,545 @@
+[
+  {
+    "timestamp": "2025-03-26T09:07:32.999Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "콜백 처리 실패",
+    "data": {
+      "__isAuthError": true,
+      "name": "AuthApiError",
+      "status": 400,
+      "code": "validation_failed"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:07:33.509Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:07:33.076Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:07:33.555Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:07:33.077Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "콜백 처리 실패",
+    "data": {
+      "__isAuthError": true,
+      "name": "AuthApiError",
+      "status": 400,
+      "code": "validation_failed"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:07:33.607Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:07:32.998Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:07:33.634Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:17:41.104Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:17:42.237Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:17:41.167Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:17:42.277Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:17:42.520Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:17:42.632Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:17:42.516Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:17:42.677Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:24:16.553Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:24:17.021Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:24:16.638Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:24:17.056Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:33:35.147Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:33:35.975Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:33:35.092Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:33:35.977Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:33:36.125Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:33:36.197Z"
+  },
+  {
+    "timestamp": "2025-03-26T09:33:36.122Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T09:33:36.199Z"
+  },
+  {
+    "timestamp": "2025-03-26T10:52:32.251Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T10:52:33.179Z"
+  },
+  {
+    "timestamp": "2025-03-26T10:52:32.184Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T10:52:33.181Z"
+  },
+  {
+    "timestamp": "2025-03-26T10:52:33.417Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T10:52:33.440Z"
+  },
+  {
+    "timestamp": "2025-03-26T10:52:33.421Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T10:52:33.443Z"
+  },
+  {
+    "timestamp": "2025-03-26T10:54:56.941Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T10:54:57.497Z"
+  },
+  {
+    "timestamp": "2025-03-26T10:54:56.949Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T10:54:57.498Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:09.716Z",
+    "level": "warn",
+    "module": "Callback",
+    "message": "코드 검증기 문제로 인한 오류, 새로 생성 후 다시 시도합니다",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:10.815Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:09.753Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:10.818Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:09.754Z",
+    "level": "warn",
+    "module": "Callback",
+    "message": "코드 검증기 문제로 인한 오류, 새로 생성 후 다시 시도합니다",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:10.820Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:09.810Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "두 번째 세션 교환 시도도 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:10.821Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:09.715Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:10.822Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:09.878Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "두 번째 세션 교환 시도도 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:11.002Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:11.042Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:11.128Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:12:11.046Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:12:11.209Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:14:05.742Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:14:06.150Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:14:21.688Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:14:21.780Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:14:21.697Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:14:21.782Z"
+  },
+  {
+    "timestamp": "2025-03-26T11:16:39.595Z",
+    "level": "warn",
+    "module": "AuthErrorPage",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T11:16:39.811Z"
+  },
+  {
+    "timestamp": "2025-03-26T14:30:35.870Z",
+    "level": "warn",
+    "module": "Callback",
+    "message": "코드 검증기 문제로 인한 오류, 새로 생성 후 다시 시도합니다",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T14:30:36.226Z"
+  },
+  {
+    "timestamp": "2025-03-26T14:30:35.868Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T14:30:36.227Z"
+  },
+  {
+    "timestamp": "2025-03-26T14:30:36.406Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "두 번째 세션 교환 시도도 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T14:30:37.040Z"
+  },
+  {
+    "timestamp": "2025-03-26T14:30:37.117Z",
+    "level": "warn",
+    "module": "AuthError",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T14:30:37.217Z"
+  },
+  {
+    "timestamp": "2025-03-26T14:30:37.121Z",
+    "level": "warn",
+    "module": "AuthError",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-26T14:30:37.220Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:05:12.200Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:05:12.241Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:05:12.201Z",
+    "level": "warn",
+    "module": "Callback",
+    "message": "코드 검증기 문제로 인한 오류, 새로 생성 후 다시 시도합니다",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:05:12.248Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:05:12.769Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "두 번째 세션 교환 시도도 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:05:12.800Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:05:12.868Z",
+    "level": "warn",
+    "module": "AuthError",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:05:12.991Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:05:12.880Z",
+    "level": "warn",
+    "module": "AuthError",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:05:12.995Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:09:22.294Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "세션 교환 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty",
+      "코드": 400
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:09:22.321Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:09:22.295Z",
+    "level": "warn",
+    "module": "Callback",
+    "message": "코드 검증기 문제로 인한 오류, 새로 생성 후 다시 시도합니다",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:09:22.327Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:09:22.851Z",
+    "level": "error",
+    "module": "Callback",
+    "message": "두 번째 세션 교환 시도도 실패",
+    "data": {
+      "에러": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:09:22.877Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:09:22.953Z",
+    "level": "warn",
+    "module": "AuthError",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:09:23.082Z"
+  },
+  {
+    "timestamp": "2025-03-27T01:09:22.967Z",
+    "level": "warn",
+    "module": "AuthError",
+    "message": "인증 오류 페이지 접근",
+    "data": {
+      "error": "exchange_failed",
+      "errorDescription": "invalid request: both auth code and code verifier should be non-empty"
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-03-27T01:09:23.087Z"
+  }
+]

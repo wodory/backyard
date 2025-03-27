@@ -1,59 +1,51 @@
+/**
+ * 파일명: vitest.config.ts
+ * 목적: Vitest 테스트 프레임워크 설정
+ * 역할: 테스트 환경, 경로 별칭, 변환기 등의 설정 제공
+ * 작성일: 2024-03-26
+ */
+
 import { defineConfig } from 'vitest/config';
 // @ts-ignore - 타입 문제 해결
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    setupFiles: [path.resolve(__dirname, './src/setupTests.ts')],
-    include: ['**/*.test.{ts,tsx}'],
     globals: true,
-    server: {
-      deps: {
-        inline: [
-          '@testing-library/jest-dom',
-          '@testing-library/user-event',
-          '@testing-library/react'
-        ]
-      }
+    setupFiles: ['./src/tests/setup.ts'],
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    testTransformMode: {
+      web: ['.jsx', '.js', '.tsx', '.ts'],
     },
     coverage: {
-      reporter: ['text', 'html'],
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/**',
-        '**/.next/**',
-        '**/scripts/**',
-        '**/eslint.config.mjs',
-        '**/next.config.ts',
-        '**/postcss.config.mjs',
-        '**/next-env.d.ts',
-        '**/vitest.config.ts',
-        '**/src/components/ui/**', // shadcn UI 컴포넌트 제외
-        '**/jest.setup.js',
-        '**/jest.config.js',
-        '**/tailwind.config.js',
-        '**/src/lib/prisma.ts' // Prisma 클라이언트 설정 파일 제외
+        'dist/**',
+        '**/*.d.ts',
+        'test/**',
+        'src/tests/**',
       ],
-      include: ['src/**/*.{ts,tsx}'],
-      all: true,
-      thresholds: {
-        lines: 0,
-        functions: 0,
-        branches: 0,
-        statements: 0
-      }
-    }
+    },
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    reporters: ['default', 'json'],
+    outputFile: {
+      json: './src/tests/results/test-results.json',
+    },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@/components': path.resolve(__dirname, 'src/components'),
-      '@/lib': path.resolve(__dirname, 'src/lib'),
-      '@/app': path.resolve(__dirname, 'src/app'),
-      '@/utils': path.resolve(__dirname, 'src/utils'),
-      '@/hooks': path.resolve(__dirname, 'src/hooks')
+      '@': resolve(__dirname, './src'),
+      '@/components': resolve(__dirname, 'src/components'),
+      '@/lib': resolve(__dirname, 'src/lib'),
+      '@/app': resolve(__dirname, 'src/app'),
+      '@/utils': resolve(__dirname, 'src/utils'),
+      '@/hooks': resolve(__dirname, 'src/hooks')
     }
   }
 }); 

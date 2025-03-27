@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import TiptapViewer from "@/components/editor/TiptapViewer";
 import { useAppStore } from "@/store/useAppStore";
+import { useRouter } from "next/navigation";
 
 interface Tag {
   id: string;
@@ -49,6 +50,7 @@ export default function CardList() {
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const filteredCards = React.useMemo(() => {
     const q = searchParams.get('q')?.toLowerCase();
@@ -104,8 +106,10 @@ export default function CardList() {
     }
   }
 
-  const handleTagClick = (tagName: string) => {
-    window.location.href = `/cards?tag=${encodeURIComponent(tagName)}`;
+  const handleTagClick = (tagName: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/cards?tag=${encodeURIComponent(tagName)}`);
   };
 
   const handleDeleteCard = async (cardId: string) => {
@@ -248,9 +252,8 @@ export default function CardList() {
                       <Badge 
                         key={cardTag.id} 
                         variant="secondary"
-                        className="cursor-pointer"
-                        data-testid={`tag-name-${cardTag.tag.name}`}
-                        onClick={() => handleTagClick(cardTag.tag.name)}
+                        className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                        onClick={(e) => handleTagClick(cardTag.tag.name, e)}
                       >
                         #{cardTag.tag.name}
                       </Badge>

@@ -1,254 +1,327 @@
+/**
+ * 파일명: callback/page.tsx
+ * 목적: OAuth 콜백 처리 및 인증 완료
+ * 역할: Google 로그인 후 리디렉션된 콜백을 처리하고 세션을 설정
+ * 작성일: 2024-03-30
+ */
+
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { getAuthClient } from '@/lib/auth';
+import createLogger from '@/lib/logger';
+import { 
+  getAuthData, 
+  setAuthData, 
+  getAuthDataAsync, 
+  STORAGE_KEYS 
+} from '@/lib/auth-storage';
 
-// 실제 콜백 처리를 담당하는 컴포넌트
-function CallbackHandler() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+// 모듈별 로거 생성
+const logger = createLogger('Callback');
+
+// 백업용 코드 검증기 생성 함수
+function generateCodeVerifier() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const randomValues = new Uint8Array(128);
   
+  if (window.crypto && window.crypto.getRandomValues) {
+    window.crypto.getRandomValues(randomValues);
+    for (let i = 0; i < 96; i++) {
+      result += chars.charAt(randomValues[i] % chars.length);
+    }
+  } else {
+    // 예비 방법으로 일반 난수 사용
+    for (let i = 0; i < 96; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * CallbackHandler: OAuth 콜백을 처리하는 컴포넌트
+ * @returns {JSX.Element} 콜백 처리 중임을 나타내는 UI
+ */
+export default function CallbackHandler() {
+  const router = useRouter();
+  const [processingState, setProcessingState] = useState<string>('초기화 중');
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    console.log('[Callback][1] 컴포넌트 마운트됨', {
-      searchParams: Object.fromEntries(searchParams.entries()),
-      url: typeof window !== 'undefined' ? window.location.href : '알 수 없음',
-      timestamp: new Date().toISOString()
-    });
-    
-    const handleCallback = async () => {
+    let mounted = true;
+
+    async function handleCallback() {
       try {
-        const code = searchParams.get('code');
-        const state = searchParams.get('state');
+        if (!mounted) return;
+        logger.info('콜백 처리 시작');
+        setProcessingState('코드 파라미터 확인 중');
+
+        // URL 파라미터 처리 (먼저 확인)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const queryParams = new URLSearchParams(window.location.search);
         
-        console.log('[Callback][2] 인증 콜백 처리 시작', {
-          code: code ? `${code.substring(0, 8)}...${code.substring(code.length - 5)}` : '없음',
-          code길이: code?.length || 0,
-          state: state || '없음',
-          timestamp: new Date().toISOString(),
-          url: typeof window !== 'undefined' ? window.location.href : '알 수 없음'
-        });
+        // 인증 코드 확인
+        const rawCode = hashParams.get('code') || queryParams.get('code');
         
-        // 디버깅: 로컬 스토리지 상태 확인
-        if (typeof window !== 'undefined') {
-          const verifier = localStorage.getItem('supabase.auth.code_verifier');
-          const backupVerifier = sessionStorage.getItem('auth.code_verifier.backup');
-          const timestamp = sessionStorage.getItem('auth.code_verifier.timestamp');
-          const timeElapsed = timestamp ? Math.round((Date.now() - parseInt(timestamp)) / 1000) : null;
-          
-          console.log('[Callback][3] 로컬 스토리지 상태:', {
-            code_verifier: verifier 
-              ? `${verifier.substring(0, 5)}...${verifier.substring(verifier.length - 5)} (길이: ${verifier.length})` 
-              : '없음',
-            backup_verifier: backupVerifier 
-              ? `${backupVerifier.substring(0, 5)}...${backupVerifier.substring(backupVerifier.length - 5)} (길이: ${backupVerifier.length})` 
-              : '없음',
-            백업_타임스탬프: timestamp ? new Date(parseInt(timestamp)).toISOString() : '없음',
-            백업_경과시간: timeElapsed !== null ? `${timeElapsed}초` : '알 수 없음',
-            localStorage_키목록: Object.keys(localStorage),
-            supabase관련_키목록: Object.keys(localStorage).filter(key => key.startsWith('supabase')),
-            sessionStorage_키목록: Object.keys(sessionStorage)
-          });
-          
-          // 백업에서 복원 시도 (5분 이내 백업만 신뢰)
-          if (!verifier && backupVerifier && timestamp) {
-            const timeElapsed = Date.now() - parseInt(timestamp);
-            if (timeElapsed < 300000) { // 5분(300,000ms) 이내
-              console.log('[Callback][4] 백업에서 code_verifier 복원 시도', {
-                백업_시각: new Date(parseInt(timestamp)).toISOString(),
-                경과_시간: `${Math.round(timeElapsed / 1000)}초`,
-                백업_길이: backupVerifier.length
-              });
-              localStorage.setItem('supabase.auth.code_verifier', backupVerifier);
-              
-              // 복원 확인
-              const restoredVerifier = localStorage.getItem('supabase.auth.code_verifier');
-              console.log('[Callback][4-1] 복원 결과 확인:', {
-                성공여부: restoredVerifier === backupVerifier,
-                복원된_길이: restoredVerifier?.length || 0
-              });
-            } else {
-              console.warn('[Callback][4] 백업이 너무 오래되어 사용하지 않음', {
-                백업_시각: new Date(parseInt(timestamp)).toISOString(),
-                경과_시간: `${Math.round(timeElapsed / 1000)}초 (5분 초과)`
-              });
-            }
-          } else if (!verifier && !backupVerifier) {
-            console.error('[Callback][4] code_verifier가 없고 백업도 없음 - 인증 실패 가능성 높음');
-          } else if (verifier) {
-            console.log('[Callback][4] 이미 code_verifier가 존재함, 백업 복원 필요 없음');
-          }
-        }
+        // 에러 파라미터 확인
+        const errorParam = hashParams.get('error') || queryParams.get('error');
+        const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
         
-        if (!code) {
-          console.error('[Callback][5] 인증 코드가 없습니다.');
-          setError('인증 코드가 없습니다.');
-          router.push('/login?error=missing_code');
+        if (errorParam) {
+          logger.error('인증 오류 파라미터 감지', { error: errorParam, description: errorDescription });
+          setProcessingState('오류 발생');
+          setError(`${errorParam}: ${errorDescription}`);
+          router.push(`/auth/error?error=${encodeURIComponent(errorParam)}&error_description=${encodeURIComponent(errorDescription || '')}`);
           return;
         }
         
-        // Supabase 클라이언트 생성
-        console.log('[Callback][6] Supabase 클라이언트 생성 시작');
-        const supabase = createBrowserSupabaseClient();
-        console.log('[Callback][6-1] Supabase 클라이언트 생성 완료');
+        if (!rawCode) {
+          logger.error('인증 코드가 없습니다');
+          setProcessingState('오류 발생');
+          setError('인증 코드가 없습니다');
+          router.push('/auth/error?error=no_code&error_description=인증 코드가 없습니다. 다시 로그인해 주세요.');
+          return;
+        }
+
+        // 스토리지 상태 기록
+        const storageData: Record<string, string> = {};
+        for (const key of Object.values(STORAGE_KEYS)) {
+          storageData[key] = getAuthData(key) ? '존재' : '없음';
+        }
+        logger.info('인증 스토리지 상태:', storageData);
         
-        // 코드 교환 전 최종 검증
-        const finalVerifier = localStorage.getItem('supabase.auth.code_verifier');
-        console.log('[Callback][7] 코드 교환 직전 최종 상태 확인:', {
-          code_verifier_존재: !!finalVerifier,
-          code_verifier_길이: finalVerifier?.length || 0,
-          code길이: code.length
+        setProcessingState('코드 검증기 확인 중');
+        // code_verifier 복구 시도 (모든 스토리지에서)
+        let codeVerifier = await getAuthDataAsync(STORAGE_KEYS.CODE_VERIFIER);
+        
+        if (codeVerifier) {
+          logger.info('코드 검증기 복구 성공', {
+            길이: codeVerifier.length,
+            첫_5글자: codeVerifier.substring(0, 5)
+          });
+        } else {
+          // 추가 복구 시도: sessionStorage 직접 확인
+          const sessionVerifier = sessionStorage.getItem('auth.code_verifier.backup') || 
+                                  sessionStorage.getItem('auth.code_verifier.emergency');
+          if (sessionVerifier) {
+            codeVerifier = sessionVerifier;
+            logger.info('코드 검증기를 sessionStorage에서 직접 복구했습니다', {
+              길이: codeVerifier.length,
+              첫_5글자: codeVerifier.substring(0, 5)
+            });
+            // 모든 스토리지에 동기화
+            setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier, { expiry: 60 });
+          } else {
+            // 코드 검증기가 없는 경우 새로 생성 (마지막 수단)
+            codeVerifier = generateCodeVerifier();
+            logger.warn('코드 검증기를 찾을 수 없어 새로 생성했습니다', {
+              길이: codeVerifier.length,
+              첫_5글자: codeVerifier.substring(0, 5)
+            });
+            
+            // 모든 스토리지에 저장
+            setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier, { expiry: 60 });
+          }
+        }
+        
+        // code_verifier 직접 설정 (여러 장소에 백업)
+        // Supabase 내부 저장소에 직접 설정을 시도
+        try {
+          // @ts-ignore - 전역 객체에 추가된 커스텀 속성 접근
+          if (window.__SUPABASE_AUTH_SET_ITEM) {
+            // @ts-ignore
+            window.__SUPABASE_AUTH_SET_ITEM('code_verifier', codeVerifier);
+          }
+          
+          // 이중 안전을 위해 localStorage에도 직접 저장
+          localStorage.setItem('code_verifier', codeVerifier);
+          
+          // 전역 변수에도 저장
+          // @ts-ignore
+          window.__SUPABASE_AUTH_CODE_VERIFIER = codeVerifier;
+          
+          // 세션 스토리지에 백업
+          sessionStorage.setItem('auth.code_verifier.backup', codeVerifier);
+          sessionStorage.setItem('auth.code_verifier.timestamp', Date.now().toString());
+        } catch (storageError) {
+          logger.warn('일부 스토리지에 저장 실패', storageError);
+        }
+        
+        logger.info('인증 코드 및 코드 검증기 확인', {
+          code_존재: true,
+          code_verifier_존재: !!codeVerifier,
+          code_길이: rawCode.length,
+          verifier_길이: codeVerifier.length
         });
         
-        // 코드 교환 시도
-        console.log('[Callback][8] 코드를 세션으로 교환 시도 시작...');
+        setProcessingState('세션 교환 중');
+        // Supabase 클라이언트 생성 및 세션 교환
+        const supabase = getAuthClient();
+        logger.info('세션 교환 시도', { code_길이: rawCode.length, verifier_길이: codeVerifier.length });
+        
         try {
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          console.log('[Callback][9] 코드 교환 응답 받음', {
-            성공여부: !exchangeError,
-            세션존재여부: !!data?.session
-          });
+          // 세션 교환 전에 코드 검증기 스토리지 검사
+          const verifierCheck = {
+            localStorage: localStorage.getItem('code_verifier'),
+            authDataFunc: getAuthData(STORAGE_KEYS.CODE_VERIFIER),
+            sessionBackup: sessionStorage.getItem('auth.code_verifier.backup')
+          };
           
-          if (exchangeError) {
-            console.error('[Callback][10] 세션 교환 오류:', {
-              에러코드: exchangeError.code,
-              에러메시지: exchangeError.message,
-              상태코드: exchangeError.status,
-              에러객체: exchangeError
-            });
-            setError(exchangeError.message);
-            router.push(`/login?error=auth_error&message=${encodeURIComponent(exchangeError.message)}&code=${exchangeError.code || 'unknown'}`);
+          logger.info('세션 교환 직전 code_verifier 상태', verifierCheck);
+          
+          // 세션 교환
+          const { data, error } = await supabase.auth.exchangeCodeForSession(rawCode);
+          
+          if (error) {
+            logger.error('세션 교환 실패', { 에러: error.message, 코드: error.status });
+            setProcessingState('오류 발생');
+            setError(error.message);
+            
+            // 오류가 code_verifier 관련이면 새로 생성 후 재시도
+            if (error.message?.includes('code verifier') || error.message?.includes('invalid request')) {
+              logger.warn('코드 검증기 문제로 인한 오류, 새로 생성 후 다시 시도합니다');
+              const newVerifier = generateCodeVerifier();
+              
+              setProcessingState('코드 검증기 재생성 및 재시도 중');
+              
+              // 새 코드 검증기를 모든 스토리지에 저장 (더 철저하게)
+              setAuthData(STORAGE_KEYS.CODE_VERIFIER, newVerifier, { expiry: 60 });
+              
+              // Supabase 내부 저장소용
+              try {
+                // @ts-ignore
+                if (window.__SUPABASE_AUTH_SET_ITEM) {
+                  // @ts-ignore
+                  window.__SUPABASE_AUTH_SET_ITEM('code_verifier', newVerifier);
+                }
+                
+                // 이중 안전을 위해 localStorage에도 직접 저장
+                localStorage.setItem('code_verifier', newVerifier);
+                
+                // 전역 변수에도 저장
+                // @ts-ignore
+                window.__SUPABASE_AUTH_CODE_VERIFIER = newVerifier;
+                
+                // 세션 스토리지에 백업
+                sessionStorage.setItem('auth.code_verifier.backup', newVerifier);
+                sessionStorage.setItem('auth.code_verifier.timestamp', Date.now().toString());
+              } catch (storageError) {
+                logger.warn('일부 스토리지에 저장 실패', storageError);
+              }
+              
+              // 잠시 대기하여 스토리지 업데이트가 반영되도록 함
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              try {
+                const secondAttempt = await supabase.auth.exchangeCodeForSession(rawCode);
+                
+                if (secondAttempt.error) {
+                  logger.error('두 번째 세션 교환 시도도 실패', { 에러: secondAttempt.error.message });
+                  setProcessingState('최종 오류 발생');
+                  setError(secondAttempt.error.message);
+                  router.push(`/auth/error?error=exchange_failed&error_description=${encodeURIComponent(secondAttempt.error.message)}`);
+                  return;
+                }
+                
+                if (secondAttempt.data.session) {
+                  logger.info('두 번째 시도로 세션 교환 성공');
+                  setProcessingState('세션 저장 중');
+                  
+                  // 세션 정보 저장
+                  if (secondAttempt.data.session) {
+                    setAuthData(STORAGE_KEYS.ACCESS_TOKEN, secondAttempt.data.session.access_token, { expiry: 60 * 60 * 24 });
+                    setAuthData(STORAGE_KEYS.REFRESH_TOKEN, secondAttempt.data.session.refresh_token, { expiry: 60 * 60 * 24 * 14 });
+                    
+                    if (secondAttempt.data.session.user) {
+                      setAuthData(STORAGE_KEYS.USER_ID, secondAttempt.data.session.user.id, { expiry: 60 * 60 * 24 });
+                      if (secondAttempt.data.session.user.app_metadata?.provider) {
+                        setAuthData(STORAGE_KEYS.PROVIDER, secondAttempt.data.session.user.app_metadata.provider, { expiry: 60 * 60 * 24 });
+                      }
+                    }
+                  }
+                  
+                  setProcessingState('리디렉션 중');
+                  // 홈페이지로 리디렉션
+                  router.push('/');
+                  return;
+                }
+              } catch (retryError) {
+                logger.error('두 번째 시도 중 오류 발생', retryError);
+                setProcessingState('최종 오류 발생');
+                setError('두 번째 시도 중 오류 발생');
+              }
+            }
+            
+            router.push(`/auth/error?error=exchange_failed&error_description=${encodeURIComponent(error.message)}`);
             return;
           }
           
           if (!data.session) {
-            console.error('[Callback][11] 세션이 생성되지 않았습니다.');
-            setError('세션이 생성되지 않았습니다.');
-            router.push('/login?error=no_session');
+            logger.error('세션 데이터가 없습니다.');
+            setProcessingState('오류 발생');
+            setError('세션 데이터 없음');
+            router.push('/auth/error?error=no_session&error_description=세션 데이터를 받지 못했습니다. 다시 시도해 주세요.');
             return;
           }
           
-          // 세션 정보 확인
-          console.log('[Callback][12] 세션 생성 성공:', {
-            액세스토큰_길이: data.session.access_token?.length || 0,
-            리프레시토큰_존재: !!data.session.refresh_token,
-            만료시간: data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : '알 수 없음'
+          logger.info('세션 교환 성공', { 
+            user_id: data.session?.user?.id?.substring(0, 8) + '...',
+            provider: data.session?.user?.app_metadata?.provider
           });
+
+          setProcessingState('세션 저장 중');
+          // 세션 정보 저장
+          setAuthData(STORAGE_KEYS.ACCESS_TOKEN, data.session.access_token, { expiry: 60 * 60 * 24 });
+          setAuthData(STORAGE_KEYS.REFRESH_TOKEN, data.session.refresh_token, { expiry: 60 * 60 * 24 * 14 });
           
-          // 쿠키 확인
-          const allCookies = document.cookie.split(';').map(cookie => cookie.trim());
-          console.log('[Callback][13] 세션 생성 후 쿠키 확인:', {
-            모든쿠키: allCookies,
-            액세스토큰_쿠키존재: allCookies.some(c => c.startsWith('sb-access-token=')),
-            리프레시토큰_쿠키존재: allCookies.some(c => c.startsWith('sb-refresh-token=')),
-            쿠키개수: allCookies.length
-          });
-          
-          // localStorage 최종 상태 확인
-          console.log('[Callback][14] 세션 생성 후 localStorage 상태:', {
-            supabase관련_키: Object.keys(localStorage).filter(key => key.startsWith('supabase')),
-            supabase_session존재: !!localStorage.getItem('supabase.auth.token')
-          });
-          
-          // 세션 스토리지 정리
-          sessionStorage.removeItem('auth.code_verifier.backup');
-          sessionStorage.removeItem('auth.code_verifier.timestamp');
-          console.log('[Callback][15] 임시 백업 데이터 정리 완료');
-          
-          console.log('[Callback][16] 인증 성공. 유저 정보:', {
-            userId: data.session.user.id,
-            email: data.session.user.email,
-            provider: data.session.user.app_metadata?.provider || '알 수 없음'
-          });
-          
-          // 성공 시 보드 페이지로 리디렉션
-          setLoading(false);
-          console.log('[Callback][17] 보드 페이지로 리디렉션 시작...');
-          router.push('/board');
-        } catch (exchangeErr: any) {
-          console.error('[Callback][오류-교환] 코드 교환 중 예외 발생:', {
-            에러메시지: exchangeErr.message,
-            스택: exchangeErr.stack,
-            타입: typeof exchangeErr
-          });
-          setError(`코드 교환 중 오류: ${exchangeErr.message}`);
-          router.push(`/login?error=exchange_exception&message=${encodeURIComponent(exchangeErr.message || '알 수 없는 오류')}`);
+          if (data.session?.user) {
+            setAuthData(STORAGE_KEYS.USER_ID, data.session.user.id, { expiry: 60 * 60 * 24 });
+            if (data.session.user.app_metadata?.provider) {
+              setAuthData(STORAGE_KEYS.PROVIDER, data.session.user.app_metadata.provider, { expiry: 60 * 60 * 24 });
+            }
+          }
+
+          setProcessingState('완료, 리디렉션 중');
+          // 홈페이지로 리디렉션
+          logger.info('인증 완료, 홈페이지로 리디렉션');
+          router.push('/');
+        } catch (supabaseError) {
+          logger.error('Supabase 세션 교환 실패', supabaseError);
+          setProcessingState('오류 발생');
+          setError('Supabase 세션 교환 실패');
+          router.push('/auth/error?error=exchange_error&error_description=인증 과정에서 오류가 발생했습니다. 다시 시도해 주세요.');
         }
-      } catch (err: any) {
-        console.error('[Callback][오류-전체] 예상치 못한 오류:', {
-          에러메시지: err.message,
-          스택: err.stack,
-          타입: typeof err
-        });
-        setError(err.message || '알 수 없는 오류가 발생했습니다.');
-        router.push(`/login?error=unexpected&message=${encodeURIComponent(err.message || '알 수 없는 오류')}`);
+      } catch (error) {
+        logger.error('콜백 처리 실패', error);
+        setProcessingState('예외 발생');
+        setError('콜백 처리 중 예외 발생');
+        router.push('/auth/error?error=callback_error&error_description=인증 콜백 처리 중 오류가 발생했습니다.');
       }
-    };
-    
+    }
+
+    // 즉시 콜백 처리 실행
     handleCallback();
-    
-    // 컴포넌트 언마운트 시 로그
+
     return () => {
-      console.log('[Callback][언마운트] 콜백 컴포넌트 언마운트됨');
+      mounted = false;
     };
-  }, [router, searchParams]);
-  
-  // 상태 변화 로깅
-  useEffect(() => {
-    console.log('[Callback][상태] 컴포넌트 상태 변경:', {
-      로딩중: loading,
-      에러: error
-    });
-  }, [loading, error]);
+  }, [router]);
 
+  // 로딩 UI 표시
   return (
-    <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
-      {loading ? (
-        <>
-          <h2 className="text-2xl font-semibold mb-4">인증 처리 중...</h2>
-          <p className="text-gray-600 mb-4">잠시만 기다려주세요.</p>
-          <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
-        </>
-      ) : error ? (
-        <>
-          <h2 className="text-2xl font-semibold mb-4 text-red-500">오류 발생</h2>
-          <p className="text-gray-700">{error}</p>
-          <button 
-            onClick={() => router.push('/login')}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            로그인 페이지로 돌아가기
-          </button>
-        </>
-      ) : (
-        <>
-          <h2 className="text-2xl font-semibold mb-4 text-green-500">인증 성공!</h2>
-          <p className="text-gray-700">로그인되었습니다. 리디렉션 중...</p>
-        </>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <div className="mb-4">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+      </div>
+      <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
+      <p className="text-gray-500 mb-2">{processingState}</p>
+      {error && (
+        <p className="text-red-500 text-sm mt-2">오류: {error}</p>
       )}
-    </div>
-  );
-}
-
-// 로딩 표시 컴포넌트
-function LoadingFallback() {
-  return (
-    <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
-      <h2 className="text-2xl font-semibold mb-4">로딩 중...</h2>
-      <div className="w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
-    </div>
-  );
-}
-
-// 메인 페이지 컴포넌트
-export default function AuthCallbackPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Suspense fallback={<LoadingFallback />}>
-        <CallbackHandler />
-      </Suspense>
     </div>
   );
 } 

@@ -1,0 +1,18 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v1.6.1 /Users/wodory/Development/apps/backyard
+
+ ✓ src/tests/auth/auth-integration.test.ts  (7 tests) 37ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  23:27:32
+   Duration  721ms (transform 52ms, setup 81ms, collect 43ms, tests 37ms, environment 234ms, prepare 38ms)
+
+JSON report written to /Users/wodory/Development/apps/backyard/src/tests/results/test-results.json
+테스트 파일: src/tests/auth/auth-integration.test.ts
+총 테스트: 
+통과: 1
+실패: 0
+0
+실행 시간: 2 초

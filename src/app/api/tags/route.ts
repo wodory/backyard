@@ -1,84 +1,127 @@
+/**
+ * 파일명: src/app/api/tags/route.ts
+ * 목적: 태그 관련 API 엔드포인트 제공
+ * 역할: 태그 목록 조회, 태그 사용 횟수 집계, 태그 생성 등 기능 제공
+ * 작성일: 2024-03-30
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { z } from 'zod';
+import { auth } from '@/lib/auth-server';
 
-// 태그 스키마 정의
-const tagSchema = z.object({
-  name: z.string().min(1, '태그 이름은 필수입니다.').max(50, '태그 이름은 50자 이하여야 합니다.')
-});
-
-// 태그 목록 조회
+/**
+ * GET: 태그 목록을 반환하는 API
+ * @param request - 요청 객체
+ * @returns 태그 목록 및 사용 횟수
+ */
 export async function GET(request: NextRequest) {
   try {
-    const tags = await prisma.tag.findMany({
-      orderBy: { name: 'asc' }
-    });
+    const searchParams = request.nextUrl.searchParams;
+    const includeCount = searchParams.get('includeCount') === 'true';
+    const searchQuery = searchParams.get('q') || '';
     
-    return NextResponse.json(tags);
+    if (includeCount) {
+      // 사용 횟수와 함께 태그 목록 반환
+      const tags = await prisma.tag.findMany({
+        where: {
+          name: {
+            contains: searchQuery,
+          },
+        },
+        include: {
+          _count: {
+            select: { cardTags: true },
+          },
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+      
+      // 응답 형식 변환
+      const formattedTags = tags.map(tag => ({
+        id: tag.id,
+        name: tag.name,
+        count: tag._count.cardTags,
+        createdAt: tag.createdAt,
+      }));
+      
+      return NextResponse.json(formattedTags);
+    } else {
+      // 기본 태그 목록만 반환
+      const tags = await prisma.tag.findMany({
+        where: searchQuery ? {
+          name: {
+            contains: searchQuery,
+          },
+        } : undefined,
+        orderBy: {
+          name: 'asc',
+        },
+      });
+      
+      return NextResponse.json(tags);
+    }
   } catch (error) {
-    console.error('Error fetching tags:', error);
+    console.error('태그 조회 오류:', error);
     return NextResponse.json(
-      { error: '태그 목록을 가져오는 중 오류가 발생했습니다.' },
+      { error: '태그 목록을 불러오는데 실패했습니다' },
       { status: 500 }
     );
   }
 }
 
-// 태그 생성
+/**
+ * POST: 새 태그를 생성하는 API
+ * @param request - 요청 객체
+ * @returns 생성된 태그 정보
+ */
 export async function POST(request: NextRequest) {
   try {
-    // 요청 데이터 추출
-    let body;
-    try {
-      body = await request.json();
-    } catch (error) {
-      // request.json()이 실패하면 request.text()를 사용
-      const text = await request.text();
-      try {
-        body = JSON.parse(text);
-      } catch {
-        // JSON 파싱에 실패하면 빈 객체 반환
-        return NextResponse.json(
-          { error: '잘못된 JSON 형식입니다.' },
-          { status: 400 }
-        );
-      }
+    // 사용자 인증 확인
+    const session = await auth();
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: '인증이 필요합니다' },
+        { status: 401 }
+      );
     }
     
-    // 태그 데이터 유효성 검사
-    const validationResult = tagSchema.safeParse(body);
-    if (!validationResult.success) {
-      console.error('Validation error:', validationResult.error);
+    const { name } = await request.json();
+    
+    if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
-        { error: validationResult.error.errors },
+        { error: '유효한 태그 이름이 필요합니다' },
         { status: 400 }
       );
     }
     
-    // 태그 중복 확인
-    const existingTag = await prisma.tag.findUnique({
-      where: { name: validationResult.data.name }
+    // 이미 존재하는 태그인지 확인
+    const existingTag = await prisma.tag.findFirst({
+      where: {
+        name: name.trim(),
+      },
     });
     
     if (existingTag) {
       return NextResponse.json(
-        { error: '이미 존재하는 태그입니다.' },
-        { status: 400 }
+        { error: '이미 존재하는 태그입니다', tag: existingTag },
+        { status: 409 }
       );
     }
     
-    // 태그 생성
-    const tag = await prisma.tag.create({
+    // 새 태그 생성
+    const newTag = await prisma.tag.create({
       data: {
-        name: validationResult.data.name
-      }
+        name: name.trim(),
+      },
     });
     
-    return NextResponse.json(tag, { status: 201 });
+    return NextResponse.json(newTag, { status: 201 });
   } catch (error) {
-    console.error('Error creating tag:', error);
+    console.error('태그 생성 오류:', error);
     return NextResponse.json(
-      { error: '태그 생성 중 오류가 발생했습니다.' },
+      { error: '태그 생성에 실패했습니다' },
       { status: 500 }
     );
   }

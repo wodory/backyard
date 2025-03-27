@@ -16,7 +16,8 @@ import {
   Circle,
   SeparatorHorizontal,
   Paintbrush,
-  Layout
+  Layout,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +50,11 @@ import {
   STORAGE_KEY,
   EDGES_STORAGE_KEY
 } from '@/lib/board-constants';
+import { useAuth } from '@/contexts/AuthContext';
+import createLogger from '@/lib/logger';
+
+// 모듈별 로거 생성
+const logger = createLogger('ProjectToolbar');
 
 export function ProjectToolbar() {
   const [projectName, setProjectName] = useState('프로젝트 이름');
@@ -59,6 +65,7 @@ export function ProjectToolbar() {
     updateBoardSettings,
     reactFlowInstance
   } = useAppStore();
+  const { signOut } = useAuth();
   
   // 저장 핸들러 (임시)
   const handleSaveLayout = useCallback(() => {
@@ -169,6 +176,32 @@ export function ProjectToolbar() {
     toast.info('내보내기 기능은 아직 구현되지 않았습니다');
   }, []);
   
+  // 로그아웃 핸들러
+  const handleLogout = async () => {
+    try {
+      logger.info('로그아웃 시작');
+      
+      // 로그아웃 처리는 AuthContext의 signOut 함수가 알아서 처리함
+      await signOut();
+      toast.success('로그아웃되었습니다.');
+      
+      // 로그아웃 후 로그인 페이지로 직접 이동
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('로그아웃 중 오류 발생:', error);
+      logger.error('로그아웃 실패', error);
+      toast.error('로그아웃 중 문제가 발생했습니다.');
+      
+      // 오류가 발생해도 로그인 페이지로 리디렉션 (UI 동기화를 위해)
+      try {
+        window.location.href = '/login';
+      } catch (redirectError) {
+        console.error('리디렉션 중 오류:', redirectError);
+        logger.error('리디렉션 실패', redirectError);
+      }
+    }
+  };
+  
   return (
     <div className="fixed top-3 left-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-lg shadow-md border p-1 px-3 z-10">
       <DropdownMenu>
@@ -189,7 +222,10 @@ export function ProjectToolbar() {
             <ArrowRightIcon className="mr-2 h-4 w-4" />
             내보내기
           </DropdownMenuItem>
-          <DropdownMenuItem>가져오기</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            로그아웃
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           
           {/* 보드 설정 서브메뉴 */}
@@ -378,7 +414,6 @@ export function ProjectToolbar() {
           </DropdownMenuSub>
           
           <DropdownMenuItem>옵션</DropdownMenuItem>
-          <DropdownMenuItem>로그아웃</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       
