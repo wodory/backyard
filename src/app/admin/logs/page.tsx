@@ -109,8 +109,9 @@ export default function LogViewerPage() {
       <div className="bg-white p-4 rounded shadow mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">모듈</label>
+            <label htmlFor="module" className="block text-sm font-medium text-gray-700 mb-1">모듈</label>
             <select
+              id="module"
               className="w-full rounded border-gray-300 shadow-sm"
               value={selectedModule}
               onChange={(e) => setSelectedModule(e.target.value)}
@@ -123,8 +124,9 @@ export default function LogViewerPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">레벨</label>
+            <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">레벨</label>
             <select
+              id="level"
               className="w-full rounded border-gray-300 shadow-sm"
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(e.target.value)}
@@ -138,8 +140,9 @@ export default function LogViewerPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">세션 ID</label>
+            <label htmlFor="sessionId" className="block text-sm font-medium text-gray-700 mb-1">세션 ID</label>
             <select
+              id="sessionId"
               className="w-full rounded border-gray-300 shadow-sm"
               value={selectedSessionId}
               onChange={(e) => setSelectedSessionId(e.target.value)}
@@ -152,8 +155,9 @@ export default function LogViewerPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">로그 수</label>
+            <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-1">로그 수</label>
             <select
+              id="limit"
               className="w-full rounded border-gray-300 shadow-sm"
               value={limit.toString()}
               onChange={(e) => setLimit(Number(e.target.value))}

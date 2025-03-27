@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Package manager
+
+- 패키지 관리를 통일하기 위해 패키지 관리자는 yarn만 사용. 
+- 특히 shadcn 컴포넌트 최신화를 위해 이렇게 설치.  
+'yarn add shadcn@latest dialog'
+
+# 테스트
+- 테스트를 수행할 때는 사용자가 q를 입력하지 않아도 테스트를 자동 종료하기 위해 yarn vitest run 실행

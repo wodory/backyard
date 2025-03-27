@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import CardPage, { generateMetadata } from './page';
 import '@testing-library/jest-dom/vitest';
 
-// notFound 및 useRouter 모킹
+// next/navigation 모킹
 vi.mock('next/navigation', () => ({
   notFound: vi.fn(),
   useRouter: vi.fn(() => ({
@@ -13,20 +13,31 @@ vi.mock('next/navigation', () => ({
   }))
 }));
 
-// prisma 모킹
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    card: {
-      findUnique: vi.fn()
+// Prisma 모킹 - 함수를 inline으로 정의
+vi.mock('@/lib/prisma', () => {
+  return {
+    default: {
+      card: {
+        findUnique: vi.fn()
+      }
     }
   }
-}));
+});
 
 // formatDate 모킹
 vi.mock('@/lib/utils', () => ({
   formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
   cn: vi.fn((...args: any[]) => args.join(' '))
 }));
+
+// EditCardContent 컴포넌트 모킹
+vi.mock('@/components/cards/EditCardContent', () => {
+  return {
+    default: vi.fn(({ initialContent }: { initialContent: string }) => (
+      <div data-testid="edit-card-content">{initialContent}</div>
+    ))
+  };
+});
 
 describe('CardPage', () => {
   const params = { id: 'card123' };
@@ -65,8 +76,14 @@ describe('CardPage', () => {
     ]
   };
   
-  beforeEach(() => {
+  // 테스트에서 사용할 모듈 참조 변수
+  let prisma: any;
+  
+  beforeEach(async () => {
     vi.clearAllMocks();
+    // 테스트에서 사용할 모킹된 모듈을 동적으로 가져옴
+    const prismaModule = await import('@/lib/prisma');
+    prisma = prismaModule.default;
   });
   
   afterEach(() => {
@@ -75,15 +92,14 @@ describe('CardPage', () => {
   
   it('유효한 카드 ID로 카드 데이터를 렌더링해야 함', async () => {
     // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(mockCard);
+    prisma.card.findUnique.mockResolvedValue(mockCard);
     
     const page = await CardPage({ params });
     render(page);
     
     // 카드 제목과 내용이 렌더링되었는지 확인
     expect(screen.getByRole('heading', { name: '테스트 카드' })).toBeInTheDocument();
-    expect(screen.getByText('테스트 내용입니다.')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-card-content')).toHaveTextContent('테스트 내용입니다.');
     
     // 작성자 정보와 날짜가 렌더링되었는지 확인
     expect(screen.getByText(/작성자: 테스트 사용자/)).toBeInTheDocument();
@@ -109,8 +125,7 @@ describe('CardPage', () => {
   
   it('존재하지 않는 카드 ID로 notFound()를 호출해야 함', async () => {
     // prisma 모킹 설정 - 카드가 없음
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(null);
+    prisma.card.findUnique.mockResolvedValue(null);
     
     // notFound 함수 가져오기
     const { notFound } = await import('next/navigation');
@@ -136,8 +151,7 @@ describe('CardPage', () => {
   
   it('오류 발생 시 notFound()를 호출해야 함', async () => {
     // prisma 모킹 설정 - 오류 발생
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockRejectedValue(new Error('데이터베이스 오류'));
+    prisma.card.findUnique.mockRejectedValue(new Error('데이터베이스 오류'));
     
     // notFound 함수 가져오기
     const { notFound } = await import('next/navigation');
@@ -169,8 +183,7 @@ describe('CardPage', () => {
     };
     
     // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(userEmailOnlyCard);
+    prisma.card.findUnique.mockResolvedValue(userEmailOnlyCard);
     
     const page = await CardPage({ params });
     render(page);
@@ -187,15 +200,14 @@ describe('CardPage', () => {
     };
     
     // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(noTagsCard);
+    prisma.card.findUnique.mockResolvedValue(noTagsCard);
     
     const page = await CardPage({ params });
     render(page);
     
     // 카드 내용은 렌더링되어야 함
     expect(screen.getByRole('heading', { name: '테스트 카드' })).toBeInTheDocument();
-    expect(screen.getByText('테스트 내용입니다.')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-card-content')).toHaveTextContent('테스트 내용입니다.');
     
     // 태그 영역이 렌더링되지 않아야 함
     expect(screen.queryByText('태그1')).not.toBeInTheDocument();
@@ -211,23 +223,28 @@ describe('CardPage', () => {
     };
     
     // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(diverseContentCard);
+    prisma.card.findUnique.mockResolvedValue(diverseContentCard);
     
     const page = await CardPage({ params });
     render(page);
     
     // 다양한 콘텐츠가 올바르게 렌더링되는지 확인
     expect(screen.getByRole('heading', { name: '다양한 내용 테스트 카드' })).toBeInTheDocument();
-    expect(screen.getByText('한글 내용, English content, 특수문자 !@#$%, 숫자 123')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-card-content')).toHaveTextContent('한글 내용, English content, 특수문자 !@#$%, 숫자 123');
   });
 });
 
 describe('generateMetadata', () => {
   const params = { id: 'card123' };
   
-  beforeEach(() => {
+  // 테스트에서 사용할 모듈 참조 변수
+  let prisma: any;
+  
+  beforeEach(async () => {
     vi.clearAllMocks();
+    // 테스트에서 사용할 모킹된 모듈을 동적으로 가져옴
+    const prismaModule = await import('@/lib/prisma');
+    prisma = prismaModule.default;
   });
   
   afterEach(() => {
@@ -245,8 +262,7 @@ describe('generateMetadata', () => {
     };
     
     // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(mockCard);
+    prisma.card.findUnique.mockResolvedValue(mockCard);
     
     const metadata = await generateMetadata({ params });
     
@@ -257,8 +273,7 @@ describe('generateMetadata', () => {
   
   it('존재하지 않는 카드 ID로 기본 메타데이터를 반환해야 함', async () => {
     // prisma 모킹 설정 - 카드가 없음
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockResolvedValue(null);
+    prisma.card.findUnique.mockResolvedValue(null);
     
     const metadata = await generateMetadata({ params });
     
@@ -269,8 +284,7 @@ describe('generateMetadata', () => {
   
   it('오류 발생 시 기본 메타데이터를 반환해야 함', async () => {
     // prisma 모킹 설정 - 오류 발생
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.card.findUnique as any).mockRejectedValue(new Error('데이터베이스 오류'));
+    prisma.card.findUnique.mockRejectedValue(new Error('데이터베이스 오류'));
     
     // 콘솔 오류 출력 방지를 위한 스파이
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -280,6 +294,9 @@ describe('generateMetadata', () => {
     expect(metadata).toEqual({
       title: '카드를 찾을 수 없음'
     });
+    
+    // 오류 로깅이 되었는지 확인
+    expect(consoleSpy).toHaveBeenCalled();
     
     // 스파이 복원
     consoleSpy.mockRestore();
