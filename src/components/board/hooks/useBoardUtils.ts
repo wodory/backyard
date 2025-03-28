@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { Node, Edge, useReactFlow } from '@xyflow/react';
+import { Node, Edge, useReactFlow, Viewport } from '@xyflow/react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/useAppStore';
 import { 
@@ -17,6 +17,7 @@ import {
   loadBoardSettingsFromServer 
 } from '@/lib/board-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
+import { TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
 import { CardData } from '../types/board-types';
 
 /**
@@ -86,21 +87,51 @@ export function useBoardUtils({
   }, [edges, setEdges, setBoardSettings]);
 
   /**
+   * 뷰포트(transform) 저장
+   * @returns 저장 성공 여부
+   */
+  const saveTransform = useCallback(() => {
+    try {
+      if (!reactFlowInstance) {
+        console.error('React Flow 인스턴스를 찾을 수 없습니다');
+        return false;
+      }
+      
+      // 현재 뷰포트 가져오기
+      const viewport = reactFlowInstance.getViewport();
+      
+      // 뷰포트 저장
+      localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
+      console.log('[useBoardUtils] 뷰포트 저장 완료:', viewport);
+      
+      return true;
+    } catch (err) {
+      console.error('뷰포트 저장 실패:', err);
+      return false;
+    }
+  }, [reactFlowInstance]);
+
+  /**
    * 모든 레이아웃 데이터 저장
    * @returns 저장 성공 여부
    */
   const saveAllLayoutData = useCallback(() => {
     const layoutSaved = saveLayout();
     const edgesSaved = saveEdges();
+    const transformSaved = saveTransform();
     
-    if (layoutSaved && edgesSaved) {
+    if (layoutSaved && edgesSaved && transformSaved) {
       hasUnsavedChanges.current = false;
-      toast.success('레이아웃이 저장되었습니다');
+      console.log('[useBoardUtils] 모든 레이아웃 데이터 저장 완료');
       return true;
     }
     
+    if (!layoutSaved) console.error('노드 위치 저장 실패');
+    if (!edgesSaved) console.error('엣지 저장 실패');
+    if (!transformSaved) console.error('뷰포트 저장 실패');
+    
     return false;
-  }, [saveLayout, saveEdges]);
+  }, [saveLayout, saveEdges, saveTransform]);
 
   /**
    * 수동 저장
@@ -248,9 +279,10 @@ export function useBoardUtils({
     saveAllLayoutData,
     handleSaveLayout,
     handleBoardSettingsChange,
+    handleLayoutChange,
     updateViewportCenter,
     handleAutoLayout,
-    handleLayoutChange,
+    saveTransform,
     hasUnsavedChanges
   };
 } 

@@ -5,11 +5,12 @@
  * 작성일: 2024-05-30
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { Edge, ReactFlowInstance } from '@xyflow/react';
+import { useState, useCallback } from 'react';
+import { Edge, ReactFlowInstance, Position, Viewport } from '@xyflow/react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/useAppStore';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+import { NODE_TYPES_KEYS, EDGE_TYPES_KEYS } from '@/lib/flow-constants';
 import { Node, CardData } from '../types/board-types';
 
 /**
@@ -60,6 +61,19 @@ export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
         console.error('저장된 위치 불러오기 실패:', err);
       }
       
+      // 이전에 저장된 뷰포트 정보 가져오기
+      let savedViewport: Viewport | null = null;
+      try {
+        const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
+        if (transformString) {
+          savedViewport = JSON.parse(transformString);
+          console.log('[useBoardData] 저장된 뷰포트:', savedViewport);
+        }
+      } catch (err) {
+        console.error('저장된 뷰포트 불러오기 실패:', err);
+        savedViewport = null;
+      }
+      
       // 카드 데이터를 노드로 변환
       const initialNodes = cards.map((card: any, index: number) => {
         // ID에 해당하는 위치 정보가 있으면 사용, 없으면 기본 위치 설정
@@ -70,15 +84,19 @@ export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
           ? card.cardTags.map((cardTag: any) => cardTag.tag.name)
           : (card.tags || []);
         
+        // 디버깅 로그 추가
+        console.log(`[노드 생성] 카드 ID: ${card.id}, 설정된 타입: ${NODE_TYPES_KEYS.card}`);
+
         return {
           id: card.id,
-          type: 'card',
+          type: NODE_TYPES_KEYS.card,
           position: savedPosition,
           data: {
-            id: card.id,
-            title: card.title,
-            content: card.content,
-            tags,
+            // id: card.id,
+            // title: card.title,
+            // content: card.content,
+            // tags,
+            ...card,
             onSelect: onSelectCard,
           },
         };
@@ -99,7 +117,7 @@ export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
             // 기본 엣지 속성 업데이트
             const updatedEdge = {
               ...edge,
-              type: 'custom',  // 명시적으로 custom 타입 지정
+              type: EDGE_TYPES_KEYS.custom,  // 명시적으로 custom 타입 지정
             };
             
             // 소스 핸들 ID 업데이트 (예: 'right' -> 'right-source')
@@ -152,11 +170,18 @@ export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
       setIsLoading(false);
       setError(null);
       
-      // 모든 노드가 뷰에 맞도록 조정 (Fit to View)
+      // 뷰포트 설정
       if (reactFlowInstance) {
         setTimeout(() => {
-          reactFlowInstance.fitView({ padding: 0.2, includeHiddenNodes: false });
-          console.log('[useBoardData] 뷰에 맞게 화면을 조정했습니다');
+          if (savedViewport) {
+            // 저장된 뷰포트가 있으면 그대로 복원
+            reactFlowInstance.setViewport(savedViewport);
+            console.log('[useBoardData] 저장된 뷰포트를 복원했습니다:', savedViewport);
+          } else {
+            // 저장된 뷰포트가 없으면 모든 노드가 보이도록 맞춤
+            reactFlowInstance.fitView({ padding: 0.2, includeHiddenNodes: false });
+            console.log('[useBoardData] 뷰에 맞게 화면을 조정했습니다');
+          }
         }, 100);
       }
       
@@ -196,7 +221,7 @@ export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
       
       return {
         id: cardId,
-        type: 'card',
+        type: NODE_TYPES_KEYS.card,
         data: { 
           id: card.id,
           title: card.title,
@@ -226,16 +251,13 @@ export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
     }
   }, [fetchBoardData]);
 
-  // 노드 및 엣지 반환
   return {
     nodes,
     edges,
-    setNodes,
-    setEdges,
     isLoading,
     error,
-    fetchBoardData,
     loadNodesAndEdges,
-    applyStoredLayout
+    setIsLoading,
+    setError
   };
 } 

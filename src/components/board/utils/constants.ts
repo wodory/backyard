@@ -15,12 +15,12 @@ export const LAYOUT_DIRECTION = {
 
 // 노드 타입
 export const NODE_TYPES = {
-  CARD: 'card'
+  card: 'card'
 };
 
 // 엣지 타입
 export const EDGE_TYPES = {
-  CUSTOM: 'custom'
+  custom: 'custom'
 };
 
 // 핸들 위치 정보

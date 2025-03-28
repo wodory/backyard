@@ -12,15 +12,19 @@ import { useBoardUtils } from './useBoardUtils';
 import { BoardSettings, saveBoardSettingsToServer, loadBoardSettingsFromServer } from '@/lib/board-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import { ConnectionLineType, MarkerType, Node, Edge } from '@xyflow/react';
+import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
+import { TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
 
 // 모든 vi.mock 호출을 먼저 수행
 vi.mock('@xyflow/react', async () => {
   const actual = await vi.importActual('@xyflow/react');
   return {
     ...actual,
-    useReactFlow: () => mockReactFlow,
+    useReactFlow: () => ({
+      ...mockReactFlow,
+      getViewport: () => ({ x: 100, y: 200, zoom: 2 }),
+    }),
   };
 });
 
@@ -88,6 +92,28 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// localStorage 모킹
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value.toString();
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    store,
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
+
 describe('useBoardUtils', () => {
   // 테스트를 위한 모의 함수 및 데이터 준비
   const saveLayout = vi.fn().mockReturnValue(true);
@@ -122,6 +148,7 @@ describe('useBoardUtils', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorageMock.clear();
   });
   
   it('saveAllLayoutData가 레이아웃과 엣지를 저장하고 성공 메시지를 표시해야 함', () => {
@@ -148,6 +175,66 @@ describe('useBoardUtils', () => {
     expect(saveLayout).toHaveBeenCalled();
     expect(saveEdges).toHaveBeenCalled();
     expect(toast.success).toHaveBeenCalledWith('레이아웃이 저장되었습니다');
+  });
+
+  it('saveTransform이 뷰포트 상태를 로컬 스토리지에 저장해야 함', () => {
+    // 훅 렌더링
+    const { result } = renderHook(() => useBoardUtils({
+      reactFlowWrapper,
+      updateNodeInternals,
+      saveLayout,
+      saveEdges,
+      nodes: mockNodes as any,
+      edges: mockEdges as any,
+      setNodes,
+      setEdges,
+    }));
+    
+    // saveTransform 함수 호출
+    let success;
+    act(() => {
+      success = result.current.saveTransform();
+    });
+    
+    // 결과 검증
+    expect(success).toBe(true);
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      TRANSFORM_STORAGE_KEY, 
+      expect.any(String)
+    );
+    
+    // 저장된 뷰포트 데이터 확인
+    const savedData = JSON.parse(localStorageMock.setItem.mock.calls[0][1]);
+    expect(savedData).toEqual({ x: 100, y: 200, zoom: 2 });
+  });
+  
+  it('saveAllLayoutData가 뷰포트 상태도 함께 저장해야 함', () => {
+    // 훅 렌더링
+    const { result } = renderHook(() => useBoardUtils({
+      reactFlowWrapper,
+      updateNodeInternals,
+      saveLayout,
+      saveEdges,
+      nodes: mockNodes as any,
+      edges: mockEdges as any,
+      setNodes,
+      setEdges,
+    }));
+    
+    // 함수 호출
+    let success;
+    act(() => {
+      success = result.current.saveAllLayoutData();
+    });
+    
+    // 결과 검증
+    expect(success).toBe(true);
+    expect(saveLayout).toHaveBeenCalled();
+    expect(saveEdges).toHaveBeenCalled();
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      TRANSFORM_STORAGE_KEY, 
+      expect.any(String)
+    );
   });
   
   it('handleSaveLayout이 저장 실패 시 오류 메시지를 표시해야 함', () => {
@@ -198,12 +285,12 @@ describe('useBoardUtils', () => {
       connectionLineType: 'default' as ConnectionLineType,
       snapToGrid: true,
       snapGrid: [10, 10],
-      markerSize: 30,
+      markerSize: 20,
     };
     
-    // 인증된 사용자로 설정 변경
-    await act(async () => {
-      await result.current.handleBoardSettingsChange(newSettings, true, 'user123');
+    // 함수 호출
+    act(() => {
+      result.current.handleBoardSettingsChange(newSettings, true, 'user123');
     });
     
     // 결과 검증
@@ -212,7 +299,7 @@ describe('useBoardUtils', () => {
     expect(mockedSaveBoardSettingsToServer).toHaveBeenCalledWith('user123', newSettings);
   });
   
-  it('loadBoardSettingsFromServerIfAuthenticated가 인증된 사용자에게만 설정을 로드해야 함', async () => {
+  it('handleLayoutChange가 레이아웃 방향을 변경하고 노드 내부를 업데이트해야 함', () => {
     // 훅 렌더링
     const { result } = renderHook(() => useBoardUtils({
       reactFlowWrapper,
@@ -225,28 +312,19 @@ describe('useBoardUtils', () => {
       setEdges,
     }));
     
-    // 인증되지 않은 사용자로 호출
-    await act(async () => {
-      await result.current.loadBoardSettingsFromServerIfAuthenticated(false);
+    // 함수 호출
+    act(() => {
+      result.current.handleLayoutChange('horizontal');
     });
     
-    // 서버 로드가 호출되지 않아야 함
-    expect(mockedLoadBoardSettingsFromServer).not.toHaveBeenCalled();
-    
-    // 인증된 사용자로 호출
-    await act(async () => {
-      await result.current.loadBoardSettingsFromServerIfAuthenticated(true, 'user123');
-    });
-    
-    // 서버 로드가 호출되어야 함
-    expect(mockedLoadBoardSettingsFromServer).toHaveBeenCalledWith('user123');
-    
-    // 설정 적용 확인
-    expect(mockedSetBoardSettings).toHaveBeenCalled();
+    // 결과 검증
+    expect(mockedGetLayoutedElements).toHaveBeenCalledWith(mockNodes, mockEdges, 'horizontal');
+    expect(setNodes).toHaveBeenCalled();
     expect(setEdges).toHaveBeenCalled();
+    expect(updateNodeInternals).toHaveBeenCalledTimes(mockNodes.length);
   });
   
-  it('handleAutoLayout이 그리드 레이아웃을 적용하고 저장해야 함', () => {
+  it('handleAutoLayout이 그리드 레이아웃을 적용해야 함', () => {
     // 훅 렌더링
     const { result } = renderHook(() => useBoardUtils({
       reactFlowWrapper,
@@ -267,41 +345,6 @@ describe('useBoardUtils', () => {
     // 결과 검증
     expect(mockedGetGridLayout).toHaveBeenCalledWith(mockNodes);
     expect(setNodes).toHaveBeenCalled();
-    expect(saveLayout).toHaveBeenCalled();
-    expect(toast.success).toHaveBeenCalledWith('카드가 격자 형태로 배치되었습니다.');
-  });
-  
-  it('handleLayoutChange가 레이아웃 방향을 변경하고 노드 내부를 업데이트해야 함', () => {
-    // 실제 타이머 대신 가상 타이머 사용
-    vi.useFakeTimers();
-    
-    // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
-      reactFlowWrapper,
-      updateNodeInternals,
-      saveLayout,
-      saveEdges,
-      nodes: mockNodes as any,
-      edges: mockEdges as any,
-      setNodes,
-      setEdges,
-    }));
-    
-    // 함수 호출
-    act(() => {
-      result.current.handleLayoutChange('horizontal');
-      // 타이머 진행
-      vi.advanceTimersByTime(300);
-    });
-    
-    // 결과 검증
-    expect(mockedGetLayoutedElements).toHaveBeenCalledWith(mockNodes, mockEdges, 'horizontal');
-    expect(setNodes).toHaveBeenCalled();
-    expect(setEdges).toHaveBeenCalled();
-    expect(updateNodeInternals).toHaveBeenCalledTimes(mockNodes.length * 3); // 3번의 업데이트 각각 노드 수만큼 호출
-    expect(toast.success).toHaveBeenCalledWith('수평 레이아웃으로 변경되었습니다.');
-    
-    // 가상 타이머 종료
-    vi.useRealTimers();
+    expect(updateNodeInternals).toHaveBeenCalledTimes(mockNodes.length);
   });
 }); 

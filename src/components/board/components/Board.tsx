@@ -11,7 +11,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   useReactFlow,
   useUpdateNodeInternals,
-  Position
+  Position,
+  Viewport,
+  ViewportHelperFunctions
 } from '@xyflow/react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,6 +59,9 @@ export default function Board({
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
   const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
+  
+  // 뷰포트 변경 디바운스를 위한 타이머
+  const viewportChangeTimer = useRef<NodeJS.Timeout | null>(null);
   
   // 인증 상태 가져오기
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -122,6 +127,7 @@ export default function Board({
     handleLayoutChange,
     updateViewportCenter,
     handleAutoLayout,
+    saveTransform,
     hasUnsavedChanges: hasBoardUtilsUnsavedChanges
   } = useBoardUtils({ 
     reactFlowWrapper, 
@@ -294,16 +300,14 @@ export default function Board({
   // 페이지 이탈 시 저장되지 않은 변경사항 경고
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedNodesChanges.current || hasUnsavedEdgesChanges.current) {
-        const message = '저장되지 않은 변경사항이 있습니다. 정말 페이지를 떠나시겠습니까?';
-        e.returnValue = message;
-        return message;
+      if (hasUnsavedNodesChanges.current || hasUnsavedEdgesChanges.current || hasBoardUtilsUnsavedChanges.current) {
+        saveAllLayoutData();
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedNodesChanges, hasUnsavedEdgesChanges]);
+  }, [saveAllLayoutData, hasUnsavedNodesChanges, hasUnsavedEdgesChanges, hasBoardUtilsUnsavedChanges]);
 
   // 카드 생성 모달 처리
   const handleCreateCard = useCallback(() => {
@@ -363,6 +367,23 @@ export default function Board({
     }
   }, [saveAllLayoutData]);
 
+  /**
+   * 뷰포트 변경 핸들러 (확대/축소, 이동)
+   * @param viewport 현재 뷰포트 상태
+   */
+  const onViewportChange = useCallback((viewport: Viewport) => {
+    // 디바운싱: 연속적인 뷰포트 변경 중 마지막 이벤트만 처리
+    if (viewportChangeTimer.current) {
+      clearTimeout(viewportChangeTimer.current);
+    }
+    
+    viewportChangeTimer.current = setTimeout(() => {
+      // 변경된 뷰포트 저장
+      saveTransform();
+      viewportChangeTimer.current = null;
+    }, 500); // 500ms 디바운스
+  }, [saveTransform]);
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-full bg-red-50 p-8 rounded-lg">
@@ -406,6 +427,7 @@ export default function Board({
         userId={user?.id}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onViewportChange={onViewportChange}
       />
       
       {isCreateModalOpen && (

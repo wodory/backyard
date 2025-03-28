@@ -65,6 +65,7 @@ export const EDGE_COLOR_OPTIONS = [
 export const STORAGE_KEY = 'backyard-board-layout';
 export const EDGES_STORAGE_KEY = 'backyard-board-edges';
 export const BOARD_SETTINGS_KEY = 'backyard-board-settings';
+export const TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
 
 // 자동 저장 설정
 export const BOARD_CONFIG = {

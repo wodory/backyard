@@ -19,9 +19,13 @@ import { cn } from '@/lib/utils';
 import { createPortal } from 'react-dom';
 import { EditCardModal } from '@/components/cards/EditCardModal';
 import { useTheme } from '@/contexts/ThemeContext';
+import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
 
-// 디버깅용 로그
-console.log('[CardNode] 모듈이 로드됨 - NODE_TYPES에 등록 확인 필요');
+// 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
+const COMPONENT_ID = 'CardNode_from_nodes_directory';
+
+// 디버깅용 로그 - 순환 참조 방지를 위해 NODE_TYPES 접근 제거
+console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CardNode`);
 
 // 노드 데이터 타입 정의
 export interface NodeData {
@@ -55,6 +59,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 // 헥스 색상을 HSL로 변환하는 함수
+// utils 이동 대상 
 const hexToHsl = (hex: string): { h: number, s: number, l: number } | null => {
   if (!hex) return null;
   
@@ -85,6 +90,7 @@ const hexToHsl = (hex: string): { h: number, s: number, l: number } | null => {
 };
 
 // HSL을 헥스 색상으로 변환하는 함수
+// utils 이동 대상 
 const hslToHex = (h: number, s: number, l: number): string => {
   s /= 100;
   l /= 100;
@@ -100,9 +106,6 @@ const hslToHex = (h: number, s: number, l: number): string => {
 
 // 카드 노드 컴포넌트 정의
 export default function CardNode({ data, isConnectable, selected, id }: NodeProps) {
-  // 컴포넌트 초기화 로그
-  console.log(`[CardNode] 컴포넌트 렌더링 시작: ID=${id}`);
-
   const [isHovered, setIsHovered] = useState(false);
   const { getNode, setNodes } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -110,6 +113,17 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
+
+  // 컴포넌트 초기화 로그 - 상세 정보 추가 (NODE_TYPES 참조 제거)
+  console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
+    id: id,
+    title: data.title, 
+    type: data.type,
+    expectedType: NODE_TYPES_KEYS.card,
+    isTypeValid: data.type === NODE_TYPES_KEYS.card,
+    componentId: COMPONENT_ID,
+    isExpanded: isExpanded
+  });
   
   // 테마 컨텍스트 가져오기
   const { theme } = useTheme();
@@ -126,7 +140,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const selectedCardIdsKey = useMemo(() => {
     return selectedCardIds.join(',');
   }, [selectedCardIds]);
-  
+
   // 보드 설정 가져오기 - 기존 설정 유지 (폴백용)
   const uiConfig = loadDefaultBoardUIConfig();
   
@@ -192,7 +206,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     const style: CSSProperties = {
       width: cardWidth,
       height: cardHeight,
-      zIndex: isActive ? 9999 : 1, // 활성화된 카드는 항상 최상위에 표시
+      zIndex: isActive || isExpanded ? 9999 : 1, // 활성화된 카드는 항상 최상위에 표시
       backgroundColor: theme.node.backgroundColor,
       borderColor: selected || isMultiSelected ? theme.node.selectedBorderColor : theme.node.borderColor,
       borderWidth: theme.node.borderWidth,
@@ -308,18 +322,19 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   return (
     <>
       <div
-        className={cn(
-          "bg-white border shadow-sm rounded-md transition-all duration-200",
-          selected || isMultiSelected ? "ring-2 ring-blue-500" : "",
-          isHovered ? "shadow-md" : ""
-        )}
         ref={nodeRef}
+        className={cn("card-node bg-white border transition-all", {
+          "border-primary": selected || isMultiSelected,
+          "border-muted": !selected && !isMultiSelected,
+          "shadow-lg": isHovered || isActive,
+          "shadow-sm": !(isHovered || isActive)
+        })}
         style={getNodeStyle()}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleCardClick}
         onTransitionEnd={handleTransitionEnd}
-        data-testid={`card-node-${id}`}
+        data-component-id={COMPONENT_ID}
       >
         {/* 수평 연결 핸들 (좌우) - 테마 설정을 사용 */}
         <Handle
@@ -334,8 +349,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
             borderColor: theme.handle.borderColor,
             borderWidth: theme.handle.borderWidth,
             borderStyle: 'solid',
-            borderRadius: '50%',
-            right: -handleSize / 2 - 1,
+            borderRadius: '50%'
           }}
         />
         <Handle
@@ -350,8 +364,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
             borderColor: theme.handle.borderColor,
             borderWidth: theme.handle.borderWidth,
             borderStyle: 'solid',
-            borderRadius: '50%',
-            left: -handleSize / 2 - 1, 
+            borderRadius: '50%'
           }}
         />
         
@@ -368,8 +381,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
             borderColor: theme.handle.borderColor,
             borderWidth: theme.handle.borderWidth,
             borderStyle: 'solid',
-            borderRadius: '50%',
-            bottom: -handleSize / 2 - 1,
+            borderRadius: '50%'
           }}
         />
         <Handle
@@ -384,8 +396,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
             borderColor: theme.handle.borderColor,
             borderWidth: theme.handle.borderWidth,
             borderStyle: 'solid',
-            borderRadius: '50%',
-            top: -handleSize / 2 - 1,
+            borderRadius: '50%'
           }}
         />
         
@@ -395,13 +406,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           style={{ height: `${cardHeaderHeight}px` }}
         >
           <div className="flex-1 truncate mr-1" style={{ fontSize: `${titleFontSize}px` }}>
-            <Link 
-              href={`/cards/${nodeData.id}`}
-              className="hover:underline font-semibold text-gray-900 truncate block"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {nodeData.title || '제목 없음'}
-            </Link>
+            {nodeData.title || '제목 없음'}
           </div>
           <button 
             className="flex-shrink-0 text-gray-500 hover:text-gray-800 transition-colors"

@@ -9,9 +9,13 @@ import React, { useMemo, useEffect } from 'react';
 import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
 import { loadBoardSettings } from '@/lib/board-utils';
 import { useAppStore } from '@/store/useAppStore';
+import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
 
-// 디버깅용 로그
-console.log('[CustomEdge] 모듈이 로드됨 - EDGE_TYPES에 등록 확인 필요');
+// 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
+const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
+
+// 디버깅용 로그 - 순환 참조 방지를 위해 EDGE_TYPES 접근 제거
+console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge`);
 
 // 확장된 엣지 Props 인터페이스
 interface CustomEdgeProps extends EdgeProps {
@@ -48,8 +52,16 @@ function CustomEdge({
   data,
   ...restProps
 }: CustomEdgeProps) {
-  // 컴포넌트 초기화 로그
-  console.log(`[CustomEdge] 컴포넌트 렌더링 시작: ID=${id}, 타입=${type || 'custom'}`);
+  // 컴포넌트 초기화 로그 - 상세 정보 추가 (타입 검증은 유지)
+  console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
+    id: id,
+    source: source,
+    target: target,
+    type: type,
+    expectedType: EDGE_TYPES_KEYS.custom,
+    isTypeValid: type === EDGE_TYPES_KEYS.custom,
+    componentId: COMPONENT_ID
+  });
   
   // Zustand 스토어에서 boardSettings 가져오기
   const { boardSettings } = useAppStore();
@@ -158,6 +170,7 @@ function CustomEdge({
       style={edgeStyle}
       className={isAnimated ? 'edge-animated' : ''}
       data-selected={selected ? 'true' : 'false'}
+      data-component-id={COMPONENT_ID}
       {...(() => {
         // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
         const { sourceHandleId, targetHandleId, pathOptions, selectable, deletable, ...cleanProps } = restProps;
@@ -167,4 +180,4 @@ function CustomEdge({
   );
 }
 
-export default React.memo(CustomEdge); 
+export default CustomEdge; 

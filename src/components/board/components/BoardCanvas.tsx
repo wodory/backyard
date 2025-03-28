@@ -21,12 +21,15 @@ import {
   OnConnectStartParams,
   OnConnectStart,
   OnConnectEnd,
-  MarkerType
+  MarkerType,
+  Viewport
 } from '@xyflow/react';
 import { BoardSettings } from '@/lib/board-utils';
 // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
-import CardNode from '@/components/board/nodes/CardNode';
-import CustomEdge from '@/components/board/nodes/CustomEdge';
+// import CardNode from '@/components/board/nodes/CardNode';
+// import CustomEdge from '@/components/board/nodes/CustomEdge';
+// 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
+import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 import NodeInspect from '@/components/board/nodes/NodeInspect';
 import { cn } from '@/lib/utils';
 import BoardControls from './BoardControls';
@@ -78,6 +81,8 @@ interface BoardCanvasProps {
   onDragOver?: (event: React.DragEvent) => void;
   /** 드롭 핸들러 (옵셔널) */
   onDrop?: (event: React.DragEvent) => void;
+  /** 뷰포트 변경 핸들러 (옵셔널) */
+  onViewportChange?: (viewport: Viewport) => void;
 }
 
 /**
@@ -107,21 +112,28 @@ export default function BoardCanvas({
   isAuthenticated,
   userId,
   onDragOver,
-  onDrop
+  onDrop,
+  onViewportChange
 }: BoardCanvasProps) {
-  // 컴포넌트 내부에 노드 및 엣지 타입 직접 정의
-  const nodeTypes = useMemo(() => ({
-    card: CardNode,
-    nodeInspect: NodeInspect,
-    default: CardNode
-  }), []);
+  // 컴포넌트 내부에 노드 및 엣지 타입 직접 정의 -> 제거 
+  // const nodeTypes = useMemo(() => ({
+  //   card: CardNode,
+  //   nodeInspect: NodeInspect,
+  //   default: CardNode
+  // }), []);
   
-  const edgeTypes = useMemo(() => ({
-    custom: CustomEdge,
-    default: CustomEdge
-  }), []);
+  // const edgeTypes = useMemo(() => ({
+  //   custom: CustomEdge,
+  //   default: CustomEdge
+  // }), []);
+
+  // 로그 변경
+console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { 
+  NODE_TYPES: NODE_TYPES ? 'DEFINED' : 'UNDEFINED', 
+  EDGE_TYPES: EDGE_TYPES ? 'DEFINED' : 'UNDEFINED' 
+});
   
-  console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { nodeTypes, edgeTypes });
+  // console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { nodeTypes, edgeTypes });
   
   // 기본 엣지 옵션 메모이제이션
   const defaultEdgeOptions = useMemo(() => ({ 
@@ -155,8 +167,12 @@ export default function BoardCanvas({
         onConnectEnd={onConnectEnd}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
+        onViewportChange={onViewportChange}
+        // 노드 타입 버그 수정
+        // nodeTypes={nodeTypes}
+        // edgeTypes={edgeTypes}
+        nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
         connectionMode={ConnectionMode.Loose}
         connectionLineType={boardSettings.connectionLineType as any}
         snapToGrid={boardSettings.snapToGrid}
