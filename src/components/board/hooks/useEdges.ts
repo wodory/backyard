@@ -85,9 +85,16 @@ export function useEdges({
   
   /**
    * 노드 연결 핸들러: 노드 간 연결 생성 처리
-   * @param params 연결 파라미터
+   * @param {object} params 연결 파라미터
    */
   const onConnect = useCallback((params: Connection) => {
+    // 연결 정보 로깅 (디버깅용)
+    console.log('[useEdges] onConnect - 연결 파라미터:', { 
+      ...params,
+      rawSourceHandle: params.sourceHandle, 
+      rawTargetHandle: params.targetHandle 
+    });
+    
     // 소스 노드와 타겟 노드가 같은 경우 연결 방지
     if (params.source === params.target) {
       toast.error('같은 카드에 연결할 수 없습니다.');
@@ -98,14 +105,28 @@ export function useEdges({
     const sourceNode = nodes.find(node => node.id === params.source);
     const targetNode = nodes.find(node => node.id === params.target);
     
+    // 노드 정보 로깅
+    console.log('[useEdges] onConnect - 노드 정보:', { 
+      sourceNode: sourceNode ? sourceNode.id : 'not found', 
+      targetNode: targetNode ? targetNode.id : 'not found'
+    });
+    
     if (sourceNode && targetNode) {
       // 현재 레이아웃 방향 판단 (노드의 targetPosition으로 확인)
       const firstNode = nodes[0];
       const isHorizontal = firstNode?.targetPosition === Position.Left;
       
-      // 핸들 ID 설정
+      console.log('[useEdges] onConnect - 레이아웃 방향:', { 
+        isHorizontal, 
+        firstNodeTargetPosition: firstNode?.targetPosition
+      });
+      
+      // 핸들 ID 설정 - 이미 suffix를 포함하는 경우는 그대로 사용
       let sourceHandle = params.sourceHandle;
       let targetHandle = params.targetHandle;
+      
+      // 들어온 핸들 ID 로깅
+      console.log('[useEdges] onConnect - 원본 핸들 ID:', { sourceHandle, targetHandle });
       
       // 핸들 ID가 없는 경우 기본값 설정
       if (!sourceHandle) {
@@ -121,6 +142,14 @@ export function useEdges({
         // 접미사가 없는 경우 추가
         targetHandle = `${targetHandle}-target`;
       }
+      
+      // 추가 디버깅 로그
+      console.log('[useEdges] onConnect - 핸들 ID 처리 후:', { 
+        sourceHandle, 
+        targetHandle,
+        sourceNode: sourceNode.id,
+        targetNode: targetNode.id
+      });
       
       // 엣지 ID 생성 - 소스ID-타겟ID-타임스탬프
       const edgeId = `${params.source}-${params.target}-${Date.now()}`;
@@ -151,25 +180,48 @@ export function useEdges({
         } : undefined,
         data: {
           edgeType: boardSettings.connectionLineType,
-          settings: { ...boardSettings }
+          settings: { ...boardSettings },
+          // 추가 디버깅 정보 포함
+          debug: {
+            createdAt: new Date().toISOString(),
+            sourceNodePosition: sourceNode.position,
+            targetNodePosition: targetNode.position,
+            sourceHandleOriginal: params.sourceHandle,
+            targetHandleOriginal: params.targetHandle,
+            originalParams: { ...params }
+          }
         },
       };
       
       // 새 Edge 추가 및 로컬 스토리지에 저장
       setEdges((eds) => {
+        // React Flow의 addEdge 함수를 사용하여 엣지 생성
         const newEdges = addEdge(newEdge, eds);
         
-        // 엣지 저장
-        saveEdges(newEdges);
+        // 엣지가 성공적으로 추가되었는지 확인
+        const edgeAdded = newEdges.some(e => e.id === edgeId);
+        console.log(`[useEdges] 엣지 추가 결과:`, { 
+          success: edgeAdded, 
+          edgeCount: newEdges.length,
+          previousEdgeCount: eds.length
+        });
+        
+        if (edgeAdded) {
+          // 엣지 저장
+          saveEdges(newEdges);
+          // 성공 메시지
+          toast.success('카드가 연결되었습니다.');
+        } else {
+          // 실패 메시지
+          toast.error('카드 연결에 실패했습니다. 다시 시도해주세요.');
+          console.error('[useEdges] 엣지 추가 실패:', { newEdge, existingEdges: eds });
+        }
         
         return newEdges;
       });
       
       // 저장 상태로 표시
       hasUnsavedChanges.current = true;
-      
-      // 성공 메시지
-      toast.success('카드가 연결되었습니다.');
     }
   }, [nodes, boardSettings, saveEdges, setEdges]);
 
@@ -202,13 +254,15 @@ export function useEdges({
    * @returns 생성된 엣지
    */
   const createEdgeOnDrop = useCallback((sourceId: string, targetId: string) => {
+    console.log('[useEdges] createEdgeOnDrop - 시작:', { sourceId, targetId });
+    
     // 엣지 ID 생성 - 소스ID-타겟ID-타임스탬프
     const edgeId = `${sourceId}-${targetId}-${Date.now()}`;
     
     // 엣지 타입 명시적 설정
     const edgeType = 'custom'; // 항상 'custom' 타입 사용 (EDGE_TYPES에 등록된 타입)
     
-    // 핸들 ID 명시적 설정
+    // 핸들 ID 명시적 설정 - 일관성을 위해 "-source", "-target" 접미사 사용
     const sourceHandle = 'right-source';
     const targetHandle = 'left-target';
     
