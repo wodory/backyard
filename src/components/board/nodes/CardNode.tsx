@@ -113,6 +113,9 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  
+  // ReactFlow 인스턴스 가져오기
+  const reactFlowInstance = useReactFlow();
 
   // 컴포넌트 초기화 로그 - 상세 정보 추가 (NODE_TYPES 참조 제거)
   console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
@@ -148,6 +151,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   const defaultCardWidth = theme.node.width;
   const cardHeaderHeight = theme.node.height;
   const cardMaxHeight = theme.node.maxHeight;
+  const borderWidth = theme.node.borderWidth;
   
   // 폰트 크기 - 테마 컨텍스트에서 가져오기
   const titleFontSize = theme.node.font.titleSize;
@@ -180,11 +184,42 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     setIsHovered(false);
   }, []);
   
-  // 카드 확장 토글
+  // 노드를 선택 상태로 설정하는 함수
+  const selectThisNode = useCallback(() => {
+    // 앱 스토어의 카드 선택 함수 호출
+    selectCard(id);
+    
+    // ReactFlow 내부 노드 상태 업데이트
+    reactFlowInstance.setNodes((nodes) => 
+      nodes.map((node) => ({
+        ...node,
+        selected: node.id === id
+      }))
+    );
+  }, [id, selectCard, reactFlowInstance]);
+  
+  // 카드 확장 토글 함수 - 노드 선택 기능 추가
   const toggleExpand = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  }, [isExpanded]);
+    
+    // 확장 상태 토글
+    setIsExpanded((prev) => !prev);
+    
+    // 확장 시 노드를 선택 상태로 만들기
+    if (!isExpanded) {
+      selectThisNode();
+    }
+    
+    console.log(`[CardNode] 노드 ${id} 확장 상태 변경:`, !isExpanded);
+  }, [isExpanded, id, selectThisNode]);
+  
+  // 확장 상태가 변경될 때 노드 선택 상태 동기화
+  useEffect(() => {
+    if (isExpanded && !selected && !isMultiSelected) {
+      // 확장된 상태이지만 선택되지 않은 경우 선택 상태로 설정
+      selectThisNode();
+    }
+  }, [isExpanded, selected, isMultiSelected, selectThisNode]);
   
   // 노드 트랜지션 완료 후 React Flow 업데이트
   const handleTransitionEnd = useCallback(() => {
@@ -202,19 +237,34 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       ? (nodeData.height || cardMaxHeight)
       : cardHeaderHeight + 2; // 헤더 높이 + 테두리
     
-    // 최소한의 동적 스타일만 포함
+    // 스타일 계산
     const style: CSSProperties = {
       width: cardWidth,
       height: cardHeight,
-      zIndex: isActive || isExpanded ? 9999 : 1, // 활성화된 카드는 항상 최상위에 표시
+      // 확장된 노드는 더 높은 z-index 값을 가지도록 설정
+      zIndex: isExpanded ? 9999 : (selected || isMultiSelected ? 100 : 1),
       backgroundColor: theme.node.backgroundColor,
       borderColor: selected || isMultiSelected ? theme.node.selectedBorderColor : theme.node.borderColor,
       borderWidth: theme.node.borderWidth,
       borderRadius: theme.node.borderRadius,
+      overflow: 'visible', // 핸들러가 잘리지 않도록 오버플로우 설정
+      position: 'relative', // 핸들러 위치 기준점
+      // 확장된 노드에 그림자 효과 추가
+      boxShadow: isExpanded 
+        ? '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' 
+        : selected || isMultiSelected 
+          ? '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+          : 'none',
+      transition: 'height 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
     };
     
     return style;
-  }, [data, isExpanded, isActive, defaultCardWidth, cardMaxHeight, cardHeaderHeight, selected, isMultiSelected, theme]);
+  }, [
+    data, isExpanded, selected, isMultiSelected, 
+    defaultCardWidth, cardMaxHeight, cardHeaderHeight, 
+    theme.node.backgroundColor, theme.node.selectedBorderColor, 
+    theme.node.borderColor, theme.node.borderWidth, theme.node.borderRadius
+  ]);
 
   // 노드 데이터 안전하게 타입 변환
   const nodeData = data as NodeData;
@@ -318,6 +368,59 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     );
   }, [isExpanded, nodeData.content, contentFontSize, renderTags]);
 
+  // 핸들 표시 여부 결정 - normal, hover, selected 상태에 따라 결정
+  const showHandles = useMemo(() => isHovered || selected || isMultiSelected, [isHovered, selected, isMultiSelected]);
+
+  // 테두리 고려한 오프셋 계산
+  const handleOffset = useMemo(() => 
+    Math.ceil(handleSize / 2) + borderWidth
+  , [handleSize, borderWidth]);
+
+  // 각 방향별 핸들 스타일 계산
+  const getHandleStyleByPosition = useCallback((position: Position) => {
+    // 기본 스타일
+    const baseStyle: CSSProperties = {
+      width: handleSize,
+      height: handleSize,
+      background: theme.handle.backgroundColor,
+      borderColor: theme.handle.borderColor,
+      borderWidth: theme.handle.borderWidth,
+      borderStyle: 'solid',
+      borderRadius: '50%',
+      opacity: showHandles ? 1 : 0,
+      transition: 'opacity 0.2s ease-in-out',
+      zIndex: 1000, // 높은 z-index로 설정
+      pointerEvents: showHandles ? 'auto' : 'none', // 숨겨진 상태에서 이벤트 무시
+    };
+    
+    // 각 방향별 위치 미세 조정 
+    // 핸들의 반지름 + 테두리 두께를 고려하여 정확한 위치 계산
+    switch(position) {
+      case Position.Top:
+        baseStyle.top = -handleOffset;
+        baseStyle.left = '50%';
+        baseStyle.transform = 'translateX(-50%)';
+        break;
+      case Position.Right:
+        baseStyle.right = -handleOffset;
+        baseStyle.top = '50%';
+        baseStyle.transform = 'translateY(-50%)';
+        break;
+      case Position.Bottom:
+        baseStyle.bottom = -handleOffset;
+        baseStyle.left = '50%';
+        baseStyle.transform = 'translateX(-50%)';
+        break;
+      case Position.Left:
+        baseStyle.left = -handleOffset;
+        baseStyle.top = '50%';
+        baseStyle.transform = 'translateY(-50%)';
+        break;
+    }
+    
+    return baseStyle;
+  }, [handleSize, theme.handle.backgroundColor, theme.handle.borderColor, theme.handle.borderWidth, showHandles, handleOffset]);
+
   // 최종 렌더링
   return (
     <>
@@ -327,7 +430,8 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
           "border-primary": selected || isMultiSelected,
           "border-muted": !selected && !isMultiSelected,
           "shadow-lg": isHovered || isActive,
-          "shadow-sm": !(isHovered || isActive)
+          "shadow-sm": !(isHovered || isActive),
+          "expanded": isExpanded // 확장 상태를 나타내는 클래스 추가
         })}
         style={getNodeStyle()}
         onMouseEnter={handleMouseEnter}
@@ -335,69 +439,38 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
         onClick={handleCardClick}
         onTransitionEnd={handleTransitionEnd}
         data-component-id={COMPONENT_ID}
+        data-expanded={isExpanded ? "true" : "false"} // 확장 상태를 데이터 속성으로 추가
       >
-        {/* 수평 연결 핸들 (좌우) - 테마 설정을 사용 */}
+        {/* 수평 연결 핸들 (좌우) - 각 방향별 스타일 적용 */}
         <Handle
           type="source"
           position={Position.Right}
           id="right-source"
           isConnectable={isConnectable}
-          style={{
-            width: handleSize,
-            height: handleSize,
-            background: theme.handle.backgroundColor,
-            borderColor: theme.handle.borderColor,
-            borderWidth: theme.handle.borderWidth,
-            borderStyle: 'solid',
-            borderRadius: '50%'
-          }}
+          style={getHandleStyleByPosition(Position.Right)}
         />
         <Handle
           type="target"
           position={Position.Left}
           id="left-target"
           isConnectable={isConnectable}
-          style={{
-            width: handleSize,
-            height: handleSize,
-            background: theme.handle.backgroundColor,
-            borderColor: theme.handle.borderColor,
-            borderWidth: theme.handle.borderWidth,
-            borderStyle: 'solid',
-            borderRadius: '50%'
-          }}
+          style={getHandleStyleByPosition(Position.Left)}
         />
         
-        {/* 수직 연결 핸들 (상하) - 테마 설정을 사용 */}
+        {/* 수직 연결 핸들 (상하) - 각 방향별 스타일 적용 */}
         <Handle
           type="source"
           position={Position.Bottom}
           id="bottom-source"
           isConnectable={isConnectable}
-          style={{
-            width: handleSize,
-            height: handleSize,
-            background: theme.handle.backgroundColor,
-            borderColor: theme.handle.borderColor,
-            borderWidth: theme.handle.borderWidth,
-            borderStyle: 'solid',
-            borderRadius: '50%'
-          }}
+          style={getHandleStyleByPosition(Position.Bottom)}
         />
         <Handle
           type="target"
           position={Position.Top}
           id="top-target"
           isConnectable={isConnectable}
-          style={{
-            width: handleSize,
-            height: handleSize,
-            background: theme.handle.backgroundColor,
-            borderColor: theme.handle.borderColor,
-            borderWidth: theme.handle.borderWidth,
-            borderStyle: 'solid',
-            borderRadius: '50%'
-          }}
+          style={getHandleStyleByPosition(Position.Top)}
         />
         
         {/* 카드 헤더 */}
@@ -409,7 +482,10 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
             {nodeData.title || '제목 없음'}
           </div>
           <button 
-            className="flex-shrink-0 text-gray-500 hover:text-gray-800 transition-colors"
+            className={cn(
+              "flex-shrink-0 text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-sm",
+              isExpanded ? "bg-gray-100" : ""
+            )}
             onClick={toggleExpand}
             aria-label={isExpanded ? "접기" : "펼치기"}
           >

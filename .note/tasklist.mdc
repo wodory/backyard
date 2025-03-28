@@ -376,6 +376,101 @@ const { user, session, error } = await supabase.auth.signIn({
 - 모든 아이콘은 60x60 크기로 일관성 있게 구현
 
 
+# BoardComponent.tsx 리팩토링
+
+## 1. 리팩토링 목표
+
+현재 BoardComponent.tsx(1100줄 이상)는 다음과 같은 문제점이 있습니다:
+- 너무 많은 역할과 책임을 가지고 있음
+- 코드 가독성과 유지보수성이 낮음
+- 테스트하기 어려운 구조
+
+제안된 폴더 구조와 모듈 분리 전략을 따라 단일 책임 원칙에 맞게 리팩토링하겠습니다.
+
+## 2. 리팩토링 단계
+
+### 1단계: 타입 정의 분리 (완료)
+- ✅ `board-types.ts` 파일 생성 및 타입 정의 이전
+
+### 2단계: 커스텀 훅 분리
+- ✅ `useNodes.ts` - 노드 관련 로직 분리 완료
+- ✅ `useEdges.ts` - 엣지 관련 로직 분리 
+- ✅ `useBoardHandlers.ts` - 보드 이벤트 핸들러 분리
+- ✅ `useBoardUtils.ts` - 유틸리티 함수 분리
+
+### 3단계: 컴포넌트 분리
+- ✅ `Board.tsx` - 메인 컨테이너 컴포넌트 생성
+- ✅ `BoardCanvas.tsx` - ReactFlow 캔버스 관련 로직 분리
+- ✅ `BoardControls.tsx` - 컨트롤 패널 관련 로직 분리
+
+### 4단계: 상태 관리 리팩토링
+- ✅ `useBoardStore.ts` - Zustand를 활용한 전역 상태 관리 구현
+
+### 5단계: 노드 컴포넌트 분리
+- ✅ `nodes/` 폴더 생성
+- ✅ `nodes/CustomNodeTypeA.tsx` 등 커스텀 노드 컴포넌트 분리
+
+### 6단계: 유틸리티 분리
+- ✅ `utils/graphUtils.ts` - 그래프 관련 순수 함수 분리
+- ✅ `utils/constants.ts` - 상수 정의 파일 생성/업데이트
+
+### 7단계: 테스트 작성
+- ✅ `useNodes.test.tsx` - useNodes 훅 테스트 완료
+- ⬜ src/component/layout/MainCanvas.tsx에 리펙토링한 파일 반영 
+- ⬜ src/app/board/page.tsx에 리펙토링한 파일 반영
+
+
+## 3. 세부 구현 계획
+
+### useEdges.ts 구현 (다음 단계)
+```typescript
+/**
+ * useEdges: 엣지 관련 상태 및 로직을 관리하는 훅
+ * - 엣지 상태 관리 (useEdgesState)
+ * - 엣지 변경 핸들러 (handleEdgesChange)
+ * - 엣지 연결 핸들러 (onConnect)
+ * - 엣지 저장 함수 (saveEdges)
+ */
+```
+
+### useBoardStore.ts 구현 방향
+```typescript
+/**
+ * useBoardStore: 보드 상태 및 액션을 관리하는 전역 상태 저장소
+ * - 노드/엣지 상태 관리
+ * - UI 상태 관리 (선택된 노드, 모달 상태 등)
+ * - 액션 함수 (노드/엣지 추가, 삭제, 업데이트)
+ */
+```
+
+### Board.tsx 컴포넌트 구조
+```typescript
+/**
+ * Board: 보드 전체를 조율하는 메인 컴포넌트
+ * - 레이아웃 관리
+ * - BoardCanvas와 BoardControls 조율
+ * - 모달 관리
+ */
+```
+
+## 4. 리팩토링 전략 및 주의사항
+
+1. **점진적 접근**: 한 번에 모든 것을 변경하지 않고, 모듈별로 분리하며 각 단계마다 테스트
+
+2. **상태 관리 통합**: 기존에 분산된 상태를 Zustand 저장소로 통합하여 상태 관리 일원화
+
+3. **React Flow 컨텍스트 관리**: React Flow 훅은 반드시 적절한 컨텍스트 내에서 사용하도록 주의
+
+4. **성능 최적화**: 불필요한 리렌더링 방지를 위한 메모이제이션 및 Zustand 선택자 활용
+
+5. **테스트 우선**: 각 모듈은 분리 후 즉시 테스트 작성하여 기능 보장
+
+## 5. 다음 단계 (useEdges 훅 구현)
+
+현재 진행 중인 리팩토링에서 다음 단계는 엣지 관련 로직을 분리하는 것입니다. useNodes와 유사한 패턴으로 useEdges 훅을 구현하여 BoardComponent에서 엣지 관리 로직을 분리하겠습니다.
+
+
+
 
 ** Todo **
 - [ ] 카드 리스트 삭제 -> 캔버스 삭제 
@@ -415,6 +510,9 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
   - [ ] 프로젝트 삭제하면 카드는 어떻게 해야 하지... 아마 전체 삭제. 단, trashcan으로 이동. (90일 보관)
 - [ ] 카드 공유를 위해 카드 id도 uid로 개선 
 - [ ] 로컬 서버 DB도 supabase로 일원화하기 
+- [ ] 사이드바 
+  - [ ] 사이드바 크기 조절 -> react flow도 크기 조절 
+  - [ ] 사이드바 선택 -> 보드 노드도 선택 
 - [ ] 아이콘
   - [ ] new https://lucide.dev/icons/file-plus
   - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
@@ -423,131 +521,7 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
 
 
 
-[MODE: INNOVATE]
 
-BoardComponent.tsx를 분석해보니 1186줄의 대규모 컴포넌트로, 다양한 책임과 기능이 혼재되어 있습니다. 리팩토링을 위한 방향성을 최신 트렌드에 맞춰 우선순위별로 제안해드리겠습니다.
 
-## 1. 커스텀 훅으로 로직 분리 (최우선)
 
-현재 컴포넌트 내에 상태 관리와 이벤트 핸들러, 데이터 페칭 등 모든 로직이 한곳에 모여있습니다. 기능별로 커스텀 훅으로 분리하는 것이 가장 시급합니다.
-
-```javascript
-// 예시: 노드 관련 로직 분리
-function useNodes() {
-  const [nodes, setNodes] = useNodesState([]);
-  // 노드 관련 로직...
-  return { nodes, setNodes, handleNodesChange, ... };
-}
-
-// 예시: 에지 관련 로직 분리
-function useEdges() {
-  const [edges, setEdges] = useEdgesState([]);
-  // 에지 관련 로직...
-  return { edges, setEdges, handleEdgesChange, onConnect, ... };
-}
-```
-
-## 2. 컴포넌트 분해 (높은 우선순위)
-
-메인 컴포넌트를 더 작은 컴포넌트로 분리하여 각각이 단일 책임을 갖도록 합니다:
-
-```javascript
-// 예시 구조
-function BoardComponent({ onSelectCard, className, showControls }) {
-  // 최소한의 상태와 메인 로직만 유지
-  return (
-    <div className={...}>
-      <ReactFlow {...flowProps}>
-        <BoardControls />
-        <BoardBackground />
-        <BoardPanels />
-      </ReactFlow>
-      <BoardModals />
-    </div>
-  );
-}
-```
-
-## 3. 전역 상태 관리 개선 (중요)
-
-이미 useAppStore를 사용하고 있지만, 더 많은 상태와 로직을 전역 상태로 이동시키는 것이 좋습니다. Zustand, Jotai, Recoil 등 모던 상태 관리 도구를 적극 활용하세요.
-
-```javascript
-// 예시: 상태를 세분화하여 관리
-const useBoardStore = create((set) => ({
-  nodes: [],
-  edges: [],
-  settings: DEFAULT_BOARD_SETTINGS,
-  setNodes: (nodes) => set({ nodes }),
-  // ...더 많은 액션
-}));
-```
-
-## 4. 유틸리티 함수 분리 (중요)
-
-상태 변경과 관련 없는 순수 함수들은 별도 유틸리티 파일로 분리:
-
-```javascript
-// utils/board-utils.ts
-export function applyStoredLayout(cards, layout) {
-  // 구현...
-}
-
-export function saveLayout(nodes) {
-  // 구현...
-}
-```
-
-## 5. 서비스 레이어 도입 (좋은 실행)
-
-데이터 페칭 및 저장 로직을 서비스 레이어로 분리:
-
-```javascript
-// services/boardService.ts
-export async function fetchCards() {
-  // API 호출 로직...
-}
-
-export async function saveLayoutToServer(layout) {
-  // 저장 로직...
-}
-```
-
-## 6. React Query 또는 SWR 도입 (최신 트렌드)
-
-데이터 페칭 로직을 React Query나 SWR로 대체하여 캐싱, 재시도, 낙관적 업데이트 등 개선:
-
-```javascript
-// 예시: React Query 사용
-const { data: cards, isLoading, error } = useQuery('cards', fetchCards);
-const updateMutation = useMutation(updateCard);
-```
-
-## 7. 이벤트 핸들러 최적화 (성능 개선)
-
-이벤트 핸들러 최적화 및 메모이제이션 개선:
-
-```javascript
-// 예시: 의존성을 최소화하여 최적화
-const handleNodeClick = useCallback((event, node) => {
-  // 핵심 로직만 유지
-}, [필수_의존성만_포함]);
-```
-
-## 8. 타입 시스템 강화 (유지보수성)
-
-인터페이스와 타입 정의를 강화하여 코드의 안정성 향상:
-
-```typescript
-interface NodeData {
-  title: string;
-  content: string;
-  tags: string[];
-  // 기타 필요한 속성
-}
-
-type BoardNode = Node<NodeData>;
-```
-
-이러한 방향으로 리팩토링하면 코드의 가독성, 유지보수성, 테스트 용이성이 크게 향상될 것입니다. 각 부분이 명확한 책임을 갖고, 변경 시 서로 영향을 최소화할 수 있습니다.
 
