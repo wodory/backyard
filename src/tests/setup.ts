@@ -7,7 +7,7 @@
 
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-// import matchers from '@testing-library/jest-dom/matchers';
+import '@testing-library/jest-dom';
 
 // JSDOM 환경이 없을 경우 대비
 if (typeof window === 'undefined') {
@@ -21,16 +21,6 @@ if (typeof window === 'undefined') {
     configurable: true
   });
 }
-
-// DOM 테스트를 위한 matchers 확장
-// 비동기로 import 후 extend 실행
-import('@testing-library/jest-dom/matchers').then(matchers => {
-  if (matchers && matchers.default) {
-    expect.extend(matchers.default);
-  }
-}).catch(error => {
-  console.warn('jest-dom matchers 확장 로드 실패:', error);
-});
 
 // 각 테스트 후 DOM 정리
 afterEach(() => {

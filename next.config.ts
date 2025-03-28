@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // React Flow 및 관련 패키지 트랜스파일 설정
+  transpilePackages: ['@xyflow/react', 'zustand'],
 };
 
 export default nextConfig;

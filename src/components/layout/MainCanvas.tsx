@@ -3,8 +3,7 @@
 import { useAppStore } from '@/store/useAppStore';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Loader2 } from 'lucide-react';
-import BoardComponent from '@/components/board/BoardComponent';
-import '@xyflow/react/dist/style.css';
+import Board from '@/components/board/components/Board';
 
 // 외부 내보내기 컴포넌트
 export function MainCanvas() {
@@ -13,7 +12,7 @@ export function MainCanvas() {
   return (
     <ReactFlowProvider>
       <div className="w-full h-full pt-14">
-        <BoardComponent
+        <Board
           onSelectCard={selectCard}
           className="bg-background"
           showControls={true}

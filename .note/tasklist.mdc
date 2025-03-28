@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 [ ] 카드 보드의 카드 구조
 - 카드 보드의 카드는 해더와 콘텐츠 영억으로 나뉜다
 - 카드는 접고 펼수 있다. 기본값은 접은 상태이다.
@@ -383,13 +388,18 @@ const { user, session, error } = await supabase.auth.signIn({
 - [ ] 오토 레이아웃에서 노드 크기를 유지하기
 
 
-** 프로젝트 개념 도입 + DB 리펙토링**
+**프로젝트 개념 도입 + DB 리펙토링**
 
 ***개념***
-~~
+User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --- User Z
+        +              +- tree & node info
+        +              +- project info
+        +         
+        +-> Project 2  +- card a, b, c, q
+                       +- tree & node info
+                       +- project info
+                  
 
-~~
-#task 
 - [ ] 프로젝트 + 프로젝트 속성 스키마
   - [ ] 프로젝트 이름
   - [ ] 소유자 
@@ -408,3 +418,136 @@ const { user, session, error } = await supabase.auth.signIn({
 - [ ] 아이콘
   - [ ] new https://lucide.dev/icons/file-plus
   - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
+
+
+
+
+
+[MODE: INNOVATE]
+
+BoardComponent.tsx를 분석해보니 1186줄의 대규모 컴포넌트로, 다양한 책임과 기능이 혼재되어 있습니다. 리팩토링을 위한 방향성을 최신 트렌드에 맞춰 우선순위별로 제안해드리겠습니다.
+
+## 1. 커스텀 훅으로 로직 분리 (최우선)
+
+현재 컴포넌트 내에 상태 관리와 이벤트 핸들러, 데이터 페칭 등 모든 로직이 한곳에 모여있습니다. 기능별로 커스텀 훅으로 분리하는 것이 가장 시급합니다.
+
+```javascript
+// 예시: 노드 관련 로직 분리
+function useNodes() {
+  const [nodes, setNodes] = useNodesState([]);
+  // 노드 관련 로직...
+  return { nodes, setNodes, handleNodesChange, ... };
+}
+
+// 예시: 에지 관련 로직 분리
+function useEdges() {
+  const [edges, setEdges] = useEdgesState([]);
+  // 에지 관련 로직...
+  return { edges, setEdges, handleEdgesChange, onConnect, ... };
+}
+```
+
+## 2. 컴포넌트 분해 (높은 우선순위)
+
+메인 컴포넌트를 더 작은 컴포넌트로 분리하여 각각이 단일 책임을 갖도록 합니다:
+
+```javascript
+// 예시 구조
+function BoardComponent({ onSelectCard, className, showControls }) {
+  // 최소한의 상태와 메인 로직만 유지
+  return (
+    <div className={...}>
+      <ReactFlow {...flowProps}>
+        <BoardControls />
+        <BoardBackground />
+        <BoardPanels />
+      </ReactFlow>
+      <BoardModals />
+    </div>
+  );
+}
+```
+
+## 3. 전역 상태 관리 개선 (중요)
+
+이미 useAppStore를 사용하고 있지만, 더 많은 상태와 로직을 전역 상태로 이동시키는 것이 좋습니다. Zustand, Jotai, Recoil 등 모던 상태 관리 도구를 적극 활용하세요.
+
+```javascript
+// 예시: 상태를 세분화하여 관리
+const useBoardStore = create((set) => ({
+  nodes: [],
+  edges: [],
+  settings: DEFAULT_BOARD_SETTINGS,
+  setNodes: (nodes) => set({ nodes }),
+  // ...더 많은 액션
+}));
+```
+
+## 4. 유틸리티 함수 분리 (중요)
+
+상태 변경과 관련 없는 순수 함수들은 별도 유틸리티 파일로 분리:
+
+```javascript
+// utils/board-utils.ts
+export function applyStoredLayout(cards, layout) {
+  // 구현...
+}
+
+export function saveLayout(nodes) {
+  // 구현...
+}
+```
+
+## 5. 서비스 레이어 도입 (좋은 실행)
+
+데이터 페칭 및 저장 로직을 서비스 레이어로 분리:
+
+```javascript
+// services/boardService.ts
+export async function fetchCards() {
+  // API 호출 로직...
+}
+
+export async function saveLayoutToServer(layout) {
+  // 저장 로직...
+}
+```
+
+## 6. React Query 또는 SWR 도입 (최신 트렌드)
+
+데이터 페칭 로직을 React Query나 SWR로 대체하여 캐싱, 재시도, 낙관적 업데이트 등 개선:
+
+```javascript
+// 예시: React Query 사용
+const { data: cards, isLoading, error } = useQuery('cards', fetchCards);
+const updateMutation = useMutation(updateCard);
+```
+
+## 7. 이벤트 핸들러 최적화 (성능 개선)
+
+이벤트 핸들러 최적화 및 메모이제이션 개선:
+
+```javascript
+// 예시: 의존성을 최소화하여 최적화
+const handleNodeClick = useCallback((event, node) => {
+  // 핵심 로직만 유지
+}, [필수_의존성만_포함]);
+```
+
+## 8. 타입 시스템 강화 (유지보수성)
+
+인터페이스와 타입 정의를 강화하여 코드의 안정성 향상:
+
+```typescript
+interface NodeData {
+  title: string;
+  content: string;
+  tags: string[];
+  // 기타 필요한 속성
+}
+
+type BoardNode = Node<NodeData>;
+```
+
+이러한 방향으로 리팩토링하면 코드의 가독성, 유지보수성, 테스트 용이성이 크게 향상될 것입니다. 각 부분이 명확한 책임을 갖고, 변경 시 서로 영향을 최소화할 수 있습니다.
+

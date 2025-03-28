@@ -1,3 +1,9 @@
+/**
+ * @deprecated 이 컴포넌트는 더 이상 사용되지 않습니다. 대신 src/components/board/components/Board.tsx를 사용해 주세요.
+ * 이 파일은 리팩토링 과정에서 새로운 구조의 Board 컴포넌트로 대체되었습니다.
+ * 향후 릴리스에서 제거될 예정이므로 신규 기능 개발 시 새 컴포넌트를 사용하세요.
+ */
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';

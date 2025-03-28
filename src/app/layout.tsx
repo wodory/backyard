@@ -7,6 +7,7 @@
 
 import { ClientLayout } from "@/components/layout/ClientLayout";
 import "@/app/globals.css";
+import "@xyflow/react/dist/style.css";
 
 export default function RootLayout({
   children,
