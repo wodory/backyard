@@ -5,6 +5,10 @@
 .env.development
 .env.production
 .env.local
+.env.development.local
+.env.test
+.env.test.local
+.env.production.local
 
 # 환경 변수 템플릿은 커밋에 포함
 !.env.example

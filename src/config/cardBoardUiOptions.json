@@ -24,10 +24,10 @@
     }
   },
   "handles": {
-    "size": 18,
-    "backgroundColor": "#555555",
-    "borderColor": "#FFFFFF",
-    "borderWidth": 2
+    "size": 10,
+    "backgroundColor": "#FFFFFF",
+    "borderColor": "#555555",
+    "borderWidth": 1
   },
   "layout": {
     "defaultPadding": 20,
@@ -36,14 +36,14 @@
       "vertical": 30
     },
     "nodeSize": {
-      "width": 130,
+      "width": 200,
       "height": 48,
       "maxHeight": 180
     },
     "graphSettings": {
       "nodesep": 60,
       "ranksep": 60,
-      "edgesep": 40
+      "edgesep": 140
     }
   }
 } 

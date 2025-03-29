@@ -23,5 +23,10 @@
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
   "editor.fontSize": 15,
-  "editor.fontFamily": "'Jetbrains mono', Menlo, Monaco, 'Courier New', monospace"
+  "editor.fontFamily": "'Jetbrains mono', Menlo, Monaco, 'Courier New', monospace",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "editor.formatOnSave": true,
+  "eslint.validate": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
 }

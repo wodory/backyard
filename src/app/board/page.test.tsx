@@ -57,7 +57,7 @@ const viewportCenterMock = { x: 500, y: 300 };
 vi.mock('@xyflow/react', () => {
   // ReactFlow 컴포넌트 모킹
   const ReactFlowMock = ({ children, onNodesChange }: { children?: React.ReactNode, onNodesChange?: (changes: NodeChange[]) => void }) => (
-    <div 
+    <div
       data-testid="react-flow-mock"
       onClick={() => {
         // 노드 위치 변경 시뮬레이션
@@ -73,7 +73,7 @@ vi.mock('@xyflow/react', () => {
       {children}
     </div>
   );
-  
+
   return {
     // default export 추가 (중요!)
     default: ReactFlowMock,
@@ -86,7 +86,7 @@ vi.mock('@xyflow/react', () => {
     Background: () => <div data-testid="react-flow-background">Background</div>,
     Panel: ({ position, children, className, ...props }: any) => (
       <div data-testid={`react-flow-panel-${position}`} className={className} {...props}>
-        {position === "top-left" && className === "z-20" ? 
+        {position === "top-left" && className === "z-20" ?
           children : children}
       </div>
     ),
@@ -145,7 +145,7 @@ vi.mock('@xyflow/react', () => {
 // CreateCardButton 모킹
 vi.mock('@/components/cards/CreateCardButton', () => ({
   default: ({ onCardCreated }: { onCardCreated?: (cardData: any) => void }) => (
-    <button 
+    <button
       data-testid="create-card-button"
       onClick={() => {
         if (onCardCreated) {
@@ -182,7 +182,7 @@ global.fetch = vi.fn();
 // 추가 모듈 모킹 설정
 vi.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, asChild, variant, size }: any) => (
-    <button 
+    <button
       onClick={onClick}
       data-variant={variant}
       data-size={size}
@@ -223,7 +223,7 @@ vi.mock('lucide-react', () => ({
 vi.mock('./page', async (importOriginal) => {
   // 원본 모듈 가져오기
   const originalModule = await importOriginal();
-  
+
   // 실제 BoardPage 컴포넌트를 사용, 단 내부 함수는 모킹
   return {
     ...(originalModule as object),
@@ -236,7 +236,7 @@ vi.mock('./page', async (importOriginal) => {
       return nodes.map((node: Node, index: number) => ({
         ...node,
         position: {
-          x: (index % 3) * 300 + 50, 
+          x: (index % 3) * 300 + 50,
           y: Math.floor(index / 3) * 200 + 50
         }
       }));
@@ -253,7 +253,7 @@ const mockCardData = [
 // 필요한 모의 설정 추가
 vi.mock('@/components/board/components/Board', () => ({
   default: ({ onSelectCard, className, showControls }: any) => (
-    <div 
+    <div
       data-testid="board-component"
       data-selectcard={!!onSelectCard}
       data-classname={className}
@@ -280,7 +280,7 @@ vi.mock('@/store/useAppStore', () => ({
 describe('BoardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // fetch 모킹
     global.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
@@ -292,29 +292,29 @@ describe('BoardPage', () => {
 
   test('renders Board component inside ReactFlowProvider', async () => {
     render(<BoardPage />);
-    
+
     // ReactFlowProvider가 렌더링되었는지 확인
     expect(screen.getByTestId('react-flow-provider')).toBeInTheDocument();
-    
+
     // Board 컴포넌트가 렌더링되었는지 확인
     const boardComponent = screen.getByTestId('board-component');
     expect(boardComponent).toBeInTheDocument();
-    
+
     // Board 컴포넌트에 올바른 props가 전달되었는지 확인
     expect(boardComponent.getAttribute('data-selectcard')).toBe('true');
     expect(boardComponent.getAttribute('data-classname')).toBe('bg-background');
     expect(boardComponent.getAttribute('data-showcontrols')).toBe('true');
   });
-  
+
   test('autoLayoutNodes function returns correctly formatted nodes', () => {
     // autoLayoutNodes 함수 테스트
     const testNodes = [
       { id: '1', position: { x: 0, y: 0 } },
       { id: '2', position: { x: 0, y: 0 } }
     ];
-    
+
     const result = autoLayoutNodes(testNodes);
-    
+
     expect(result).toHaveLength(2);
     expect(result[0].position.x).toBe(50);
     expect(result[0].position.y).toBe(50);

@@ -32,7 +32,8 @@ import { BoardSettings } from '@/lib/board-utils';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 import NodeInspect from '@/components/board/nodes/NodeInspect';
 import { cn } from '@/lib/utils';
-import BoardControls from './BoardControls';
+// 삭제 3/29
+// import BoardControls from './BoardControls';
 
 interface BoardCanvasProps {
   /** ReactFlow 노드 배열 */
@@ -70,7 +71,7 @@ interface BoardCanvasProps {
   /** 컨트롤 표시 여부 */
   showControls?: boolean;
   /** 래퍼 ref */
-  wrapperRef: React.RefObject<HTMLDivElement>;
+  wrapperRef: React.RefObject<HTMLDivElement | null>;
   /** 추가 CSS 클래스 */
   className?: string;
   /** 사용자 인증 여부 */
@@ -128,10 +129,6 @@ export default function BoardCanvas({
   // }), []);
 
   // 로그 변경
-console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { 
-  NODE_TYPES: NODE_TYPES ? 'DEFINED' : 'UNDEFINED', 
-  EDGE_TYPES: EDGE_TYPES ? 'DEFINED' : 'UNDEFINED' 
-});
   
   // console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { nodeTypes, edgeTypes });
   
@@ -186,6 +183,7 @@ console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', {
             <Background />
             <Controls />
             
+            {/* 삭제 3/29 */}
             {/* <BoardControls
               boardSettings={boardSettings}
               onBoardSettingsChange={onBoardSettingsChange}

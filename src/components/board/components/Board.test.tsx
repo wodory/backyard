@@ -17,6 +17,8 @@ import { useBoardUtils } from '../hooks/useBoardUtils';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useNodeStore } from '@/stores/nodeStore';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 // React Flow 모킹
 mockReactFlow();
@@ -82,6 +84,7 @@ vi.mock('../hooks/useBoardUtils', () => ({
     updateViewportCenter: vi.fn(),
     handleAutoLayout: vi.fn(),
     handleSaveLayout: vi.fn(),
+    saveTransform: vi.fn(),
     hasUnsavedChanges: { current: false },
   })),
 }));
@@ -149,6 +152,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// CreateCardButton 모킹
 vi.mock('@/components/cards/CreateCardButton', () => ({
   default: ({ onClick }: { onClick: () => void }) => (
     <button data-testid="create-card-button" onClick={onClick}>
@@ -170,19 +174,51 @@ vi.mock('./BoardCanvas', () => ({
   ),
 }));
 
+// SimpleCreateCardModal 모킹
 vi.mock('@/components/cards/SimpleCreateCardModal', () => ({
-  SimpleCreateCardModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
+  default: ({ isOpen, onClose, onSubmit }: any) => (
     isOpen ? (
       <div data-testid="create-card-modal">
-        <button data-testid="close-modal-button" onClick={onClose}>Close</button>
+        <button data-testid="close-modal-button" onClick={onClose}>닫기</button>
+        <button data-testid="submit-button" onClick={() => onSubmit({ title: '테스트', content: '내용' })}>제출</button>
       </div>
     ) : null
   ),
 }));
 
+// 스토어 모킹
+vi.mock('@/stores/nodeStore', () => ({
+  useNodeStore: vi.fn(),
+}));
+
+vi.mock('@/stores/appStore', () => ({
+  useAppStore: vi.fn(),
+}));
+
+// 인증 컨텍스트 모킹
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuthContext: vi.fn(),
+}));
+
 describe('Board Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    (useNodeStore as any).mockReturnValue({
+      nodes: [],
+      edges: [],
+      setNodes: vi.fn(),
+      setEdges: vi.fn(),
+    });
+
+    (useAppStore as any).mockReturnValue({
+      showControls: true,
+      setShowControls: vi.fn(),
+    });
+
+    (useAuthContext as any).mockReturnValue({
+      isAuthenticated: true,
+    });
   });
 
   it('renders without crashing', () => {
@@ -192,45 +228,65 @@ describe('Board Component', () => {
 
   it('renders with controls when showControls is true', () => {
     render(<Board showControls={true} />);
-    expect(screen.getByTestId('board-canvas')).toBeInTheDocument();
+    expect(screen.getByTestId('create-card-button')).toBeInTheDocument();
   });
 
   it('does not render controls when showControls is false', () => {
     render(<Board showControls={false} />);
-    expect(screen.getByTestId('board-canvas')).toBeInTheDocument();
+    expect(screen.queryByTestId('create-card-button')).not.toBeInTheDocument();
   });
 
-  it('opens the create card modal when the create card button is clicked', async () => {
+  it('opens create card modal when create card button is clicked', async () => {
     render(<Board showControls={true} />);
     
-    const createCardButton = screen.getByTestId('create-card-button');
-    fireEvent.click(createCardButton);
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
-    });
-  });
-
-  it('closes the create card modal when close button is clicked', async () => {
-    render(<Board showControls={true} />);
-    
-    // 모달 열기
-    const createCardButton = screen.getByTestId('create-card-button');
-    fireEvent.click(createCardButton);
+    // 버튼 클릭
+    fireEvent.click(screen.getByTestId('create-card-button'));
     
     // 모달이 열렸는지 확인
     await waitFor(() => {
       expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
     });
+  });
+
+  it('closes create card modal when close button is clicked', async () => {
+    render(<Board />);
+    
+    // 모달 열기
+    const createButton = screen.getByText('새 카드 만들기');
+    fireEvent.click(createButton);
     
     // 닫기 버튼 클릭
     const closeButton = screen.getByTestId('close-modal-button');
     fireEvent.click(closeButton);
     
     // 모달이 닫혔는지 확인
-    await waitFor(() => {
-      expect(screen.queryByTestId('create-card-modal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('create-card-modal')).toBeNull();
+  });
+
+  it('handles card creation through modal', async () => {
+    const mockSetNodes = vi.fn();
+    (useNodeStore as any).mockReturnValue({
+      nodes: [],
+      edges: [],
+      setNodes: mockSetNodes,
+      setEdges: vi.fn(),
     });
+
+    render(<Board />);
+    
+    // 모달 열기
+    const createButton = screen.getByText('새 카드 만들기');
+    fireEvent.click(createButton);
+    
+    // 폼 제출
+    const submitButton = screen.getByTestId('submit-button');
+    fireEvent.click(submitButton);
+    
+    // 모달이 닫혔는지 확인
+    expect(screen.queryByTestId('create-card-modal')).toBeNull();
+    
+    // 노드가 추가되었는지 확인
+    expect(mockSetNodes).toHaveBeenCalled();
   });
 
   it('shows a toast message when saving layout', async () => {
@@ -249,6 +305,7 @@ describe('Board Component', () => {
       updateViewportCenter: vi.fn(),
       handleAutoLayout: vi.fn(),
       handleSaveLayout: vi.fn(),
+      saveTransform: vi.fn(),
       hasUnsavedChanges: { current: false },
     });
     

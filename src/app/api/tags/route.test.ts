@@ -1,70 +1,53 @@
+/**
+ * 파일명: route.test.ts
+ * 목적: 태그 API 엔드포인트 테스트
+ * 역할: 태그 생성 및 조회 API의 기능 검증
+ * 작성일: 2024-03-30
+ */
+
 /// <reference types="vitest" />
 import { NextRequest, NextResponse } from 'next/server';
 import { GET, POST } from './route';
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import prisma from '@/lib/prisma';
+import { auth } from '@/lib/auth-server';
+import type { Mock } from 'vitest';
 
-// NextResponse.json 모킹
-vi.mock('next/server', () => {
-  return {
-    NextRequest: vi.fn().mockImplementation((url: string, options?: any) => ({
-      url,
-      method: options?.method || 'GET',
-      json: vi.fn().mockImplementation(async () => {
-        if (options?.body) {
-          try {
-            return JSON.parse(options.body);
-          } catch {
-            throw new Error('Invalid JSON');
-          }
-        }
-        return {};
-      }),
-      nextUrl: {
-        searchParams: new URLSearchParams(url?.split('?')[1] || ''),
-      },
-      cookies: {},
-      page: {},
-      ua: {},
-      headers: new Headers(),
-      signal: {},
-      body: new ReadableStream(),
-      text: vi.fn().mockImplementation(async () => {
-        if (options?.body) {
-          return options.body;
-        }
-        return '';
-      }),
-      arrayBuffer: vi.fn(),
-      blob: vi.fn(),
-      clone: vi.fn(),
-      formData: vi.fn(),
-      redirect: 'follow' as const,
-      [Symbol.asyncIterator]: vi.fn()
+// NextRequest와 NextResponse 모킹
+vi.mock('next/server', () => ({
+  NextRequest: vi.fn().mockImplementation((url: string, options?: any) => ({
+    url,
+    method: options?.method || 'GET',
+    json: vi.fn().mockResolvedValue(options?.body ? JSON.parse(options.body) : {}),
+    nextUrl: {
+      searchParams: new URLSearchParams(url?.split('?')[1] || ''),
+    },
+  })),
+  NextResponse: {
+    json: vi.fn().mockImplementation((data: any, options?: any) => ({
+      status: options?.status || 200,
+      json: async () => data,
     })),
-    NextResponse: {
-      json: vi.fn().mockImplementation((data: any, options: { status?: number } = {}) => {
-        return {
-          status: options.status || 200,
-          body: data,
-          json: () => Promise.resolve(data)
-        };
-      })
-    }
-  };
-});
-
-// Prisma 모킹
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    tag: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-      findUnique: vi.fn()
-    }
-  }
+  },
 }));
 
-describe('태그 API', () => {
+// prisma 모킹
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    tag: {
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+    },
+  },
+}));
+
+// auth 모킹
+vi.mock('@/lib/auth-server', () => ({
+  auth: vi.fn(),
+}));
+
+describe('태그 API 테스트', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -77,311 +60,215 @@ describe('태그 API', () => {
     vi.resetAllMocks();
   });
 
-  // 태그 목록 조회 테스트
   describe('GET /api/tags', () => {
-    it('태그 목록을 성공적으로 반환해야 함', async () => {
-      // 가짜 태그 데이터
+    it('기본 태그 목록을 반환', async () => {
       const mockTags = [
-        { id: '1', name: 'JavaScript', createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', name: 'React', createdAt: new Date(), updatedAt: new Date() },
-        { id: '3', name: 'TypeScript', createdAt: new Date(), updatedAt: new Date() }
+        { id: '1', name: '태그1', createdAt: new Date() },
+        { id: '2', name: '태그2', createdAt: new Date() },
       ];
-      
-      // prisma 모킹 설정
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findMany as any).mockResolvedValue(mockTags);
-      
-      // GET 요청 시뮬레이션
+
+      (prisma.tag.findMany as Mock).mockResolvedValueOnce(mockTags);
+
       const request = new NextRequest('http://localhost:3000/api/tags');
       const response = await GET(request);
-      
-      // 응답 검증
+      const data = await response.json();
+
       expect(response.status).toBe(200);
-      const responseData = await response.json();
-      expect(responseData).toEqual(mockTags);
+      expect(data).toEqual(mockTags);
+      expect(prisma.tag.findMany).toHaveBeenCalledWith({
+        orderBy: {
+          name: 'asc',
+        },
+      });
     });
-    
-    it('서버 오류 발생 시 500 에러를 반환해야 함', async () => {
-      // prisma 오류 모킹
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findMany as any).mockRejectedValue(new Error('데이터베이스 오류'));
-      
-      // GET 요청 시뮬레이션
+
+    it('사용 횟수를 포함한 태그 목록을 반환', async () => {
+      const mockTags = [
+        { 
+          id: '1', 
+          name: '태그1', 
+          createdAt: new Date(),
+          _count: { cardTags: 3 },
+        },
+        { 
+          id: '2', 
+          name: '태그2', 
+          createdAt: new Date(),
+          _count: { cardTags: 1 },
+        },
+      ];
+
+      (prisma.tag.findMany as Mock).mockResolvedValueOnce(mockTags);
+
+      const request = new NextRequest('http://localhost:3000/api/tags?includeCount=true');
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toEqual(mockTags.map(tag => ({
+        id: tag.id,
+        name: tag.name,
+        count: tag._count.cardTags,
+        createdAt: tag.createdAt,
+      })));
+      expect(prisma.tag.findMany).toHaveBeenCalledWith({
+        include: {
+          _count: {
+            select: { cardTags: true },
+          },
+        },
+        orderBy: {
+          name: 'asc',
+        },
+        where: {
+          name: {
+            contains: '',
+          },
+        },
+      });
+    });
+
+    it('검색어로 태그를 필터링', async () => {
+      const searchQuery = '태그1';
+      const mockTags = [
+        { id: '1', name: '태그1', createdAt: new Date() },
+      ];
+
+      (prisma.tag.findMany as Mock).mockResolvedValueOnce(mockTags);
+
+      const request = new NextRequest(`http://localhost:3000/api/tags?q=${searchQuery}`);
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toEqual(mockTags);
+      expect(prisma.tag.findMany).toHaveBeenCalledWith({
+        where: {
+          name: {
+            contains: searchQuery,
+          },
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+    });
+
+    it('데이터베이스 오류 처리', async () => {
+      (prisma.tag.findMany as Mock).mockRejectedValueOnce(new Error('DB 오류'));
+
       const request = new NextRequest('http://localhost:3000/api/tags');
       const response = await GET(request);
-      
-      // 응답 검증
+      const data = await response.json();
+
       expect(response.status).toBe(500);
-      const responseData = await response.json();
-      expect(responseData).toEqual({
-        error: '태그 목록을 가져오는 중 오류가 발생했습니다.'
-      });
+      expect(data.error).toBe('태그 목록을 불러오는데 실패했습니다');
     });
   });
 
-  // 태그 생성 테스트
   describe('POST /api/tags', () => {
-    it('유효한 태그 데이터로 태그를 생성해야 함', async () => {
-      // 가짜 태그 데이터
-      const tagData = { name: '새로운태그' };
-      const mockCreatedTag = { 
-        id: '4', 
-        name: '새로운태그', 
-        createdAt: new Date(), 
-        updatedAt: new Date() 
+    const mockUser = { id: '123', name: 'Test User' };
+
+    it('새 태그를 생성', async () => {
+      (auth as Mock).mockResolvedValueOnce({ user: mockUser });
+
+      const tagName = '새로운태그';
+      const mockTag = {
+        id: '1',
+        name: tagName,
+        createdAt: new Date(),
       };
-      
-      // prisma 모킹 설정
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findUnique as any).mockResolvedValue(null); // 태그가 존재하지 않음
-      (prisma.tag.create as any).mockResolvedValue(mockCreatedTag);
-      
-      // POST 요청 시뮬레이션
+
+      (prisma.tag.findFirst as Mock).mockResolvedValueOnce(null);
+      (prisma.tag.create as Mock).mockResolvedValueOnce(mockTag);
+
       const request = new NextRequest('http://localhost:3000/api/tags', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(tagData)
+        body: JSON.stringify({ name: tagName }),
       });
-      
-      // request.json 메서드 모킹
-      request.json = vi.fn().mockResolvedValue(tagData);
-      
+
       const response = await POST(request);
-      
-      // 응답 검증
+      const data = await response.json();
+
       expect(response.status).toBe(201);
-      const responseData = await response.json();
-      expect(responseData).toEqual(mockCreatedTag);
-      
-      // Prisma 호출 확인
-      expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-        where: { name: tagData.name }
-      });
+      expect(data).toEqual(mockTag);
       expect(prisma.tag.create).toHaveBeenCalledWith({
-        data: { name: tagData.name }
-      });
-    });
-    
-    it('이미 존재하는 태그 이름으로 생성 시 400 에러를 반환해야 함', async () => {
-      // 가짜 태그 데이터
-      const tagData = { name: '이미존재하는태그' };
-      const existingTag = { 
-        id: '5', 
-        name: '이미존재하는태그', 
-        createdAt: new Date(), 
-        updatedAt: new Date() 
-      };
-      
-      // prisma 모킹 설정
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findUnique as any).mockResolvedValue(existingTag); // 이미 태그가 존재함
-      
-      // POST 요청 시뮬레이션
-      const request = new NextRequest('http://localhost:3000/api/tags', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+        data: {
+          name: tagName,
         },
-        body: JSON.stringify(tagData)
       });
-      
-      // request.json 메서드 모킹
-      request.json = vi.fn().mockResolvedValue(tagData);
-      
-      const response = await POST(request);
-      
-      // 응답 검증
-      expect(response.status).toBe(400);
-      const responseData = await response.json();
-      expect(responseData).toEqual({
-        error: '이미 존재하는 태그입니다.'
-      });
-      
-      // Prisma 호출 확인
-      expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-        where: { name: tagData.name }
-      });
-      expect(prisma.tag.create).not.toHaveBeenCalled();
-    });
-    
-    it('유효하지 않은 데이터로 생성 시 400 에러를 반환해야 함', async () => {
-      // 유효하지 않은 태그 데이터 (빈 이름)
-      const invalidData = { name: '' };
-      
-      // POST 요청 시뮬레이션
-      const request = new NextRequest('http://localhost:3000/api/tags', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(invalidData)
-      });
-      
-      // request.json 메서드 모킹
-      request.json = vi.fn().mockResolvedValue(invalidData);
-      
-      const response = await POST(request);
-      
-      // 응답 검증
-      expect(response.status).toBe(400);
-      const responseData = await response.json();
-      expect(responseData).toHaveProperty('error');
     });
 
-    it('잘못된 JSON 형식으로 요청 시 400 에러를 반환해야 함', async () => {
-      // 1. 테스트 데이터 준비
-      const invalidJson = '{invalid json}';
-      
-      // 2. 테스트 환경 설정
+    it('인증되지 않은 사용자 요청 처리', async () => {
+      (auth as Mock).mockResolvedValueOnce(null);
+
       const request = new NextRequest('http://localhost:3000/api/tags', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: invalidJson
+        body: JSON.stringify({ name: '새로운태그' }),
       });
-      
-      // 3. 모킹 설정
-      request.json = vi.fn().mockRejectedValue(new Error('Invalid JSON'));
-      
-      // 4. 테스트 실행
+
       const response = await POST(request);
-      
-      // 5. 결과 검증
-      expect(response.status).toBe(400);
-      const responseData = await response.json();
-      expect(responseData).toHaveProperty('error');
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.error).toBe('인증이 필요합니다');
     });
 
-    it('request.json() 실패 시 request.body가 문자열인 경우 처리해야 함', async () => {
-      // 1. 테스트 데이터 준비
-      const tagData = { name: '새로운태그' };
-      const tagDataString = JSON.stringify(tagData);
-      const mockCreatedTag = { 
-        id: '4', 
-        name: '새로운태그', 
-        createdAt: new Date(), 
-        updatedAt: new Date() 
+    it('이미 존재하는 태그 처리', async () => {
+      (auth as Mock).mockResolvedValueOnce({ user: mockUser });
+
+      const existingTag = {
+        id: '1',
+        name: '기존태그',
+        createdAt: new Date(),
       };
-      
-      // 2. 테스트 환경 설정
+
+      (prisma.tag.findFirst as Mock).mockResolvedValueOnce(existingTag);
+
       const request = new NextRequest('http://localhost:3000/api/tags', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: tagDataString
+        body: JSON.stringify({ name: '기존태그' }),
       });
-      
-      // 3. 모킹 설정
-      request.json = vi.fn().mockRejectedValue(new Error('Invalid JSON'));
-      request.text = vi.fn().mockResolvedValue(tagDataString);
-      
-      // Prisma 모킹 설정
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findUnique as any).mockResolvedValue(null); // 태그가 존재하지 않음
-      (prisma.tag.create as any).mockResolvedValue(mockCreatedTag);
-      
-      // 4. 테스트 실행
+
       const response = await POST(request);
-      
-      // 5. 결과 검증
-      expect(response.status).toBe(201);
-      const responseData = await response.json();
-      expect(responseData).toEqual(mockCreatedTag);
-      
-      // 6. 모킹 호출 검증
-      expect(request.text).toHaveBeenCalled();
-      expect(await request.text()).toBe(tagDataString);
-      expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-        where: { name: tagData.name }
-      });
-      expect(prisma.tag.create).toHaveBeenCalledWith({
-        data: { name: tagData.name }
-      });
+      const data = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(data.error).toBe('이미 존재하는 태그입니다');
+      expect(data.tag).toEqual(existingTag);
     });
 
-    it('request.json() 실패 시 request.body가 객체인 경우 처리해야 함', async () => {
-      // 1. 테스트 데이터 준비
-      const tagData = { name: '새로운태그' };
-      const tagDataString = JSON.stringify(tagData);
-      const mockCreatedTag = { 
-        id: '4', 
-        name: '새로운태그', 
-        createdAt: new Date(), 
-        updatedAt: new Date() 
-      };
-      
-      // 2. 테스트 환경 설정
+    it('유효하지 않은 태그 이름 처리', async () => {
+      (auth as Mock).mockResolvedValueOnce({ user: mockUser });
+
       const request = new NextRequest('http://localhost:3000/api/tags', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: tagDataString
+        body: JSON.stringify({ name: '' }),
       });
-      
-      // 3. 모킹 설정
-      request.json = vi.fn().mockRejectedValue(new Error('Invalid JSON'));
-      request.text = vi.fn().mockResolvedValue(tagDataString);
-      
-      // Prisma 모킹 설정
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findUnique as any).mockResolvedValue(null); // 태그가 존재하지 않음
-      (prisma.tag.create as any).mockResolvedValue(mockCreatedTag);
-      
-      // 4. 테스트 실행
+
       const response = await POST(request);
-      
-      // 5. 결과 검증
-      expect(response.status).toBe(201);
-      const responseData = await response.json();
-      expect(responseData).toEqual(mockCreatedTag);
-      
-      // 6. 모킹 호출 검증
-      expect(request.text).toHaveBeenCalled();
-      expect(await request.text()).toBe(tagDataString);
-      expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-        where: { name: tagData.name }
-      });
-      expect(prisma.tag.create).toHaveBeenCalledWith({
-        data: { name: tagData.name }
-      });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('유효한 태그 이름이 필요합니다');
     });
 
-    it('태그 생성 중 서버 오류 발생 시 500 에러를 반환해야 함', async () => {
-      // 유효한 태그 데이터
-      const tagData = { name: '새로운태그' };
-      
-      // prisma 모킹 설정
-      const { prisma } = await import('@/lib/prisma');
-      (prisma.tag.findUnique as any).mockResolvedValue(null); // 태그가 존재하지 않음
-      (prisma.tag.create as any).mockRejectedValue(new Error('데이터베이스 오류')); // 생성 중 오류 발생
-      
-      // POST 요청 시뮬레이션
+    it('데이터베이스 오류 처리', async () => {
+      (auth as Mock).mockResolvedValueOnce({ user: mockUser });
+
+      (prisma.tag.findFirst as Mock).mockResolvedValueOnce(null);
+      (prisma.tag.create as Mock).mockRejectedValueOnce(new Error('DB 오류'));
+
       const request = new NextRequest('http://localhost:3000/api/tags', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(tagData)
+        body: JSON.stringify({ name: '새로운태그' }),
       });
-      
-      // request.json 메서드 모킹
-      request.json = vi.fn().mockResolvedValue(tagData);
-      
+
       const response = await POST(request);
-      
-      // 응답 검증
+      const data = await response.json();
+
       expect(response.status).toBe(500);
-      const responseData = await response.json();
-      expect(responseData).toEqual({
-        error: '태그 생성 중 오류가 발생했습니다.'
-      });
-      
-      // Prisma 호출 확인
-      expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-        where: { name: tagData.name }
-      });
-      expect(prisma.tag.create).toHaveBeenCalledWith({
-        data: { name: tagData.name }
-      });
+      expect(data.error).toBe('태그 생성에 실패했습니다');
     });
   });
 }); 

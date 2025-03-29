@@ -14,6 +14,7 @@
     "lint": "next lint",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "prisma:seed": "node prisma/seed/index.js",
@@ -28,7 +29,8 @@
     "env:dev": "vercel env pull .env.development",
     "env:prod": "vercel env pull .env.production",
     "deploy": "yarn env:prod && vercel --prod",
-    "deploy:preview": "yarn env:prod && vercel"
+    "deploy:preview": "yarn env:prod && vercel",
+    "test:browser": "vitest --workspace=vitest.workspace.ts"
   },
   "dependencies": {
     "@auth/core": "^0.38.0",
@@ -67,6 +69,7 @@
     "cookies-next": "^5.1.0",
     "dagre": "^0.8.5",
     "dialog": "^0.3.1",
+    "eslint-plugin-import": "^2.31.0",
     "framer-motion": "^12.5.0",
     "lucide-react": "^0.476.0",
     "next": "15.2.0",
@@ -96,18 +99,22 @@
     "@types/react-dom": "^19",
     "@types/testing-library__user-event": "^4.2.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/browser": "^3.0.9",
     "@vitest/coverage-v8": "^3.0.9",
     "css-loader": "^7.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "jsdom": "^26.0.0",
+    "msw": "^2.7.3",
     "node-fetch": "^2.7.0",
+    "playwright": "^1.51.1",
     "prisma": "^6.4.1",
     "prisma-json-schema-generator": "^5.1.5",
     "style-loader": "^4.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^6.2.0",
-    "vitest": "^3.0.9"
+    "vitest": "^3.0.9",
+    "vitest-browser-react": "^0.1.1"
   }
 }

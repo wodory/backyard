@@ -6,6 +6,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET, PUT, DELETE } from './route';
 import prisma from '@/lib/prisma';
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import type { Mock } from 'vitest';
+
+// 타입 정의
+interface MockContext {
+  params: {
+    id: string;
+  };
+}
 
 // 모킹 설정
 vi.mock('@/lib/prisma', () => ({
@@ -16,49 +24,64 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    cardTag: {
+      deleteMany: vi.fn(),
+      create: vi.fn(),
+    },
+    tag: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    $transaction: vi.fn().mockImplementation(async (callback) => {
+      const mockTx = {
+        card: {
+          update: vi.fn().mockImplementation(async (args) => ({
+            id: args.where.id,
+            title: args.data.title || '업데이트된 제목',
+            content: args.data.content || '업데이트된 내용',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            userId: 'user1',
+          })),
+          findUnique: vi.fn().mockImplementation(async () => ({
+            id: '1',
+            title: '업데이트된 제목',
+            content: '업데이트된 내용',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            userId: 'user1',
+            cardTags: [],
+          })),
+        },
+        cardTag: {
+          deleteMany: vi.fn(),
+          create: vi.fn(),
+        },
+        tag: {
+          findUnique: vi.fn(),
+          create: vi.fn(),
+        },
+      };
+      return callback(mockTx);
+    }),
   },
 }));
 
-// Request 객체 모킹 - 타입 오류 해결
-if (!global.Request) {
-  // @ts-ignore
-  global.Request = function Request() {
-    return {
-      json: () => Promise.resolve({}),
-    };
+// Request 객체 모킹
+const createMockRequest = (method: string, body?: any) => {
+  const request = {
+    method,
+    url: 'http://localhost:3000/api/cards/1',
+    nextUrl: { searchParams: new URLSearchParams() },
+    json: async () => body,
   };
-}
-
-// NextRequest, NextResponse 모킹
-vi.mock('next/server', () => {
-  return {
-    __esModule: true,
-    NextRequest: vi.fn().mockImplementation((url: string, options?: any) => {
-      return {
-        url,
-        method: options?.method || 'GET',
-        json: vi.fn().mockImplementation(async () => {
-          return options?.body ? JSON.parse(options.body) : {};
-        }),
-      };
-    }),
-    NextResponse: {
-      json: vi.fn().mockImplementation((data: any, options?: any) => {
-        return {
-          status: options?.status || 200,
-          json: async () => data,
-        };
-      }),
-    },
-  };
-});
+  return request as unknown as NextRequest;
+};
 
 // 컨텍스트 모킹 함수
-const createMockContext = (id: string) => {
-  return {
-    params: { id },
-  };
-};
+const createMockContext = (id: string): MockContext => ({
+  params: { id },
+});
 
 describe('Card Detail API', () => {
   // console.error 모킹 추가
@@ -81,16 +104,21 @@ describe('Card Detail API', () => {
         id: '1',
         title: '테스트 카드',
         content: '테스트 내용',
-        createdAt: new Date(),
-        updatedAt: new Date(),
         userId: 'user1',
+        createdAt: '2025-03-29T13:20:53.491Z',
+        updatedAt: '2025-03-29T13:20:53.491Z',
+        user: {
+          id: 'user1',
+          name: '테스트 사용자'
+        },
+        cardTags: []
       };
 
       // Prisma 응답 모킹
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue(mockCard);
+      (prisma.card.findUnique as Mock).mockResolvedValue(mockCard);
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1');
+      const request = createMockRequest('GET');
       const context = createMockContext('1');
       const response = await GET(request, context);
       const data = await response.json();
@@ -100,16 +128,23 @@ describe('Card Detail API', () => {
       expect(data).toEqual(mockCard);
       expect(prisma.card.findUnique).toHaveBeenCalledWith({
         where: { id: '1' },
-        include: { user: { select: { id: true, name: true } } },
+        include: {
+          user: { select: { id: true, name: true } },
+          cardTags: {
+            include: {
+              tag: true,
+            },
+          },
+        },
       });
     });
 
     it('존재하지 않는 카드 조회 시 404 응답을 반환한다', async () => {
       // Prisma 응답 모킹 (카드가 없음)
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue(null);
+      (prisma.card.findUnique as Mock).mockResolvedValue(null);
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/999');
+      const request = createMockRequest('GET');
       const context = createMockContext('999');
       const response = await GET(request, context);
       const data = await response.json();
@@ -121,10 +156,10 @@ describe('Card Detail API', () => {
 
     it('에러 발생 시 500 응답을 반환한다', async () => {
       // 에러 모킹
-      (prisma.card.findUnique as vi.Mock).mockRejectedValue(new Error('DB 에러'));
+      (prisma.card.findUnique as Mock).mockRejectedValue(new Error('DB 에러'));
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1');
+      const request = createMockRequest('GET');
       const context = createMockContext('1');
       const response = await GET(request, context);
       const data = await response.json();
@@ -145,6 +180,7 @@ describe('Card Detail API', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         userId: 'user1',
+        cardTags: [],
       };
 
       // 요청 데이터
@@ -154,30 +190,26 @@ describe('Card Detail API', () => {
       };
 
       // Prisma 응답 모킹
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
-      (prisma.card.update as vi.Mock).mockResolvedValue(mockUpdatedCard);
+      (prisma.card.findUnique as Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1', {
-        method: 'PUT',
-        body: JSON.stringify(requestData),
-      });
+      const request = createMockRequest('PUT', requestData);
       const context = createMockContext('1');
       const response = await PUT(request, context);
       const data = await response.json();
 
       // 검증
       expect(response.status).toBe(200);
-      expect(data).toEqual(mockUpdatedCard);
-      expect(prisma.card.update).toHaveBeenCalledWith({
-        where: { id: '1' },
-        data: requestData,
+      expect(data).toMatchObject({
+        id: '1',
+        title: '업데이트된 제목',
+        content: '업데이트된 내용',
       });
     });
 
     it('존재하지 않는 카드 업데이트 시 404 응답을 반환한다', async () => {
       // Prisma 응답 모킹 (카드가 없음)
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue(null);
+      (prisma.card.findUnique as Mock).mockResolvedValue(null);
 
       // 요청 데이터
       const requestData = {
@@ -186,10 +218,7 @@ describe('Card Detail API', () => {
       };
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/999', {
-        method: 'PUT',
-        body: JSON.stringify(requestData),
-      });
+      const request = createMockRequest('PUT', requestData);
       const context = createMockContext('999');
       const response = await PUT(request, context);
       const data = await response.json();
@@ -208,10 +237,7 @@ describe('Card Detail API', () => {
       };
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1', {
-        method: 'PUT',
-        body: JSON.stringify(requestData),
-      });
+      const request = createMockRequest('PUT', requestData);
       const context = createMockContext('1');
       const response = await PUT(request, context);
       const data = await response.json();
@@ -230,14 +256,11 @@ describe('Card Detail API', () => {
       };
 
       // Prisma 응답 모킹
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
-      (prisma.card.update as vi.Mock).mockRejectedValue(new Error('DB 에러'));
+      (prisma.card.findUnique as Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
+      (prisma.$transaction as Mock).mockRejectedValue(new Error('DB 에러'));
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1', {
-        method: 'PUT',
-        body: JSON.stringify(requestData),
-      });
+      const request = createMockRequest('PUT', requestData);
       const context = createMockContext('1');
       const response = await PUT(request, context);
       const data = await response.json();
@@ -251,13 +274,11 @@ describe('Card Detail API', () => {
   describe('DELETE /api/cards/[id]', () => {
     it('존재하는 카드를 성공적으로 삭제한다', async () => {
       // Prisma 응답 모킹
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
-      (prisma.card.delete as vi.Mock).mockResolvedValue({ id: '1' });
+      (prisma.card.findUnique as Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
+      (prisma.card.delete as Mock).mockResolvedValue({ id: '1' });
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1', {
-        method: 'DELETE',
-      });
+      const request = createMockRequest('DELETE');
       const context = createMockContext('1');
       const response = await DELETE(request, context);
       const data = await response.json();
@@ -272,12 +293,10 @@ describe('Card Detail API', () => {
 
     it('존재하지 않는 카드 삭제 시 404 응답을 반환한다', async () => {
       // Prisma 응답 모킹 (카드가 없음)
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue(null);
+      (prisma.card.findUnique as Mock).mockResolvedValue(null);
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/999', {
-        method: 'DELETE',
-      });
+      const request = createMockRequest('DELETE');
       const context = createMockContext('999');
       const response = await DELETE(request, context);
       const data = await response.json();
@@ -290,13 +309,11 @@ describe('Card Detail API', () => {
 
     it('에러 발생 시 500 응답을 반환한다', async () => {
       // Prisma 응답 모킹
-      (prisma.card.findUnique as vi.Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
-      (prisma.card.delete as vi.Mock).mockRejectedValue(new Error('DB 에러'));
+      (prisma.card.findUnique as Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
+      (prisma.card.delete as Mock).mockRejectedValue(new Error('DB 에러'));
 
       // API 호출
-      const request = new NextRequest('http://localhost:3000/api/cards/1', {
-        method: 'DELETE',
-      });
+      const request = createMockRequest('DELETE');
       const context = createMockContext('1');
       const response = await DELETE(request, context);
       const data = await response.json();

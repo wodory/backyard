@@ -131,7 +131,7 @@ export default function CreateCardButton({
     e.preventDefault();
     
     if (!title.trim() || !content.trim()) {
-      toast.error("제목과 내용을 모두 입력해주세요.");
+      toast.error("제목과 내용을 모두 입력해주세요");
       return;
     }
 

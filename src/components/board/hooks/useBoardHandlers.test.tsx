@@ -11,16 +11,36 @@ import { toast } from 'sonner';
 import { useBoardHandlers } from './useBoardHandlers';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 
-// 전역 상태 모킹
+// Zustand 상태 관리 모킹
+const mockSelectCards = vi.fn();
+const mockSetModalOpen = vi.fn();
+const mockSetSelectedNode = vi.fn();
+
+const mockState = {
+  selectedCardIds: ['node1', 'node2'],
+  selectCards: mockSelectCards,
+  isModalOpen: false,
+  setModalOpen: mockSetModalOpen,
+  setSelectedNode: mockSetSelectedNode,
+};
+
+const mockStore = {
+  getState: () => mockState,
+  setState: vi.fn(),
+  subscribe: vi.fn(),
+  destroy: vi.fn(),
+};
+
 vi.mock('@/store/useAppStore', () => ({
-  useAppStore: vi.fn(() => ({
-    selectedCardIds: ['node1', 'node2'],
-    selectCards: vi.fn(),
-  })),
-  getState: vi.fn(() => ({
-    selectedCardIds: ['node1', 'node2'],
-    selectCards: vi.fn(),
-  })),
+  useAppStore: Object.assign(
+    vi.fn((selector) => {
+      if (typeof selector === 'function') {
+        return selector(mockState);
+      }
+      return mockState;
+    }),
+    mockStore
+  ),
 }));
 
 // toast 모킹
@@ -62,10 +82,12 @@ describe('useBoardHandlers', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSelectCards.mockClear();
+    mockSetModalOpen.mockClear();
+    mockSetSelectedNode.mockClear();
   });
   
-  it('handleSelectionChange가 전역 상태를 업데이트하고 메시지를 표시해야 함', () => {
-    // 훅 렌더링
+  it('handleSelectionChange가 전역 상태를 올바르게 업데이트해야 함', () => {
     const { result } = renderHook(() => useBoardHandlers({
       saveLayout,
       nodes: mockNodes as any,
@@ -75,23 +97,46 @@ describe('useBoardHandlers', () => {
       fetchCards,
     }));
     
-    // 선택 변경 이벤트 시뮬레이션
+    const selectedNodes = [
+      { id: 'node3', type: 'card' },
+      { id: 'node4', type: 'card' },
+    ];
+    
     act(() => {
       result.current.handleSelectionChange({
-        nodes: [{ id: 'node3' }, { id: 'node4' }, { id: 'node5' }] as any,
+        nodes: selectedNodes as any,
         edges: [] as any,
       });
     });
     
-    // 여러 노드가 선택된 경우 메시지 표시 확인
+    expect(mockSelectCards).toHaveBeenCalledWith(['node3', 'node4']);
+    expect(mockSetSelectedNode).toHaveBeenCalledWith(null);
+    expect(mockSetModalOpen).toHaveBeenCalledWith(false);
     expect(toast.info).toHaveBeenCalledWith(
-      '3개 카드가 선택되었습니다.', 
+      '2개 카드가 선택되었습니다.',
       expect.objectContaining({ duration: 2000 })
     );
+  });
+  
+  it('handleSelectionChange가 선택된 노드가 없을 때 상태를 초기화해야 함', () => {
+    const { result } = renderHook(() => useBoardHandlers({
+      saveLayout,
+      nodes: mockNodes as any,
+      setNodes,
+      reactFlowWrapper,
+      reactFlowInstance,
+      fetchCards,
+    }));
     
-    // 전역 상태에 선택된 노드 ID 배열이 전달되었는지 확인
-    const useAppStoreMock = require('@/store/useAppStore').useAppStore;
-    expect(useAppStoreMock().selectCards).toHaveBeenCalledWith(['node3', 'node4', 'node5']);
+    act(() => {
+      result.current.handleSelectionChange({
+        nodes: [],
+        edges: [] as any,
+      });
+    });
+    
+    expect(mockSelectCards).toHaveBeenCalledWith([]);
+    expect(toast.info).not.toHaveBeenCalled();
   });
   
   it('onDragOver가 기본 이벤트를 방지하고 dropEffect를 설정해야 함', () => {

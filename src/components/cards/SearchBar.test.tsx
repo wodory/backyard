@@ -157,7 +157,7 @@ describe('SearchBar', () => {
     fireEvent.change(inputElement, { target: { value: '지울검색어' } });
     
     // X 버튼이 표시되어야 함
-    const clearButton = screen.getByRole('button', { name: '' }); // X 아이콘은 텍스트가 없음
+    const clearButton = screen.getByRole('button', { name: '검색어 지우기' });
     expect(clearButton).toBeInTheDocument();
     
     // X 버튼 클릭
@@ -165,9 +165,6 @@ describe('SearchBar', () => {
     
     // 검색어가 초기화되고 기본 URL로 이동했는지 확인
     expect(push).toHaveBeenCalledWith('/cards');
-    
-    // 입력 값이 클릭 후에 비워져야 함
-    // 리액트의 상태 업데이트는 비동기적이기 때문에 추가 렌더링 후 확인해야 함
-    expect(screen.getByPlaceholderText('검색어 입력 또는 #태그 입력')).not.toHaveValue('지울검색어');
+    expect(inputElement).toHaveValue('');
   });
 });

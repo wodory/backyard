@@ -7,15 +7,18 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import CustomEdge from '../CustomEdge';
-import { ReactFlowProvider, EdgeProps, Position } from '@xyflow/react';
+import { ReactFlowProvider, EdgeProps, Position, ConnectionLineType } from '@xyflow/react';
+import { ConnectionLineType as SystemConnectionLineType } from '@xyflow/system';
+import type * as XyflowReact from '@xyflow/react';
 
 // AppStore 모킹
 vi.mock('@/store/useAppStore', () => ({
   useAppStore: () => ({
     boardSettings: {
       edgeColor: '#000000',
+      selectedEdgeColor: '#ff0000',
       strokeWidth: 2,
+      selectedStrokeWidth: 3,
       animated: false,
       markerEnd: true,
       connectionLineType: 'bezier'
@@ -23,18 +26,31 @@ vi.mock('@/store/useAppStore', () => ({
   })
 }));
 
-// useUpdateNodeInternals 모킹
-vi.mock('@xyflow/react', async () => {
-  const actual = await vi.importActual('@xyflow/react');
+vi.mock('@xyflow/react', async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof XyflowReact;
+  const getBezierPathMock = vi.fn().mockReturnValue(['M0 0 C100 0 100 100 200 100']);
+  const getStraightPathMock = vi.fn().mockReturnValue(['M0 0 L200 100']);
+  const getSmoothStepPathMock = vi.fn().mockReturnValue(['M0 0 Q100 0 100 50 Q100 100 200 100']);
+
   return {
     ...actual,
-    BaseEdge: ({ path, markerEnd, style, className, ...props }: any) => (
-      <g data-testid="base-edge" className={className} style={style}>
+    getBezierPath: getBezierPathMock,
+    getStraightPath: getStraightPathMock,
+    getSmoothStepPath: getSmoothStepPathMock,
+    useStore: vi.fn(() => ({
+      selectedEdgeColor: '#ff0000',
+    })),
+    ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    BaseEdge: ({ path, markerEnd, style, className, 'data-selected': selected, 'data-component-id': componentId }: any) => (
+      <g data-testid="base-edge" className={className} style={style} data-selected={selected} data-component-id={componentId}>
         <path data-testid="edge-path" d={path} markerEnd={markerEnd} />
       </g>
-    )
+    ),
   };
 });
+
+// CustomEdge 컴포넌트 임포트
+import CustomEdge from '../../nodes/CustomEdge';
 
 describe('CustomEdge', () => {
   const mockEdgeProps: Partial<EdgeProps> = {
@@ -52,7 +68,15 @@ describe('CustomEdge', () => {
     selected: false
   };
 
-  beforeEach(() => {
+  let getBezierPathMock: ReturnType<typeof vi.fn>;
+  let getStraightPathMock: ReturnType<typeof vi.fn>;
+  let getSmoothStepPathMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    const xyflow = vi.mocked(await import('@xyflow/react'));
+    getBezierPathMock = xyflow.getBezierPath;
+    getStraightPathMock = xyflow.getStraightPath;
+    getSmoothStepPathMock = xyflow.getSmoothStepPath;
     vi.clearAllMocks();
   });
 
@@ -70,12 +94,13 @@ describe('CustomEdge', () => {
     
     expect(baseEdge).toBeInTheDocument();
     expect(edgePath).toBeInTheDocument();
+    expect(baseEdge).toHaveAttribute('data-component-id', 'CustomEdge_from_nodes_directory');
   });
 
-  it('애니메이션 속성이 올바르게 적용되어야 함', () => {
+  it('애니메이션 클래스가 올바르게 적용되어야 함', () => {
     const animatedEdgeProps = {
       ...mockEdgeProps,
-      animated: true
+      data: { settings: { animated: true } }
     };
 
     render(
@@ -93,7 +118,8 @@ describe('CustomEdge', () => {
   it('선택 상태에 따라 스타일이 변경되어야 함', () => {
     const selectedEdgeProps = {
       ...mockEdgeProps,
-      selected: true
+      selected: true,
+      style: {} // 기본 스타일 제거하여 선택 상태 스타일만 적용
     };
 
     render(
@@ -106,34 +132,111 @@ describe('CustomEdge', () => {
 
     const baseEdge = screen.getByTestId('base-edge');
     expect(baseEdge).toHaveAttribute('data-selected', 'true');
+    
+    // style 객체에서 직접 값을 확인
+    const style = window.getComputedStyle(baseEdge);
+    expect(style.getPropertyValue('--edge-selected-width')).toBeDefined();
+    expect(style.getPropertyValue('--edge-selected-color')).toBeDefined();
   });
 
-  it('데이터로 전달된 연결선 타입이 적용되어야 함', () => {
-    const edgeWithData = {
+  describe('엣지 타입별 경로 생성', () => {
+    it('Bezier 타입 엣지가 올바르게 생성되어야 함', () => {
+      render(
+        <CustomEdge
+          id="test-edge-id"
+          source="source-node"
+          target="target-node"
+          type="bezier"
+          sourceX={0}
+          sourceY={0}
+          targetX={100}
+          targetY={100}
+          sourcePosition={Position.Right}
+          targetPosition={Position.Left}
+          style={{}}
+          markerEnd="url(#arrow)"
+          data={{
+            edgeType: ConnectionLineType.Bezier,
+          }}
+        />,
+      );
+
+      expect(getBezierPathMock).toHaveBeenCalled();
+    });
+
+    it('Straight 타입 엣지가 올바르게 생성되어야 함', () => {
+      render(
+        <CustomEdge
+          id="test-edge-id"
+          source="source-node"
+          target="target-node"
+          type="straight"
+          sourceX={0}
+          sourceY={0}
+          targetX={100}
+          targetY={100}
+          sourcePosition={Position.Right}
+          targetPosition={Position.Left}
+          style={{}}
+          markerEnd="url(#arrow)"
+          data={{
+            edgeType: ConnectionLineType.Straight,
+          }}
+        />,
+      );
+
+      expect(getStraightPathMock).toHaveBeenCalled();
+    });
+
+    it('SmoothStep 타입 엣지가 올바르게 생성되어야 함', () => {
+      render(
+        <CustomEdge
+          id="test-edge-id"
+          source="source-node"
+          target="target-node"
+          type="smoothstep"
+          sourceX={0}
+          sourceY={0}
+          targetX={100}
+          targetY={100}
+          sourcePosition={Position.Right}
+          targetPosition={Position.Left}
+          style={{}}
+          markerEnd="url(#arrow)"
+          data={{
+            edgeType: ConnectionLineType.SmoothStep,
+          }}
+        />,
+      );
+
+      expect(getSmoothStepPathMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          borderRadius: 10,
+        }),
+      );
+    });
+  });
+
+  it('스타일 우선순위가 올바르게 적용되어야 함', () => {
+    const customStyleProps = {
       ...mockEdgeProps,
-      data: {
-        edgeType: 'straight',
-        settings: {
-          animated: true,
-          strokeWidth: 3,
-          edgeColor: '#FF0000'
-        }
+      style: {
+        strokeWidth: '5px',
+        stroke: '#00ff00'
       }
     };
-
-    // 실제 getStraightPath가 호출되는지 스파이
-    const getStraightPathSpy = vi.spyOn(require('@xyflow/react'), 'getStraightPath');
 
     render(
       <ReactFlowProvider>
         <svg>
-          <CustomEdge {...edgeWithData as EdgeProps} />
+          <CustomEdge {...customStyleProps as EdgeProps} />
         </svg>
       </ReactFlowProvider>
     );
 
     const baseEdge = screen.getByTestId('base-edge');
-    expect(baseEdge).toBeInTheDocument();
-    expect(getStraightPathSpy).toHaveBeenCalled();
+    const style = window.getComputedStyle(baseEdge);
+    expect(style.strokeWidth).toBe('5px');
+    expect(style.stroke).toBe('#00ff00');
   });
 }); 

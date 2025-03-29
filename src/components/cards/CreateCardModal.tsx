@@ -36,7 +36,7 @@ export function CreateCardModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="relative bg-card rounded-lg shadow-lg max-w-[700px] w-full mx-4" onClick={handleModalClick}>
         <div className="absolute top-2 right-2">
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="모달 닫기" data-testid="close-modal-button">
             <X className="h-4 w-4" />
           </Button>
         </div>

@@ -11,7 +11,7 @@ import { ReactNode, useEffect } from 'react';
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Toaster } from "sonner";
-import { InitDatabase } from "@/components/InitDatabase";
+import InitDatabase from "@/components/debug/InitDatabase";
 import createLogger from '@/lib/logger';
 
 // Supabase 싱글톤 인스턴스 초기화 (클라이언트에서만 실행)
@@ -28,7 +28,7 @@ const logger = createLogger('ClientLayout');
 export function ClientLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     logger.info('클라이언트 레이아웃 마운트');
-    
+
     // 브라우저 환경 확인 로깅
     if (typeof window !== 'undefined') {
       logger.info('브라우저 환경 확인');
@@ -41,7 +41,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
         logger.warn('localStorage 접근 불가', error);
       }
     }
-    
+
     return () => {
       logger.info('클라이언트 레이아웃 언마운트');
     };
@@ -52,7 +52,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
       <ThemeProvider>
         <main>
           {children}
-          
+
           {/* DB 초기화 스크립트 */}
           <InitDatabase />
         </main>

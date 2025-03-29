@@ -1,4 +1,4 @@
-import { cn, formatDate, extractTags, parseTagsInText } from './utils';
+import { cn, formatDate, extractTags, parseTagsInText, hexToHsl, hslToHex } from './utils';
 import { describe, it, expect } from 'vitest';
 
 describe('유틸리티 함수', () => {
@@ -21,9 +21,9 @@ describe('유틸리티 함수', () => {
   
   describe('formatDate 함수', () => {
     it('Date 객체를 한국어 날짜 형식으로 변환해야 합니다', () => {
-      const date = new Date(2023, 0, 15); // 2023-01-15
+      const date = new Date(2023, 0, 15, 12, 0); // 2023-01-15 12:00
       const result = formatDate(date);
-      expect(result).toBe('2023년 1월 15일');
+      expect(result).toMatch(/^2023년 1월 15일 오후 12:00$/);
     });
     
     it('문자열 날짜를 한국어 날짜 형식으로 변환해야 합니다', () => {
@@ -31,7 +31,7 @@ describe('유틸리티 함수', () => {
       const result = formatDate(dateStr);
       
       // 시간대에 따라 결과가 다를 수 있으므로 포맷만 확인
-      expect(result).toMatch(/^\d{4}년 \d{1,2}월 \d{1,2}일$/);
+      expect(result).toMatch(/^\d{4}년 \d{1,2}월 \d{1,2}일 (오전|오후) \d{1,2}:\d{2}$/);
     });
     
     it('다양한 날짜 입력에 대해 오류 없이 처리해야 합니다', () => {
@@ -45,7 +45,7 @@ describe('유틸리티 함수', () => {
       
       dates.forEach(date => {
         const result = formatDate(date);
-        expect(result).toMatch(/^\d{4}년 \d{1,2}월 \d{1,2}일$/);
+        expect(result).toMatch(/^\d{4}년 \d{1,2}월 \d{1,2}일 (오전|오후) \d{1,2}:\d{2}$/);
       });
     });
   });
@@ -117,6 +117,59 @@ describe('유틸리티 함수', () => {
         text: '',
         tags: []
       });
+    });
+  });
+
+  describe('hexToHsl 함수', () => {
+    it('유효한 16진수 색상 코드를 HSL로 변환해야 합니다', () => {
+      const result = hexToHsl('#ff0000');
+      expect(result).toEqual({ h: 0, s: 100, l: 50 });
+    });
+
+    it('# 기호가 없는 16진수 색상 코드도 처리해야 합니다', () => {
+      const result = hexToHsl('00ff00');
+      expect(result).toEqual({ h: 120, s: 100, l: 50 });
+    });
+
+    it('검정색을 올바르게 변환해야 합니다', () => {
+      const result = hexToHsl('#000000');
+      expect(result).toEqual({ h: 0, s: 0, l: 0 });
+    });
+
+    it('흰색을 올바르게 변환해야 합니다', () => {
+      const result = hexToHsl('#ffffff');
+      expect(result).toEqual({ h: 0, s: 0, l: 100 });
+    });
+
+    it('잘못된 입력에 대해 null을 반환해야 합니다', () => {
+      expect(hexToHsl('')).toBeNull();
+      expect(hexToHsl('#xyz')).toBeNull();
+      expect(hexToHsl('invalid')).toBeNull();
+    });
+  });
+
+  describe('hslToHex 함수', () => {
+    it('기본 색상을 올바르게 변환해야 합니다', () => {
+      expect(hslToHex(0, 100, 50)).toBe('#ff0000');   // 빨강
+      expect(hslToHex(120, 100, 50)).toBe('#00ff00'); // 초록
+      expect(hslToHex(240, 100, 50)).toBe('#0000ff'); // 파랑
+    });
+
+    it('검정색과 흰색을 올바르게 변환해야 합니다', () => {
+      expect(hslToHex(0, 0, 0)).toBe('#000000');   // 검정
+      expect(hslToHex(0, 0, 100)).toBe('#ffffff'); // 흰색
+    });
+
+    it('회색조를 올바르게 변환해야 합니다', () => {
+      expect(hslToHex(0, 0, 50)).toBe('#808080');  // 중간 회색
+      expect(hslToHex(0, 0, 75)).toBe('#bfbfbf');  // 밝은 회색
+      expect(hslToHex(0, 0, 25)).toBe('#404040');  // 어두운 회색
+    });
+
+    it('다양한 색조와 채도에 대해 올바르게 변환해야 합니다', () => {
+      expect(hslToHex(30, 50, 50)).toMatch(/^#[0-9a-f]{6}$/i);  // 주황빛
+      expect(hslToHex(270, 75, 50)).toMatch(/^#[0-9a-f]{6}$/i); // 보라빛
+      expect(hslToHex(180, 25, 50)).toMatch(/^#[0-9a-f]{6}$/i); // 옅은 청록
     });
   });
 }); 

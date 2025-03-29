@@ -15,7 +15,7 @@ import { loadDefaultBoardUIConfig } from '@/lib/board-ui-config';
 import { CSSProperties } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn, hexToHsl, hslToHex } from '@/lib/utils';
 import { createPortal } from 'react-dom';
 import { EditCardModal } from '@/components/cards/EditCardModal';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -56,52 +56,6 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, []);
 
   return mounted ? createPortal(children, document.body) : null;
-};
-
-// 헥스 색상을 HSL로 변환하는 함수
-// utils 이동 대상 
-const hexToHsl = (hex: string): { h: number, s: number, l: number } | null => {
-  if (!hex) return null;
-  
-  // hex를 RGB로 변환
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return null;
-  
-  const r = parseInt(result[1], 16) / 255;
-  const g = parseInt(result[2], 16) / 255;
-  const b = parseInt(result[3], 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-
-  return { h: h * 360, s: s * 100, l: l * 100 };
-};
-
-// HSL을 헥스 색상으로 변환하는 함수
-// utils 이동 대상 
-const hslToHex = (h: number, s: number, l: number): string => {
-  s /= 100;
-  l /= 100;
-
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color).toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
 };
 
 // 카드 노드 컴포넌트 정의

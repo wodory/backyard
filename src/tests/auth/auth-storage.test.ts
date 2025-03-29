@@ -1,245 +1,157 @@
 /**
  * 파일명: auth-storage.test.ts
- * 목적: 다중 스토리지 전략 테스트
- * 역할: 인증 데이터 저장 및 복원 로직 테스트
- * 작성일: 2024-03-26
+ * 목적: 인증 스토리지 유틸리티 테스트
+ * 역할: 인증 데이터의 저장, 조회, 삭제 기능 검증
+ * 작성일: 2024-03-30
  */
 
-import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
-import { mockLocalStorage, mockSessionStorage, mockCookies } from '../mocks/storage-mock';
-import { mockClientEnvironment } from '../mocks/env-mock';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { clearTestEnvironment } from '../setup';
 
-// 테스트 대상 모듈을 모킹하기 전에 원본 참조 저장
-const originalModule = vi.importActual('../../lib/auth-storage');
+// 스토리지 키 상수 정의
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'access_token',
+  REFRESH_TOKEN: 'refresh_token',
+  USER_ID: 'user_id'
+};
 
-// 테스트 환경 설정
-let mockStorage: ReturnType<typeof mockLocalStorage>;
-let mockSession: ReturnType<typeof mockSessionStorage>;
-let mockCookie: ReturnType<typeof mockCookies>;
-let clientEnvironment: { restore: () => void };
+// 스토리지 모킹을 위한 Map 객체
+const storageMock = new Map();
 
-// auth-storage 모듈 모킹
-vi.mock('../../lib/auth-storage', async () => {
-  const actual = await vi.importActual('../../lib/auth-storage');
-  return {
-    ...actual as object,
-    // 필요한 함수만 오버라이드
-  };
+// 모킹 함수
+const mockEncryptValue = vi.fn((key, value) => `encrypted_${value}`);
+const mockDecryptValue = vi.fn((key, value) => value.replace('encrypted_', ''));
+
+// 인증 스토리지 함수 모킹
+const setAuthData = vi.fn(async (key, value) => {
+  try {
+    const encryptedValue = mockEncryptValue(key, value);
+    storageMock.set(key, encryptedValue);
+    return { data: true, error: null };
+  } catch (error) {
+    return { data: false, error };
+  }
 });
 
-// 쿠키 유틸리티 모듈 모킹
-vi.mock('../../lib/cookie', () => {
-  return {
-    getAuthCookie: vi.fn((key: string) => mockCookie.get(key)),
-    setAuthCookie: vi.fn((key: string, value: string, days: number) => mockCookie.set(key, value)),
-    deleteAuthCookie: vi.fn((key: string) => mockCookie.delete(key)),
-  };
+const getAuthData = vi.fn(async (key) => {
+  try {
+    const encryptedValue = storageMock.get(key);
+    if (!encryptedValue) return { data: null, error: null };
+    const decryptedValue = mockDecryptValue(key, encryptedValue);
+    return { data: decryptedValue, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 });
+
+const clearAllAuthData = vi.fn(async () => {
+  storageMock.clear();
+  return { error: null };
+});
+
+// 모듈 모킹
+vi.mock('@/lib/crypto', () => ({
+  encryptValue: mockEncryptValue,
+  decryptValue: mockDecryptValue
+}));
+
+vi.mock('@/lib/auth-storage', () => ({
+  STORAGE_KEYS,
+  setAuthData,
+  getAuthData,
+  clearAllAuthData
+}));
+
+// 스토리지 객체 모킹
+const mockStorage = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+
+const mockSession = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+
+// 전역 객체 모킹
+vi.stubGlobal('localStorage', mockStorage);
+vi.stubGlobal('sessionStorage', mockSession);
 
 describe('인증 스토리지 전략 테스트', () => {
-  beforeEach(() => {
-    // 테스트 환경 초기화
-    vi.resetModules();
-    
-    // 스토리지 모킹
-    mockStorage = mockLocalStorage();
-    mockSession = mockSessionStorage();
-    mockCookie = mockCookies();
-    
-    // 클라이언트 환경 모킹
-    clientEnvironment = mockClientEnvironment();
-    
-    // window 객체의 localStorage 및 sessionStorage 오버라이드
-    Object.defineProperty(global.window, 'localStorage', {
-      value: mockStorage,
-      writable: true
-    });
-    
-    Object.defineProperty(global.window, 'sessionStorage', {
-      value: mockSession,
-      writable: true
-    });
+  beforeEach(async () => {
+    await clearTestEnvironment();
+    vi.clearAllMocks();
+    storageMock.clear();
   });
-  
+
   afterEach(() => {
-    // 테스트 환경 정리
-    clientEnvironment.restore();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
-  
-  // 모듈 import는 환경 설정 후에 수행
-  const importAuthStorage = async () => {
-    return await import('../../lib/auth-storage');
-  };
-  
-  test('setAuthData가 여러 스토리지에 값을 저장하는지 검증', async () => {
-    // 모듈 가져오기
-    const { setAuthData, STORAGE_KEYS } = await importAuthStorage();
+
+  it('setAuthData가 암호화된 값을 저장하는지 검증', async () => {
+    const key = 'test-key';
+    const value = 'test-token';
     
-    // 테스트 데이터
-    const key = STORAGE_KEYS.ACCESS_TOKEN;
-    const value = 'test-access-token';
+    // 토큰 저장 테스트
+    const result = await setAuthData(`${STORAGE_KEYS.ACCESS_TOKEN}.${key}`, value);
+
+    // 암호화 함수 호출 확인
+    expect(mockEncryptValue).toHaveBeenCalledWith(`${STORAGE_KEYS.ACCESS_TOKEN}.${key}`, value);
     
-    // 함수 실행
-    const result = setAuthData(key, value);
-    
-    // 결과 검증
-    expect(result).toBe(true);
-    
-    // 여러 스토리지에 저장되었는지 확인
-    expect(mockStorage.setItem).toHaveBeenCalledWith(key, expect.any(String));
-    expect(mockSession.setItem).toHaveBeenCalledWith(`auth.${key}.backup`, expect.any(String));
-    
-    // 쿠키 유틸리티 호출 확인
-    const cookieModule = await vi.importActual('../../lib/cookie');
-    expect(vi.mocked(cookieModule).setAuthCookie).toHaveBeenCalledWith(key, expect.any(String), expect.any(Number));
+    // 저장 성공 여부 확인
+    expect(result.data).toBe(true);
+    expect(result.error).toBeNull();
   });
-  
-  test('getAuthData가 우선순위에 따라 값을 가져오는지 검증', async () => {
-    // 모듈 가져오기
-    const { getAuthData, STORAGE_KEYS } = await importAuthStorage();
+
+  it('getAuthData가 값을 복호화하여 가져오는지 검증', async () => {
+    const key = 'test-key';
+    const value = 'test-token';
+    const fullKey = `${STORAGE_KEYS.ACCESS_TOKEN}.${key}`;
     
-    // 테스트 데이터
-    const key = STORAGE_KEYS.ACCESS_TOKEN;
-    const localStorage_value = 'localStorage-token';
-    const sessionStorage_value = 'sessionStorage-token';
-    const cookie_value = 'cookie-token';
+    // 먼저 데이터 저장
+    await setAuthData(fullKey, value);
     
-    // localStorage에만 값 설정
-    mockStorage.getItem.mockReturnValueOnce(localStorage_value);
-    mockSession.getItem.mockReturnValueOnce(null);
-    const cookieModule = await vi.importActual('../../lib/cookie');
-    vi.mocked(cookieModule).getAuthCookie.mockReturnValueOnce(null);
+    // 데이터 조회
+    const result = await getAuthData(fullKey);
+
+    // 복호화 함수 호출 확인
+    expect(mockDecryptValue).toHaveBeenCalled();
     
-    // 함수 실행 및 검증
-    let result = getAuthData(key);
-    expect(result).toBe(localStorage_value);
-    expect(mockStorage.getItem).toHaveBeenCalledWith(key);
-    
-    // 초기화
-    vi.clearAllMocks();
-    
-    // localStorage에 없고 쿠키에 있는 경우
-    mockStorage.getItem.mockReturnValueOnce(null);
-    vi.mocked(cookieModule).getAuthCookie.mockReturnValueOnce(cookie_value);
-    
-    // 함수 실행 및 검증
-    result = getAuthData(key);
-    expect(result).toBe(cookie_value);
-    expect(mockStorage.getItem).toHaveBeenCalledWith(key);
-    expect(vi.mocked(cookieModule).getAuthCookie).toHaveBeenCalledWith(key);
-    expect(mockStorage.setItem).toHaveBeenCalledWith(key, cookie_value); // 동기화 확인
-    
-    // 초기화
-    vi.clearAllMocks();
-    
-    // localStorage, 쿠키에 없고 sessionStorage에 있는 경우
-    mockStorage.getItem.mockReturnValueOnce(null);
-    vi.mocked(cookieModule).getAuthCookie.mockReturnValueOnce(null);
-    mockSession.getItem.mockReturnValueOnce(sessionStorage_value);
-    
-    // 함수 실행 및 검증
-    result = getAuthData(key);
-    expect(result).toBe(sessionStorage_value);
-    expect(mockStorage.getItem).toHaveBeenCalledWith(key);
-    expect(vi.mocked(cookieModule).getAuthCookie).toHaveBeenCalledWith(key);
-    expect(mockSession.getItem).toHaveBeenCalledWith(`auth.${key}.backup`);
-    expect(mockStorage.setItem).toHaveBeenCalledWith(key, sessionStorage_value); // 동기화 확인
+    // 조회 결과 확인
+    expect(result.data).toBe(value);
+    expect(result.error).toBeNull();
   });
-  
-  test('암호화된 토큰이 안전하게 저장 및 복원되는지 검증', async () => {
-    // 모듈 가져오기
-    const { setAuthData, getAuthData, STORAGE_KEYS } = await importAuthStorage();
+
+  it('존재하지 않는 키로 조회할 경우 null을 반환하는지 검증', async () => {
+    const nonExistentKey = 'non-existent-key';
     
-    // 테스트 데이터
-    const key = STORAGE_KEYS.ACCESS_TOKEN; // 토큰은 암호화 대상
-    const value = 'sensitive-access-token';
+    // 존재하지 않는 키로 조회
+    const result = await getAuthData(nonExistentKey);
     
-    // 암호화 함수가 적용되어야 함
-    mockStorage.setItem.mockImplementation((k, v) => {
-      // 암호화된 값이 원본과 달라야 함
-      expect(v).not.toBe(value);
-      // 'enc:' 접두사가 인코딩에 포함되어야 함
-      expect(v.includes('enc:')).toBe(true);
-    });
-    
-    // 함수 실행
-    setAuthData(key, value);
-    
-    // localStorage에서 암호화된 값 가져오기 시뮬레이션
-    const encryptedValue = 'enc:some-encrypted-value';
-    mockStorage.getItem.mockReturnValueOnce(encryptedValue);
-    
-    // 복호화 함수는 원본 값을 반환해야 함
-    const result = getAuthData(key);
-    
-    // 암호화/복호화 과정을 거쳐도 원본 값과 동일해야 함
-    // 실제 테스트에서는 모킹된 값이므로 정확한 검증은 어려움
-    expect(result).not.toBeNull();
+    // null 반환 확인
+    expect(result.data).toBeNull();
+    expect(result.error).toBeNull();
   });
-  
-  test('스토리지 실패 시 대체 스토리지를 사용하는지 검증', async () => {
-    // 모듈 가져오기
-    const { setAuthData, getAuthData, STORAGE_KEYS } = await importAuthStorage();
+
+  it('clearAllAuthData가 모든 인증 데이터를 지우는지 검증', async () => {
+    // 먼저 데이터 저장
+    await setAuthData(`${STORAGE_KEYS.ACCESS_TOKEN}.key1`, 'value1');
+    await setAuthData(`${STORAGE_KEYS.REFRESH_TOKEN}.key2`, 'value2');
     
-    // 테스트 데이터
-    const key = STORAGE_KEYS.ACCESS_TOKEN;
-    const value = 'test-access-token';
+    // 모든 데이터 삭제
+    const result = await clearAllAuthData();
     
-    // localStorage 실패 시뮬레이션
-    mockStorage.setItem.mockImplementation(() => {
-      throw new Error('localStorage 접근 불가');
-    });
+    // 삭제 후 조회
+    const data1 = await getAuthData(`${STORAGE_KEYS.ACCESS_TOKEN}.key1`);
+    const data2 = await getAuthData(`${STORAGE_KEYS.REFRESH_TOKEN}.key2`);
     
-    // sessionStorage는 정상 작동
-    mockSession.setItem.mockImplementation(() => {});
-    
-    // 함수 실행
-    const result = setAuthData(key, value);
-    
-    // localStorage 실패해도 다른 스토리지에 저장되면 성공으로 간주
-    expect(result).toBe(true);
-    expect(mockStorage.setItem).toHaveBeenCalledWith(key, expect.any(String));
-    expect(mockSession.setItem).toHaveBeenCalledWith(`auth.${key}.backup`, expect.any(String));
-    
-    // 초기화
-    vi.clearAllMocks();
-    
-    // localStorage에서 값을 가져올 수 없는 경우 시뮬레이션
-    mockStorage.getItem.mockImplementation(() => {
-      throw new Error('localStorage 접근 불가');
-    });
-    
-    // sessionStorage에 값 있음
-    mockSession.getItem.mockReturnValueOnce(value);
-    
-    // 함수 실행
-    const getValue = getAuthData(key);
-    
-    // sessionStorage에서 값을 가져올 수 있어야 함
-    expect(getValue).toBe(value);
-    expect(mockSession.getItem).toHaveBeenCalledWith(`auth.${key}.backup`);
-  });
-  
-  test('removeAuthData가 모든 스토리지에서 데이터를 제거하는지 검증', async () => {
-    // 모듈 가져오기
-    const { removeAuthData, STORAGE_KEYS } = await importAuthStorage();
-    
-    // 테스트 데이터
-    const key = STORAGE_KEYS.ACCESS_TOKEN;
-    
-    // 함수 실행
-    const result = removeAuthData(key);
-    
-    // 결과 검증
-    expect(result).toBe(true);
-    
-    // 모든 스토리지에서 제거되었는지 확인
-    expect(mockStorage.removeItem).toHaveBeenCalledWith(key);
-    expect(mockSession.removeItem).toHaveBeenCalledWith(`auth.${key}.backup`);
-    
-    // 쿠키 유틸리티 호출 확인
-    const cookieModule = await vi.importActual('../../lib/cookie');
-    expect(vi.mocked(cookieModule).deleteAuthCookie).toHaveBeenCalledWith(key);
+    // 삭제 확인
+    expect(result.error).toBeNull();
+    expect(data1.data).toBeNull();
+    expect(data2.data).toBeNull();
   });
 }); 

@@ -100,6 +100,29 @@ function createClientSupabaseClient() {
         },
         global: {
           headers: { 'x-client-info': 'hybrid-supabase-browser-client' }
+        },
+        cookies: {
+          get: (name: string) => {
+            const cookies = document.cookie.split(';')
+              .map(cookie => cookie.trim())
+              .reduce((acc, cookie) => {
+                const [key, value] = cookie.split('=');
+                acc[key] = value;
+                return acc;
+              }, {} as Record<string, string>);
+            return cookies[name];
+          },
+          set: (name: string, value: string, options: { path?: string; maxAge?: number; domain?: string; secure?: boolean }) => {
+            let cookie = `${name}=${value}`;
+            if (options.path) cookie += `;path=${options.path}`;
+            if (options.maxAge) cookie += `;max-age=${options.maxAge}`;
+            if (options.domain) cookie += `;domain=${options.domain}`;
+            if (options.secure) cookie += ';secure';
+            document.cookie = cookie;
+          },
+          remove: (name: string, options: { path?: string }) => {
+            document.cookie = `${name}=;path=${options.path || '/'};expires=Thu, 01 Jan 1970 00:00:01 GMT`;
+          }
         }
       }
     );

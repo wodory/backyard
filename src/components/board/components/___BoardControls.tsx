@@ -1,5 +1,6 @@
 /**
- * 파일명: BoardControls.tsx
+ * Deprecated 3/29
+ * 파일명: BoardControls.tsx 
  * 목적: 보드 컨트롤 패널 컴포넌트
  * 역할: 보드 캔버스의 우측 상단에 위치한 컨트롤 패널 UI 관리
  * 작성일: 2024-05-30

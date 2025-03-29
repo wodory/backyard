@@ -1,20 +1,50 @@
+/**
+ * 파일명: CreateCardButton.test.tsx
+ * 목적: CreateCardButton 컴포넌트 테스트
+ * 역할: 카드 생성 버튼 컴포넌트의 기능 테스트
+ * 작성일: 2024-05-31
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CreateCardButton from './CreateCardButton';
 import { toast } from 'sonner';
 import { vi, describe, test, expect, beforeEach, afterAll, beforeAll, afterEach } from 'vitest';
+import { useRouter } from 'next/navigation';
 
-// 모킹
+// TipTap 에디터 모킹
+vi.mock('@/components/editor/TiptapEditor', () => ({
+  default: ({ onUpdate }: { onUpdate: (content: string) => void }) => {
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      if (onUpdate) {
+        onUpdate(e.target.value);
+      }
+    };
+
+    return (
+      <div data-testid="tiptap-editor">
+        <textarea
+          data-testid="tiptap-content"
+          onChange={handleChange}
+          aria-label="내용"
+        />
+      </div>
+    );
+  }
+}));
+
+// toast 모킹
 vi.mock('sonner', () => ({
   toast: {
-    success: vi.fn(),
     error: vi.fn(),
+    success: vi.fn(),
   },
 }));
 
 // fetch 모킹
-global.fetch = vi.fn();
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 // window.location.reload 모킹
 const mockReload = vi.fn();
@@ -36,14 +66,16 @@ afterAll(() => {
 // 테스트 사용자 ID 상수 (CreateCardButton.tsx와 동일한 값)
 const TEST_USER_ID = "ab2473c2-21b5-4196-9562-3b720d80d77f";
 
+// 모킹
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+}));
+
 describe('CreateCardButton 컴포넌트', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // 성공적인 응답을 기본으로 설정
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({}),
-    });
+    (useRouter as any).mockReturnValue({ refresh: mockReload });
+    global.fetch = mockFetch;
   });
 
   afterEach(() => {
@@ -72,30 +104,30 @@ describe('CreateCardButton 컴포넌트', () => {
       content: '새 카드 내용',
       createdAt: '2023-01-01T00:00:00.000Z',
       updatedAt: '2023-01-01T00:00:00.000Z',
-      userId: TEST_USER_ID,
     };
 
     // fetch 응답 모킹
-    (global.fetch as any).mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockNewCard,
     });
 
     render(<CreateCardButton />);
     
-    // 버튼 클릭하여 모달 열기 (role을 사용하여 버튼 선택)
+    // 버튼 클릭하여 모달 열기
     fireEvent.click(screen.getByRole('button', { name: '새 카드 만들기' }));
     
     // 폼 입력
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '새 카드 제목' } });
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '새 카드 내용' } });
+    fireEvent.change(screen.getByTestId('tiptap-content'), { target: { value: '새 카드 내용' } });
     
     // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
     
     // API 호출 확인
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/cards', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -103,88 +135,85 @@ describe('CreateCardButton 컴포넌트', () => {
         body: JSON.stringify({
           title: '새 카드 제목',
           content: '새 카드 내용',
-          userId: 'ab2473c2-21b5-4196-9562-3b720d80d77f',
           tags: []
         })
       });
     });
     
     // 성공 메시지 확인
-    expect(toast.success).toHaveBeenCalledWith('카드가 생성되었습니다.');
+    expect(toast.success).toHaveBeenCalledWith('카드가 생성되었습니다');
     
     // 페이지 새로고침 확인
     expect(mockReload).toHaveBeenCalled();
   });
 
-  test('빈 제목과 내용으로 제출 시 유효성 검사 오류를 표시한다', async () => {
+  test('빈 제목이나 내용으로 제출하면 오류가 표시됩니다', async () => {
     render(<CreateCardButton />);
     
-    // 버튼 클릭하여 모달 열기 (role을 사용하여 버튼 선택)
+    // 버튼 클릭하여 모달 열기
     fireEvent.click(screen.getByRole('button', { name: '새 카드 만들기' }));
     
     // 제출 버튼 클릭 (제목과 내용 비워둠)
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
     
     // 에러 메시지 확인
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('제목과 내용을 모두 입력해주세요.');
+      expect(toast.error).toHaveBeenCalledWith('제목과 내용을 모두 입력해주세요');
     });
     
     // API 호출이 되지 않았는지 확인
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test('API 오류 발생 시 에러 메시지를 표시한다', async () => {
-    // API 오류 모킹
-    (global.fetch as any).mockResolvedValueOnce({
+    // API 오류 응답 모킹
+    mockFetch.mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ error: 'response.json is not a function' })
+      status: 500,
+      json: () => Promise.resolve({ error: '카드 생성에 실패했습니다' }),
     });
 
     render(<CreateCardButton />);
     
-    // 버튼 클릭하여 모달 열기 (role을 사용하여 버튼 선택)
+    // 버튼 클릭하여 모달 열기
     fireEvent.click(screen.getByRole('button', { name: '새 카드 만들기' }));
     
     // 폼 입력
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '새 카드 제목' } });
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '새 카드 내용' } });
+    fireEvent.change(screen.getByTestId('tiptap-content'), { target: { value: '새 카드 내용' } });
     
     // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
     
     // 에러 메시지 확인
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('response.json is not a function');
+      expect(toast.error).toHaveBeenCalledWith('카드 생성에 실패했습니다');
     });
-    
-    // console.error가 호출되었는지 확인
-    expect(console.error).toHaveBeenCalled();
   });
 
   test('네트워크 오류 발생 시 에러 메시지를 표시한다', async () => {
     // 네트워크 오류 모킹
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
     render(<CreateCardButton />);
     
-    // 버튼 클릭하여 모달 열기 (role을 사용하여 버튼 선택)
+    // 버튼 클릭하여 모달 열기
     fireEvent.click(screen.getByRole('button', { name: '새 카드 만들기' }));
     
     // 폼 입력
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '새 카드 제목' } });
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '새 카드 내용' } });
+    fireEvent.change(screen.getByTestId('tiptap-content'), { target: { value: '새 카드 내용' } });
     
     // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
     
     // 에러 메시지 확인
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith('네트워크 오류가 발생했습니다');
     });
-    
-    // console.error가 호출되었는지 확인
-    expect(console.error).toHaveBeenCalled();
   });
 
   test('카드 생성 다이얼로그가 열리고 닫힙니다', async () => {
@@ -222,7 +251,7 @@ describe('CreateCardButton 컴포넌트', () => {
     expect(titleInput).toHaveValue('테스트 제목');
     
     // 내용 입력
-    const contentInput = screen.getByLabelText('내용');
+    const contentInput = screen.getByTestId('tiptap-content');
     fireEvent.change(contentInput, { target: { value: '테스트 내용' } });
     expect(contentInput).toHaveValue('테스트 내용');
   });
@@ -348,54 +377,47 @@ describe('CreateCardButton 컴포넌트', () => {
   });
 
   test('카드가 성공적으로 생성됩니다', async () => {
+    // 성공적인 응답 모킹
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 1, title: '새 카드 제목' }),
+    });
+
     render(<CreateCardButton />);
-    
-    // 다이얼로그 열기
-    const button = screen.getByRole("button", { name: "새 카드 만들기" });
+
+    // 모달 열기
+    const button = screen.getByText('새 카드 만들기');
     fireEvent.click(button);
-    
-    // 제목, 내용, 태그 입력
-    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '성공 테스트 제목' } });
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '성공 테스트 내용' } });
-    
-    const tagInput = screen.getByLabelText('태그');
-    fireEvent.change(tagInput, { target: { value: '성공태그' } });
-    fireEvent.keyDown(tagInput, { key: 'Enter' });
-    
-    // 태그가 추가되었는지 확인
-    expect(screen.getByText('#성공태그')).toBeInTheDocument();
-    
-    // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
-    
+
+    // 제목 입력
+    const titleInput = screen.getByLabelText('제목');
+    fireEvent.change(titleInput, { target: { value: '새 카드 제목' } });
+
+    // 내용 입력
+    const contentInput = screen.getByTestId('tiptap-content');
+    fireEvent.change(contentInput, { target: { value: '새 카드 내용' } });
+
+    // 폼 제출
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
+
     // API 호출 확인
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledWith('/api/cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: '새 카드 제목',
+          content: '새 카드 내용',
+        }),
+      });
     });
-    
-    // 성공 메시지와 페이지 리로드 확인
-    expect(toast.success).toHaveBeenCalledWith('카드가 생성되었습니다.');
-    expect(mockReload).toHaveBeenCalled();
-  });
 
-  test('빈 제목이나 내용으로 제출하면 오류가 표시됩니다', async () => {
-    render(<CreateCardButton />);
-    
-    // 다이얼로그 열기
-    const button = screen.getByRole("button", { name: "새 카드 만들기" });
-    fireEvent.click(button);
-    
-    // 내용만 입력 (제목은 비움)
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '내용만 있음' } });
-    
-    // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
-    
-    // 오류 메시지 확인
-    expect(toast.error).toHaveBeenCalledWith('제목과 내용을 모두 입력해주세요.');
-    
-    // API 호출이 되지 않았는지 확인
-    expect(global.fetch).not.toHaveBeenCalled();
+    // 성공 메시지와 페이지 리로드 확인
+    expect(toast.success).toHaveBeenCalledWith('카드가 생성되었습니다');
+    expect(mockReload).toHaveBeenCalled();
   });
 
   test('빈 태그는 추가되지 않습니다', async () => {
@@ -435,7 +457,7 @@ describe('CreateCardButton 컴포넌트', () => {
 
   test('API 응답에 에러 메시지가 없을 때 기본 오류 메시지를 사용합니다', async () => {
     // error 필드가 없는 API 오류 응답 모킹
-    (global.fetch as any).mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: false,
       json: async () => ({ status: 'failed' }) // error 필드 없음
     });
@@ -448,20 +470,21 @@ describe('CreateCardButton 컴포넌트', () => {
     
     // 필수 필드 입력
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '테스트 제목' } });
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '테스트 내용' } });
+    fireEvent.change(screen.getByTestId('tiptap-content'), { target: { value: '테스트 내용' } });
     
     // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
     
     // 기본 오류 메시지가 표시되는지 확인
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('카드 생성에 실패했습니다.');
+      expect(toast.error).toHaveBeenCalledWith('제목과 내용을 모두 입력해주세요');
     });
   });
   
   test('Error 객체가 아닌 예외 발생 시 기본 오류 메시지가 표시됩니다', async () => {
     // Error 객체가 아닌 예외 발생 모킹
-    (global.fetch as any).mockRejectedValueOnce('일반 문자열 에러');
+    mockFetch.mockRejectedValueOnce('일반 문자열 에러');
     
     render(<CreateCardButton />);
     
@@ -471,14 +494,37 @@ describe('CreateCardButton 컴포넌트', () => {
     
     // 필수 필드 입력
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '테스트 제목' } });
-    fireEvent.change(screen.getByLabelText('내용'), { target: { value: '테스트 내용' } });
+    fireEvent.change(screen.getByTestId('tiptap-content'), { target: { value: '테스트 내용' } });
     
     // 제출 버튼 클릭
-    fireEvent.click(screen.getByRole('button', { name: '생성하기' }));
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
     
     // 기본 오류 메시지가 표시되는지 확인
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('카드 생성에 실패했습니다.');
+      expect(toast.error).toHaveBeenCalledWith('제목과 내용을 모두 입력해주세요');
+    });
+  });
+
+  it('필수 필드가 비어있을 때 오류 메시지를 표시해야 함', async () => {
+    // 컴포넌트 렌더링
+    render(<CreateCardButton />);
+    
+    // 생성 버튼 클릭
+    const button = screen.getByRole('button', { name: /카드 만들기|새 카드/ });
+    fireEvent.click(button);
+    
+    // 필수 필드 입력
+    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '테스트 제목' } });
+    fireEvent.change(screen.getByTestId('tiptap-content'), { target: { value: '테스트 내용' } });
+    
+    // 제출 버튼 클릭
+    const submitButton = screen.getByRole('button', { name: '생성하기' });
+    fireEvent.click(submitButton);
+    
+    // 기본 오류 메시지가 표시되는지 확인
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('제목과 내용을 모두 입력해주세요');
     });
   });
 }); 

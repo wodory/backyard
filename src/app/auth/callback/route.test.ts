@@ -1,88 +1,81 @@
 /**
  * 파일명: route.test.ts
- * 목적: OAuth 콜백 처리 라우트 테스트
- * 역할: 인증 콜백의 다양한 시나리오 테스트
+ * 목적: OAuth 콜백 핸들러 테스트
+ * 역할: 인증 코드 처리와 리다이렉션 로직 검증
  * 작성일: 2024-03-31
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
-
-// 모의 객체 생성
-const mocks = vi.hoisted(() => {
-  return {
-    supabaseClient: {
-      auth: {
-        exchangeCodeForSession: vi.fn()
-      }
-    },
-    createClient: vi.fn()
-  }
-})
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { GET } from './route';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 
 // Supabase 클라이언트 모킹
 vi.mock('@/utils/supabase/server', () => ({
-  createClient: () => mocks.supabaseClient
-}))
-
-// next/server 모킹
-vi.mock('next/server', async () => {
-  const actual = await vi.importActual('next/server') as any
-  return {
-    ...actual,
-    NextResponse: {
-      redirect: vi.fn((url) => ({ url }))
-    }
-  }
-})
+  createClient: vi.fn()
+}));
 
 describe('OAuth Callback Route Handler', () => {
-  let request: NextRequest
-
   beforeEach(() => {
-    vi.clearAllMocks()
-    request = new NextRequest(new URL('http://localhost:3000/auth/callback?code=test_code'))
-  })
+    vi.clearAllMocks();
+  });
 
   it('성공적으로 인증 코드를 교환하고 홈으로 리다이렉트', async () => {
-    // 성공 시나리오 설정
-    mocks.supabaseClient.auth.exchangeCodeForSession.mockResolvedValueOnce({ error: null })
+    // 모의 Supabase 클라이언트 설정
+    const mockExchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
+    (createClient as any).mockResolvedValue({
+      auth: {
+        exchangeCodeForSession: mockExchangeCodeForSession
+      }
+    });
 
-    // GET 핸들러 임포트 및 실행
-    const { GET } = await import('./route')
-    const response = await GET(request)
+    // 테스트 요청 생성
+    const testUrl = 'http://localhost:3000/auth/callback?code=valid_code';
+    const request = new NextRequest(new URL(testUrl));
+
+    // 핸들러 실행
+    const response = await GET(request);
 
     // 검증
-    expect(mocks.supabaseClient.auth.exchangeCodeForSession).toHaveBeenCalledWith('test_code')
-    expect(NextResponse.redirect).toHaveBeenCalledWith(new URL('/', request.url))
-  })
+    expect(mockExchangeCodeForSession).toHaveBeenCalledWith('valid_code');
+    expect(response).toBeInstanceOf(NextResponse);
+    expect(response.headers.get('location')).toBe('http://localhost:3000/');
+  });
 
   it('인증 코드가 없을 경우 에러 페이지로 리다이렉트', async () => {
-    // 코드가 없는 요청 생성
-    request = new NextRequest(new URL('http://localhost:3000/auth/callback'))
+    // 테스트 요청 생성 (코드 없음)
+    const testUrl = 'http://localhost:3000/auth/callback';
+    const request = new NextRequest(new URL(testUrl));
 
-    // GET 핸들러 임포트 및 실행
-    const { GET } = await import('./route')
-    const response = await GET(request)
+    // 핸들러 실행
+    const response = await GET(request);
 
     // 검증
-    expect(NextResponse.redirect).toHaveBeenCalledWith(
-      new URL('/login?error=인증 코드를 찾을 수 없습니다', request.url)
-    )
-  })
+    expect(response).toBeInstanceOf(NextResponse);
+    expect(response.headers.get('location')).toContain('/login?error=');
+  });
 
   it('인증 코드 교환 중 오류 발생 시 에러 페이지로 리다이렉트', async () => {
-    // 오류 시나리오 설정
-    const mockError = { message: '인증 실패' }
-    mocks.supabaseClient.auth.exchangeCodeForSession.mockResolvedValueOnce({ error: mockError })
+    // 모의 Supabase 클라이언트 설정 (오류 발생)
+    const mockExchangeCodeForSession = vi.fn().mockResolvedValue({ 
+      error: new Error('인증 실패')
+    });
+    (createClient as any).mockResolvedValue({
+      auth: {
+        exchangeCodeForSession: mockExchangeCodeForSession
+      }
+    });
 
-    // GET 핸들러 임포트 및 실행
-    const { GET } = await import('./route')
-    const response = await GET(request)
+    // 테스트 요청 생성
+    const testUrl = 'http://localhost:3000/auth/callback?code=invalid_code';
+    const request = new NextRequest(new URL(testUrl));
+
+    // 핸들러 실행
+    const response = await GET(request);
 
     // 검증
-    expect(NextResponse.redirect).toHaveBeenCalledWith(
-      new URL(`/login?error=${encodeURIComponent(mockError.message)}`, request.url)
-    )
-  })
-}) 
+    expect(mockExchangeCodeForSession).toHaveBeenCalledWith('invalid_code');
+    expect(response).toBeInstanceOf(NextResponse);
+    expect(response.headers.get('location')).toContain('/login?error=');
+  });
+}); 

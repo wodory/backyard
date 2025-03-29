@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DELETE } from './route';
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import prisma from '@/lib/prisma';
+import type { Mock } from 'vitest';
 
 // NextResponse.json 모킹
 vi.mock('next/server', async () => {
@@ -23,18 +25,23 @@ vi.mock('next/server', async () => {
 
 // Prisma 모킹
 vi.mock('@/lib/prisma', () => ({
-  prisma: {
+  default: {
     tag: {
       findUnique: vi.fn(),
-      delete: vi.fn()
+      findFirst: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     cardTag: {
-      deleteMany: vi.fn()
-    }
-  }
+      count: vi.fn(),
+    },
+  },
 }));
 
 describe('태그 API - DELETE', () => {
+  const mockTagId = 'test-tag-id';
+  const mockContext = { params: { id: mockTagId } };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -48,77 +55,60 @@ describe('태그 API - DELETE', () => {
   });
 
   it('성공적으로 태그를 삭제해야 함', async () => {
-    const tagId = '1';
-    const mockTag = { 
-      id: tagId, 
+    // 태그 존재 확인 모킹
+    (prisma.tag.findUnique as Mock).mockResolvedValueOnce({
+      id: mockTagId,
       name: '테스트 태그',
-      _count: { cardTags: 2 }
-    };
+    });
 
-    // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.tag.findUnique as any).mockResolvedValue(mockTag);
-    (prisma.cardTag.deleteMany as any).mockResolvedValue({ count: 2 });
-    (prisma.tag.delete as any).mockResolvedValue(mockTag);
-    
-    // DELETE 요청 시뮬레이션
-    const request = new NextRequest(`http://localhost:3000/api/tags/${tagId}`, {
-      method: 'DELETE'
+    // 카드 태그 카운트 모킹
+    (prisma.cardTag.count as Mock).mockResolvedValueOnce(2);
+
+    // 태그 삭제 모킹
+    (prisma.tag.delete as Mock).mockResolvedValueOnce({
+      id: mockTagId,
+      name: '테스트 태그',
     });
-    
-    const response = await DELETE(request, {
-      params: { id: tagId }
-    });
-    
+
+    const request = new NextRequest('http://localhost:3000/api/tags/' + mockTagId);
+    const response = await DELETE(request, mockContext);
+
     // 응답 검증
     expect(response.status).toBe(200);
-    const responseData = await response.json();
-    expect(responseData).toEqual({
-      message: '태그가 성공적으로 삭제되었습니다.'
+    expect(response.body).toEqual({
+      message: '태그가 성공적으로 삭제되었습니다.',
+      affectedCards: 2,
     });
-    
-    // prisma 함수 호출 확인
+
+    // Prisma 호출 검증
     expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-      where: { id: tagId },
-      include: { _count: { select: { cardTags: true } } }
+      where: { id: mockTagId },
     });
-    expect(prisma.cardTag.deleteMany).toHaveBeenCalledWith({
-      where: { tagId }
+    expect(prisma.cardTag.count).toHaveBeenCalledWith({
+      where: { tagId: mockTagId },
     });
     expect(prisma.tag.delete).toHaveBeenCalledWith({
-      where: { id: tagId }
+      where: { id: mockTagId },
     });
   });
 
   it('존재하지 않는 태그에 대해 404 오류를 반환해야 함', async () => {
-    const tagId = '999';
-    
-    // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
-    (prisma.tag.findUnique as any).mockResolvedValue(null); // 태그가 존재하지 않음
-    
-    // DELETE 요청 시뮬레이션
-    const request = new NextRequest(`http://localhost:3000/api/tags/${tagId}`, {
-      method: 'DELETE'
-    });
-    
-    const response = await DELETE(request, {
-      params: { id: tagId }
-    });
-    
+    // 태그가 존재하지 않는 상황 모킹
+    (prisma.tag.findUnique as Mock).mockResolvedValueOnce(null);
+
+    const request = new NextRequest('http://localhost:3000/api/tags/' + mockTagId);
+    const response = await DELETE(request, mockContext);
+
     // 응답 검증
     expect(response.status).toBe(404);
-    const responseData = await response.json();
-    expect(responseData).toEqual({
-      error: '존재하지 않는 태그입니다.'
+    expect(response.body).toEqual({
+      error: '태그를 찾을 수 없습니다.',
     });
-    
-    // prisma 함수 호출 확인
+
+    // Prisma 호출 검증
     expect(prisma.tag.findUnique).toHaveBeenCalledWith({
-      where: { id: tagId },
-      include: { _count: { select: { cardTags: true } } }
+      where: { id: mockTagId },
     });
-    expect(prisma.cardTag.deleteMany).not.toHaveBeenCalled();
     expect(prisma.tag.delete).not.toHaveBeenCalled();
   });
   
@@ -131,7 +121,6 @@ describe('태그 API - DELETE', () => {
     };
     
     // prisma 모킹 설정
-    const { prisma } = await import('@/lib/prisma');
     (prisma.tag.findUnique as any).mockResolvedValue(mockTag);
     (prisma.tag.delete as any).mockRejectedValue(new Error('데이터베이스 오류'));
     

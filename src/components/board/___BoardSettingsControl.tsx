@@ -147,7 +147,7 @@ export default function BoardSettingsControl({
           <DialogTrigger asChild>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <Box className="mr-2 h-4 w-4" />
-              <span>노드 크기 설정</span>
+              <span>노드 크기 설정///</span>
             </DropdownMenuItem>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">

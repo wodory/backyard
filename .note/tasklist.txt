@@ -408,3 +408,6 @@ const { user, session, error } = await supabase.auth.signIn({
 - [ ] 아이콘
   - [ ] new https://lucide.dev/icons/file-plus
   - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
+
+# 중복 파일 제거 
+- [ ] NodeInspector
