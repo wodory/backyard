@@ -18,20 +18,20 @@ const mockReactFlow = () => {
   // 브라우저 환경의 ResizeObserver 모킹
   class ResizeObserver {
     callback: any;
-    
+
     constructor(callback: any) {
       this.callback = callback;
     }
-    
+
     observe(target: Element) {
       this.callback([{ target } as any], this);
     }
-    
-    unobserve() {}
-    
-    disconnect() {}
+
+    unobserve() { }
+
+    disconnect() { }
   }
-  
+
   // 브라우저 환경의 DOMMatrixReadOnly 모킹
   class DOMMatrixReadOnly {
     m22: number;
@@ -40,11 +40,11 @@ const mockReactFlow = () => {
       this.m22 = scale !== undefined ? +scale : 1;
     }
   }
-  
+
   // 전역 객체에 모킹된 클래스 할당
   global.ResizeObserver = ResizeObserver as any;
   (global as any).DOMMatrixReadOnly = DOMMatrixReadOnly;
-  
+
   // HTMLElement의 offset 프로퍼티 모킹
   Object.defineProperties(global.HTMLElement.prototype, {
     offsetHeight: {
@@ -58,7 +58,7 @@ const mockReactFlow = () => {
       },
     },
   });
-  
+
   // SVGElement의 getBBox 메서드 모킹
   (global.SVGElement as any).prototype.getBBox = () => ({
     x: 0,
@@ -75,6 +75,8 @@ interface MockAppState {
   removeSelectedCard: (id: string) => void;
   selectedCardIds: string[];
   selectedCardId: string | null;
+  expandedCardId: string | null;
+  toggleExpandCard: (id: string) => void;
   updateCard: (card: any) => void;
   selectCards: (ids: string[]) => void;
   toggleSelectedCard: (id: string) => void;
@@ -85,6 +87,7 @@ interface MockAppState {
 
 // 테스트 전역 변수 - selectCard 함수에 대한 참조 저장용
 let selectCardMockFn = vi.fn();
+let toggleExpandCardMockFn = vi.fn();
 
 // AppStore 모킹
 vi.mock('@/store/useAppStore', () => ({
@@ -95,6 +98,8 @@ vi.mock('@/store/useAppStore', () => ({
       removeSelectedCard: vi.fn(),
       selectedCardIds: [],
       selectedCardId: null,
+      expandedCardId: null,
+      toggleExpandCard: toggleExpandCardMockFn,
       updateCard: vi.fn(),
       selectCards: vi.fn(),
       toggleSelectedCard: vi.fn(),
@@ -141,7 +146,7 @@ vi.mock('@/contexts/ThemeContext', () => ({
       handle: {
         size: 8,
         backgroundColor: '#ffffff',
-        borderColor: '#888888', 
+        borderColor: '#888888',
         borderWidth: 1
       },
       edge: {
@@ -168,7 +173,7 @@ vi.mock('@xyflow/react', async () => {
       })
     }),
     Handle: ({ type, position, id, isConnectable, style }: any) => (
-      <div 
+      <div
         data-testid={`handle-${id}`}
         data-position={position}
         data-type={type}
@@ -183,7 +188,7 @@ describe('CardNode', () => {
   beforeAll(() => {
     mockReactFlow();
   });
-  
+
   const mockNodeData: NodeData = {
     id: 'test-card-id',
     title: '테스트 카드',
@@ -204,8 +209,9 @@ describe('CardNode', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // 모든 테스트 전에 selectCardMockFn 초기화
+    // 모든 테스트 전에 mock 함수 초기화
     selectCardMockFn = vi.fn();
+    toggleExpandCardMockFn = vi.fn();
   });
 
   it('카드 노드가 올바르게 렌더링되어야 함', () => {
@@ -217,16 +223,16 @@ describe('CardNode', () => {
 
     // 카드 제목이 표시되는지 확인
     expect(screen.getByText('테스트 카드')).toBeInTheDocument();
-    
+
     // 4개의 핸들이 렌더링되는지 확인
     expect(screen.getByTestId('handle-right-source')).toBeInTheDocument();
     expect(screen.getByTestId('handle-left-target')).toBeInTheDocument();
     expect(screen.getByTestId('handle-bottom-source')).toBeInTheDocument();
     expect(screen.getByTestId('handle-top-target')).toBeInTheDocument();
-    
+
     // 접기/펼치기 버튼이 있는지 확인
     expect(screen.getByRole('button', { name: /펼치기/i })).toBeInTheDocument();
-    
+
     // 태그가 렌더링되지 않아야 함 (접혀있는 상태)
     expect(screen.queryByText('#태그1')).not.toBeInTheDocument();
   });
@@ -260,15 +266,15 @@ describe('CardNode', () => {
     // 초기 상태 확인 (접혀있음)
     expect(screen.getByRole('button', { name: /펼치기/i })).toBeInTheDocument();
     expect(screen.queryByTestId('tiptap-viewer')).not.toBeInTheDocument();
-    
+
     // 펼치기 버튼 클릭
     fireEvent.click(screen.getByRole('button', { name: /펼치기/i }));
-    
+
     // 확장된 상태 확인
     expect(screen.getByRole('button', { name: /접기/i })).toBeInTheDocument();
     expect(screen.getByTestId('tiptap-viewer')).toBeInTheDocument();
     expect(screen.getByText('테스트 내용')).toBeInTheDocument();
-    
+
     // 태그 확인
     expect(screen.getByText('#태그1')).toBeInTheDocument();
     expect(screen.getByText('#태그2')).toBeInTheDocument();
@@ -283,18 +289,18 @@ describe('CardNode', () => {
 
     // 초기 상태에서는 모달이 없어야 함
     expect(screen.queryByTestId('edit-card-modal')).not.toBeInTheDocument();
-    
+
     // 카드 더블 클릭
     const cardElement = screen.getByText('테스트 카드').closest('div');
     fireEvent.click(cardElement!, { detail: 2 });
-    
+
     // 모달이 열려야 함
     // 주의: createPortal을 사용하는 경우 실제 테스트에서는 모달이 감지되지 않을 수 있음
     // 이 경우 Portal 컴포넌트의 구현을 테스트에 맞게 수정하거나 다른 방법으로 테스트해야 함
   });
 
   // 새로 추가된 테스트 케이스
-  
+
   describe('노드 상태별 엣지 핸들러 및 스타일 테스트', () => {
     /**
      * 핸들의 opacity 값 가져오기 함수
@@ -303,7 +309,7 @@ describe('CardNode', () => {
       const handle = screen.getByTestId(`handle-${handleId}`);
       return handle.style.opacity;
     };
-    
+
     /**
      * 노드 엘리먼트 가져오기 함수
      */
@@ -317,13 +323,13 @@ describe('CardNode', () => {
           <CardNode {...mockNodeProps as NodeProps} />
         </ReactFlowProvider>
       );
-      
+
       // 엣지 핸들러가 렌더링되었지만 보이지 않아야 함 (opacity: 0)
       expect(getHandleOpacity('right-source')).toBe('0');
       expect(getHandleOpacity('left-target')).toBe('0');
       expect(getHandleOpacity('bottom-source')).toBe('0');
       expect(getHandleOpacity('top-target')).toBe('0');
-      
+
       // 노드가 보더와 배경색이 기본 스타일을 가져야 함
       const nodeElement = getNodeElement();
       expect(nodeElement.classList.contains('border-primary')).toBe(false);
@@ -331,62 +337,62 @@ describe('CardNode', () => {
       expect(nodeElement.classList.contains('shadow-lg')).toBe(false);
       expect(nodeElement.classList.contains('shadow-sm')).toBe(true);
     });
-    
+
     it('2. hover 노드 - 엣지 핸들러가 보이고 hover 스타일이 적용되어야 함', () => {
       render(
         <ReactFlowProvider>
           <CardNode {...mockNodeProps as NodeProps} />
         </ReactFlowProvider>
       );
-      
+
       // 노드에 마우스 오버 이벤트 발생
       const nodeElement = getNodeElement();
       fireEvent.mouseEnter(nodeElement);
-      
+
       // 엣지 핸들러가 보여야 함 (opacity: 1)
       expect(getHandleOpacity('right-source')).toBe('1');
       expect(getHandleOpacity('left-target')).toBe('1');
       expect(getHandleOpacity('bottom-source')).toBe('1');
       expect(getHandleOpacity('top-target')).toBe('1');
-      
+
       // 노드가 hover 스타일을 가져야 함
       expect(nodeElement.classList.contains('shadow-lg')).toBe(true);
       expect(nodeElement.classList.contains('shadow-sm')).toBe(false);
-      
+
       // 마우스 아웃 시 hover 스타일이 제거되어야 함
       fireEvent.mouseLeave(nodeElement);
       expect(getHandleOpacity('right-source')).toBe('0');
       expect(nodeElement.classList.contains('shadow-lg')).toBe(false);
       expect(nodeElement.classList.contains('shadow-sm')).toBe(true);
     });
-    
+
     it('3. selected 노드 - 엣지 핸들러가 보이고 선택 스타일이 적용되어야 함', () => {
       const selectedProps = {
         ...mockNodeProps,
         selected: true, // 선택 상태로 설정
       };
-      
+
       render(
         <ReactFlowProvider>
           <CardNode {...selectedProps as NodeProps} />
         </ReactFlowProvider>
       );
-      
+
       // 엣지 핸들러가 보여야 함 (opacity: 1)
       expect(getHandleOpacity('right-source')).toBe('1');
       expect(getHandleOpacity('left-target')).toBe('1');
       expect(getHandleOpacity('bottom-source')).toBe('1');
       expect(getHandleOpacity('top-target')).toBe('1');
-      
+
       // 노드가 선택 스타일을 가져야 함
       const nodeElement = getNodeElement();
       expect(nodeElement.classList.contains('border-primary')).toBe(true);
       expect(nodeElement.classList.contains('border-muted')).toBe(false);
-      
+
       // z-index 값이 일반 노드보다 높아야 함
       expect(nodeElement.style.zIndex).toBe('100');
     });
-    
+
     // 마지막 테스트 케이스를 비동기 테스트로 변경
     it('4. 펼침 버튼 클릭 시 selected + expanded 노드가 되어야 함', async () => {
       // 선택 함수가 확실히 호출되도록 미리 설정된 selected 노드로 시작
@@ -394,45 +400,127 @@ describe('CardNode', () => {
         ...mockNodeProps,
         selected: true, // 이미 선택된 상태로 시작
       };
-      
+
       render(
         <ReactFlowProvider>
           <CardNode {...expandableProps as NodeProps} />
         </ReactFlowProvider>
       );
-      
+
       // 펼침 버튼 클릭
       const expandButton = screen.getByRole('button', { name: /펼치기/i });
       fireEvent.click(expandButton);
-      
+
       // 노드를 선택하는 함수가 호출되어야 함
       expect(selectCardMockFn).toHaveBeenCalledWith('test-node-id');
-      
+
       // 컨텐츠가 보여야 함 - 비동기 확인
       await waitFor(() => {
         expect(screen.getByTestId('tiptap-viewer')).toBeInTheDocument();
       });
       expect(screen.getByText('테스트 내용')).toBeInTheDocument();
-      
+
       // 노드에 확장 상태 클래스가 추가되어야 함
       const nodeElement = getNodeElement();
-      
+
       // data-expanded 속성 확인
       expect(nodeElement.getAttribute('data-expanded')).toBe('true');
-      
+
       // 클래스 확인 
       expect(nodeElement.classList.contains('expanded')).toBe(true);
-      
+
       // 스타일 확인 - 스타일이 명시적으로 설정되어 있을 때만 검증
       if (nodeElement.style.zIndex) {
         expect(nodeElement.style.zIndex).toBe('9999');
       }
-      
+
       // 핸들의 가시성은 이미 선택 상태이므로 항상 보여야 함
       expect(getHandleOpacity('right-source')).toBe('1');
       expect(getHandleOpacity('left-target')).toBe('1');
       expect(getHandleOpacity('bottom-source')).toBe('1');
       expect(getHandleOpacity('top-target')).toBe('1');
     });
+  });
+
+  it('카드 클릭 시 selectCard 함수가 호출되어야 함', () => {
+    render(
+      <ReactFlowProvider>
+        <CardNode {...mockNodeProps as NodeProps} />
+      </ReactFlowProvider>
+    );
+
+    // 카드 요소 찾기
+    const cardElement = screen.getByText('테스트 카드').closest('.card-node');
+    expect(cardElement).toBeInTheDocument();
+
+    // 카드 클릭
+    if (cardElement) {
+      fireEvent.click(cardElement);
+    }
+
+    // selectCard 함수가 올바른 ID로 호출되었는지 확인
+    expect(selectCardMockFn).toHaveBeenCalledWith('test-node-id');
+  });
+
+  it('확장 토글 버튼 클릭 시 이벤트 전파가 중지되고 toggleExpandCard 함수가 호출되어야 함', () => {
+    render(
+      <ReactFlowProvider>
+        <CardNode {...mockNodeProps as NodeProps} />
+      </ReactFlowProvider>
+    );
+
+    // 확장 토글 버튼 찾기
+    const toggleButton = screen.getByRole('button', { name: /펼치기/i });
+    expect(toggleButton).toBeInTheDocument();
+
+    // 이벤트 전파 중지를 테스트하기 위한 설정
+    const stopPropagationMock = vi.fn();
+
+    // 토글 버튼 클릭
+    fireEvent.click(toggleButton, {
+      stopPropagation: stopPropagationMock
+    });
+
+    // stopPropagation이 호출되었는지 확인
+    expect(stopPropagationMock).toHaveBeenCalled();
+
+    // toggleExpandCard 함수가 올바른 ID로 호출되었는지 확인
+    expect(toggleExpandCardMockFn).toHaveBeenCalledWith('test-node-id');
+
+    // selectCard 함수는 호출되지 않아야 함
+    expect(selectCardMockFn).not.toHaveBeenCalled();
+  });
+
+  it('expandedCardId 상태에 따라 카드 내용 표시 여부가 달라져야 함', () => {
+    // expandedCardId를 설정한 상태로 모킹
+    vi.mocked(useAppStore).mockImplementation((selector: Function) => {
+      const state: MockAppState = {
+        selectCard: selectCardMockFn,
+        addSelectedCard: vi.fn(),
+        removeSelectedCard: vi.fn(),
+        selectedCardIds: [],
+        selectedCardId: null,
+        expandedCardId: 'test-node-id', // 확장 상태
+        toggleExpandCard: toggleExpandCardMockFn,
+        updateCard: vi.fn(),
+        selectCards: vi.fn(),
+        toggleSelectedCard: vi.fn(),
+        clearSelectedCards: vi.fn(),
+      };
+      return selector(state);
+    });
+
+    render(
+      <ReactFlowProvider>
+        <CardNode {...mockNodeProps as NodeProps} />
+      </ReactFlowProvider>
+    );
+
+    // 카드가 확장되어 내용이 표시되는지 확인
+    expect(screen.getByTestId('tiptap-viewer')).toBeInTheDocument();
+    expect(screen.getByText('테스트 내용')).toBeInTheDocument();
+
+    // 접기 버튼이 표시되는지 확인
+    expect(screen.getByRole('button', { name: /접기/i })).toBeInTheDocument();
   });
 }); 

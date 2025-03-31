@@ -17,6 +17,8 @@ export interface AppState {
   selectedCardIds: string[];
   // 이전 단일 선택 상태 (내부적으로 selectedCardIds로 변환)
   selectedCardId: string | null; // 하위 호환성 유지 (파생 값)
+  // 확장된 카드 ID
+  expandedCardId: string | null;
   
   // 선택 관련 액션들
   selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
@@ -25,6 +27,8 @@ export interface AppState {
   removeSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 제거
   toggleSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 토글
   clearSelectedCards: () => void; // 모든 선택 해제
+  // 카드 확장 액션
+  toggleExpandCard: (cardId: string) => void; // 카드 확장 토글
   
   // 카드 데이터 상태
   cards: Card[]; // 현재 로드된 카드 목록
@@ -63,6 +67,9 @@ export const useAppStore = create<AppState>()(
       // 단일 선택 상태 (파생 값)
       selectedCardId: null,
       
+      // 확장된 카드 ID 초기값
+      expandedCardId: null,
+      
       // 선택 관련 액션들
       selectCards: (cardIds) => {
         set({
@@ -75,8 +82,28 @@ export const useAppStore = create<AppState>()(
       
       // 단일 카드 선택 (내부적으로 selectCards 호출)
       selectCard: (cardId) => {
-        const { selectCards } = get();
-        selectCards(cardId ? [cardId] : []);
+        const currentExpanded = get().expandedCardId;
+        // 다른 카드가 선택되면서 기존에 펼쳐진 카드가 있는 경우 접기
+        const shouldCollapse = currentExpanded !== null && currentExpanded !== cardId;
+        
+        if (cardId) {
+          // 카드 선택
+          set({ 
+            selectedCardIds: [cardId], 
+            selectedCardId: cardId,
+            // 다른 카드 선택 시 기존에 펼쳐진 카드 접기
+            expandedCardId: shouldCollapse ? null : currentExpanded
+          });
+          console.log('[AppStore] 카드 선택:', cardId, '펼쳐진 카드 접기:', shouldCollapse);
+        } else {
+          // 선택 해제
+          set({ 
+            selectedCardIds: [], 
+            selectedCardId: null,
+            expandedCardId: null // 선택 해제 시 펼쳐진 카드도 함께 접기
+          });
+          console.log('[AppStore] 카드 선택 해제');
+        }
       },
       
       // 선택된 카드 목록에 추가
@@ -121,7 +148,26 @@ export const useAppStore = create<AppState>()(
         }),
       
       // 모든 선택 해제
-      clearSelectedCards: () => set({ selectedCardIds: [], selectedCardId: null }),
+      clearSelectedCards: () => set({ 
+        selectedCardIds: [], 
+        selectedCardId: null,
+        expandedCardId: null // 선택 해제 시 펼쳐진 카드도 함께 접기
+      }),
+      
+      // 카드 확장 토글 액션
+      toggleExpandCard: (cardId) => {
+        const currentExpanded = get().expandedCardId;
+        
+        if (currentExpanded === cardId) {
+          // 이미 펼쳐진 카드를 토글 (접기)
+          set({ expandedCardId: null, selectedCardId: null, selectedCardIds: [] });
+          console.log('[AppStore] 카드 확장 취소:', cardId);
+        } else {
+          // 새로운 카드를 펼침
+          set({ expandedCardId: cardId, selectedCardId: cardId, selectedCardIds: [cardId] });
+          console.log('[AppStore] 카드 확장:', cardId);
+        }
+      },
       
       // 카드 데이터 상태 초기값 및 액션
       cards: [],

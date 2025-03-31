@@ -403,11 +403,16 @@ const { user, session, error } = await supabase.auth.signIn({
   - [ ] 프로젝트 선택 화면
   - [ ] 프로젝트 삭제 
   - [ ] 프로젝트 삭제하면 카드는 어떻게 해야 하지... 아마 전체 삭제. 단, trashcan으로 이동. (90일 보관)
-- [ ] 카드 공유를 위해 카드 id도 uid로 개선 
+- [x] 카드 공유를 위해 카드 id도 uid로 개선 
 - [ ] 로컬 서버 DB도 supabase로 일원화하기 
 - [ ] 아이콘
   - [ ] new https://lucide.dev/icons/file-plus
   - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
 
+# bug
+- [x] 노드 확장하면 contents 삐져나오는 문제
+- [ ] 노드 디자인 (아래에 테두리 두 줄)
+- [x] 확장한 카드 선택 해제 -> 동작하지 않음. 
+- [x] 카드 하나 확장한 상태에서 다른 갈매기 클릭 -> 크래시
 # 중복 파일 제거 
 - [ ] NodeInspector

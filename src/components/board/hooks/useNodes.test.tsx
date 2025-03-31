@@ -17,12 +17,13 @@ import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
 mockReactFlow();
 
 // useAppStore 모킹
+const clearSelectedCardsMock = vi.fn();
 vi.mock('@/store/useAppStore', () => ({
   useAppStore: () => ({
     selectedCardIds: ['test-node-1'],
     toggleSelectedCard: vi.fn(),
     selectCard: vi.fn(),
-    clearSelectedCards: vi.fn(),
+    clearSelectedCards: clearSelectedCardsMock,
   }),
 }));
 
@@ -64,7 +65,7 @@ describe('useNodes', () => {
 
   it('초기 상태가 올바르게 반환되어야 함', () => {
     const { result } = renderHook(() => useNodes({}));
-    
+
     expect(result.current.nodes).toEqual([]);
     expect(typeof result.current.handleNodesChange).toBe('function');
     expect(typeof result.current.handleNodeClick).toBe('function');
@@ -74,7 +75,7 @@ describe('useNodes', () => {
 
   it('handleNodesChange가 노드 변경사항을 적용해야 함', () => {
     const { result } = renderHook(() => useNodes({}));
-    
+
     // 위치 변경 테스트
     const positionChange: NodeChange = {
       id: 'test-node-1',
@@ -82,11 +83,11 @@ describe('useNodes', () => {
       position: { x: 100, y: 100 },
       dragging: false,
     };
-    
+
     act(() => {
       result.current.handleNodesChange([positionChange]);
     });
-    
+
     // nodes가 업데이트됨
     expect(result.current.nodes).toEqual([]);
   });
@@ -117,20 +118,20 @@ describe('useNodes', () => {
         },
       },
     ];
-    
+
     const { result } = renderHook(() => useNodes({}));
-    
+
     // 노드들의 레이아웃 저장
     act(() => {
       result.current.saveLayout(testNodes);
     });
-    
+
     // 로컬 스토리지에 저장되었는지 확인
     expect(localStorageMock.setItem).toHaveBeenCalledWith(
       STORAGE_KEY,
       expect.stringContaining('test-node-1')
     );
-    
+
     // 저장된 형식 확인
     const savedData = JSON.parse(localStorageMock.setItem.mock.calls[0][1]);
     expect(savedData['test-node-1']).toEqual({ position: { x: 100, y: 200 } });
@@ -140,7 +141,7 @@ describe('useNodes', () => {
   it('onSelectCard 콜백이 노드 클릭 시 호출되어야 함', () => {
     const onSelectCardMock = vi.fn();
     const { result } = renderHook(() => useNodes({ onSelectCard: onSelectCardMock }));
-    
+
     // 테스트 노드
     const testNode: Node<CardData> = {
       id: 'test-node-1',
@@ -153,23 +154,83 @@ describe('useNodes', () => {
         tags: ['tag1', 'tag2'],
       },
     };
-    
+
     // 테스트 이벤트
     const testEvent = {
       stopPropagation: vi.fn(),
       ctrlKey: false,
       metaKey: false,
     } as unknown as React.MouseEvent;
-    
+
     // 노드 클릭 핸들러 호출
     act(() => {
       result.current.handleNodeClick(testEvent, testNode);
     });
-    
+
     // 이벤트 전파가 중단되었는지 확인
     expect(testEvent.stopPropagation).toHaveBeenCalled();
-    
+
     // 콜백이 호출되었는지 확인
     expect(onSelectCardMock).toHaveBeenCalledWith('test-node-1');
+  });
+
+  it('handlePaneClick이 clearSelectedCards를 호출해야 함', () => {
+    const onSelectCardMock = vi.fn();
+    const { result } = renderHook(() => useNodes({ onSelectCard: onSelectCardMock }));
+
+    // 초기 설정 재확인
+    expect(clearSelectedCardsMock).not.toHaveBeenCalled();
+
+    // 테스트 이벤트 - Ctrl 키 없이 일반 클릭
+    const testEvent = {
+      ctrlKey: false,
+      metaKey: false,
+    } as unknown as React.MouseEvent;
+
+    // 패널 클릭 핸들러 호출
+    act(() => {
+      result.current.handlePaneClick(testEvent);
+    });
+
+    // clearSelectedCards가 호출되었는지 확인
+    expect(clearSelectedCardsMock).toHaveBeenCalled();
+
+    // onSelectCard 콜백이 null과 함께 호출되었는지 확인
+    expect(onSelectCardMock).toHaveBeenCalledWith(null);
+  });
+
+  it('Ctrl/Meta 키를 누른 상태에서 handlePaneClick은 clearSelectedCards를 호출하지 않아야 함', () => {
+    clearSelectedCardsMock.mockClear();
+    const onSelectCardMock = vi.fn();
+    const { result } = renderHook(() => useNodes({ onSelectCard: onSelectCardMock }));
+
+    // 테스트 이벤트 - Ctrl 키 있는 클릭
+    const testEventWithCtrl = {
+      ctrlKey: true,
+      metaKey: false,
+    } as unknown as React.MouseEvent;
+
+    // Ctrl 키를 누른 상태에서 패널 클릭
+    act(() => {
+      result.current.handlePaneClick(testEventWithCtrl);
+    });
+
+    // clearSelectedCards가 호출되지 않아야 함
+    expect(clearSelectedCardsMock).not.toHaveBeenCalled();
+    expect(onSelectCardMock).not.toHaveBeenCalled();
+
+    // Meta 키를 누른 상태에서 패널 클릭
+    const testEventWithMeta = {
+      ctrlKey: false,
+      metaKey: true,
+    } as unknown as React.MouseEvent;
+
+    act(() => {
+      result.current.handlePaneClick(testEventWithMeta);
+    });
+
+    // clearSelectedCards가 여전히 호출되지 않아야 함
+    expect(clearSelectedCardsMock).not.toHaveBeenCalled();
+    expect(onSelectCardMock).not.toHaveBeenCalled();
   });
 }); 

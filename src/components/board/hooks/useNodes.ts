@@ -135,15 +135,9 @@ export function useNodes({
       
       // 성공 메시지 표시 - 다중 선택 모드
       if (isCurrentlySelected) {
-        toast.success(`'${node.data.title}'가 선택에서 제거되었습니다.`, {
-          duration: 1500,
-          position: 'bottom-center',
-        });
+        toast.success(`'${node.data.title}'가 선택에서 제거되었습니다.`);
       } else {
-        toast.success(`'${node.data.title}'가 선택에 추가되었습니다.`, {
-          duration: 1500,
-          position: 'bottom-center',
-        });
+        toast.success(`'${node.data.title}'가 선택에 추가되었습니다.`);
       }
     } else {
       // 단일 선택 모드: 하나만 선택
@@ -158,10 +152,7 @@ export function useNodes({
         selectCard(nodeId);
         
         // 성공 메시지 표시 - 단일 선택 모드
-        toast.success(`'${node.data.title}'가 선택되었습니다.`, {
-          duration: 1500,
-          position: 'bottom-center',
-        });
+        toast.success(`'${node.data.title}'가 선택되었습니다.`);
       }
     }
     
@@ -181,15 +172,9 @@ export function useNodes({
       // 선택된 카드가 있을 때만 토스트 표시 및 선택 해제
       if (selectedCardIds.length > 0) {
         if (selectedCardIds.length > 1) {
-          toast.info(`${selectedCardIds.length}개 카드 선택이 해제되었습니다.`, {
-            duration: 1500,
-            position: 'bottom-center',
-          });
+          toast.info(`${selectedCardIds.length}개 카드 선택이 해제되었습니다.`);
         } else {
-          toast.info('카드 선택이 해제되었습니다.', {
-            duration: 1500,
-            position: 'bottom-center',
-          });
+          toast.info('카드 선택이 해제되었습니다.');
         }
         
         // 선택 해제

@@ -60,10 +60,7 @@ export function useBoardHandlers({
       
       // 선택된 노드가 있는 경우 토스트 메시지 표시
       if (selectedNodeIds.length > 1) {
-        toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`, {
-          duration: 2000,
-          position: 'bottom-center',
-        });
+        toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`);
       }
     }
   }, [selectCards]);

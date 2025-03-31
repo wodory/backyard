@@ -34,7 +34,7 @@ interface CustomEdgeProps extends EdgeProps {
 // 컴포넌트 사용 시점 디버깅
 console.log('[CustomEdge] 컴포넌트 정의 전: 함수 형태의 컴포넌트 생성');
 
-function CustomEdge({ 
+function CustomEdge({
   id,
   source,
   target,
@@ -53,19 +53,19 @@ function CustomEdge({
   ...restProps
 }: CustomEdgeProps) {
   // 컴포넌트 초기화 로그 - 상세 정보 추가 (타입 검증은 유지)
-  console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
-    id: id,
-    source: source,
-    target: target,
-    type: type,
-    expectedType: EDGE_TYPES_KEYS.custom,
-    isTypeValid: type === EDGE_TYPES_KEYS.custom,
-    componentId: COMPONENT_ID
-  });
-  
+  // console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
+  //   id: id,
+  //   source: source,
+  //   target: target,
+  //   type: type,
+  //   expectedType: EDGE_TYPES_KEYS.custom,
+  //   isTypeValid: type === EDGE_TYPES_KEYS.custom,
+  //   componentId: COMPONENT_ID
+  // });
+
   // Zustand 스토어에서 boardSettings 가져오기
   const { boardSettings } = useAppStore();
-  
+
   // 글로벌 설정과 로컬 설정 결합
   const effectiveSettings = useMemo(() => {
     // 로컬 설정이 있으면 우선적으로 사용, 없으면 글로벌 설정 사용
@@ -95,8 +95,8 @@ function CustomEdge({
 
   // 엣지 패스 계산 (연결선 타입에 따라)
   const [edgePath] = useMemo(() => {
-    console.log(`엣지 ${id}의 타입 업데이트:`, effectiveEdgeType);
-    
+    // console.log(`엣지 ${id}의 타입 업데이트:`, effectiveEdgeType);
+
     // 타입에 따라 적절한 경로 생성 함수 사용
     switch (effectiveEdgeType) {
       case ConnectionLineType.Straight:
@@ -130,8 +130,8 @@ function CustomEdge({
     // 1. 기본 스타일 (보드 설정에서 가져옴)
     const baseStyle = {
       strokeWidth: `var(--edge-width)`,
-      stroke: selected 
-        ? `var(--edge-selected-color)` 
+      stroke: selected
+        ? `var(--edge-selected-color)`
         : `var(--edge-color)`,
       transition: 'stroke 0.2s, stroke-width 0.2s',
     };
@@ -154,19 +154,19 @@ function CustomEdge({
   }, [style, selected, isAnimated]);
 
   // 엣지 컴포넌트에서 변경 내용 로깅 (개발 모드에서만)
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`엣지 ${id} 렌더링:`, {
-        edgeType: effectiveEdgeType,
-        selected
-      });
-    }
-  }, [id, effectiveEdgeType, selected]);
+  // useEffect(() => {
+  //   if (process.env.NODE_ENV === 'development') {
+  //     console.log(`엣지 ${id} 렌더링:`, {
+  //       edgeType: effectiveEdgeType,
+  //       selected
+  //     });
+  //   }
+  // }, [id, effectiveEdgeType, selected]);
 
   return (
-    <BaseEdge 
-      path={edgePath} 
-      markerEnd={markerEnd} 
+    <BaseEdge
+      path={edgePath}
+      markerEnd={markerEnd}
       style={edgeStyle}
       className={isAnimated ? 'edge-animated' : ''}
       data-selected={selected ? 'true' : 'false'}

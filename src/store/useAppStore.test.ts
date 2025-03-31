@@ -21,6 +21,7 @@ describe('useAppStore', () => {
     useAppStore.setState({
       selectedCardIds: [],
       selectedCardId: null,
+      expandedCardId: null,
       cards: [],
       isSidebarOpen: false,
       layoutDirection: 'auto',
@@ -30,12 +31,13 @@ describe('useAppStore', () => {
     });
   });
 
-  describe('카드 선택 관련 테스트', () => {
+  describe('카드 선택 및 확장 관련 테스트', () => {
     it('초기 상태가 올바르게 설정되어야 함', () => {
       const state = useAppStore.getState();
       
       expect(state.selectedCardIds).toEqual([]);
       expect(state.selectedCardId).toBeNull();
+      expect(state.expandedCardId).toBeNull();
     });
 
     it('selectCard 액션이 단일 카드를 선택해야 함', () => {
@@ -46,6 +48,71 @@ describe('useAppStore', () => {
       const state = useAppStore.getState();
       expect(state.selectedCardIds).toEqual(['card-1']);
       expect(state.selectedCardId).toBe('card-1');
+    });
+
+    it('toggleExpandCard 액션이 카드 확장 상태를 토글해야 함', () => {
+      const { toggleExpandCard } = useAppStore.getState();
+      
+      // 카드 확장
+      toggleExpandCard('card-1');
+      
+      let state = useAppStore.getState();
+      expect(state.expandedCardId).toBe('card-1');
+      expect(state.selectedCardId).toBe('card-1');
+      expect(state.selectedCardIds).toEqual(['card-1']);
+      
+      // 카드 접기
+      toggleExpandCard('card-1');
+      
+      state = useAppStore.getState();
+      expect(state.expandedCardId).toBeNull();
+      expect(state.selectedCardId).toBeNull();
+      expect(state.selectedCardIds).toEqual([]);
+    });
+
+    it('selectCard 액션은 다른 카드가 펼쳐진 상태에서 새 카드 선택 시 기존 카드를 접어야 함', () => {
+      const { toggleExpandCard, selectCard } = useAppStore.getState();
+      
+      // 첫 번째 카드 확장
+      toggleExpandCard('card-1');
+      
+      // 다른 카드 선택
+      selectCard('card-2');
+      
+      const state = useAppStore.getState();
+      expect(state.expandedCardId).toBeNull(); // 기존 카드가 접혀야 함
+      expect(state.selectedCardId).toBe('card-2');
+      expect(state.selectedCardIds).toEqual(['card-2']);
+    });
+
+    it('selectCard로 null을 전달하면 선택 및 확장 상태가 모두 해제되어야 함', () => {
+      const { toggleExpandCard, selectCard } = useAppStore.getState();
+      
+      // 카드 확장 및 선택
+      toggleExpandCard('card-1');
+      
+      // 선택 해제
+      selectCard(null);
+      
+      const state = useAppStore.getState();
+      expect(state.expandedCardId).toBeNull();
+      expect(state.selectedCardId).toBeNull();
+      expect(state.selectedCardIds).toEqual([]);
+    });
+
+    it('clearSelectedCards 액션이 모든 선택 및 확장 상태를 해제해야 함', () => {
+      const { toggleExpandCard, clearSelectedCards } = useAppStore.getState();
+      
+      // 카드 확장
+      toggleExpandCard('card-1');
+      
+      // 모든 선택 해제
+      clearSelectedCards();
+      
+      const state = useAppStore.getState();
+      expect(state.expandedCardId).toBeNull();
+      expect(state.selectedCardIds).toEqual([]);
+      expect(state.selectedCardId).toBeNull();
     });
 
     it('selectCards 액션이 다중 카드를 선택해야 함', () => {
@@ -90,17 +157,6 @@ describe('useAppStore', () => {
       // 동일 카드 선택 해제
       toggleSelectedCard('card-1');
       expect(useAppStore.getState().selectedCardIds).toEqual([]);
-    });
-
-    it('clearSelectedCards 액션이 모든 선택을 해제해야 함', () => {
-      const { selectCards, clearSelectedCards } = useAppStore.getState();
-      
-      selectCards(['card-1', 'card-2']);
-      clearSelectedCards();
-      
-      const state = useAppStore.getState();
-      expect(state.selectedCardIds).toEqual([]);
-      expect(state.selectedCardId).toBeNull();
     });
   });
 

@@ -34,6 +34,7 @@ import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 // 타입 임포트
 import { BoardComponentProps, XYPosition } from '../types/board-types';
 import { Node } from '@xyflow/react';
+import { NodeInspector } from '../nodes/NodeInspector';
 
 /**
  * Board: 보드 메인 컨테이너 컴포넌트
@@ -41,36 +42,36 @@ import { Node } from '@xyflow/react';
  * @param className 추가 CSS 클래스
  * @param showControls 컨트롤 표시 여부
  */
-export default function Board({ 
+export default function Board({
   onSelectCard,
   className = "",
-  showControls = true 
+  showControls = true
 }: BoardComponentProps) {
   // 상태 관리
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
+
   // 엣지 드롭 관련 상태
   const [isEdgeDropModalOpen, setIsEdgeDropModalOpen] = useState(false);
   const [edgeDropPosition, setEdgeDropPosition] = useState<XYPosition | null>(null);
   const [edgeDropNodeId, setEdgeDropNodeId] = useState<string | null>(null);
   const [edgeDropHandleType, setEdgeDropHandleType] = useState<'source' | 'target' | null>(null);
-  
+
   // 커넥팅 노드 관련 상태
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
   const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
-  
+
   // 뷰포트 변경 디바운스를 위한 타이머
   const viewportChangeTimer = useRef<NodeJS.Timeout | null>(null);
-  
+
   // 인증 상태 가져오기
   const { user, isLoading: isAuthLoading } = useAuth();
-  
+
   // 레퍼런스 및 기타 훅
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
-  
+
   // useAppStore에서 상태 가져오기
   const layoutDirection = useAppStore(state => state.layoutDirection);
   const boardSettings = useAppStore(state => state.boardSettings);
@@ -78,7 +79,7 @@ export default function Board({
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
   const setCards = useAppStore(state => state.setCards);
   const { selectCards, selectedCardIds } = useAppStore();
-  
+
   // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
   const storeCards = useAppStore(state => state.cards);
 
@@ -92,19 +93,19 @@ export default function Board({
   } = useBoardData(onSelectCard);
 
   // 커스텀 훅 사용
-  const { 
-    nodes, 
-    setNodes, 
-    handleNodesChange, 
-    handleNodeClick, 
+  const {
+    nodes,
+    setNodes,
+    handleNodesChange,
+    handleNodeClick,
     handlePaneClick,
     saveLayout,
     hasUnsavedChanges: hasUnsavedNodesChanges
-  } = useNodes({ 
+  } = useNodes({
     onSelectCard,
     initialNodes: initialNodes
   });
-  
+
   const {
     edges,
     setEdges,
@@ -114,12 +115,12 @@ export default function Board({
     updateEdgeStyles,
     createEdgeOnDrop,
     hasUnsavedChanges: hasUnsavedEdgesChanges
-  } = useEdges({ 
-    boardSettings, 
+  } = useEdges({
+    boardSettings,
     nodes,
     initialEdges: initialEdges
   });
-  
+
   const {
     loadBoardSettingsFromServerIfAuthenticated,
     saveAllLayoutData,
@@ -129,17 +130,17 @@ export default function Board({
     handleAutoLayout,
     saveTransform,
     hasUnsavedChanges: hasBoardUtilsUnsavedChanges
-  } = useBoardUtils({ 
-    reactFlowWrapper, 
-    updateNodeInternals, 
-    saveLayout, 
-    saveEdges, 
-    nodes, 
-    edges, 
-    setNodes, 
+  } = useBoardUtils({
+    reactFlowWrapper,
+    updateNodeInternals,
+    saveLayout,
+    saveEdges,
+    nodes,
+    edges,
+    setNodes,
     setEdges
   });
-  
+
   // BoardSettings 변경 핸들러 래퍼
   const handleBoardSettingsChangeWrapper = useCallback((newSettings: any) => {
     handleBoardSettingsChange(newSettings, !!user, user?.id);
@@ -167,7 +168,7 @@ export default function Board({
     try {
       // 데이터 파싱
       const cardData = JSON.parse(reactFlowData);
-      
+
       // 드롭된 위치 계산
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
       const position = reactFlowInstance.screenToFlowPosition({
@@ -210,7 +211,7 @@ export default function Board({
       toast.error('카드를 캔버스에 추가하는 중 오류가 발생했습니다.');
     }
   }, [reactFlowInstance, nodes, setNodes, saveLayout]);
-  
+
   // 엣지에 새 노드 추가 기능
   const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
     onCreateNode: (position, connectingNodeId, handleType) => {
@@ -260,13 +261,13 @@ export default function Board({
   // 전역 상태의 카드가 업데이트되면 노드 데이터 업데이트
   useEffect(() => {
     if (storeCards.length === 0 || nodes.length === 0 || isLoading) return;
-    
+
     // 노드 데이터 업데이트 (카드 ID가 일치하는 노드들만)
-    setNodes(currentNodes => 
+    setNodes(currentNodes =>
       currentNodes.map(node => {
         // 대응되는 카드 데이터 찾기
         const cardData = storeCards.find(card => card.id === node.id);
-        
+
         // 카드 데이터가 존재하면 노드 데이터 업데이트
         if (cardData) {
           return {
@@ -276,13 +277,13 @@ export default function Board({
               title: cardData.title,
               content: cardData.content,
               // 태그 처리 (카드에 cardTags가 있는 경우와 없는 경우 모두 처리)
-              tags: cardData.cardTags 
-                ? cardData.cardTags.map((cardTag: any) => cardTag.tag.name) 
+              tags: cardData.cardTags
+                ? cardData.cardTags.map((cardTag: any) => cardTag.tag.name)
                 : (cardData.tags || [])
             }
           };
         }
-        
+
         return node;
       })
     );
@@ -321,11 +322,11 @@ export default function Board({
       // handleType에 따라 소스와 타겟 결정
       const sourceId = edgeDropHandleType === 'source' ? nodeId : edgeDropNodeId;
       const targetId = edgeDropHandleType === 'target' ? nodeId : edgeDropNodeId;
-      
+
       // 엣지 생성
       createEdgeOnDrop(sourceId, targetId);
     }
-    
+
     // 모달 닫기 및 상태 초기화
     setIsEdgeDropModalOpen(false);
     setEdgeDropPosition(null);
@@ -338,10 +339,7 @@ export default function Board({
     const autoSaveInterval = setInterval(() => {
       if (hasUnsavedNodesChanges.current || hasUnsavedEdgesChanges.current) {
         saveAllLayoutData();
-        toast.success('변경사항이 자동 저장되었습니다.', {
-          duration: 1500,
-          position: 'bottom-center',
-        });
+        toast.success('변경사항이 자동 저장되었습니다.');
       }
     }, 30000); // 30초마다 자동 저장
 
@@ -376,7 +374,7 @@ export default function Board({
     if (viewportChangeTimer.current) {
       clearTimeout(viewportChangeTimer.current);
     }
-    
+
     viewportChangeTimer.current = setTimeout(() => {
       // 변경된 뷰포트 저장
       saveTransform();
@@ -390,8 +388,8 @@ export default function Board({
         <div className="text-center">
           <h2 className="text-xl font-bold text-red-600 mb-2">오류 발생</h2>
           <p className="text-red-500">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
           >
             새로고침
@@ -403,7 +401,7 @@ export default function Board({
 
   return (
     <>
-      <BoardCanvas 
+      <BoardCanvas
         nodes={nodes}
         edges={edges}
         onNodesChange={handleNodesChange}
@@ -429,17 +427,20 @@ export default function Board({
         onDrop={onDrop}
         onViewportChange={onViewportChange}
       />
-      
+
+      {/* 노드 인스펙터 컴포넌트 */}
+      <NodeInspector nodes={nodes} />
+
       {isCreateModalOpen && (
-        <SimpleCreateCardModal 
+        <SimpleCreateCardModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onCardCreated={() => {}}
+          onCardCreated={() => { }}
         />
       )}
-      
+
       {isEdgeDropModalOpen && edgeDropPosition && (
-        <SimpleCreateCardModal 
+        <SimpleCreateCardModal
           isOpen={isEdgeDropModalOpen}
           onClose={() => setIsEdgeDropModalOpen(false)}
           onCardCreated={handleEdgeDropCardCreated}
