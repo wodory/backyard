@@ -90,6 +90,10 @@ export default mergeConfig(
           '**/src/lib/constants.ts', // 단순 상수 파일 (선택 사항)
           '**/src/components/ui/**', // UI 라이브러리 컴포넌트 (선택 사항)
           '**/src/contexts/**', // 단순 Context (선택 사항)
+          '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
+          // src/lib
+          '**/src/lib/logger.ts',       // 디버깅용 로거
+          '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
           './*.config.js',
           './*.config.ts',
           './*.config.mjs',

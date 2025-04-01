@@ -1,0 +1,110 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 환경(클라이언트/서버)에 따라 다르게 동작하는 코드를 테스트하기 위해, 내부 환경 감지 로직 대신 전역 환경 자체를 모킹하는 규칙입니다.
+globs:
+  - "**/*.{test.ts,test.tsx}" # 테스트 파일 대상
+alwaysApply: true
+---
+# Rule: [env-mocking] 환경 의존성 코드 테스트 전략
+
+## 1. 핵심 원칙: 환경 자체를 모킹하라
+
+*   **금지:** 테스트 대상 모듈 내부에 있는 환경 감지 함수(예: `detectEnvironment`, `isClientEnvironment` 등)를 **직접 모킹하지 마십시오 (`vi.mock` 사용 금지)**. 이는 내부 구현에 대한 테스트가 되며 불안정합니다.
+*   **필수:** 대신, 해당 환경 감지 함수가 의존하는 **전역(Global) 환경 지표**를 모킹하여 특정 환경(클라이언트 또는 서버)을 시뮬레이션하십시오.
+*   **주요 대상 전역 객체:**
+    *   `window`: 브라우저 환경의 지표. 존재 여부로 클라이언트 환경을 판단하는 경우가 많습니다.
+    *   `process`: Node.js(서버) 환경의 지표. `process.versions.node` 등의 속성 존재 여부로 서버 환경을 판단하는 경우가 많습니다.
+
+## 2. 테스트 방법론 (Vitest 사용)
+
+*   **테스트 구조:** 각 환경(클라이언트, 서버)에 대한 **별도의 `describe` 블록 또는 `it`/`test` 블록**을 사용하여 테스트 케이스를 명확히 분리하십시오.
+*   **환경 시뮬레이션:**
+    *   **`beforeEach` (또는 `beforeAll`)**: 테스트 실행 전에 `vi.stubGlobal(name, value)`을 사용하여 해당 환경을 시뮬레이션합니다.
+        *   **클라이언트 시뮬레이션:**
+            ```typescript
+            vi.stubGlobal('window', { /* 필요한 최소한의 window 속성/메서드 모킹 */ });
+            vi.stubGlobal('process', undefined); // 서버 환경 지표 제거
+            ```
+        *   **서버 시뮬레이션:**
+            ```typescript
+            vi.stubGlobal('window', undefined); // 클라이언트 환경 지표 제거
+            vi.stubGlobal('process', { versions: { node: 'v18.0.0' } }); // 서버 환경 지표 설정
+            ```
+            *(참고: `process` 객체는 테스트 대상 코드가 실제로 사용하는 속성만 포함해도 충분할 수 있습니다.)*
+    *   **테스트 실행:** 시뮬레이션된 환경 하에서 테스트 대상 함수/모듈을 호출합니다.
+    *   **검증:** 해당 환경에서 **기대되는 동작**(특정 함수 호출, 특정 값 반환, 특정 로직 경로 실행 등)을 `expect`를 사용하여 검증합니다.
+*   **정리 (필수):**
+    *   **`afterEach` (또는 `afterAll`)**: `vi.unstubAllGlobals()`를 **반드시 호출**하여 모킹된 전역 상태를 원래대로 복원합니다. 이를 통해 테스트 간의 격리성을 보장하고 예상치 못한 부작용을 방지합니다.
+
+## 3. 구체적인 지시사항
+
+*   테스트 대상 코드가 `typeof window !== 'undefined'` 또는 `process.versions.node` 와 같은 패턴으로 환경을 감지하는 경우, 이 **규칙을 적용**하십시오.
+*   `vi.stubGlobal`을 사용하여 `window` 또는 `process` 객체의 존재/부재를 제어하십시오.
+*   각 환경 시나리오(`it` 블록) 내에서 테스트 대상 함수를 호출하고, 해당 환경에 맞는 **기대 결과**를 단언하십시오.
+*   다른 테스트에 영향을 주지 않도록 `afterEach`에서 **반드시 `vi.unstubAllGlobals()`를 호출**하여 정리하십시오.
+
+## 4. 예시 (Vitest)
+
+```typescript
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { myEnvironmentDependentFunction } from './myModule'; // 테스트 대상 함수
+
+// myModule이 의존하는 다른 모듈 모킹 (필요시)
+vi.mock('./browserDependency', () => ({ callBrowserAPI: vi.fn() }));
+vi.mock('./serverDependency', () => ({ callServerAPI: vi.fn() }));
+
+describe('myEnvironmentDependentFunction 테스트', () => {
+  const originalWindow = global.window;
+  const originalProcess = global.process;
+
+  afterEach(() => {
+    // ★★★ 필수: 각 테스트 후 전역 상태 복원 ★★★
+    vi.unstubAllGlobals();
+    // 필요시 수동 복원 (일반적으론 unstubAllGlobals로 충분)
+    global.window = originalWindow;
+    global.process = originalProcess;
+    vi.clearAllMocks();
+  });
+
+  describe('클라이언트 환경 시뮬레이션', () => {
+    beforeEach(() => {
+      // 클라이언트 환경 설정
+      vi.stubGlobal('window', { document: {} }); // window 객체 존재
+      vi.stubGlobal('process', undefined);      // process 객체 없음
+    });
+
+    it('클라이언트 환경에서는 브라우저 API를 호출해야 함', async () => {
+      const { callBrowserAPI } = await import('./browserDependency'); // 모킹된 함수 가져오기
+
+      myEnvironmentDependentFunction();
+
+      expect(callBrowserAPI).toHaveBeenCalled();
+      // 서버 API는 호출되지 않아야 함
+      // const { callServerAPI } = await import('./serverDependency');
+      // expect(callServerAPI).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('서버 환경 시뮬레이션', () => {
+    beforeEach(() => {
+      // 서버 환경 설정
+      vi.stubGlobal('window', undefined);        // window 객체 없음
+      vi.stubGlobal('process', { versions: { node: 'v18.0.0' } }); // process 객체 존재
+    });
+
+    it('서버 환경에서는 서버 API를 호출해야 함', async () => {
+      const { callServerAPI } = await import('./serverDependency'); // 모킹된 함수 가져오기
+
+      myEnvironmentDependentFunction();
+
+      expect(callServerAPI).toHaveBeenCalled();
+      // 브라우저 API는 호출되지 않아야 함
+      // const { callBrowserAPI } = await import('./browserDependency');
+      // expect(callBrowserAPI).not.toHaveBeenCalled();
+    });
+  });
+});
