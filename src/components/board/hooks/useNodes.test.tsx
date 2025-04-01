@@ -5,48 +5,34 @@
  * 작성일: 2024-05-09
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useNodes } from './useNodes';
-import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 import { Node, NodeChange } from '@xyflow/react';
 import { CardData } from '../types/board-types';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { STORAGE_KEY } from '@/lib/board-constants';
 
+// 모든 모킹은 파일 상단에 배치 (호이스팅 문제 방지)
 // React Flow 모킹
-mockReactFlow();
+vi.mock('@/tests/utils/react-flow-mock', () => ({
+  mockReactFlow: vi.fn()
+}));
 
 // useAppStore 모킹
 const clearSelectedCardsMock = vi.fn();
+const selectCardMock = vi.fn();
+const toggleSelectedCardMock = vi.fn();
+
 vi.mock('@/store/useAppStore', () => ({
-  useAppStore: () => ({
-    selectedCardIds: ['test-node-1'],
-    toggleSelectedCard: vi.fn(),
-    selectCard: vi.fn(),
-    clearSelectedCards: clearSelectedCardsMock,
-  }),
+  useAppStore: (selector: ((state: any) => any) | undefined) => {
+    const state = {
+      selectedCardIds: ['test-node-1'],
+      toggleSelectedCard: toggleSelectedCardMock,
+      selectCard: selectCardMock,
+      clearSelectedCards: clearSelectedCardsMock,
+    };
+    return selector ? selector(state) : state;
+  }
 }));
-
-// 로컬 스토리지 모킹
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value.toString();
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
 
 // toast 라이브러리 모킹
 vi.mock('sonner', () => ({
@@ -54,13 +40,43 @@ vi.mock('sonner', () => ({
     success: vi.fn(),
     info: vi.fn(),
     error: vi.fn(),
-  },
+  }
 }));
 
+// 실제 컴포넌트 및 유틸리티 임포트 (모킹 후 임포트)
+import { useNodes } from './useNodes';
+import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+
 describe('useNodes', () => {
+  // localStorage 메서드들에 대한 스파이 설정
+  const localStorageGetItemSpy = vi.spyOn(window.localStorage, 'getItem');
+  const localStorageSetItemSpy = vi.spyOn(window.localStorage, 'setItem');
+  const localStorageRemoveItemSpy = vi.spyOn(window.localStorage, 'removeItem');
+
+  // 테스트 전 전역 설정
+  beforeAll(() => {
+    mockReactFlow();
+  });
+
+  // 각 테스트 전 초기화
   beforeEach(() => {
-    localStorageMock.clear();
+    // 로컬 스토리지 모의 구현 초기화
+    localStorageGetItemSpy.mockClear();
+    localStorageSetItemSpy.mockClear();
+    localStorageRemoveItemSpy.mockClear();
+
+    // 모든 모의 함수 초기화
     vi.clearAllMocks();
+  });
+
+  // 각 테스트 후 정리
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  // 모든 테스트 후 정리
+  afterAll(() => {
+    vi.restoreAllMocks();
   });
 
   it('초기 상태가 올바르게 반환되어야 함', () => {
@@ -127,13 +143,14 @@ describe('useNodes', () => {
     });
 
     // 로컬 스토리지에 저장되었는지 확인
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+    expect(localStorageSetItemSpy).toHaveBeenCalledWith(
       STORAGE_KEY,
       expect.stringContaining('test-node-1')
     );
 
     // 저장된 형식 확인
-    const savedData = JSON.parse(localStorageMock.setItem.mock.calls[0][1]);
+    const savedJson = localStorageSetItemSpy.mock.calls[0][1] as string;
+    const savedData = JSON.parse(savedJson);
     expect(savedData['test-node-1']).toEqual({ position: { x: 100, y: 200 } });
     expect(savedData['test-node-2']).toEqual({ position: { x: 300, y: 400 } });
   });
@@ -200,7 +217,6 @@ describe('useNodes', () => {
   });
 
   it('Ctrl/Meta 키를 누른 상태에서 handlePaneClick은 clearSelectedCards를 호출하지 않아야 함', () => {
-    clearSelectedCardsMock.mockClear();
     const onSelectCardMock = vi.fn();
     const { result } = renderHook(() => useNodes({ onSelectCard: onSelectCardMock }));
 
@@ -232,5 +248,30 @@ describe('useNodes', () => {
     // clearSelectedCards가 여전히 호출되지 않아야 함
     expect(clearSelectedCardsMock).not.toHaveBeenCalled();
     expect(onSelectCardMock).not.toHaveBeenCalled();
+  });
+
+  it('로컬 스토리지 오류 발생 시 saveLayout이 적절히 처리되어야 함', () => {
+    // 로컬 스토리지 저장 실패 모의
+    localStorageSetItemSpy.mockImplementationOnce(() => {
+      throw new Error('로컬 스토리지 접근 실패');
+    });
+
+    const { result } = renderHook(() => useNodes({}));
+
+    // 테스트 노드
+    const testNode = {
+      id: 'test-node-1',
+      position: { x: 100, y: 100 },
+    } as Node<CardData>;
+
+    // 오류가 발생해도 함수가 정상 완료되고 false를 반환해야 함
+    let saveResult: boolean = false;
+
+    act(() => {
+      saveResult = result.current.saveLayout([testNode]);
+    });
+
+    // 저장 실패를 나타내는 false 반환 확인
+    expect(saveResult).toBe(false);
   });
 }); 

@@ -24,22 +24,22 @@ vi.mock('@xyflow/react', async () => {
   const actual = await vi.importActual('@xyflow/react');
   return {
     ...actual,
-    Panel: ({ 
-      children, 
-      className, 
-      position = 'top-right', 
-      ...props 
-    }: { 
-      children: ReactNode; 
-      className?: string; 
-      position?: string; 
-      [key: string]: any; 
+    Panel: ({
+      children,
+      className,
+      position = 'top-right',
+      ...props
+    }: {
+      children: ReactNode;
+      className?: string;
+      position?: string;
+      [key: string]: any;
     }) => (
       <div data-testid={`panel-${position}`} className={className} {...props}>
         {children}
       </div>
     ),
-    ReactFlow: ({ children, ...props }: { children?: ReactNode; [key: string]: any }) => (
+    ReactFlow: ({ children, ...props }: { children?: ReactNode;[key: string]: any }) => (
       <div className="react-flow" data-testid="react-flow-container">
         <div data-testid="react-flow-nodes">
           {JSON.stringify(props.nodes)}
@@ -108,30 +108,7 @@ vi.mock('@/components/debug/DevTools', () => ({
   default: () => <div data-testid="dev-tools">Dev Tools</div>,
 }));
 
-// BoardControls 컴포넌트 모킹 3/29 삭제
-// vi.mock('./BoardControls', () => ({
-//   default: ({ 
-//     boardSettings, 
-//     onBoardSettingsChange, 
-//     onLayoutChange, 
-//     onAutoLayout, 
-//     onSaveLayout, 
-//     onCreateCard 
-//   }: {
-//     boardSettings: BoardSettings;
-//     onBoardSettingsChange: (settings: BoardSettings, isAuthenticated: boolean, userId?: string) => void;
-//     onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
-//     onAutoLayout: () => void;
-//     onSaveLayout: () => void;
-//     onCreateCard: () => void;
-//   }) => (
-//     <div data-testid="board-controls">
-//       <div data-testid="board-settings-control" />
-//       <div data-testid="layout-controls" />
-//       <div data-testid="create-card-button" />
-//     </div>
-//   )
-// }));
+// BoardControls 컴포넌트 모킹 코드 제거 (3/29 주석 처리됨)
 
 describe('BoardCanvas Component', () => {
   const snapGrid: [number, number] = [15, 15];
@@ -178,46 +155,37 @@ describe('BoardCanvas Component', () => {
 
   it('renders with controls when showControls is true', () => {
     render(<BoardCanvas {...defaultProps} showControls={true} />);
-    
+
     // 기본 ReactFlow 컴포넌트 확인
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
-    expect(screen.getAllByTestId('react-flow-background')).toHaveLength(1);
-    expect(screen.getAllByTestId('react-flow-controls')).toHaveLength(1);
-    
-    // BoardControls 컴포넌트 확인
-    // expect(screen.getByTestId('board-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('react-flow-background')).toBeInTheDocument();
+    expect(screen.getByTestId('react-flow-controls')).toBeInTheDocument();
+
+    // 참고: BoardControls 컴포넌트는 현재 구현에서 주석 처리되어 사용되지 않음
   });
 
   it('does not render controls when showControls is false', () => {
     render(<BoardCanvas {...defaultProps} showControls={false} />);
-    
+
     // 기본 ReactFlow 컴포넌트는 있어야 함
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
-    
+
     // 컨트롤 컴포넌트들은 없어야 함
     expect(screen.queryByTestId('react-flow-background')).not.toBeInTheDocument();
     expect(screen.queryByTestId('react-flow-controls')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('board-controls')).not.toBeInTheDocument();
   });
 
   it('passes correct props to ReactFlow', () => {
     render(<BoardCanvas {...defaultProps} />);
-    
+
     // 노드와 엣지 데이터 확인
     const nodesContainer = screen.getByTestId('react-flow-nodes');
     const edgesContainer = screen.getByTestId('react-flow-edges');
-    
+
     expect(JSON.parse(nodesContainer.textContent || '')).toEqual(defaultProps.nodes);
     expect(JSON.parse(edgesContainer.textContent || '')).toEqual(defaultProps.edges);
   });
 
-  it('renders controls with correct components', () => {
-    render(<BoardCanvas {...defaultProps} showControls={true} />);
-    
-    // 모든 컨트롤 컴포넌트가 존재하는지 확인
-    expect(screen.getByTestId('board-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('board-settings-control')).toBeInTheDocument();
-    expect(screen.getByTestId('layout-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('create-card-button')).toBeInTheDocument();
-  });
+  // 참고: 'renders controls with correct components' 테스트는 BoardControls 컴포넌트가
+  // 주석 처리되어 사용되지 않으므로 제거함
 }); 

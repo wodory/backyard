@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import React from 'react';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import DeleteButton, { callIfExists } from './DeleteButton';
 import '@testing-library/jest-dom/vitest';
@@ -77,7 +77,7 @@ describe('DeleteButton', () => {
   });
 
   afterEach(() => {
-    cleanup();
+    vi.restoreAllMocks();
   });
 
   describe('렌더링 및 UI 테스트', () => {
@@ -109,56 +109,71 @@ describe('DeleteButton', () => {
       // 다이얼로그가 닫히면 확인 메시지는 화면에서 사라짐
       expect(screen.queryByText('이 카드를 정말로 삭제하시겠습니까?')).not.toBeInTheDocument();
     });
+
+    // 삭제 버튼 클릭 시 API 호출 테스트
+    it('삭제 확인 버튼 클릭 시 API 호출이 이루어져야 함', async () => {
+      render(<DeleteButton cardId={cardId} />);
+      clickDeleteButton();
+      clickConfirmDeleteButton();
+
+      // fetch 호출 확인
+      expect(global.fetch).toHaveBeenCalledWith(`/api/cards/${cardId}`, {
+        method: "DELETE",
+      });
+    });
   });
 
-  // 비동기 테스트 케이스는 실패할 가능성이 높기 때문에 일단 제외합니다
-  // 실제 환경에서 수동으로 테스트하는 것이 더 안정적일 수 있습니다.
-  // 
-  // describe('삭제 성공 시나리오', () => {
-  //   it('삭제 성공 시 API 호출이 이루어지고 리디렉션되어야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // 
-  //   it('삭제 성공 시 onSuccessfulDelete 콜백이 호출되어야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // 
-  //   it('콜백이 제공되지 않아도 정상 동작해야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // });
-  // 
-  // describe('삭제 중 상태 테스트', () => {
-  //   it('삭제 중에는 버튼이 비활성화되고 로딩 텍스트가 표시되어야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // });
-  // 
-  // describe('오류 시나리오 테스트', () => {
-  //   it('API 오류 발생 시 에러 메시지가 표시되어야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // 
-  //   it('errorData.error가 없을 때 기본 에러 메시지를 표시해야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // 
-  //   it('네트워크 오류 발생 시 에러 메시지가 표시되어야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // });
-  // 
-  // describe('다양한 카드 ID 테스트', () => {
-  //   it('다양한 형식의 카드 ID로 삭제가 가능해야 함', async () => {
-  //     // TODO: DeleteButton의 비동기 처리 테스트는 vitest 환경에서 불안정합니다
-  //     // 이 테스트는 수동으로 확인하는 것이 좋습니다.
-  //   });
-  // });
+  describe('콜백 테스트', () => {
+    it('성공 응답 시 올바른 함수들이 호출되어야 함', async () => {
+      const mockSuccessCallback = vi.fn();
+
+      // 성공 응답 모킹
+      mockFetchSuccess();
+
+      render(<DeleteButton cardId={cardId} onSuccessfulDelete={mockSuccessCallback} />);
+      clickDeleteButton();
+      clickConfirmDeleteButton();
+
+      // 비동기 처리가 완료될 때까지 대기
+      await vi.waitFor(() => {
+        expect(mockSuccessCallback).toHaveBeenCalled();
+        expect(toast.success).toHaveBeenCalledWith("카드가 성공적으로 삭제되었습니다.");
+        expect(mockPush).toHaveBeenCalledWith("/cards");
+      }, { timeout: 1000 });
+    });
+  });
+
+  describe('오류 테스트', () => {
+    it('API 오류 응답 시 에러 처리가 올바르게 동작해야 함', async () => {
+      const errorMessage = '카드 삭제에 실패했습니다';
+
+      // 에러 응답 모킹
+      mockFetchError(errorMessage);
+
+      render(<DeleteButton cardId={cardId} />);
+      clickDeleteButton();
+      clickConfirmDeleteButton();
+
+      // 비동기 처리가 완료될 때까지 대기
+      await vi.waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(errorMessage);
+        expect(mockPush).not.toHaveBeenCalled(); // 오류 시 리디렉션 없음
+      }, { timeout: 1000 });
+    });
+
+    it('네트워크 오류 발생 시 오류 처리가 올바르게 동작해야 함', async () => {
+      // 네트워크 오류 모킹
+      mockFetchNetworkError();
+
+      render(<DeleteButton cardId={cardId} />);
+      clickDeleteButton();
+      clickConfirmDeleteButton();
+
+      // 비동기 처리가 완료될 때까지 대기
+      await vi.waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("네트워크 오류");
+        expect(mockPush).not.toHaveBeenCalled(); // 오류 시 리디렉션 없음
+      }, { timeout: 1000 });
+    });
+  });
 }); 

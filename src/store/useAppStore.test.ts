@@ -5,16 +5,63 @@
  * 작성일: 2024-03-27
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useAppStore, Card } from '@/store/useAppStore';
+import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
+import { useAppStore } from '@/store/useAppStore';
 import { DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
+import { Card } from '@/types/card';
+
+// 모든 모킹을 파일 상단에 배치
+vi.mock('@/lib/board-utils', () => ({
+  DEFAULT_BOARD_SETTINGS: {
+    edgeColor: '#000000',
+    strokeWidth: 1,
+    animated: false,
+    markerEnd: true,
+    connectionLineType: 'default',
+    snapToGrid: false,
+    snapGrid: [20, 20]
+  },
+  saveBoardSettings: vi.fn()
+}));
+
+// global fetch 모킹
+const fetchMock = vi.fn();
 
 describe('useAppStore', () => {
-  // 테스트용 카드 데이터
+  // 테스트용 카드 데이터 - Card 타입에 맞게 수정
   const testCards: Card[] = [
-    { id: 'card-1', title: '카드 1', content: '내용 1', tags: ['태그1'] },
-    { id: 'card-2', title: '카드 2', content: '내용 2', tags: ['태그2'] }
+    { 
+      id: 'card-1', 
+      title: '카드 1', 
+      content: '내용 1', 
+      createdAt: '2024-01-01T00:00:00Z', 
+      updatedAt: '2024-01-01T00:00:00Z', 
+      userId: 'user-1' 
+    },
+    { 
+      id: 'card-2', 
+      title: '카드 2', 
+      content: '내용 2', 
+      createdAt: '2024-01-01T00:00:00Z', 
+      updatedAt: '2024-01-01T00:00:00Z', 
+      userId: 'user-1' 
+    }
   ];
+
+  // 전역 설정
+  beforeAll(() => {
+    // fetch API 모킹
+    global.fetch = fetchMock;
+    
+    // 기본적인 fetch 응답 설정
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+      text: async () => "",
+      headers: new Headers(),
+      status: 200
+    });
+  });
 
   // 각 테스트 전에 스토어 초기화
   beforeEach(() => {
@@ -27,8 +74,25 @@ describe('useAppStore', () => {
       layoutDirection: 'auto',
       sidebarWidth: 320,
       boardSettings: DEFAULT_BOARD_SETTINGS,
-      reactFlowInstance: null
+      reactFlowInstance: null,
+      isLoading: false,
+      error: null
     });
+
+    // 모든 모킹 함수 초기화
+    vi.clearAllMocks();
+    fetchMock.mockClear();
+  });
+
+  // 각 테스트 후 정리
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  // 모든 테스트 후 정리
+  afterAll(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('카드 선택 및 확장 관련 테스트', () => {
@@ -178,13 +242,14 @@ describe('useAppStore', () => {
         id: 'card-1',
         title: '수정된 카드 1',
         content: '수정된 내용 1',
-        tags: ['수정된태그1']
+        createdAt: '2024-01-01T00:00:00Z', 
+        updatedAt: '2024-01-02T00:00:00Z', 
+        userId: 'user-1'
       });
       
       const state = useAppStore.getState();
       expect(state.cards[0].title).toBe('수정된 카드 1');
       expect(state.cards[0].content).toBe('수정된 내용 1');
-      expect(state.cards[0].tags).toEqual(['수정된태그1']);
     });
   });
 
@@ -242,10 +307,20 @@ describe('useAppStore', () => {
       expect(state.boardSettings).toEqual(newSettings);
     });
 
-    it('updateBoardSettings 액션이 보드 설정을 부분 업데이트해야 함', () => {
+    it('updateBoardSettings 액션이 보드 설정을 부분 업데이트해야 함', async () => {
+      // API 응답 모킹
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+        status: 200
+      });
+      
       const { updateBoardSettings } = useAppStore.getState();
       
-      updateBoardSettings({ snapToGrid: true });
+      await updateBoardSettings({ snapToGrid: true });
+      
+      // fetch 호출 확인
+      expect(fetchMock).toHaveBeenCalledWith('/api/board-settings', expect.anything());
       
       const state = useAppStore.getState();
       expect(state.boardSettings.snapToGrid).toBe(true);

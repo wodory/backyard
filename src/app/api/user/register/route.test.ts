@@ -108,6 +108,50 @@ describe('User Register API', () => {
       expect(console.log).toHaveBeenCalled();
     });
 
+    it('이름이 제공되지 않을 때 이메일에서 이름을 추출한다', async () => {
+      // 이름 없는 사용자 데이터
+      const userData = {
+        id: 'no-name-user-id',
+        email: 'user.name@example.com',
+        // name 필드 없음
+      };
+
+      // 예상되는 생성 데이터
+      const expectedCreateData = {
+        id: userData.id,
+        email: userData.email,
+        name: 'user.name', // 이메일의 @ 앞부분
+      };
+
+      // 존재하지 않는 사용자 모킹
+      prismaMock.user.findUnique.mockResolvedValueOnce(null);
+      
+      // 생성된 사용자 데이터 모킹
+      const createdUser = {
+        ...expectedCreateData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      prismaMock.user.create.mockResolvedValueOnce(createdUser);
+
+      // API 호출
+      const request = createMockRequest(userData);
+      const response = await POST(request);
+      
+      // 검증
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      expect(data).toEqual({
+        message: '사용자 등록 성공',
+        user: createdUser
+      });
+      
+      // 올바른 이름 추출 검증
+      expect(prismaMock.user.create).toHaveBeenCalledWith({
+        data: expectedCreateData
+      });
+    });
+
     it('이미 존재하는 사용자 ID로 요청 시 기존 사용자를 반환한다', async () => {
       // 기존 사용자 데이터
       const existingUser = {
@@ -165,6 +209,26 @@ describe('User Register API', () => {
       expect(prismaMock.user.create).not.toHaveBeenCalled();
     });
 
+    it('이메일만 누락된 경우 400 에러를 반환한다', async () => {
+      // 이메일 누락 데이터
+      const incompleteData = {
+        id: 'user-id-without-email',
+        // email이 없음
+        name: '이메일 없는 사용자'
+      };
+
+      // API 호출
+      const request = createMockRequest(incompleteData);
+      const response = await POST(request);
+      
+      // 검증
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data).toEqual({
+        error: '사용자 ID와 이메일은 필수입니다.'
+      });
+    });
+
     it('데이터베이스 오류 시 더미 사용자 데이터를 반환한다', async () => {
       // 사용자 데이터
       const userData = {
@@ -198,6 +262,33 @@ describe('User Register API', () => {
       });
       expect(prismaMock.user.findUnique).toHaveBeenCalled();
       expect(prismaMock.user.create).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
+    });
+
+    it('데이터베이스 오류 시 이름이 없는 경우 이메일에서 이름을 추출한다', async () => {
+      // 이름 없는 사용자 데이터
+      const userData = {
+        id: 'error-no-name-id',
+        email: 'error.handler@example.com',
+        // name 필드 없음
+      };
+
+      // 사용자가 없음 모킹
+      prismaMock.user.findUnique.mockResolvedValueOnce(null);
+      
+      // DB 오류 시뮬레이션
+      prismaMock.user.create.mockRejectedValueOnce(new Error('DB 연결 오류'));
+
+      // API 호출
+      const request = createMockRequest(userData);
+      const response = await POST(request);
+      
+      // 검증
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      
+      // 더미 사용자의 이름이 올바르게 추출되었는지 확인
+      expect(data.user.name).toBe('error.handler');
       expect(console.error).toHaveBeenCalled();
     });
 

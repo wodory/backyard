@@ -5,279 +5,299 @@
  * 작성일: 2024-05-11
  */
 
-import { renderHook, act } from '@testing-library/react';
-import { vi } from 'vitest';
-import { toast } from 'sonner';
-import { useBoardHandlers } from './useBoardHandlers';
-import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+// 모킹 함수 정의
+const mockHandleSelectionChange = vi.fn();
+const mockHandleNodeClick = vi.fn();
+const mockHandlePaneClick = vi.fn();
+const mockSyncZustandToReactFlow = vi.fn();
+const mockOnDragOver = vi.fn();
+const mockOnDrop = vi.fn();
+const mockHandleCardCreated = vi.fn();
+const mockHandleEdgeDropCardCreated = vi.fn();
 
-// Zustand 상태 관리 모킹
-const mockSelectCards = vi.fn();
-const mockSetModalOpen = vi.fn();
-const mockSetSelectedNode = vi.fn();
-
-const mockState = {
-  selectedCardIds: ['node1', 'node2'],
-  selectCards: mockSelectCards,
-  isModalOpen: false,
-  setModalOpen: mockSetModalOpen,
-  setSelectedNode: mockSetSelectedNode,
-};
-
-const mockStore = {
-  getState: () => mockState,
-  setState: vi.fn(),
-  subscribe: vi.fn(),
-  destroy: vi.fn(),
-};
-
-vi.mock('@/store/useAppStore', () => ({
-  useAppStore: Object.assign(
-    vi.fn((selector) => {
-      if (typeof selector === 'function') {
-        return selector(mockState);
-      }
-      return mockState;
-    }),
-    mockStore
-  ),
+// 하위 모듈 모킹
+vi.mock('./useBoardSelectionHandler', () => ({
+  useBoardSelectionHandler: vi.fn(() => ({
+    handleSelectionChange: mockHandleSelectionChange,
+    handleNodeClick: mockHandleNodeClick,
+    handlePaneClick: mockHandlePaneClick,
+    syncZustandToReactFlow: mockSyncZustandToReactFlow
+  }))
 }));
 
-// toast 모킹
+vi.mock('./useBoardDragHandler', () => ({
+  useBoardDragHandler: vi.fn(() => ({
+    onDragOver: mockOnDragOver,
+    onDrop: mockOnDrop,
+    handleCardCreated: mockHandleCardCreated,
+    handleEdgeDropCardCreated: mockHandleEdgeDropCardCreated
+  }))
+}));
+
+// useAppStore 모킹
+vi.mock('@/store/useAppStore', () => ({
+  useAppStore: vi.fn()
+}));
+
+// 토스트 모킹
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
-    error: vi.fn(),
     info: vi.fn(),
-  },
+    error: vi.fn()
+  }
 }));
 
-describe('useBoardHandlers', () => {
-  // 테스트를 위한 모의 함수 및 데이터 준비
-  const saveLayout = vi.fn().mockReturnValue(true);
-  const setNodes = vi.fn();
-  const fetchCards = vi.fn().mockResolvedValue({ nodes: [], edges: [] });
-  
-  const mockNodes = [
-    { id: 'node1', position: { x: 0, y: 0 }, data: { title: '카드 1', content: '내용 1' } },
-    { id: 'node2', position: { x: 100, y: 100 }, data: { title: '카드 2', content: '내용 2' } },
-  ];
-  
-  const reactFlowWrapper = {
-    current: {
-      getBoundingClientRect: vi.fn().mockReturnValue({
-        left: 0,
-        top: 0,
-        width: 1000,
-        height: 800,
-      }),
-      offsetWidth: 1000,
-      offsetHeight: 800,
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useBoardHandlers } from './useBoardHandlers';
+
+// React Flow 모킹 함수
+const mockReactFlow = () => {
+  // ResizeObserver 모킹
+  class ResizeObserver {
+    callback: any;
+    constructor(callback: any) {
+      this.callback = callback;
+    }
+    observe() { }
+    unobserve() { }
+    disconnect() { }
+  }
+
+  // 전역 객체에 할당
+  global.ResizeObserver = ResizeObserver as any;
+
+  // Window 이벤트 리스너 모킹
+  Object.defineProperty(global, 'window', {
+    value: {
+      ...global.window,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     },
-  } as unknown as React.RefObject<HTMLDivElement>;
-  
-  const reactFlowInstance = {
-    screenToFlowPosition: vi.fn().mockImplementation((pos) => pos),
-  };
-  
+    writable: true,
+  });
+};
+
+// 훅 테스트
+describe('useBoardHandlers', () => {
+  // 테스트 전 설정
   beforeEach(() => {
+    // 모의 함수 초기화
     vi.clearAllMocks();
-    mockSelectCards.mockClear();
-    mockSetModalOpen.mockClear();
-    mockSetSelectedNode.mockClear();
+
+    // React Flow 모킹 적용
+    mockReactFlow();
   });
-  
-  it('handleSelectionChange가 전역 상태를 올바르게 업데이트해야 함', () => {
-    const { result } = renderHook(() => useBoardHandlers({
-      saveLayout,
-      nodes: mockNodes as any,
-      setNodes,
-      reactFlowWrapper,
-      reactFlowInstance,
-      fetchCards,
-    }));
-    
-    const selectedNodes = [
-      { id: 'node3', type: 'card' },
-      { id: 'node4', type: 'card' },
+
+  // 테스트용 데이터 및 함수 준비
+  const setupTest = () => {
+    const saveLayout = vi.fn().mockReturnValue(true);
+    const setNodes = vi.fn();
+    const fetchCards = vi.fn().mockResolvedValue({ nodes: [], edges: [] });
+
+    // 테스트 노드 데이터
+    const mockNodes = [
+      { id: 'node1', position: { x: 0, y: 0 }, data: { id: 'card1', title: '카드 1', content: '내용 1' } },
+      { id: 'node2', position: { x: 100, y: 100 }, data: { id: 'card2', title: '카드 2', content: '내용 2' } },
     ];
-    
-    act(() => {
-      result.current.handleSelectionChange({
-        nodes: selectedNodes as any,
-        edges: [] as any,
-      });
-    });
-    
-    expect(mockSelectCards).toHaveBeenCalledWith(['node3', 'node4']);
-    expect(mockSetSelectedNode).toHaveBeenCalledWith(null);
-    expect(mockSetModalOpen).toHaveBeenCalledWith(false);
-    expect(toast.info).toHaveBeenCalledWith(
-      '2개 카드가 선택되었습니다.',
-      expect.objectContaining({ duration: 2000 })
-    );
-  });
-  
-  it('handleSelectionChange가 선택된 노드가 없을 때 상태를 초기화해야 함', () => {
-    const { result } = renderHook(() => useBoardHandlers({
-      saveLayout,
-      nodes: mockNodes as any,
-      setNodes,
-      reactFlowWrapper,
-      reactFlowInstance,
-      fetchCards,
-    }));
-    
-    act(() => {
-      result.current.handleSelectionChange({
-        nodes: [],
-        edges: [] as any,
-      });
-    });
-    
-    expect(mockSelectCards).toHaveBeenCalledWith([]);
-    expect(toast.info).not.toHaveBeenCalled();
-  });
-  
-  it('onDragOver가 기본 이벤트를 방지하고 dropEffect를 설정해야 함', () => {
-    const { result } = renderHook(() => useBoardHandlers({
-      saveLayout,
-      nodes: mockNodes as any,
-      setNodes,
-      reactFlowWrapper,
-      reactFlowInstance,
-      fetchCards,
-    }));
-    
-    // 드래그 오버 이벤트 객체 생성
-    const event = {
-      preventDefault: vi.fn(),
-      dataTransfer: {
-        dropEffect: '',
+
+    // React Flow wrapper 레퍼런스 모킹
+    const reactFlowWrapper = {
+      current: {
+        getBoundingClientRect: vi.fn().mockReturnValue({
+          left: 0,
+          top: 0,
+          width: 1000,
+          height: 800,
+        }),
+        offsetWidth: 1000,
+        offsetHeight: 800,
       },
-    } as unknown as React.DragEvent;
-    
-    // 핸들러 호출
-    act(() => {
-      result.current.onDragOver(event);
-    });
-    
-    // 기본 이벤트가 방지되었는지 확인
-    expect(event.preventDefault).toHaveBeenCalled();
-    // dropEffect가 'move'로 설정되었는지 확인
-    expect(event.dataTransfer.dropEffect).toBe('move');
-  });
-  
-  it('onDrop이 새 노드를 생성하고 레이아웃을 저장해야 함', () => {
-    const { result } = renderHook(() => useBoardHandlers({
-      saveLayout,
-      nodes: mockNodes as any,
-      setNodes,
-      reactFlowWrapper,
-      reactFlowInstance,
-      fetchCards,
-    }));
-    
-    // 드롭 이벤트 객체 생성
-    const event = {
-      preventDefault: vi.fn(),
-      clientX: 100,
-      clientY: 100,
-      dataTransfer: {
-        getData: vi.fn().mockReturnValue(JSON.stringify({ 
-          id: 'new-node', 
-          data: { title: '새 카드', content: '새 내용' } 
-        })),
-      },
-    } as unknown as React.DragEvent;
-    
-    // 핸들러 호출
-    act(() => {
-      result.current.onDrop(event);
-    });
-    
-    // 기본 이벤트가 방지되었는지 확인
-    expect(event.preventDefault).toHaveBeenCalled();
-    // 노드 추가가 호출되었는지 확인
-    expect(setNodes).toHaveBeenCalled();
-    // 레이아웃 저장이 호출되었는지 확인
-    expect(saveLayout).toHaveBeenCalled();
-    // 성공 메시지가 표시되었는지 확인
-    expect(toast.success).toHaveBeenCalledWith('카드가 캔버스에 추가되었습니다.');
-  });
-  
-  it('handleCardCreated가 새 카드를 추가하고 레이아웃을 저장해야 함', () => {
-    const { result } = renderHook(() => useBoardHandlers({
-      saveLayout,
-      nodes: mockNodes as any,
-      setNodes,
-      reactFlowWrapper,
-      reactFlowInstance,
-      fetchCards,
-    }));
-    
-    // 카드 생성 데이터
-    const cardData = {
-      id: 'new-card',
-      title: '새 카드',
-      content: '새 내용',
+    } as unknown as React.RefObject<HTMLDivElement>;
+
+    // React Flow 인스턴스 모킹
+    const reactFlowInstance = {
+      screenToFlowPosition: vi.fn().mockImplementation((pos) => pos),
     };
-    
-    // 핸들러 호출
-    act(() => {
-      result.current.handleCardCreated(cardData);
-    });
-    
-    // 노드 추가가 호출되었는지 확인
-    expect(setNodes).toHaveBeenCalled();
-    // 레이아웃 저장이 호출되었는지 확인
-    expect(saveLayout).toHaveBeenCalled();
-    // 성공 메시지가 표시되었는지 확인
-    expect(toast.success).toHaveBeenCalledWith('새 카드가 생성되었습니다.');
-  });
-  
-  it('handleEdgeDropCardCreated가 새 카드를 추가하고 데이터를 다시 불러와야 함', () => {
-    // 실제 타이머 대신 가상 타이머 사용
-    vi.useFakeTimers();
-    
-    const { result } = renderHook(() => useBoardHandlers({
+
+    // 훅 프로퍼티 반환
+    return {
       saveLayout,
-      nodes: mockNodes as any,
       setNodes,
+      fetchCards,
+      mockNodes,
       reactFlowWrapper,
       reactFlowInstance,
-      fetchCards,
-    }));
-    
-    // 카드 생성 데이터
-    const cardData = {
-      id: 'edge-drop-card',
-      title: '엣지 드롭 카드',
-      content: '엣지 드롭 내용',
     };
-    
-    // 위치 및 연결 정보
-    const position = { x: 200, y: 200 };
-    const connectingNodeId = 'node1';
-    const handleType = 'source' as const;
-    
-    // 핸들러 호출
-    act(() => {
-      result.current.handleEdgeDropCardCreated(cardData, position, connectingNodeId, handleType);
-      // 타이머 진행
-      vi.advanceTimersByTime(500);
+  };
+
+  // 테스트 케이스들
+  describe('선택 관련 핸들러', () => {
+    it('handleSelectionChange가 useBoardSelectionHandler로부터 핸들러를 가져와야 함', () => {
+      // 테스트 데이터 설정
+      const { saveLayout, setNodes, fetchCards, mockNodes, reactFlowWrapper, reactFlowInstance } = setupTest();
+
+      // 훅 렌더링
+      const { result } = renderHook(() => useBoardHandlers({
+        saveLayout,
+        nodes: mockNodes as any,
+        setNodes,
+        reactFlowWrapper,
+        reactFlowInstance,
+        fetchCards,
+      }));
+
+      // 테스트 데이터 - 선택된 노드들
+      const selectionData = {
+        nodes: [{ id: 'node3' }, { id: 'node4' }] as any,
+        edges: [] as any,
+      };
+
+      // 핸들러 호출
+      act(() => {
+        result.current.handleSelectionChange(selectionData);
+      });
+
+      // 기대 결과 검증
+      expect(mockHandleSelectionChange).toHaveBeenCalledWith(selectionData);
     });
-    
-    // 노드 추가가 호출되었는지 확인
-    expect(setNodes).toHaveBeenCalled();
-    // 레이아웃 저장이 호출되었는지 확인
-    expect(saveLayout).toHaveBeenCalled();
-    // 성공 메시지가 표시되었는지 확인
-    expect(toast.success).toHaveBeenCalledWith('새 카드가 생성되었습니다.');
-    // 데이터 다시 불러오기가 호출되었는지 확인
-    expect(fetchCards).toHaveBeenCalled();
-    
-    // 가상 타이머 종료
-    vi.useRealTimers();
+
+    it('handlePaneClick이 useBoardSelectionHandler로부터 핸들러를 가져와야 함', () => {
+      // 테스트 데이터 설정
+      const { saveLayout, setNodes, fetchCards, mockNodes, reactFlowWrapper, reactFlowInstance } = setupTest();
+
+      // 훅 렌더링
+      const { result } = renderHook(() => useBoardHandlers({
+        saveLayout,
+        nodes: mockNodes as any,
+        setNodes,
+        reactFlowWrapper,
+        reactFlowInstance,
+        fetchCards,
+      }));
+
+      // 이벤트 객체
+      const event = {} as React.MouseEvent;
+
+      // 핸들러 호출
+      act(() => {
+        result.current.handlePaneClick(event);
+      });
+
+      // 기대 결과 검증
+      expect(mockHandlePaneClick).toHaveBeenCalledWith(event);
+    });
+  });
+
+  describe('드래그 & 드롭 관련 핸들러', () => {
+    it('onDragOver가 useBoardDragHandler로부터 핸들러를 가져와야 함', () => {
+      // 테스트 데이터 설정
+      const { saveLayout, setNodes, fetchCards, mockNodes, reactFlowWrapper, reactFlowInstance } = setupTest();
+
+      // 훅 렌더링
+      const { result } = renderHook(() => useBoardHandlers({
+        saveLayout,
+        nodes: mockNodes as any,
+        setNodes,
+        reactFlowWrapper,
+        reactFlowInstance,
+        fetchCards,
+      }));
+
+      // 드래그 오버 이벤트 객체 생성
+      const event = {} as React.DragEvent;
+
+      // 핸들러 호출
+      act(() => {
+        result.current.onDragOver(event);
+      });
+
+      // 기대 결과 검증
+      expect(mockOnDragOver).toHaveBeenCalledWith(event);
+    });
+
+    it('onDrop이 useBoardDragHandler로부터 핸들러를 가져와야 함', () => {
+      // 테스트 데이터 설정
+      const { saveLayout, setNodes, fetchCards, mockNodes, reactFlowWrapper, reactFlowInstance } = setupTest();
+
+      // 훅 렌더링
+      const { result } = renderHook(() => useBoardHandlers({
+        saveLayout,
+        nodes: mockNodes as any,
+        setNodes,
+        reactFlowWrapper,
+        reactFlowInstance,
+        fetchCards,
+      }));
+
+      // 드롭 이벤트 객체 생성
+      const event = {} as React.DragEvent;
+
+      // 핸들러 호출
+      act(() => {
+        result.current.onDrop(event);
+      });
+
+      // 기대 결과 검증
+      expect(mockOnDrop).toHaveBeenCalledWith(event);
+    });
+  });
+
+  describe('카드 생성 관련 핸들러', () => {
+    it('handleCardCreated가 useBoardDragHandler로부터 핸들러를 가져와야 함', () => {
+      // 테스트 데이터 설정
+      const { saveLayout, setNodes, fetchCards, mockNodes, reactFlowWrapper, reactFlowInstance } = setupTest();
+
+      // 훅 렌더링
+      const { result } = renderHook(() => useBoardHandlers({
+        saveLayout,
+        nodes: mockNodes as any,
+        setNodes,
+        reactFlowWrapper,
+        reactFlowInstance,
+        fetchCards,
+      }));
+
+      // 카드 생성 데이터
+      const cardData = { id: 'new-card', title: '새 카드', content: '새 내용' };
+
+      // 핸들러 호출
+      act(() => {
+        result.current.handleCardCreated(cardData as any);
+      });
+
+      // 기대 결과 검증
+      expect(mockHandleCardCreated).toHaveBeenCalledWith(cardData);
+    });
+
+    it('handleEdgeDropCardCreated가 useBoardDragHandler로부터 핸들러를 가져와야 함', () => {
+      // 테스트 데이터 설정
+      const { saveLayout, setNodes, fetchCards, mockNodes, reactFlowWrapper, reactFlowInstance } = setupTest();
+
+      // 훅 렌더링
+      const { result } = renderHook(() => useBoardHandlers({
+        saveLayout,
+        nodes: mockNodes as any,
+        setNodes,
+        reactFlowWrapper,
+        reactFlowInstance,
+        fetchCards,
+      }));
+
+      // 카드 생성 데이터
+      const cardData = { id: 'edge-drop-card', title: '엣지 드롭 카드', content: '엣지 드롭 내용' };
+      const position = { x: 200, y: 200 };
+      const connectingNodeId = 'node1';
+      const handleType = 'source' as const;
+
+      // 핸들러 호출
+      act(() => {
+        result.current.handleEdgeDropCardCreated(cardData as any, position, connectingNodeId, handleType);
+      });
+
+      // 기대 결과 검증
+      expect(mockHandleEdgeDropCardCreated).toHaveBeenCalledWith(cardData, position, connectingNodeId, handleType);
+    });
   });
 }); 
