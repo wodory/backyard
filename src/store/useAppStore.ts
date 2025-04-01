@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, saveBoardSettings as saveSettingsToLocalStorage } from '@/lib/board-utils';
 import { ReactFlowInstance } from '@xyflow/react';
+import { toast } from 'sonner';
 
 // 카드 타입 정의
 export interface Card {
@@ -52,6 +53,15 @@ export interface AppState {
   boardSettings: BoardSettings;
   setBoardSettings: (settings: BoardSettings) => void;
   updateBoardSettings: (settings: Partial<BoardSettings>) => void;
+  
+  // 로딩 상태
+  isLoading: boolean;
+  setLoading: (loading: boolean) => void;
+
+  // 에러 상태
+  error: Error | null;
+  setError: (error: Error | null) => void;
+  clearError: () => void;
   
   // React Flow 인스턴스
   reactFlowInstance: ReactFlowInstance | null;
@@ -172,16 +182,31 @@ export const useAppStore = create<AppState>()(
       // 카드 데이터 상태 초기값 및 액션
       cards: [],
       setCards: (cards) => set({ cards }),
-      updateCard: (updatedCard) => 
-        set((state) => {
-          // 카드 목록에서 해당 카드를 찾아 업데이트
-          const updatedCards = state.cards.map(card => 
-            card.id === updatedCard.id ? { ...card, ...updatedCard } : card
-          );
-          
-          console.log('[AppStore] 카드 업데이트:', updatedCard.id);
-          return { cards: updatedCards };
-        }),
+      updateCard: async (updatedCard) => {
+        set({ isLoading: true });
+        try {
+          const response = await fetch(`/api/cards/${updatedCard.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedCard)
+          });
+
+          if (!response.ok) {
+            throw new Error(response.statusText);
+          }
+
+          set((state) => {
+            const updatedCards = state.cards.map(card =>
+              card.id === updatedCard.id ? { ...card, ...updatedCard } : card
+            );
+            return { cards: updatedCards, isLoading: false, error: null };
+          });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+          set({ error: error as Error, isLoading: false });
+          toast.error(`카드 업데이트 실패: ${errorMessage}`);
+        }
+      },
       
       // 사이드바 상태 초기값 및 액션
       isSidebarOpen: false,
@@ -199,13 +224,42 @@ export const useAppStore = create<AppState>()(
       // 보드 설정 초기값 및 액션
       boardSettings: DEFAULT_BOARD_SETTINGS,
       setBoardSettings: (settings) => set({ boardSettings: settings }),
-      updateBoardSettings: (settings) => 
-        set((state) => ({ 
-          boardSettings: { 
-            ...state.boardSettings, 
-            ...settings 
-          } 
-        })),
+      updateBoardSettings: async (settings) => {
+        set({ isLoading: true });
+        try {
+          const response = await fetch('/api/board-settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+          });
+
+          if (!response.ok) {
+            throw new Error(response.statusText);
+          }
+
+          set((state) => ({
+            boardSettings: { ...state.boardSettings, ...settings },
+            isLoading: false,
+            error: null
+          }));
+
+          // 로컬 스토리지에도 저장
+          saveSettingsToLocalStorage({ ...get().boardSettings, ...settings });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+          set({ error: error as Error, isLoading: false });
+          toast.error(`보드 설정 업데이트 실패: ${errorMessage}`);
+        }
+      },
+      
+      // 로딩 상태 초기값 및 액션
+      isLoading: false,
+      setLoading: (loading) => set({ isLoading: loading }),
+
+      // 에러 상태 초기값 및 액션
+      error: null,
+      setError: (error) => set({ error }),
+      clearError: () => set({ error: null }),
       
       // React Flow 인스턴스
       reactFlowInstance: null,

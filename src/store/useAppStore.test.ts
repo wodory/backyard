@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, Card } from '@/store/useAppStore';
 import { DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
-import { Card } from '@/types/card';
+import { toast } from 'sonner';
 
 // 모든 모킹을 파일 상단에 배치
 vi.mock('@/lib/board-utils', () => ({
@@ -22,6 +22,14 @@ vi.mock('@/lib/board-utils', () => ({
     snapGrid: [20, 20]
   },
   saveBoardSettings: vi.fn()
+}));
+
+// toast 모킹
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn()
+  }
 }));
 
 // global fetch 모킹
@@ -234,11 +242,18 @@ describe('useAppStore', () => {
       expect(state.cards).toEqual(testCards);
     });
 
-    it('updateCard 액션이 카드를 업데이트해야 함', () => {
+    it('updateCard 액션이 카드를 업데이트해야 함', async () => {
       const { setCards, updateCard } = useAppStore.getState();
       
+      // API 응답 모킹
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+        status: 200
+      });
+      
       setCards(testCards);
-      updateCard({
+      await updateCard({
         id: 'card-1',
         title: '수정된 카드 1',
         content: '수정된 내용 1',
@@ -250,6 +265,64 @@ describe('useAppStore', () => {
       const state = useAppStore.getState();
       expect(state.cards[0].title).toBe('수정된 카드 1');
       expect(state.cards[0].content).toBe('수정된 내용 1');
+    });
+
+    it('updateCard 액션이 실패 시 에러를 처리해야 함', async () => {
+      const { setCards, updateCard } = useAppStore.getState();
+      setCards(testCards);
+      
+      // API 실패 응답 모킹
+      fetchMock.mockRejectedValueOnce(new Error('카드 업데이트 실패'));
+      
+      const updatedCard = {
+        id: 'card-1',
+        title: '수정된 카드 1',
+        content: '수정된 내용 1',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
+        userId: 'user-1'
+      };
+      
+      await updateCard(updatedCard);
+      
+      // 에러 토스트 호출 확인
+      expect(toast.error).toHaveBeenCalledWith('카드 업데이트 실패: 카드 업데이트 실패');
+      
+      const state = useAppStore.getState();
+      // 카드가 변경되지 않아야 함
+      expect(state.cards[0]).toEqual(testCards[0]);
+      expect(state.error).toBeInstanceOf(Error);
+    });
+
+    it('updateCard 액션이 로딩 상태를 적절히 처리해야 함', async () => {
+      const { setCards, updateCard } = useAppStore.getState();
+      setCards(testCards);
+      
+      // API 응답 모킹
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+        status: 200
+      });
+      
+      const updatedCard = {
+        id: 'card-1',
+        title: '수정된 카드 1',
+        content: '수정된 내용 1',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
+        userId: 'user-1'
+      };
+      
+      const updatePromise = updateCard(updatedCard);
+      
+      // 로딩 상태 확인
+      expect(useAppStore.getState().isLoading).toBe(true);
+      
+      await updatePromise;
+      
+      // 로딩 상태 해제 확인
+      expect(useAppStore.getState().isLoading).toBe(false);
     });
   });
 
@@ -330,6 +403,71 @@ describe('useAppStore', () => {
         snapToGrid: true
       });
     });
+
+    it('updateBoardSettings 액션이 실패 시 에러를 처리해야 함', async () => {
+      // API 실패 응답 모킹
+      fetchMock.mockRejectedValueOnce(new Error('네트워크 오류'));
+      
+      const { updateBoardSettings } = useAppStore.getState();
+      
+      await updateBoardSettings({ snapToGrid: true });
+      
+      // fetch 호출 확인
+      expect(fetchMock).toHaveBeenCalledWith('/api/board-settings', expect.anything());
+      
+      // 에러 토스트 호출 확인
+      expect(toast.error).toHaveBeenCalledWith('보드 설정 업데이트 실패: 네트워크 오류');
+      
+      const state = useAppStore.getState();
+      // 설정이 변경되지 않아야 함
+      expect(state.boardSettings).toEqual(DEFAULT_BOARD_SETTINGS);
+      expect(state.error).toBeInstanceOf(Error);
+    });
+
+    it('updateBoardSettings 액션이 서버 오류를 처리해야 함', async () => {
+      // 서버 오류 응답 모킹
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error'
+      });
+      
+      const { updateBoardSettings } = useAppStore.getState();
+      
+      await updateBoardSettings({ snapToGrid: true });
+      
+      // fetch 호출 확인
+      expect(fetchMock).toHaveBeenCalledWith('/api/board-settings', expect.anything());
+      
+      // 에러 토스트 호출 확인
+      expect(toast.error).toHaveBeenCalledWith('보드 설정 업데이트 실패: Internal Server Error');
+      
+      const state = useAppStore.getState();
+      // 설정이 변경되지 않아야 함
+      expect(state.boardSettings).toEqual(DEFAULT_BOARD_SETTINGS);
+      expect(state.error).toBeDefined();
+    });
+
+    it('updateBoardSettings 액션이 로딩 상태를 적절히 처리해야 함', async () => {
+      // API 응답 모킹
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+        status: 200
+      });
+      
+      const { updateBoardSettings } = useAppStore.getState();
+      
+      const updatePromise = updateBoardSettings({ snapToGrid: true });
+      
+      // 로딩 상태 확인
+      expect(useAppStore.getState().isLoading).toBe(true);
+      
+      await updatePromise;
+      
+      // 로딩 상태 해제 확인
+      expect(useAppStore.getState().isLoading).toBe(false);
+    });
   });
 
   describe('React Flow 인스턴스 관련 테스트', () => {
@@ -341,6 +479,38 @@ describe('useAppStore', () => {
       
       const state = useAppStore.getState();
       expect(state.reactFlowInstance).toBe(mockInstance);
+    });
+  });
+
+  describe('로딩 및 에러 상태 관련 테스트', () => {
+    it('setLoading 액션이 로딩 상태를 설정해야 함', () => {
+      const { setLoading } = useAppStore.getState();
+      
+      setLoading(true);
+      expect(useAppStore.getState().isLoading).toBe(true);
+      
+      setLoading(false);
+      expect(useAppStore.getState().isLoading).toBe(false);
+    });
+
+    it('setError 액션이 에러 상태를 설정해야 함', () => {
+      const { setError } = useAppStore.getState();
+      const testError = new Error('테스트 에러');
+      
+      setError(testError);
+      expect(useAppStore.getState().error).toBe(testError);
+      
+      setError(null);
+      expect(useAppStore.getState().error).toBeNull();
+    });
+
+    it('clearError 액션이 에러 상태를 초기화해야 함', () => {
+      const { setError, clearError } = useAppStore.getState();
+      const testError = new Error('테스트 에러');
+      
+      setError(testError);
+      clearError();
+      expect(useAppStore.getState().error).toBeNull();
     });
   });
 }); 
