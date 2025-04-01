@@ -35,7 +35,7 @@ vi.mock('@xyflow/react', async () => {
         {children}
       </div>
     ),
-    ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, ...props }: {
+    ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
       children?: ReactNode;
       onNodesChange?: (changes: any) => void;
       onEdgesChange?: (changes: any) => void;
@@ -44,6 +44,7 @@ vi.mock('@xyflow/react', async () => {
       onConnectEnd?: (event: any) => void;
       onNodeClick?: (event: any, node: any) => void;
       onPaneClick?: (event: any) => void;
+      defaultEdgeOptions?: any;
       [key: string]: any;
     }) => (
       <div
@@ -64,6 +65,9 @@ vi.mock('@xyflow/react', async () => {
         </div>
         <div data-testid="react-flow-edges">
           {JSON.stringify(props.edges)}
+        </div>
+        <div data-testid="default-edge-options">
+          {JSON.stringify(defaultEdgeOptions)}
         </div>
         {children}
       </div>
@@ -272,5 +276,38 @@ describe('BoardCanvas Component', () => {
 
     // ReactFlow의 onViewportChange는 모킹된 상태이므로 직접적인 테스트는 생략
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
+  });
+
+  it('applies correct edge options when markerEnd is null', () => {
+    const settingsWithoutMarker = {
+      ...defaultProps.boardSettings,
+      markerEnd: null
+    };
+
+    render(<BoardCanvas {...defaultProps} boardSettings={settingsWithoutMarker} />);
+    const defaultEdgeOptions = screen.getByTestId('default-edge-options');
+    const edgeOptionsData = JSON.parse(defaultEdgeOptions.textContent || '{}');
+
+    expect(edgeOptionsData.markerEnd).toBeUndefined();
+    expect(edgeOptionsData.type).toBe('custom');
+    expect(edgeOptionsData.animated).toBe(false);
+    expect(edgeOptionsData.style.strokeWidth).toBe(2);
+    expect(edgeOptionsData.style.stroke).toBe('#000000');
+  });
+
+  it('applies correct edge options when markerEnd is ArrowClosed', () => {
+    render(<BoardCanvas {...defaultProps} />);
+    const defaultEdgeOptions = screen.getByTestId('default-edge-options');
+    const edgeOptionsData = JSON.parse(defaultEdgeOptions.textContent || '{}');
+
+    expect(edgeOptionsData.markerEnd).toEqual({
+      type: MarkerType.ArrowClosed,
+      width: 8,
+      height: 8,
+    });
+    expect(edgeOptionsData.type).toBe('custom');
+    expect(edgeOptionsData.animated).toBe(false);
+    expect(edgeOptionsData.style.strokeWidth).toBe(2);
+    expect(edgeOptionsData.style.stroke).toBe('#000000');
   });
 }); 

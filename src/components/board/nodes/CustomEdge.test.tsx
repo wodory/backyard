@@ -50,7 +50,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
 });
 
 // CustomEdge 컴포넌트 임포트
-import CustomEdge from '../../nodes/CustomEdge';
+import CustomEdge from './CustomEdge';
 
 describe('CustomEdge', () => {
   const mockEdgeProps: Partial<EdgeProps> = {
