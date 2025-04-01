@@ -48,6 +48,9 @@ export default mergeConfig(
         '**/src/setupTests.ts', // 테스트 설정 파일
         '**/src/tests/**', // 테스트 관련 폴더
         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
+        // src/lib
+        '**/src/lib/logger.ts',       // 디버깅용 로거
+        '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
         './*.config.js', // 루트 경로의 config 파일들
         './*.config.ts',
         './*.config.mjs',
