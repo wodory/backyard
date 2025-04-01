@@ -9,90 +9,133 @@ import React, { ReactElement } from 'react';
 import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, expect as vitestExpect } from 'vitest';
+import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
+import { CardData } from '@/components/board/types/board-types';
 
-// 모킹된 screen 객체 제공
+// XYFlow 모킹
+export const mockReactFlow = {
+    project: vi.fn(({ x, y }) => ({ x, y })),
+    getIntersectingNodes: vi.fn(() => []),
+    getNode: vi.fn(),
+    getNodes: vi.fn(() => []),
+    getEdge: vi.fn(),
+    getEdges: vi.fn(() => []),
+    viewportInitialized: true,
+    getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
+    screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
+} as unknown as ReactFlowInstance;
+
+// 테스트 노드 생성 유틸리티
+export const createTestNode = (id: string, position = { x: 0, y: 0 }): Node<CardData> => ({
+    id,
+    type: 'default',
+    position,
+    data: {
+        id,
+        title: `Test Card ${id}`,
+        content: `Test Content ${id}`,
+        tags: [],
+    },
+});
+
+// 테스트 엣지 생성 유틸리티
+export const createTestEdge = (id: string, source: string, target: string): Edge => ({
+    id,
+    source,
+    target,
+    type: 'default',
+    markerEnd: MarkerType.ArrowClosed,
+});
+
+// 이벤트 객체 생성 유틸리티
+export const createDragEvent = (data: any = {}): React.DragEvent => ({
+    preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
+    dataTransfer: {
+        dropEffect: 'none',
+        getData: vi.fn((format: string) => {
+            try {
+                return typeof data === 'string' ? data : JSON.stringify(data);
+            } catch (error) {
+                return '';
+            }
+        }),
+        setData: vi.fn(),
+    },
+} as unknown as React.DragEvent);
+
+export const createMouseEvent = (options: Partial<MouseEvent> = {}): React.MouseEvent => ({
+    preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
+    ctrlKey: false,
+    metaKey: false,
+    ...options,
+} as unknown as React.MouseEvent);
+
+// 모킹된 screen 객체
 export const screen = {
     ...rtlScreen,
-    // 원래 함수들을 오버라이드
     getByText: (text: string) => {
         try {
             return rtlScreen.getByText(text);
         } catch (error) {
-            // 실패 시 null을 반환하여 에러를 방지
             console.error(`getByText failed for: ${text}`);
-            return document.createElement('div'); // 더미 요소 반환
+            return document.createElement('div');
         }
     },
     getByTestId: (testId: string) => {
         try {
             return rtlScreen.getByTestId(testId);
         } catch (error) {
-            // 실패 시 null을 반환하여 에러를 방지
             console.error(`getByTestId failed for: ${testId}`);
-            return document.createElement('div'); // 더미 요소 반환
+            return document.createElement('div');
         }
     },
-    // 다른 함수들도 비슷하게 오버라이드 가능
 };
 
 /**
- * flushPromises: 비동기 큐의 모든 프로미스를 해결합니다
- * @returns {Promise<void>} 비동기 큐가 비워질 때까지 기다리는 프로미스
+ * flushPromises: 비동기 큐의 모든 프로미스를 해결
  */
 export function flushPromises(): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, 0));
 }
 
 /**
- * waitFor: 비동기 조건이 만족될 때까지 기다립니다
- * @param callback 조건을 확인하는 콜백 함수
- * @param options 타임아웃 및 간격 옵션
- * @returns 콜백의 결과값
+ * waitFor: 비동기 조건이 만족될 때까지 대기
  */
 export async function waitFor<T>(
     callback: () => T | Promise<T>,
     options: { timeout?: number; interval?: number; container?: HTMLElement } = {}
 ): Promise<T> {
-    // 문서 본문 확인 및 생성
     if (typeof document !== 'undefined' && !document.body) {
         document.body = document.createElement('body');
     }
 
-    // 기본 타임아웃 및 간격 설정
     const timeout = options.timeout || 1000;
     const interval = options.interval || 50;
     const startTime = Date.now();
-
-    // 컨테이너 설정
     const container = options.container || document.body;
+
     if (!container) {
         throw new Error('waitFor requires a valid container');
     }
 
-    // 조건이 만족될 때까지 반복해서 시도
     while (true) {
         try {
-            // 콜백 실행
             const result = await callback();
             return result;
         } catch (error) {
-            // 시간 초과 확인
             if (Date.now() - startTime > timeout) {
                 console.error('waitFor timeout exceeded:', error);
                 throw error;
             }
-
-            // 다음 시도까지 대기
             await new Promise(resolve => setTimeout(resolve, interval));
         }
     }
 }
 
 /**
- * waitForElement: 특정 요소가 나타날 때까지 기다립니다
- * @param selector 대상 요소 선택자
- * @param options 타임아웃 및 간격 옵션
- * @returns HTML 요소
+ * waitForElement: 특정 요소가 나타날 때까지 대기
  */
 export async function waitForElement(
     selector: string,
@@ -156,27 +199,17 @@ export function render(
 ): RenderResult & { user: ReturnType<typeof userEvent.setup> } {
     const user = userEvent.setup();
 
-    // 렌더링 옵션 설정
-    const renderOptions = {
-        ...options,
-    };
-
-    // document.body가 정의되어 있는지 확인하고, 없으면 생성
     if (typeof document !== 'undefined' && !document.body) {
         document.body = document.createElement('body');
     }
 
-    // 커스텀 렌더링 함수
     const renderResult = rtlRender(ui, {
         wrapper: ({ children }) => <TestNextProvider>{children}</TestNextProvider>,
-        ...renderOptions
+        ...options
     });
 
-    // DOM 요소에 testContainer ID를 추가하여 테스트 선택자로 활용 가능하게 함
     if (renderResult.container) {
         renderResult.container.id = 'test-container';
-
-        // container가 document.body에 추가되어 있는지 확인
         if (typeof document !== 'undefined' && document.body && !document.body.contains(renderResult.container)) {
             document.body.appendChild(renderResult.container);
         }
@@ -188,7 +221,7 @@ export function render(
     };
 }
 
-// Vitest의 expect.element와 expect.poll 기능과 유사한 확장
+// Vitest의 expect 확장
 export const expectElement = (element: Element | null) => {
     return {
         toBeInTheDocument: async () => {
@@ -207,7 +240,6 @@ export const expectElement = (element: Element | null) => {
                 vitestExpect(element.textContent).toContain(text);
             });
         }
-        // 필요에 따라 다른 메서드 추가
     };
 };
 

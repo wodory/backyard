@@ -2376,10 +2376,10 @@
     loupe "^3.1.3"
     tinyrainbow "^2.0.0"
 
-"@xyflow/react@^12.4.4":
-  version "12.5.1"
-  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.5.1.tgz#a6d6cb948b31ce60a8ff78697705295a7d773d37"
-  integrity sha512-jMKQVqGwCz0x6pUyvxTIuCMbyehfua7CfEEWDj29zQSHigQpCy0/5d8aOmZrqK4cwur/pVHLQomT6Rm10gXfHg==
+"@xyflow/react@^12.5.3":
+  version "12.5.3"
+  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.5.3.tgz#e097574013e7d30b58512a38aa97d6cd559c5f0d"
+  integrity sha512-saovy/aQRoW8qQoIqMFUtmC3F6oEV7n6+J1pVbhSG45NI/hOFvK0qozsIPKqX5Va6lGQnkl/o53NHLja3NiweQ==
   dependencies:
     "@xyflow/system" "0.0.53"
     classcat "^5.0.3"

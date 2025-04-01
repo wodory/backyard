@@ -42,26 +42,21 @@ export function useBoardHandlers({
    * ReactFlow 선택 변경 이벤트 핸들러
    * @param selection 현재 선택된 노드와 엣지 정보
    */
-  const handleSelectionChange = useCallback(({ nodes }: { nodes: Node[]; edges: Edge[] }) => {
+  const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
     console.log('[BoardComponent] 선택 변경 감지:', { 
       선택된_노드_수: nodes.length,
-      선택된_노드_ID: nodes.map(node => node.id)
+      선택된_노드_ID: nodes.map(node => node.data.id)
     });
 
     // 선택된 노드 ID 배열 추출
-    const selectedNodeIds = nodes.map(node => node.id);
+    const selectedNodeIds = nodes.map(node => node.data.id);
     
-    // React Flow의 선택 상태를 Zustand 상태로 동기화
-    // 현재 선택된 ID 배열과 다를 때만 업데이트 (불필요한 리렌더링 방지)
-    const currentSelectedIds = useAppStore.getState().selectedCardIds;
-    if (!arraysEqual(currentSelectedIds, selectedNodeIds)) {
-      // 전역 상태 업데이트
-      selectCards(selectedNodeIds);
-      
-      // 선택된 노드가 있는 경우 토스트 메시지 표시
-      if (selectedNodeIds.length > 1) {
-        toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`);
-      }
+    // 전역 상태 업데이트
+    selectCards(selectedNodeIds);
+    
+    // 선택된 노드가 있는 경우 토스트 메시지 표시
+    if (selectedNodeIds.length > 1) {
+      toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`);
     }
   }, [selectCards]);
 
@@ -205,14 +200,6 @@ export function useBoardHandlers({
       fetchCards();
     }, 500);
   }, [nodes, setNodes, saveLayout, fetchCards]);
-
-  // 배열 비교 헬퍼 함수
-  const arraysEqual = (a: string[], b: string[]) => {
-    if (a.length !== b.length) return false;
-    const sortedA = [...a].sort();
-    const sortedB = [...b].sort();
-    return sortedA.every((val, idx) => val === sortedB[idx]);
-  };
 
   return {
     handleSelectionChange,

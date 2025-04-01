@@ -1,0 +1,55 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# --- START OF FILE: .cursor/rules/zustand-action-msw.mdc ---
+description: Enforces Zustand action-based architecture with MSW testing.
+globs: 
+  - src/**/*.{ts,tsx}
+  - src/tests/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Rule: Zustand Action & MSW Pattern
+
+## 1. Core Principle: Action-Centric State Management
+- **MUST:** All application state modifications **MUST** go through explicitly defined actions within the Zustand store (`src/store/useAppStore.ts`).
+- **FORBIDDEN:** Direct state manipulation (using `set` directly within components or hooks outside the store's defined actions, or mutating state objects) is strictly forbidden.
+- **MUST:** Actions should represent specific user intents or system events (e.g., `selectCard`, `fetchBoardData`, `updateSettings`).
+
+## 2. UI Component Responsibility
+- **MUST:** UI components (React components in `src/components/` or `src/app/`) **MUST NOT** contain business logic or direct state modification logic related to the global application state managed by `useAppStore`.
+- **MUST:** The primary roles of UI components are:
+    1.  Displaying data derived from the Zustand store or local UI state.
+    2.  Calling appropriate Zustand actions in response to user interactions (e.g., button clicks, input changes).
+- **SHOULD:** Local UI state (e.g., input field values, modal open/close status) can be managed within components using `useState` if it doesn't affect the global application state.
+
+## 3. Zustand Action Implementation
+- **MUST:** Actions defined in `useAppStore.ts` **MUST** contain all the logic necessary to handle the corresponding event, including state updates using `set` or `get().someAction(...)`.
+- **MUST:** Asynchronous operations (like API calls using `fetch`) related to global state changes **SHOULD** be initiated and managed *within* Zustand actions.
+    - **MUST:** Use `try...catch` blocks for robust error handling in asynchronous actions.
+    - **SHOULD:** Update relevant loading and error states within the store during the lifecycle of asynchronous actions (e.g., `isLoading: true` before fetch, `isLoading: false, error: null` on success, `isLoading: false, error: err.message` on failure).
+    - **SHOULD:** Use `toast` notifications *within* the action handlers (or call a dedicated notification action) upon success or failure of operations.
+
+## 4. API Interaction & Testing with MSW
+- **MUST:** When implementing or modifying Zustand actions that involve API calls (`fetch`), corresponding MSW handlers **MUST** be added or updated in `src/tests/msw/handlers.ts`.
+- **MUST:** Unit tests for Zustand actions involving API calls **MUST** utilize the configured MSW server (`src/tests/msw/server.ts`) to mock API responses.
+- **MUST:** Tests should cover both successful API responses and potential error scenarios (e.g., network errors, server errors) by configuring MSW handlers accordingly using `server.use()`.
+
+## 5. Console API for Debugging
+- **MUST:** In development mode (`process.env.NODE_ENV === 'development'`), key Zustand actions **MUST** be exposed via the global `window.appCommands` object. This setup should be located in a client-side entry point (e.g., `ClientLayout.tsx`).
+    - *Example:* `window.appCommands.selectCard = useAppStore.getState().selectCard;`
+- **MUST:** Ensure this `window.appCommands` assignment is properly excluded from production builds (using the environment variable check).
+- **MUST:** Maintain the `docs/console-api.md` file, documenting all exposed commands, their parameters, and usage examples whenever new commands are added or existing ones change.
+
+## 6. Refactoring Guidance
+- When refactoring existing code to adhere to this pattern:
+    1.  Identify state update logic within components or hooks.
+    2.  Define a corresponding action in `useAppStore.ts`.
+    3.  Move the logic into the newly defined action.
+    4.  Update the component/hook to call the new action instead of manipulating state directly.
+    5.  If the logic involved API calls, ensure MSW handlers and tests are created/updated.
+
+**By strictly following this rule, we ensure a consistent, maintainable, and testable architecture centered around Zustand actions and MSW.**
+# --- END OF FILE ---

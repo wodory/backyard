@@ -2,220 +2,132 @@
  * 파일명: page.test.tsx
  * 목적: 카드 편집 페이지 컴포넌트 테스트
  * 역할: 카드 편집 페이지의 다양한 상태와 기능을 테스트
- * 작성일: 2024-05-27
+ * 작성일: 2024-03-31
  */
 
-/// <reference types="vitest" />
 import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import EditCardPage from './page';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-
-// EditCardForm 컴포넌트의 props 타입 정의
-interface EditCardFormProps {
-  card: {
-    id: string;
-    title: string;
-    content: string;
-    cardTags: any[];
-  };
-  onSuccess: () => void;
-}
-
-// EditCardForm 컴포넌트 모킹
-const mockEditCardForm = vi.fn();
-vi.mock('@/components/cards/EditCardForm', () => ({
-  default: (props: EditCardFormProps) => {
-    mockEditCardForm(props);
-    return <div data-testid="edit-card-form">카드 편집 폼</div>;
-  }
-}));
-
-// useRouter 및 useParams 모킹
-const mockPush = vi.fn();
-const mockBack = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({
-    push: mockPush,
-    back: mockBack,
-  })),
-  useParams: vi.fn(() => ({
-    id: 'test-card-123'
-  }))
-}));
-
-// 전역 fetch 모킹
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+import { EditCardPageMock } from './EditCardPageMock';
+import { setupEditCardPageTests, teardownEditCardPageTests, mockActions, waitForDomChanges } from './test-utils';
 
 describe('EditCardPage', () => {
-  // 성공적인 응답을 위한 모킹 데이터
-  const mockCardData = {
-    id: 'test-card-123',
-    title: '테스트 카드',
-    content: '테스트 내용입니다.',
-    cardTags: []
-  };
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    // 기본적으로 성공 응답 모킹
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockCardData)
-    });
+    setupEditCardPageTests();
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
+    teardownEditCardPageTests();
   });
 
-  it('초기 로딩 상태를 테스트해야 함', async () => {
-    // fetch 호출 지연시키기
-    let resolvePromise: Function;
-    mockFetch.mockImplementationOnce(() =>
-      new Promise((resolve) => {
-        resolvePromise = resolve;
-      })
-    );
+  describe('@testcase.mdc 페이지 로딩 상태', () => {
+    it('rule: 초기 로딩 상태가 표시되어야 함', async () => {
+      let resolvePromise: Function;
+      mockActions.getCard.mockImplementationOnce(() =>
+        new Promise((resolve) => {
+          resolvePromise = resolve;
+        })
+      );
 
-    await act(async () => {
-      render(<EditCardPage />);
+      render(<EditCardPageMock />);
+      expect(screen.getByText('로딩 중...')).toBeInTheDocument();
     });
 
-    // 로딩 상태가 먼저 표시되는지 확인
-    expect(screen.queryByTestId('edit-card-form')).not.toBeInTheDocument();
+    it('rule: 카드 데이터 로드 후 편집 폼이 표시되어야 함', async () => {
+      render(<EditCardPageMock />);
 
-    // 로딩 표시자가 있는지 확인
-    const loadingElement = screen.getByText(/로딩/);
-    expect(loadingElement).toBeInTheDocument();
+      await act(async () => {
+        await waitForDomChanges();
+      });
+
+      expect(screen.getByTestId('edit-card-form')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('테스트 카드')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('테스트 내용')).toBeInTheDocument();
+    });
   });
 
-  it('뒤로 가기 버튼 클릭 시 이전 페이지로 이동해야 함', async () => {
-    await act(async () => {
-      render(<EditCardPage />);
-    });
+  describe('@testcase.mdc 네비게이션', () => {
+    it('rule: 뒤로 가기 버튼 클릭 시 이전 페이지로 이동해야 함', async () => {
+      render(<EditCardPageMock />);
 
-    await act(async () => {
+      await act(async () => {
+        await waitForDomChanges();
+      });
+
       fireEvent.click(screen.getByRole('button', { name: '뒤로 가기' }));
+      expect(mockActions.router.back).toHaveBeenCalled();
     });
 
-    expect(mockBack).toHaveBeenCalled();
+    it('rule: 저장 버튼 클릭 시 /board로 리다이렉트되어야 함', async () => {
+      render(<EditCardPageMock />);
+
+      await act(async () => {
+        await waitForDomChanges();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: '저장' }));
+      expect(mockActions.router.push).toHaveBeenCalledWith('/board');
+    });
   });
 
-  it('fetch 호출이 올바른 URL로 이루어져야 함', async () => {
-    await act(async () => {
-      render(<EditCardPage />);
+  describe('@testcase.mdc API 요청', () => {
+    it('rule: 올바른 카드 ID로 데이터를 요청해야 함', async () => {
+      render(<EditCardPageMock />);
+
+      await act(async () => {
+        await waitForDomChanges();
+      });
+
+      expect(mockActions.getCard).toHaveBeenCalledWith('test-card-123');
     });
-    expect(mockFetch).toHaveBeenCalledWith('/api/cards/test-card-123');
   });
 
-  it('카드 데이터 로드 성공 시 EditCardForm을 렌더링해야 함', async () => {
-    await act(async () => {
-      render(<EditCardPage />);
+  describe('@testcase.mdc 에러 처리', () => {
+    it('rule: 카드를 찾을 수 없을 때 에러 메시지를 표시해야 함', async () => {
+      mockActions.getCard.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: '카드를 찾을 수 없습니다.' })
+      });
+
+      render(<EditCardPageMock />);
+
+      await act(async () => {
+        await waitForDomChanges();
+      });
+
+      expect(screen.getByText('카드를 찾을 수 없습니다.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '돌아가기' })).toBeInTheDocument();
     });
 
-    // 비동기 데이터 로딩 완료 대기
-    await act(async () => {
-      // 비동기 처리 대기
-      await new Promise(resolve => setTimeout(resolve, 0));
+    it('rule: 네트워크 오류 발생 시 에러 메시지를 표시해야 함', async () => {
+      mockActions.getCard.mockRejectedValueOnce(new Error('네트워크 오류'));
+
+      render(<EditCardPageMock />);
+
+      await act(async () => {
+        await waitForDomChanges();
+      });
+
+      expect(screen.getByText('네트워크 오류')).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('edit-card-form')).toBeInTheDocument();
+    it('rule: 에러 상태에서 돌아가기 버튼이 작동해야 함', async () => {
+      mockActions.getCard.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: '카드를 찾을 수 없습니다.' })
+      });
 
-    // EditCardForm에 올바른 props 전달 확인
-    expect(mockEditCardForm).toHaveBeenCalledWith(
-      expect.objectContaining({
-        card: mockCardData
-      })
-    );
-  });
+      render(<EditCardPageMock />);
 
-  it('카드 로드 실패 시 에러 메시지를 표시해야 함', async () => {
-    // 에러 응답 모킹
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 404
-    });
+      await act(async () => {
+        await waitForDomChanges();
+      });
 
-    await act(async () => {
-      render(<EditCardPage />);
-    });
-
-    // 비동기 처리 대기
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    // 에러 메시지가 화면에 표시되는지 확인
-    const errorElement = screen.getByText('카드를 찾을 수 없습니다.');
-    expect(errorElement).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '돌아가기' })).toBeInTheDocument();
-  });
-
-  it('네트워크 에러 발생 시 에러 메시지를 표시해야 함', async () => {
-    // 네트워크 오류 모킹
-    mockFetch.mockRejectedValueOnce(new Error('네트워크 오류'));
-
-    await act(async () => {
-      render(<EditCardPage />);
-    });
-
-    // 비동기 처리 대기
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    // 실제 에러 메시지 텍스트를 확인 (화면에 표시된 대로)
-    const errorElement = screen.getByText('네트워크 오류');
-    expect(errorElement).toBeInTheDocument();
-  });
-
-  it('EditCardForm의 onSuccess 콜백이 호출되면 /board로 리다이렉트해야 함', async () => {
-    await act(async () => {
-      render(<EditCardPage />);
-    });
-
-    // 비동기 처리 대기
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    expect(screen.getByTestId('edit-card-form')).toBeInTheDocument();
-
-    // EditCardForm에 전달된 onSuccess 콜백 함수 추출
-    const onSuccessCallback = mockEditCardForm.mock.calls[0][0].onSuccess;
-
-    // 콜백 함수 실행
-    await act(async () => {
-      onSuccessCallback();
-    });
-
-    // /board로 리다이렉트 확인
-    expect(mockPush).toHaveBeenCalledWith('/board');
-  });
-
-  it('에러 상태에서 돌아가기 버튼 클릭 시 뒤로 가기 함수가 호출되어야 함', async () => {
-    // 에러 응답 모킹
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 404
-    });
-
-    await act(async () => {
-      render(<EditCardPage />);
-    });
-
-    // 비동기 처리 대기
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '돌아가기' }));
+      expect(mockActions.router.back).toHaveBeenCalled();
     });
-
-    expect(mockBack).toHaveBeenCalled();
   });
 }); 

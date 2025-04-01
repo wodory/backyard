@@ -50,34 +50,87 @@ Zustand 액션 기반 리팩토링과 MSW를 결합하여 앱 전체의 구조�
         3.  `act()`를 사용하여 액션을 호출하고, `expect(useAppStore.getState().someState).toEqual(...)`을 사용하여 상태 변경 결과를 검증합니다.
         4.  비동기 액션 테스트 시, MSW 핸들러를 사용하여 API 호출을 모킹하고, `waitFor` 등을 사용하여 비동기 완료 후 상태를 검증합니다.
 
+---
+
+이렇게 Phase 2의 마지막에 테스트 테스크를 추가함으로써, UI 컴포넌트 리팩토링이 의도한 대로 Zustand 액션 시스템과 잘 연동되는지를 체계적으로 검증할 수 있습니다. 이는 리팩토링 과정의 안정성을 크게 높여줄 것입니다.
+
 **Phase 2: UI 컴포넌트 리팩토링 (Calling Actions)**
 
-*   **테스크 2.1: `CardNode` 리팩토링**
-    *   **파일:** `src/components/board/nodes/CardNode.tsx`
+오케이, 기존 Phase 2 계획에 컴포넌트/훅 분리 및 LoC 관리 지침을 통합하여 수정하겠습니다. AI Agent가 각 단계를 명확히 이해하고 실행할 수 있도록 구체적인 파일 경로와 작업을 명시합니다.
+
+---
+
+**리팩토링 계획: Phase 2 수정안 (UI 컴포넌트 리팩토링 및 LoC 관리)**
+
+**목표:** UI 컴포넌트의 역할을 인터랙션 감지 및 Zustand 액션 호출로 제한하고, 코드베이스의 가독성 및 유지보수성 향상을 위해 파일 길이를 500 LoC 내외로 관리합니다.
+
+*   **테스크 2.1: `CardNode` 리팩토링 (Zustand 액션 호출 + LoC 관리)**
+    *   **대상 파일:**
+        *   `src/components/board/nodes/CardNode.tsx` (수정)
+        *   (신규) `src/components/board/nodes/CardHeader.tsx`
+        *   (신규) `src/components/board/nodes/CardContent.tsx`
+        *   (신규) `src/components/board/hooks/useCardNodeInteraction.ts`
     *   **작업:**
-        1.  `useAppStore` 훅을 사용하여 필요한 상태(`selected`, `isExpanded` - 전역 관리 시)와 액션(`selectCard`, `toggleExpandCard`)을 가져옵니다.
-        2.  카드 전체 클릭 핸들러(`handleNodeClick`)에서 직접 상태를 변경하는 대신 `selectCard(props.id)` 액션을 호출하도록 수정합니다.
-        3.  펼침/접힘 버튼 클릭 핸들러(`handleToggleExpand`)에서 로컬 `isExpanded` 상태 변경 대신 `toggleExpandCard(props.id)` 액션을 호출하도록 수정합니다. (로컬 상태 `isExpanded` 제거 고려)
-        4.  `event.stopPropagation()`은 펼침/접힘 버튼 핸들러에 유지합니다.
-        5.  노드의 시각적 상태(선택 강조, 펼침 표시)는 Zustand 스토어에서 가져온 상태(`selectedCardIds.includes(props.id)`, `expandedCardId === props.id`)를 기반으로 결정하도록 수정합니다.
-*   **테스크 2.2: `Board` (또는 `useBoardHandlers`) 리팩토링**
-    *   **파일:** `src/components/board/components/Board.tsx`, `src/components/board/hooks/useBoardHandlers.ts`
+        1.  `CardNode.tsx`에서 `useAppStore` 훅을 사용하여 필요한 상태(`selectedCardIds`, `expandedCardId` 등)와 액션(`selectCard`, `toggleExpandCard`)을 가져옵니다.
+        2.  **[컴포넌트 분리]** `CardNode.tsx` 내부의 UI 렌더링 로직을 논리적 단위(Header, Content 등)로 나누어 각각 `CardHeader.tsx`, `CardContent.tsx`와 같은 별도의 하위 컴포넌트로 분리합니다. `CardNode.tsx`는 이 하위 컴포넌트들을 조합하고 필요한 props를 전달하는 역할을 합니다.
+        3.  **[훅 추출]** 카드 전체 클릭, 펼침/접힘 버튼 클릭 등의 사용자 인터랙션 처리 로직(이벤트 핸들러)을 `useCardNodeInteraction.ts` 커스텀 훅으로 추출합니다. 이 훅은 내부적으로 `selectCard`, `toggleExpandCard` 등의 Zustand 액션을 호출합니다.
+        4.  `CardNode.tsx` 내에서 직접 상태를 변경하거나 복잡한 로직을 처리하는 부분을 제거하고, 추출된 훅과 Zustand 액션 호출로 대체합니다.
+        5.  펼침/접힘 버튼 클릭 핸들러에서는 `event.stopPropagation()`을 유지합니다.
+        6.  카드의 시각적 상태(선택, 펼침)는 `useAppStore`에서 가져온 전역 상태를 기반으로 결정되도록 합니다.
+        7.  **[LoC 관리]** 리팩토링 후 `CardNode.tsx` 및 새로 생성된 관련 파일들의 라인 수가 가급적 500 라인을 넘지 않도록 합니다. 만약 여전히 길다면 추가적인 분리(더 작은 컴포넌트, 추가 훅)를 고려합니다.
+        8.  수정된 모든 코드는 `[zustand-action-msw]` 및 `[general]` 룰을 준수해야 합니다.
+
+*   **테스크 2.2: `Board` 및 관련 Hooks 리팩토링 (Zustand 액션 호출 + LoC 관리)**
+    *   **대상 파일:**
+        *   `src/components/board/components/Board.tsx` (수정)
+        *   `src/components/board/hooks/useBoardHandlers.ts` (수정 또는 분리)
+        *   `src/components/board/hooks/useNodes.ts`, `useEdges.ts`, `useBoardUtils.ts`, `useBoardData.ts` (검토 및 필요시 수정/분리)
     *   **작업:**
-        1.  `useAppStore` 훅을 사용하여 필요한 액션(`selectCard`, `clearSelection`)을 가져옵니다.
-        2.  `onPaneClick` 핸들러에서 `clearSelection()` 액션을 호출하도록 수정합니다.
-        3.  (선택 사항) `onNodeClick` 핸들러 (만약 `CardNode` 내부 처리가 아닌 `Board` 레벨에서 처리한다면) `selectCard(node.id)` 액션을 호출하도록 수정합니다.
-        4.  React Flow의 `onSelectionChange` 콜백을 사용하여 `selectCards(selectedNodeIds)` 액션을 호출하는 로직을 추가하여 React Flow 선택 상태와 Zustand 상태를 동기화합니다. (기존 `handleSelectionChange` 로직 활용)
-*   **테스크 2.3: `Sidebar` 리팩토링**
-    *   **파일:** `src/components/layout/Sidebar.tsx`
+        1.  `Board.tsx` 또는 관련 훅(`useBoardHandlers.ts` 등)에서 `useAppStore` 훅을 사용하여 필요한 액션(`clearSelection`, `selectCards` 등)을 가져옵니다.
+        2.  `onPaneClick` 핸들러 로직을 검토하고, 상태 변경이 필요하면 `clearSelection()`과 같은 Zustand 액션을 호출하도록 수정합니다. (현재 `useBoardHandlers` 훅에서 처리될 수 있음)
+        3.  React Flow의 `onSelectionChange` 콜백에서 Zustand의 `selectCards` 액션을 호출하여 선택 상태를 동기화하는 로직을 확인하고 필요시 개선합니다. (현재 `useBoardHandlers` 훅에서 처리될 수 있음)
+        4.  **[훅 검토 및 분리]** 기존 커스텀 훅들(`useNodes`, `useEdges`, `useBoardHandlers`, `useBoardUtils`, `useBoardData`)의 역할과 크기를 검토합니다. 특정 훅이 너무 많은 책임을 지거나 LoC가 500을 초과할 경우, 논리적인 단위로 더 작은 훅으로 분리하는 것을 고려합니다. (예: `useBoardHandlers` -> `useBoardSelectionHandler`, `useBoardDragHandler`)
+        5.  **[LoC 관리]** 각 훅 파일 및 `Board.tsx`의 LoC가 가급적 500 라인을 넘지 않도록 유지합니다.
+        6.  수정된 모든 코드는 `[zustand-action-msw]` 및 `[general]` 룰을 준수해야 합니다.
+
+*   **테스크 2.3: `Sidebar` 리팩토링 (Zustand 액션 호출 + LoC 관리)**
+    *   **대상 파일:** `src/components/layout/Sidebar.tsx` (수정)
     *   **작업:**
-        1.  `useAppStore` 훅을 사용하여 필요한 상태(`selectedCardId` 또는 `selectedCardIds`)와 액션(`selectCard`)을 가져옵니다.
-        2.  사이드바 카드 목록 아이템 클릭 핸들러에서 `selectCard(clickedCardId)` 액션을 호출하도록 수정합니다.
-        3.  선택된 카드 정보 표시는 Zustand 스토어의 상태를 기반으로 렌더링하도록 합니다.
-*   **테스크 2.4: `Toolbars` (Main, Project, Shortcut) 리팩토링**
-    *   **파일:** `src/components/layout/MainToolbar.tsx`, `src/components/layout/ProjectToolbar.tsx`, `src/components/layout/ShortcutToolbar.tsx`
+        1.  `useAppStore` 훅을 사용하여 필요한 상태(`selectedCardId` 등)와 액션(`selectCard`)을 가져옵니다.
+        2.  사이드바 내 카드 목록 아이템 클릭 핸들러에서 직접 상태를 변경하는 대신 `selectCard(clickedCardId)` 액션을 호출하도록 수정합니다.
+        3.  선택된 카드 강조 등 UI 표시는 `useAppStore`의 상태를 기반으로 하도록 합니다.
+        4.  **[LoC 관리]** `Sidebar.tsx` 파일의 LoC를 검토하고, 500 라인을 초과하거나 로직이 과도하게 복잡할 경우 하위 컴포넌트 또는 커스텀 훅으로 분리하는 것을 고려합니다. (예: `SidebarCardList`, `useSidebarInteractions`)
+        5.  수정된 모든 코드는 `[zustand-action-msw]` 및 `[general]` 룰을 준수해야 합니다.
+
+*   **테스크 2.4: `Toolbars` (Main, Project, Shortcut) 리팩토링 (Zustand 액션 호출 + LoC 관리)**
+    *   **대상 파일:** `src/components/layout/MainToolbar.tsx`, `src/components/layout/ProjectToolbar.tsx`, `src/components/layout/ShortcutToolbar.tsx` (수정)
     *   **작업:**
-        1.  `useAppStore` 훅을 사용하여 필요한 액션(`applyLayout`, `toggleSidebar`, `createCard`, `updateBoardSettings` 등)을 가져옵니다.
-        2.  각 툴바 버튼의 클릭 핸들러에서 해당 Zustand 액션을 호출하도록 수정합니다. (예: 수평 레이아웃 버튼 클릭 시 `applyLayout('horizontal')` 호출)
+        1.  각 툴바 컴포넌트에서 `useAppStore` 훅을 사용하여 필요한 액션(`applyLayout`, `toggleSidebar`, `createCard`, `updateBoardSettings`, `signOut` 등)을 가져옵니다.
+        2.  툴바 내 버튼들의 클릭 핸들러에서 해당 Zustand 액션을 직접 호출하도록 수정합니다. (예: 수평 레이아웃 버튼 클릭 -> `applyLayout('horizontal')`)
+        3.  **(LoC 관리)** 각 툴바 컴포넌트의 LoC를 검토하고, 복잡성이 높거나 길이가 길 경우 하위 컴포넌트로 분리하는 것을 고려합니다. (일반적으로 툴바는 복잡하지 않을 수 있음)
+        4.  수정된 모든 코드는 `[zustand-action-msw]` 및 `[general]` 룰을 준수해야 합니다.
+
+*   **테스크 2.5: UI 컴포넌트 테스트 작성/업데이트 (액션 호출 검증)**
+    *   **대상 파일:**
+        *   `src/components/board/nodes/CardNode.test.tsx` (또는 신규 생성)
+        *   `src/components/board/components/Board.test.tsx` (또는 신규 생성, 핸들러 로직 테스트 포함)
+        *   `src/components/layout/Sidebar.test.tsx` (또는 신규 생성)
+        *   `src/components/layout/MainToolbar.test.tsx`, `ProjectToolbar.test.tsx`, `ShortcutToolbar.test.tsx` (또는 신규 생성)
+        *   Phase 2에서 리팩토링된 다른 UI 컴포넌트의 테스트 파일
+    *   **작업:**
+        1.  `@testing-library/react`와 `vitest` (또는 Jest)를 사용하여 각 리팩토링된 UI 컴포넌트에 대한 테스트를 작성하거나 업데이트합니다.
+        2.  **[Zustand 모킹]** 각 테스트 케이스에서 `vi.mock`을 사용하여 `useAppStore` 훅을 모킹합니다. 모킹된 스토어는 다음을 수행해야 합니다:
+            *   테스트 시나리오에 필요한 **초기 상태**를 제공합니다. (예: 특정 카드가 선택된 상태, 사이드바가 열린 상태 등)
+            *   검증하려는 **액션 함수**들을 `vi.fn()`으로 대체하여 스파이(spy) 역할을 하도록 합니다.
+        3.  **[사용자 인터랙션 시뮬레이션]** `@testing-library/user-event` 또는 `fireEvent`를 사용하여 사용자의 클릭, 입력 등 UI 인터랙션을 시뮬레이션합니다.
+        4.  **[액션 호출 검증]** 인터랙션 발생 후, 모킹된 Zustand 액션 함수가 **예상된 인자**와 함께 **정확히 호출되었는지** `expect(...).toHaveBeenCalledWith(...)` 등을 사용하여 검증합니다.
+        5.  **[렌더링 검증]** 모킹된 Zustand 스토어의 상태에 따라 컴포넌트가 **올바르게 렌더링**되는지(예: 선택 시 강조 표시, 상태에 따른 텍스트 변화 등) `expect(screen.getBy...)` 등을 사용하여 검증합니다.
+        6.  **[MSW (필요시)]** 만약 UI 인터랙션이 호출하는 Zustand 액션이 내부적으로 API를 호출하고, 그 결과에 따라 UI가 변경되어야 하는 로직이 *컴포넌트 레벨에서 중요하게 검증되어야 한다면* (일반적으로는 액션 단위 테스트에서 충분함), 해당 테스트 케이스에서 MSW 핸들러를 설정하여 API 응답을 모킹합니다. 하지만 주된 초점은 액션 호출 자체를 검증하는 데 둡니다.
+        7.  작성된 모든 테스트는 `[package]` 룰의 테스트 관련 지침(파일 위치 등)을 준수해야 합니다.
+
+---
+
+이 수정된 Phase 2 계획은 각 컴포넌트의 리팩토링 작업과 함께 코드 길이 관리를 명시적으로 포함하여, LLM Agent가 더 구조적이고 유지보수하기 좋은 코드를 생성하도록 유도할 것입니다.
 
 **Phase 3: 비동기 로직 통합 (API Calls in Actions)**
 
