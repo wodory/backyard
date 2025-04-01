@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
-import { NodeChange, EdgeChange } from '@xyflow/react';
+import { NodeChange, EdgeChange, Position, MarkerType, ConnectionLineType } from '@xyflow/react';
 
 // 모듈 모킹을 가장 상단에 배치 (호이스팅 문제 방지)
 // board-utils 모킹
@@ -70,7 +70,12 @@ vi.mock('@/lib/layout-utils', () => ({
       ]
     };
   }),
-  getGridLayout: vi.fn().mockImplementation((nodes) => nodes)
+  getGridLayout: vi.fn().mockImplementation((nodes: any[]) => {
+    return nodes.map(node => ({
+      ...node,
+      position: { x: 100, y: 100 } // 그리드 레이아웃에서는 모든 노드가 같은 위치를 가진다고 가정
+    }));
+  })
 }));
 
 // toast 모킹
@@ -84,9 +89,16 @@ vi.mock('sonner', () => ({
 
 // 실제 import - 모든 모킹이 완료된 후 임포트
 import { useBoardStore } from './useBoardStore';
-import { DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
+import { DEFAULT_BOARD_SETTINGS, loadBoardSettingsFromServer, applyEdgeSettings } from '@/lib/board-utils';
 import { Node, Edge, Connection } from '@xyflow/react';
 import { CardData } from '@/components/board/types/board-types';
+import { toast } from 'sonner';
+import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
+
+// 모킹된 함수에 대한 타입 설정
+const mockedApplyEdgeSettings = vi.mocked(applyEdgeSettings);
+const mockedGetGridLayout = vi.mocked(getGridLayout);
+const mockedLoadBoardSettingsFromServer = vi.mocked(loadBoardSettingsFromServer);
 
 // 전역 스토리지 상태를 추적하기 위한 객체
 const storageCache: Record<string, string> = {};
@@ -489,5 +501,290 @@ describe('useBoardStore', () => {
       // 에러 처리 로직이 구현되지 않은 경우 테스트 실패
       expect(error).toBeUndefined(); 
     }
+  });
+
+  // 새로 추가된 테스트 케이스들
+
+  it('onConnect 액션이 엣지를 생성해야 함', () => {
+    // 노드 추가
+    const testNodes: Node<CardData>[] = [
+      {
+        id: 'test-node-1',
+        type: 'default',
+        position: { x: 100, y: 200 },
+        targetPosition: Position.Left,
+        data: {
+          id: 'test-node-1',
+          title: '테스트 노드 1',
+          content: '테스트 내용 1',
+        },
+      },
+      {
+        id: 'test-node-2',
+        type: 'default',
+        position: { x: 300, y: 200 },
+        targetPosition: Position.Left,
+        data: {
+          id: 'test-node-2',
+          title: '테스트 노드 2',
+          content: '테스트 내용 2',
+        },
+      }
+    ];
+    
+    useBoardStore.getState().setNodes(testNodes);
+    
+    // 연결 객체 생성
+    const connection: Connection = {
+      source: 'test-node-1',
+      target: 'test-node-2',
+      sourceHandle: 'right',
+      targetHandle: 'left',
+    };
+    
+    // onConnect 액션 호출
+    useBoardStore.getState().onConnect(connection);
+    
+    // 엣지가 생성되었는지 확인
+    const state = useBoardStore.getState();
+    expect(state.edges.length).toBe(1);
+    expect(state.edges[0].source).toBe('test-node-1');
+    expect(state.edges[0].target).toBe('test-node-2');
+    expect(state.edges[0].type).toBe('custom');
+    
+    // toast가 호출되었는지 확인
+    expect(toast.success).toHaveBeenCalledWith('카드가 연결되었습니다.');
+  });
+
+  it('동일한 노드에 연결 시도할 경우 onConnect 액션이 엣지를 생성하지 않아야 함', () => {
+    // 노드 추가
+    const testNode: Node<CardData> = {
+      id: 'test-node-1',
+      type: 'default',
+      position: { x: 100, y: 200 },
+      data: {
+        id: 'test-node-1',
+        title: '테스트 노드 1',
+        content: '테스트 내용 1',
+      },
+    };
+    
+    useBoardStore.getState().setNodes([testNode]);
+    
+    // 같은 노드에 연결 시도
+    const connection: Connection = {
+      source: 'test-node-1',
+      target: 'test-node-1',
+      sourceHandle: null,
+      targetHandle: null,
+    };
+    
+    // onConnect 액션 호출
+    useBoardStore.getState().onConnect(connection);
+    
+    // 엣지가 생성되지 않았는지 확인
+    const state = useBoardStore.getState();
+    expect(state.edges.length).toBe(0);
+    
+    // 에러 toast가 호출되었는지 확인
+    expect(toast.error).toHaveBeenCalledWith('같은 카드에 연결할 수 없습니다.');
+  });
+
+  it('applyGridLayout 액션이 노드를 격자 형태로 배치해야 함', () => {
+    // 노드 추가
+    const testNodes: Node<CardData>[] = [
+      {
+        id: 'test-node-1',
+        type: 'default',
+        position: { x: 100, y: 200 },
+        data: {
+          id: 'test-node-1',
+          title: '테스트 노드 1',
+          content: '테스트 내용 1',
+        },
+      },
+      {
+        id: 'test-node-2',
+        type: 'default',
+        position: { x: 300, y: 400 },
+        data: {
+          id: 'test-node-2',
+          title: '테스트 노드 2',
+          content: '테스트 내용 2',
+        },
+      }
+    ];
+    
+    useBoardStore.getState().setNodes(testNodes);
+    
+    // saveLayout 메서드 모킹
+    const originalSaveLayout = useBoardStore.getState().saveLayout;
+    const saveLayoutMock = vi.fn().mockReturnValue(true);
+    useBoardStore.getState().saveLayout = saveLayoutMock;
+    
+    // applyGridLayout 호출
+    useBoardStore.getState().applyGridLayout();
+    
+    // 레이아웃이 적용되었는지 확인
+    const state = useBoardStore.getState();
+    expect(state.hasUnsavedChanges).toBe(true);
+    
+    // getGridLayout 함수가 호출되었는지 확인
+    expect(mockedGetGridLayout).toHaveBeenCalledWith(testNodes);
+    
+    // saveLayout이 호출되었는지 확인
+    expect(saveLayoutMock).toHaveBeenCalled();
+    
+    // toast가 호출되었는지 확인
+    expect(toast.success).toHaveBeenCalledWith('카드가 격자 형태로 배치되었습니다.');
+    
+    // 원래 함수로 복원
+    useBoardStore.getState().saveLayout = originalSaveLayout;
+  });
+
+  it('updateEdgeStyles 액션이 엣지 스타일을 올바르게 업데이트해야 함', () => {
+    // 엣지 추가
+    const testEdges: Edge[] = [
+      {
+        id: 'test-edge-1',
+        source: 'test-node-1',
+        target: 'test-node-2',
+        type: 'custom',
+        style: { strokeWidth: 1, stroke: '#000000' }
+      }
+    ];
+    
+    useBoardStore.getState().setEdges(testEdges);
+    
+    // 새 설정
+    const newSettings = {
+      ...DEFAULT_BOARD_SETTINGS,
+      edgeColor: '#FF0000',
+      strokeWidth: 2
+    };
+    
+    // updateEdgeStyles 호출
+    useBoardStore.getState().updateEdgeStyles(newSettings);
+    
+    // applyEdgeSettings 함수가 호출되었는지 확인
+    expect(mockedApplyEdgeSettings).toHaveBeenCalledWith(testEdges, newSettings);
+    
+    // 엣지 스타일이 업데이트되었는지 확인
+    const state = useBoardStore.getState();
+    expect(state.edges[0].style).toEqual(
+      expect.objectContaining({
+        strokeWidth: 2,
+        stroke: '#FF0000'
+      })
+    );
+  });
+
+  it('엣지가 없는 경우 updateEdgeStyles 액션이 실행되지 않아야 함', () => {
+    // 엣지 배열을 비워둠
+    useBoardStore.getState().setEdges([]);
+    
+    // 새 설정
+    const newSettings = {
+      ...DEFAULT_BOARD_SETTINGS,
+      edgeColor: '#FF0000',
+      strokeWidth: 2
+    };
+    
+    // updateEdgeStyles 호출
+    useBoardStore.getState().updateEdgeStyles(newSettings);
+    
+    // applyEdgeSettings 함수가 호출되지 않았는지 확인
+    expect(mockedApplyEdgeSettings).not.toHaveBeenCalled();
+  });
+
+  it('loadBoardSettingsFromServerIfAuthenticated 액션이 인증된 사용자의 설정을 로드해야 함', async () => {
+    // loadBoardSettingsFromServer를 모킹
+    const mockSettings = {
+      edgeColor: '#0000FF',
+      strokeWidth: 3,
+      animated: true,
+      markerEnd: MarkerType.Arrow,
+      connectionLineType: ConnectionLineType.SmoothStep,
+      snapToGrid: true,
+      snapGrid: [30, 30] as [number, number],
+      markerSize: 10,
+      selectedEdgeColor: '#FF0000'
+    };
+    
+    mockedLoadBoardSettingsFromServer.mockResolvedValueOnce(mockSettings);
+    
+    // 엣지 추가
+    const testEdges: Edge[] = [
+      {
+        id: 'test-edge-1',
+        source: 'test-node-1',
+        target: 'test-node-2',
+        type: 'custom',
+        style: { strokeWidth: 1, stroke: '#000000' }
+      }
+    ];
+    
+    useBoardStore.getState().setEdges(testEdges);
+    
+    // 설정 로드 호출 (인증된 사용자)
+    await useBoardStore.getState().loadBoardSettingsFromServerIfAuthenticated(true, 'test-user-id');
+    
+    // 서버에서 설정을 로드했는지 확인
+    expect(mockedLoadBoardSettingsFromServer).toHaveBeenCalledWith('test-user-id');
+    
+    // 설정이 업데이트되었는지 확인
+    const state = useBoardStore.getState();
+    expect(state.boardSettings).toEqual(mockSettings);
+    
+    // 엣지 스타일이 업데이트되었는지 확인
+    expect(state.edges[0].style).toEqual(
+      expect.objectContaining({
+        strokeWidth: 3,
+        stroke: '#0000FF'
+      })
+    );
+  });
+
+  it('loadBoardSettingsFromServerIfAuthenticated 액션이 인증되지 않은 사용자의 설정을 로드하지 않아야 함', async () => {
+    // 설정 로드 호출 (인증되지 않은 사용자)
+    await useBoardStore.getState().loadBoardSettingsFromServerIfAuthenticated(false);
+    
+    // 서버에서 설정을 로드하지 않았는지 확인
+    expect(mockedLoadBoardSettingsFromServer).not.toHaveBeenCalled();
+    
+    // 설정이 변경되지 않았는지 확인
+    const state = useBoardStore.getState();
+    expect(state.boardSettings).toEqual(DEFAULT_BOARD_SETTINGS);
+  });
+
+  it('setHasUnsavedChanges 액션이 상태를 올바르게 업데이트해야 함', () => {
+    // 초기값 확인
+    expect(useBoardStore.getState().hasUnsavedChanges).toBe(false);
+    
+    // 상태 변경
+    useBoardStore.getState().setHasUnsavedChanges(true);
+    
+    // 변경됐는지 확인
+    expect(useBoardStore.getState().hasUnsavedChanges).toBe(true);
+    
+    // 다시 변경
+    useBoardStore.getState().setHasUnsavedChanges(false);
+    
+    // 변경됐는지 확인
+    expect(useBoardStore.getState().hasUnsavedChanges).toBe(false);
+  });
+
+  it('setReactFlowInstance 액션이 인스턴스를 올바르게 설정해야 함', () => {
+    // 초기값 확인
+    expect(useBoardStore.getState().reactFlowInstance).toBeNull();
+    
+    // 모의 인스턴스 생성
+    const mockInstance = { project: vi.fn(), getNodes: vi.fn() };
+    
+    // 인스턴스 설정
+    useBoardStore.getState().setReactFlowInstance(mockInstance);
+    
+    // 설정됐는지 확인
+    expect(useBoardStore.getState().reactFlowInstance).toBe(mockInstance);
   });
 }); 
