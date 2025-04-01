@@ -42,10 +42,11 @@ export default mergeConfig(
         '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,storybook,eslint,prettier}.config.*', // 각종 설정 파일
         '**/prisma/seed/**', // Prisma Seed 파일
         '**/scripts/**', // 스크립트 폴더
-        '**/src/tests/mocks/**', // 목업 폴더
-        '**/src/tests/msw/**', // MSW 폴더
-        '**/src/tests/utils/**', // 테스트 유틸리티 폴더
+        // '**/src/tests/mocks/**', // 목업 폴더
+        // '**/src/tests/msw/**', // MSW 폴더
+        // '**/src/tests/utils/**', // 테스트 유틸리티 폴더
         '**/src/setupTests.ts', // 테스트 설정 파일
+        '**/src/tests/**', // 테스트 관련 폴더
         './*.config.js', // 루트 경로의 config 파일들
         './*.config.ts',
         './*.config.mjs',

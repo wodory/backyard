@@ -1,8 +1,8 @@
 /**
  * 파일명: server.ts
- * 목적: MSW 서버 설정
- * 역할: 테스트를 위한 API 모킹 서버 제공
- * 작성일: 2024-10-12
+ * 목적: MSW 테스트 서버 설정
+ * 역할: API 요청을 모킹하기 위한 MSW 서버 제공
+ * 작성일: 2024-03-31
  */
 
 import { setupServer } from 'msw/node';
@@ -13,7 +13,7 @@ import createLogger from '@/lib/logger';
 const logger = createLogger('MSWServer');
 
 // MSW 서버 설정
-export const server = setupServer(...handlers);
+export const server = setupServer();
 
 /**
  * setupMSW: 테스트에서 MSW 서버 설정

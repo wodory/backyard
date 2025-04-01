@@ -1,14 +1,16 @@
 /**
  * 파일명: setup.ts
- * 목적: 테스트 환경 설정
- * 역할: 테스트에 필요한 모킹과 환경 설정을 제공
- * 작성일: 2024-03-26
+ * 목적: Vitest 테스트 설정
+ * 역할: 테스트 환경 설정 및 전역 설정 제공
+ * 작성일: 2024-03-31
  */
 
 import '@testing-library/jest-dom/vitest';
 import { beforeEach, afterEach, vi, expect } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { beforeAll, afterAll } from 'vitest';
+import { server } from './msw/server';
 
 // Testing Library의 jest-dom 매처 확장
 expect.extend(matchers);
@@ -543,3 +545,15 @@ afterEach(() => {
     }
   }
 });
+
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'bypass' })
+})
+
+afterAll(() => {
+  server.close()
+})
+
+afterEach(() => {
+  server.resetHandlers()
+})
