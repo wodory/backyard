@@ -1,0 +1,73 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+**Rule 이름:** 종합적인 코드 경로 및 예외 처리 테스트 규칙 (Comprehensive Code Path and Exception Handling Testing Rule)
+
+**규칙 내용:**
+
+---
+
+**규칙: 종합적인 코드 경로 및 예외 처리 테스트**
+
+**1. 목표:**
+모든 `.ts` 파일에 대해 **라인, 브랜치, 함수 커버리지 90% 이상** 달성을 목표로 합니다. 이를 위해 함수의 모든 가능한 실행 경로(성공, 실패, 예외, 환경 분기 등)를 테스트 케이스로 작성하고 검증합니다. 특히 **브랜치 커버리지** 확보에 중점을 둡니다.
+
+**2. 핵심 원칙:**
+*   **모든 분기 테스트:** `if/else`, `try/catch`, `switch`, 삼항 연산자, 논리 연산자(||, &&)의 단축 평가 등 모든 조건 분기문의 **각 브랜치가 최소 한 번 이상 실행**되도록 테스트 케이스를 작성해야 합니다.
+*   **철저한 모킹:** 외부 의존성(Supabase Client 메서드, `fetch`, 스토리지 API, `crypto`, `window` 객체 및 속성, `Date`, `process.env`, `logger` 등)은 **반드시 모킹**합니다. 모킹 시 성공 시나리오뿐만 아니라 **다양한 실패/예외 시나리오** (예: API 호출 실패, 데이터 없음, 권한 없음, 네트워크 오류, 예외 발생 등)를 시뮬레이션해야 합니다.
+*   **명시적 에러 검증:** 함수가 에러를 `throw` 하도록 설계된 경우, 해당 에러 조건을 발생시키고 에러가 **실제로 던져지는지** `expect(...).rejects.toThrow()` (async) 또는 `try/catch`와 `expect` (sync)를 사용하여 명시적으로 검증해야 합니다. 에러 객체 자체(`toBe`, `toBeInstanceOf`, `toHaveProperty`)를 확인하는 것이 좋습니다.
+*   **반환 값 및 부수 효과 검증:** 함수의 모든 가능한 반환 값을 검증하고, 함수 실행으로 인해 발생하는 부수 효과(예: `setAuthData` 호출, `window.location` 변경 시도, `logger` 호출 등)도 `expect(...).toHaveBeenCalledWith(...)` 등을 사용하여 검증해야 합니다.
+*   **환경 분기 테스트:** `isClient()`, `isClientEnvironment()` 등 환경에 따라 로직이 분기되는 경우, 각 환경(클라이언트/서버)을 시뮬레이션하는 별도의 테스트 케이스를 작성하여 해당 환경의 로직이 실행되는지 검증해야 합니다.
+
+**3. 필수 조치 패턴:**
+
+*   **(A) `if (condition)` / `else` 블록:**
+    *   `condition`이 `true`인 경우와 `false`인 경우를 모두 테스트합니다.
+    *   각 경우에 대해 해당 블록 내부 로직 실행 및 결과/부수 효과를 검증합니다.
+
+*   **(B) `try...catch` 블록:**
+    *   **`try` 성공 경로:** `try` 블록 내의 작업(예: `await someOperation()`)이 성공하는 시나리오를 테스트하고, 이후 로직 및 최종 반환 값을 검증합니다.
+    *   **`catch` 실행 경로:** `try` 블록 내의 작업이 **에러를 발생시키도록 모킹**하고, `catch` 블록이 실행되는지 검증합니다.
+        *   `catch` 블록이 에러를 다시 `throw`하면, `expect(...).rejects.toThrow()`로 검증합니다.
+        *   `catch` 블록이 에러를 처리하고 특정 값을 반환하면(예: `null`, `false`, 오류 객체), 해당 반환 값을 검증하고, 관련 로깅(`logger.error` 등) 호출 여부도 검증합니다.
+
+*   **(C) API/외부 호출 후 `error` 객체 확인:**
+    ```typescript
+    const { data, error } = await someApiCall(...);
+    if (error) { // <-- 브랜치 1
+      logger.error(...) // 선택적 로깅 검증
+      throw error;      // <-- 이 throw 검증 필수
+    }
+    // <-- 브랜치 2: 성공 경로 로직 검증 필수
+    processData(data);
+    return data;
+    ```
+    *   **에러 경로 (브랜치 1):** `someApiCall`이 `{ data: null, error: testError }`를 반환하도록 모킹하고, `logger.error` 호출(선택적) 및 `expect(...).rejects.toThrow(testError)`를 검증합니다.
+    *   **성공 경로 (브랜치 2):** `someApiCall`이 `{ data: validData, error: null }`를 반환하도록 모킹하고, 이후 로직(`processData(data)`) 실행 및 최종 반환 값(`data`)을 검증합니다.
+
+*   **(D) `fetch` 응답 처리:**
+    ```typescript
+    const response = await fetch(...);
+    if (!response.ok) { // <-- 브랜치 1
+       // 에러 처리 로직 검증
+       throw new Error(...); // <-- throw 검증 또는 다른 처리 검증
+    }
+    // <-- 브랜치 2: 성공 경로 로직 검증 필수
+    const data = await response.json();
+    // ...
+    ```
+    *   **실패 경로 (브랜치 1):** `fetch`가 `{ ok: false, status: ..., statusText: ..., json: ... }`를 반환하도록 모킹하고, 에러 처리 로직(throw 또는 다른 반환)을 검증합니다. `response.json()`이나 `response.text()` 호출 검증도 포함될 수 있습니다.
+    *   **성공 경로 (브랜치 2):** `fetch`가 `{ ok: true, json: ... }`를 반환하도록 모킹하고, `response.json()` 호출 및 이후 로직을 검증합니다. `response.json()` 자체가 실패하는 경우(`Promise.reject` 모킹)도 테스트합니다.
+
+*   **(E) 환경 의존적 코드:**
+    *   **브라우저 API (`localStorage`, `window.location` 등):** `vi.stubGlobal`을 사용하여 해당 API를 모킹하고, 함수가 이 API를 올바르게 호출하는지(`toHaveBeenCalledWith`) 또는 속성을 올바르게 설정하려고 시도하는지 검증합니다. API 호출 실패 시나리오도 모킹하여 테스트합니다.
+    *   **환경 분기 함수 (`isClient`, `isClientEnvironment`):** 이 함수들을 직접 모킹하여 각각 `true`/`false`를 반환하는 테스트 케이스를 만들고, 함수 본문 내의 해당 분기 로직이 실행되는지 확인합니다.
+
+*   **(F) 단순 래퍼 함수 (`getSession`, `getUser` 등):**
+    *   함수가 내부적으로 의존하는 함수(예: `getAuthClient().auth.getSession`)를 정확히 호출하는지 `toHaveBeenCalled()` 또는 `toHaveBeenCalledWith()`로 검증합니다.
+    *   내부 함수 호출의 성공/실패 시 래퍼 함수가 올바른 값을 반환하거나 에러를 전파하는지 검증합니다.
+
+**4. 검증:**
+각 테스트 케이스 실행 후, Vitest 커버리지 리포트(`npx vitest run --coverage`)를 확인하여 **라인, 브랜치, 함수 커버리지가 모두 90% 이상**인지 확인합니다. 특히 **브랜치 커버리지**가 목표치에 도달했는지 주의 깊게 살펴봅니다.

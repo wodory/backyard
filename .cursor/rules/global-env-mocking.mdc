@@ -1,15 +1,12 @@
 ---
 description: 
-globs: 
-alwaysApply: true
----
----
-description: 환경(클라이언트/서버)에 따라 다르게 동작하는 코드를 테스트하기 위해, 내부 환경 감지 로직 대신 전역 환경 자체를 모킹하는 규칙입니다.
-globs:
-  - "**/*.{test.ts,test.tsx}" # 테스트 파일 대상
-alwaysApply: true
+globs: src/**/*.test.ts,src/**/*.test.tsx
+alwaysApply: false
 ---
 # Rule: [env-mocking] 환경 의존성 코드 테스트 전략
+
+## Description
+환경(클라이언트/서버)에 따라 다르게 동작하는 코드를 테스트하기 위해, 내부 환경 감지 로직 대신 전역 환경 자체를 모킹하는 규칙입니다.
 
 ## 1. 핵심 원칙: 환경 자체를 모킹하라
 

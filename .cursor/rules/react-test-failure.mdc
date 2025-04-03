@@ -1,0 +1,116 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# React Test Debugging Playbook for Cursor Agent
+
+**목표:** React 컴포넌트의 UI 단위 테스트 실패 시, Cursor AI 에이전트가 원인을 진단하고 해결하도록 안내하는 규칙입니다.
+
+**필수 입력:** 에이전트에게 지시할 때는 **(1) 실패한 테스트 코드 전체**와 **(2) 발생한 정확한 오류 메시지**를 함께 제공해주세요.
+
+**작동 방식:** 제공된 정보와 아래 규칙을 바탕으로 실패 원인을 추정하고 해결책을 적용합니다. 하나의 문제가 해결되면 다른 문제가 드러날 수 있으므로, 테스트가 통과할 때까지 이 지침을 반복적으로 참조할 수 있습니다.
+
+## 1. UI 요소 선택 실패 (Rule #1: Element Selection)
+
+### 진단 힌트:
+오류 메시지에 `Unable to find an element...`, `Found multiple elements...` 등이 포함된 경우 이 규칙을 우선 확인합니다.
+
+### 문제 유형:
+- ❌ 컴포넌트 마크업과 테스트 선택자 불일치 (예: 태그 변경, 텍스트 오타)
+- ❌ `querySelector` 등 불안정한 선택자 사용
+- ❌ 복잡한 DOM 구조 내 요소 식별 어려움
+
+### 해결 패턴 (우선순위 순서):
+1.  ✅ **Role 기반 (최우선):** 사용자가 상호작용하는 방식(`getByRole`)을 사용합니다. 접근성(accessibility) 이름(`name` 옵션)을 명시하는 것이 좋습니다.
+    *   예: `screen.getByRole('button', { name: /저장/i })`
+2.  ✅ **Semantic 쿼리:** `getByLabelText`, `getByPlaceholderText`, `getByText`, `getByDisplayValue` 등 의미론적이고 사용자 관점의 선택자를 사용합니다.
+    *   예: `screen.getByLabelText(/이메일/i)`, `screen.getByText('로그인')`
+3.  ✅ **Test ID (최후 수단):** 위 방법으로 선택이 어렵거나 의미론적으로 표현하기 힘든 복잡한 요소에 제한적으로 `data-testid` 속성(`getByTestId`)을 사용합니다.
+    *   마크업: `<div data-testid="custom-container">...</div>`
+    *   테스트: `screen.getByTestId('custom-container')`
+4.  **Debug:** `screen.debug()`를 사용하여 현재 렌더링된 DOM 구조를 확인하고 선택자가 올바른지 검토합니다.
+
+## 2. 비동기 로직 처리 실패 (Rule #2: Async Operations)
+
+### 진단 힌트:
+오류 메시지에 `timed out waiting...`, `Cannot read property '...' of undefined` (데이터 로딩 후 접근 시), `Warning: An update to ... inside a test was not wrapped in act(...)` 등이 포함된 경우 이 규칙을 확인합니다.
+
+### 문제 유형:
+- ❌ API 호출, 상태 업데이트 후 DOM 변경을 기다리지 않고 단언(assertion) 실행
+- ❌ `setTimeout`, `setInterval` 등 타이머 관련 로직 테스트 어려움
+- ❌ 상태 업데이트와 실제 DOM 반영 사이의 타이밍 불일치
+
+### 해결 패턴:
+- ✅ **`findBy*` 사용:** 요소가 *나중에* 나타날 것으로 예상될 때 `findBy*` 쿼리 (`findByText`, `findByRole` 등)를 사용합니다. 이는 `waitFor`와 `getBy*`를 합친 것입니다.
+    *   예: `await screen.findByText('로딩 완료')`
+- ✅ **`waitFor` 사용:** 특정 조건이 충족될 때까지 기다려야 할 때 사용합니다. 주로 여러 단언을 묶거나, 특정 요소가 사라지는 것을 기다릴 때 유용합니다.
+    *   예: `await waitFor(() => expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument())`
+    *   예: `await waitFor(() => { expect(mockApiCall).toHaveBeenCalledTimes(1); expect(screen.getByText('데이터 로드 성공')).toBeInTheDocument(); })`
+- ✅ **`act` 사용 (필요시):** 상태 업데이트를 유발하는 사용자 이벤트(`userEvent`)는 내부적으로 `act`를 사용하므로 대부분 명시적 `act` 호출은 불필요합니다. 하지만 상태 업데이트가 이벤트 핸들러 *외부*에서 발생하는 경우 등 `act` 경고가 발생하면 해당 로직을 `act`로 감싸야 할 수 있습니다. (단, `userEvent`를 먼저 검토하세요.)
+    *   **주의:** `userEvent` 사용 시 불필요한 `act` 사용은 피하세요.
+- ✅ **타이머 모킹:** `vi.useFakeTimers()` 와 `vi.runAllTimers()` (또는 `vi.advanceTimersByTime()`) 를 사용하여 타이머 의존적인 코드를 테스트합니다.
+    *   테스트 시작 전: `beforeEach(() => { vi.useFakeTimers(); });`
+    *   테스트 종료 후: `afterEach(() => { vi.runOnlyPendingTimers(); vi.useRealTimers(); });`
+    *   테스트 내: `act(() => { vi.runAllTimers(); });`
+
+## 3. 외부 의존성 모킹 실패 (Rule #3: Mocking Dependencies)
+
+### 진단 힌트:
+오류 메시지에 `TypeError: ... is not a function`, `... is undefined`, 실제 API 호출 시도 흔적, 라우터/전역 상태 관련 오류 등이 포함된 경우 이 규칙을 확인합니다.
+
+### 문제 유형:
+- ❌ API 클라이언트, `fetch` 등 네트워크 호출 모킹 실패
+- ❌ `react-router`, `zustand`, `redux` 등 외부 라이브러리/훅 모킹 실패
+- ❌ `localStorage`, `window` 객체 등 전역 객체 모킹 불완전
+
+### 해결 패턴:
+- ✅ **모듈 모킹 (`vi.mock`):** 라이브러리 전체나 특정 모듈을 모킹합니다. 파일 상단에 배치합니다.
+    *   **기본:** `vi.mock('axios');`
+    *   **구체적 구현:** `vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), }), useParams: () => ({ id: 'test-id' }), }));`
+    *   **컴포넌트 모킹:** 복잡한 자식 컴포넌트는 간단한 Mock 컴포넌트로 대체합니다.
+        `vi.mock('./components/ComplexChart', () => ({ default: (props) => <div data-testid="mock-chart">{JSON.stringify(props)}</div> }));`
+- ✅ **함수/객체 모킹 (`vi.fn`, `vi.spyOn`):**
+    *   `vi.fn()`: 간단한 함수 모킹 또는 콜백 prop 모킹에 사용합니다.
+        `const mockOnClick = vi.fn(); render(<Button onClick={mockOnClick} />);`
+    *   `vi.spyOn()`: 특정 객체의 메소드를 모킹하거나 호출 여부를 추적할 때 사용합니다. 모킹 후에는 `mockRestore()`로 복구하는 것이 좋습니다.
+        `const spy = vi.spyOn(console, 'log').mockImplementation(() => {}); ... spy.mockRestore();`
+- ✅ **전역 객체 모킹:**
+    *   `vi.stubGlobal`: `window`, `navigator` 등 전역 객체를 모킹합니다.
+        `vi.stubGlobal('localStorage', { getItem: vi.fn(), setItem: vi.fn() });`
+    *   `Object.defineProperty`: `window.location` 등 수정 불가능한 속성을 모킹할 때 사용합니다.
+- ✅ **모킹 정리:** `beforeEach` 또는 `afterEach`에서 `vi.clearAllMocks()` 또는 `vi.resetAllMocks()`를 호출하여 테스트 간 모킹 상태가 영향을 주지 않도록 합니다. `vi.restoreAllMocks()`는 spyOn으로 생성된 mock을 복원할 때 사용합니다.
+
+## 4. 상태 및 결과 검증 실패 (Rule #4: Assertion & State Validation)
+
+### 진단 힌트:
+오류 메시지에 `expect(received).toBe(expected)`, `Expected element ... to have attribute ...` 등 단언(assertion) 관련 실패가 포함된 경우 이 규칙을 확인합니다.
+
+### 문제 유형:
+- ❌ 테스트의 기대 결과가 실제 컴포넌트 동작과 다름
+- ❌ 특정 상호작용 후 상태 변화가 예상과 다름 (또는 변화 없음)
+- ❌ 로딩, 에러, 비활성화 등 다양한 상태에 대한 검증 누락
+
+### 해결 패턴:
+- ✅ **사용자 관점 우선 검증:** 내부 상태 값보다는 사용자에게 **보이는 결과**(텍스트, 활성/비활성 상태, 속성 등)를 우선적으로 검증합니다.
+    *   예: `expect(screen.getByRole('button', { name: /저장/i })).toBeDisabled();`
+    *   예: `expect(screen.getByText(/성공적으로 제출되었습니다/i)).toBeInTheDocument();`
+- ✅ **정확한 Matcher 사용:** `@testing-library/jest-dom`에서 제공하는 `.toBeInTheDocument()`, `.toBeDisabled()`, `.toHaveAttribute()`, `.toHaveValue()` 등 적절한 matcher를 사용합니다.
+- ✅ **다양한 시나리오 검증:** 성공 케이스뿐만 아니라 로딩 중 상태, 오류 발생 상태, 입력값이 유효하지 않은 경우 등 다양한 시나리오를 테스트 케이스로 분리하여 검증합니다.
+- ✅ **상태 격리:** 각 `test` 또는 `it` 블록이 독립적으로 실행되도록 `beforeEach`에서 필요한 상태(mock 호출 카운트 포함)를 초기화합니다.
+    *   예: `beforeEach(() => { vi.clearAllMocks(); // 필요한 다른 초기화 로직 추가 });`
+- ✅ **구현 기반 기대값:** 테스트는 컴포넌트의 현재 구현과 *의도된 동작*을 반영해야 합니다. 만약 기대값이 잘못되었다면, 컴포넌트 로직 또는 테스트 기대값 중 무엇을 수정해야 하는지 판단합니다.
+
+## 사용 방법 (Agent에게 지시할 때)
+
+다음과 같이 구체적인 규칙 번호와 함께 요청하면 에이전트가 더 정확하게 작업을 수행할 수 있습니다.
+
+```
+"이 테스트({filename})는 'Unable to find element' 오류가 발생합니다. Rule #1 (Element Selection)을 적용하여 선택자를 수정해 주세요."
+
+"이 테스트({filename})는 API 호출 후 결과를 기다리지 못해 실패합니다 ('timed out waiting...'). Rule #2 (Async Operations)에 따라 비동기 처리 로직을 개선해 주세요. 오류 메시지는 다음과 같습니다: {오류 메시지 붙여넣기}"
+
+"{filename} 테스트에서 'useRouter is not a function' 오류가 발생합니다. Rule #3 (Mocking Dependencies)을 사용하여 'next/navigation' 모듈을 모킹해주세요."
+
+"사용자 입력 후 버튼 상태 검증({filename})이 실패합니다 ('Expected element to be disabled...'). Rule #4 (Assertion & State Validation)를 참고하여 단언 부분을 확인하고 수정해 주세요. 현재 코드는 다음과 같습니다: {관련 코드 부분}"
+```

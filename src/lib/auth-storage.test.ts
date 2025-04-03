@@ -14,6 +14,7 @@ import {
   clearAllAuthData, 
   STORAGE_KEYS 
 } from './auth-storage';
+import createLogger from './logger';
 
 // 모듈 모킹
 vi.mock('./cookie', () => ({
@@ -22,14 +23,18 @@ vi.mock('./cookie', () => ({
   deleteAuthCookie: vi.fn()
 }));
 
-vi.mock('./logger', () => ({
-  default: vi.fn(() => ({
+vi.mock('./logger', () => {
+  const mockLogger = {
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn()
-  }))
-}));
+    error: vi.fn(),
+  };
+  return {
+    default: vi.fn(() => mockLogger),
+    createLogger: vi.fn(() => mockLogger),
+  };
+});
 
 // 쿠키 유틸리티 가져오기
 import * as cookie from './cookie';

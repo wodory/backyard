@@ -1,15 +1,8 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: src/**/*.test.ts,src/**/*.test.tsx
+alwaysApply: false
 ---
-# --- START OF FILE: .cursor/rules/vitest-mocking.mdc ---
-description: Vitest 모킹 관련 규칙 및 가이드라인
-globs:
-  - src/**/*.{test.ts,test.tsx}
-alwaysApply: true
----
-
 # Vitest 모킹 가이드라인
 
 ## 1. vi.mock 호이스팅 이해하기
