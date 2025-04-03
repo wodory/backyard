@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { X } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import TiptapEditor from "@/components/editor/TiptapEditor";
 import { DEFAULT_USER_ID } from "@/lib/constants";
 
