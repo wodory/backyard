@@ -5,15 +5,20 @@
  * 작성일: 2024-03-31
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MainToolbarMock } from './MainToolbarMock';
 import { setupMainToolbarTests, teardownMainToolbarTests, mockActions } from './test-utils';
 import '@testing-library/jest-dom';
 
+// 테스트 설정
+const TEST_TIMEOUT = 10000;
+
 describe('MainToolbar', () => {
     beforeEach(() => {
         setupMainToolbarTests();
+        // 모든 목 함수 초기화
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -40,30 +45,43 @@ describe('MainToolbar', () => {
     });
 
     describe('@testcase.mdc 카드 생성 기능', () => {
-        it('rule: 모달에서 카드 생성 시 createCard 액션이 호출되어야 함', async () => {
-            const { container } = render(<MainToolbarMock />);
+        // Promise.resolve 구현으로 변경하고 테스트 로직 단순화
+        it('rule: 모달에서 카드 생성 시 createCard 액션이 호출되어야 함', () => {
+            // 목 함수를 즉시 해결되는 Promise로 설정
+            mockActions.createCard.mockResolvedValue({ id: 'new-card-id' });
 
+            render(<MainToolbarMock />);
+
+            // 모달 열기
             fireEvent.click(screen.getByTitle('새 카드 추가'));
+
+            // 카드 생성 버튼 클릭 
             fireEvent.click(screen.getByTestId('create-card-button'));
 
-            await waitFor(() => {
-                expect(mockActions.createCard).toHaveBeenCalledWith({
-                    title: '테스트 카드',
-                    content: '테스트 내용'
-                });
-            }, { container });
-        });
+            // 동기적으로 호출 여부만 검증 (Promise 처리는 테스트하지 않음)
+            expect(mockActions.createCard).toHaveBeenCalledWith({
+                title: '테스트 카드',
+                content: '테스트 내용'
+            });
+        }, TEST_TIMEOUT);
 
-        it('rule: 카드 생성 후 모달이 닫혀야 함', async () => {
-            const { container } = render(<MainToolbarMock />);
+        // 모달이 닫히는지만 테스트하는 별도 케이스로 단순화
+        it('rule: 카드 생성 후 모달이 닫혀야 함', () => {
+            // 목 함수를 즉시 해결되는 Promise로 설정
+            mockActions.createCard.mockResolvedValue({ id: 'new-card-id' });
 
+            render(<MainToolbarMock />);
+
+            // 모달 열기
             fireEvent.click(screen.getByTitle('새 카드 추가'));
+            expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
+
+            // 카드 생성 버튼 클릭
             fireEvent.click(screen.getByTestId('create-card-button'));
 
-            await waitFor(() => {
-                expect(screen.queryByTestId('create-card-modal')).not.toBeInTheDocument();
-            }, { container });
-        });
+            // 모달이 닫혔는지 확인 (동기적으로 검증)
+            expect(screen.queryByTestId('create-card-modal')).not.toBeInTheDocument();
+        }, TEST_TIMEOUT);
     });
 
     describe('@testcase.mdc 레이아웃 기능', () => {

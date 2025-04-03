@@ -6,13 +6,15 @@
  */
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import LoginPage from './page';
 import { signIn } from 'next-auth/react';
-import { flushPromises } from '../../../tests/helper';
 
-// 모킹 설정
+// 타임아웃 설정
+const TEST_TIMEOUT = 10000;
+
+// 모듈 모킹 - 간단하게 유지
 vi.mock('next-auth/react', () => ({
   signIn: vi.fn()
 }));
@@ -37,58 +39,89 @@ describe('LoginPage', () => {
     expect(loginButton).toBeEnabled();
   });
 
-  it('Google 로그인 버튼 클릭 시 signIn이 올바른 인자와 함께 호출되어야 합니다', async () => {
+  it('Google 로그인 버튼 클릭 시 signIn이 올바른 인자와 함께 호출되어야 합니다', () => {
     render(<LoginPage />);
 
     const loginButton = screen.getByRole('button', { name: 'Google로 로그인' });
-    await userEvent.click(loginButton);
+
+    act(() => {
+      fireEvent.click(loginButton);
+    });
 
     expect(signIn).toHaveBeenCalledWith('google', { callbackUrl: '/' });
     expect(signIn).toHaveBeenCalledTimes(1);
   });
 
-  it('로그인 중에는 버튼이 비활성화되고 로딩 텍스트가 표시되어야 합니다', async () => {
-    vi.mocked(signIn).mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+  it('로그인 중에는 버튼이 비활성화되고 로딩 텍스트가 표시되어야 합니다', () => {
+    // 지연된 Promise 반환
+    vi.mocked(signIn).mockImplementation(() => {
+      return new Promise(() => { }) as any;
+    });
+
     render(<LoginPage />);
 
     const loginButton = screen.getByRole('button', { name: 'Google로 로그인' });
-    await userEvent.click(loginButton);
 
+    act(() => {
+      fireEvent.click(loginButton);
+    });
+
+    // 버튼 상태 확인
     expect(screen.getByRole('button')).toBeDisabled();
     expect(screen.getByText('로그인 중...')).toBeInTheDocument();
   });
 
   it('로그인 오류 발생 시 콘솔에 오류가 기록되어야 합니다', async () => {
-    const consoleSpy = vi.spyOn(console, 'error');
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
     const testError = new Error('로그인 실패');
-    vi.mocked(signIn).mockRejectedValueOnce(testError);
+
+    // 콜백으로 Promise reject 처리
+    vi.mocked(signIn).mockImplementationOnce(() => {
+      return Promise.reject(testError) as any;
+    });
 
     render(<LoginPage />);
 
     const loginButton = screen.getByRole('button', { name: 'Google로 로그인' });
-    await userEvent.click(loginButton);
 
-    // 비동기 처리가 필요한 경우 flushPromises 사용
-    await flushPromises();
+    // 클릭 이벤트
+    act(() => {
+      fireEvent.click(loginButton);
+    });
 
-    expect(consoleSpy).toHaveBeenCalledWith('로그인 오류:', testError);
-  });
+    // setState가 완료되기를 기다림
+    await vi.waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('로그인 오류:', testError);
+    });
 
-  // 타임아웃 문제로 스킵
-  it.skip('로그인 시도 후 버튼이 다시 활성화되어야 합니다', async () => {
+    consoleSpy.mockRestore();
+  }, TEST_TIMEOUT);  // 타임아웃 설정
+
+  it('로그인 시도 후 버튼이 다시 활성화되어야 합니다', async () => {
     const testError = new Error('로그인 실패');
-    vi.mocked(signIn).mockRejectedValueOnce(testError);
 
-    const { container } = render(<LoginPage />);
+    // Promise.reject를 반환하고 상태 변경이 발생하도록 함
+    vi.mocked(signIn).mockImplementationOnce(() => {
+      return Promise.reject(testError) as any;
+    });
 
+    render(<LoginPage />);
+
+    // 초기 버튼 상태 확인
     const loginButton = screen.getByRole('button', { name: 'Google로 로그인' });
-    await userEvent.click(loginButton);
+    expect(loginButton).toBeEnabled();
 
-    // flushPromises로 비동기 작업 처리 후, waitFor로 UI 변경 대기
-    await flushPromises();
+    // 클릭 이벤트
+    act(() => {
+      fireEvent.click(loginButton);
+    });
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Google로 로그인' })).toBeEnabled();
-    }, { container });
-  });
+    // finally 블록 실행 후 버튼 상태 확인
+    await vi.waitFor(() => {
+      // finally 블록에서 버튼이 다시 활성화됨
+      const updatedButton = screen.getByRole('button');
+      expect(updatedButton).toBeEnabled();
+      expect(updatedButton).toHaveTextContent('Google로 로그인');
+    });
+  }, TEST_TIMEOUT);  // 타임아웃 설정
 }); 

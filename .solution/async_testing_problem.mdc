@@ -1,0 +1,64 @@
+---
+description: To develop a aync testcase for UI
+globs: 
+alwaysApply: false
+---
+## 작업: 비동기 테스트 타임아웃 오류 해결 (`{target_file_or_folder}`)
+
+**목표:** `{target_file_or_folder}` 내에서 발생하는 `Test timed out` 또는 유사한 비동기 관련 오류를 해결하여 테스트가 안정적으로 통과하도록 수정합니다.
+
+**컨텍스트:**
+*   테스트가 비동기 작업(`fetch`, `Promise`, 상태 업데이트 후 UI 변경 등)을 포함하고 있으며, 이러한 작업들이 테스트 환경의 제한 시간 내에 완료되지 않거나, 상태 업데이트가 제대로 처리되지 않아 타임아웃이 발생하는 것으로 추정됩니다.
+*   `setup.ts`의 변경 (특히 모킹 방식 변경) 후 문제가 발생했을 수 있습니다.
+*   테스트 프레임워크는 Vitest, `@testing-library/react`, `@testing-library/user-event`를 사용합니다.
+
+**지시사항 (오류가 발생하는 각 테스트 파일 또는 `it` 블록에 대해 적용):**
+
+**Phase 1: 오류 분석 (`it.only` 권장)**
+
+1.  **대상 식별:** 타임아웃 오류가 발생하는 특정 테스트 파일 또는 `it` 블록을 식별합니다. 디버깅을 위해 `.only`를 사용하여 해당 테스트만 실행합니다.
+2.  **비동기 지점 파악:** 테스트 코드와 테스트 대상 컴포넌트/함수 내에서 타임아웃을 유발할 가능성이 있는 비동기 작업 지점을 정확히 파악합니다.
+    *   `fetch` 또는 다른 네트워크 요청
+    *   `Promise` 기반 로직
+    *   `setTimeout`, `setInterval` (fake timer 사용 여부 확인)
+    *   React 상태 업데이트 (`useState`, Zustand `set` 등)를 유발하는 이벤트 핸들러 또는 `useEffect` 내 비동기 로직
+3.  **상태 업데이트와 단언(Assertion) 분리:** 비동기 작업 *이후에* 발생하는 상태 업데이트와, 그 업데이트된 상태나 UI를 검증하는 `expect` 단언 부분을 명확히 구분합니다. 타임아웃은 주로 비동기 작업 후 상태/UI가 업데이트되기를 기다리는 부분에서 발생합니다.
+
+**Phase 2: 비동기 처리 수정**
+
+1.  **`act` 래퍼 적용:**
+    *   **상태 업데이트 유발 인터랙션:** `userEvent`(`click`, `type` 등) 또는 `fireEvent`를 사용하여 **React 상태 업데이트를 유발하는** 사용자 인터랙션은 **반드시 `await act(async () => { ... });`** 로 감싸야 합니다. 이는 비동기 상태 업데이트가 완료될 때까지 테스트 실행을 일시 중지시킵니다.
+    *   **상태 업데이트 유발 비동기 함수 직접 호출:** 테스트 코드에서 직접 `async` 함수를 호출하고 그 결과로 상태가 업데이트된다면, 해당 호출도 `await act(async () => { ... });` 로 감싸는 것을 고려합니다.
+    *   **동기적 상태 업데이트:** 동기적인 상태 업데이트만 유발하는 인터랙션은 `act(() => { ... });` 로 감싸도 충분할 수 있습니다.
+2.  **`waitFor` 사용:**
+    *   비동기 작업(예: `fetch`)이 완료된 후 **DOM이 업데이트되기를 기다려야 할 때** `waitFor`를 사용합니다. `expect` 단언은 `waitFor` 콜백 *내부*에 위치해야 합니다.
+    *   `waitFor`는 특정 조건(예: 특정 텍스트가 나타남, 로딩 스피너가 사라짐)이 충족될 때까지 주기적으로 콜백을 재실행합니다.
+    *   **예시:**
+        ```typescript
+        // API 호출 후 데이터가 렌더링될 때까지 기다림
+        await waitFor(() => {
+          expect(screen.getByText('데이터 로드 완료')).toBeInTheDocument();
+        });
+
+        // 특정 요소가 사라질 때까지 기다림
+        await waitFor(() => {
+          expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+        });
+        ```
+    *   `findBy*` 쿼리 (`findByText`, `findByRole` 등)는 내부에 `waitFor`가 구현되어 있으므로, 요소가 비동기적으로 나타날 때 사용하면 코드가 간결해질 수 있습니다.
+3.  **Fake Timers 확인:** `vi.useFakeTimers()`가 사용된 경우, `setTimeout`이나 `setInterval` 같은 타이머 의존 로직이 있다면, `act` 내에서 `vi.advanceTimersByTime(...)` 또는 `vi.runAllTimers()`를 호출하여 타이머를 명시적으로 진행시켜야 합니다.
+4.  **Promise/Mock 확인:** 테스트에서 사용하는 모든 비동기 모킹(`fetch`, `signIn` 등)이 프라미스를 반환하고, 테스트 흐름에 맞게 `resolve` 또는 `reject` 되는지 다시 확인합니다. `mockImplementation` 내에서 `async` 키워드가 누락되지 않았는지 확인합니다.
+5.  **정리(Cleanup) 타이밍:** `@testing-library/react`의 `cleanup` 함수는 각 테스트 후에 자동으로 호출되지만(Vitest 설정에 따라 다를 수 있음), 비동기 작업이 완전히 완료되기 전에 `cleanup`이 실행되면 문제가 발생할 수 있습니다. 모든 비동기 상호작용과 단언이 완료된 *후에* 테스트가 종료되도록 `async/await`와 `waitFor`를 올바르게 사용합니다.
+
+**Phase 3: 검증**
+
+1.  **테스트 재실행:** 수정된 테스트(`it.only` 상태)를 다시 실행하여 타임아웃 오류가 해결되었는지 확인합니다.
+2.  **반복:** 오류가 지속되면 Phase 1과 2를 반복하며 다른 비동기 지점이나 `act`/`waitFor` 사용법을 검토합니다. 문제가 해결되면 `.only`를 제거하고 다음 실패 테스트로 이동합니다.
+3.  **최종 확인:** `{target_file_or_folder}` 내 모든 타임아웃 오류가 해결될 때까지 반복합니다.
+
+**보고:**
+각 파일을 수정하고 테스트를 통과시킨 후, 주로 어떤 수정(`act` 추가/수정, `waitFor` 사용, 타이머 제어 등)을 통해 문제를 해결했는지 보고해주세요.
+
+---
+
+**사용 예시:**

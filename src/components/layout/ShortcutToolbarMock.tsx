@@ -9,13 +9,15 @@ import React from 'react';
 import { mockActions } from './test-utils';
 
 export const ShortcutToolbarMock: React.FC = () => {
-    const handleLogout = async () => {
-        try {
-            await mockActions.signOut();
-            mockActions.toast.success('로그아웃되었습니다.');
-        } catch (error) {
-            mockActions.toast.error('로그아웃 중 문제가 발생했습니다.');
-        }
+    const handleLogout = () => {
+        // Promise 체인 사용하여 분명한 흐름 제공
+        mockActions.signOut()
+            .then(() => {
+                mockActions.toast.success('로그아웃되었습니다.');
+            })
+            .catch(() => {
+                mockActions.toast.error('로그아웃 중 문제가 발생했습니다.');
+            });
     };
 
     return (

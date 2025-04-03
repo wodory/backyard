@@ -19,6 +19,14 @@ interface TagListMockProps {
     initialTags: Tag[];
 }
 
+// API 응답 타입 정의 추가
+interface ApiResponse {
+    message?: string;
+    error?: string;
+    status?: string;
+    [key: string]: any;
+}
+
 export const TagListMock: React.FC<TagListMockProps> = ({ initialTags }) => {
     const [tags, setTags] = useState(initialTags);
     const [tagToDelete, setTagToDelete] = useState<string | null>(null);
@@ -38,7 +46,7 @@ export const TagListMock: React.FC<TagListMockProps> = ({ initialTags }) => {
         try {
             const response = await mockActions.deleteTag(tagToDelete);
             if (!response.ok) {
-                const data = await response.json();
+                const data = await response.json() as ApiResponse;
                 throw new Error(data.error || '태그 삭제에 실패했습니다.');
             }
             mockActions.toast.success('태그가 삭제되었습니다.');
@@ -68,16 +76,20 @@ export const TagListMock: React.FC<TagListMockProps> = ({ initialTags }) => {
     return (
         <div>
             {tags.map(tag => (
-                <div key={tag.id}>
+                <div key={tag.id} data-testid={`tag-row-${tag.id}`}>
                     <span>{tag.name}</span>
                     <span>{tag.count > 0 ? `${tag.count}개 카드` : '0개'}</span>
                     <span>{tag.createdAt}</span>
-                    <button onClick={() => handleDeleteClick(tag.id)}></button>
+                    <button
+                        onClick={() => handleDeleteClick(tag.id)}
+                        data-testid={`delete-tag-button-${tag.id}`}
+                        aria-label={`${tag.name} 태그 삭제`}
+                    ></button>
                 </div>
             ))}
 
             {tagToDelete && (
-                <div role="dialog" aria-modal="true">
+                <div role="dialog" aria-modal="true" data-testid="delete-confirmation-dialog">
                     <h2>태그 삭제 확인</h2>
                     {(() => {
                         const tag = getTagById(tagToDelete);
@@ -90,10 +102,19 @@ export const TagListMock: React.FC<TagListMockProps> = ({ initialTags }) => {
                             </>
                         );
                     })()}
-                    <button onClick={handleDeleteConfirm} disabled={isDeleting}>
+                    <button
+                        onClick={handleDeleteConfirm}
+                        disabled={isDeleting}
+                        data-testid="delete-confirm-button"
+                    >
                         삭제
                     </button>
-                    <button onClick={handleDeleteCancel}>취소</button>
+                    <button
+                        onClick={handleDeleteCancel}
+                        data-testid="delete-cancel-button"
+                    >
+                        취소
+                    </button>
                 </div>
             )}
         </div>

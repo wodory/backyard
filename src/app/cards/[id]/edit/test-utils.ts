@@ -20,18 +20,27 @@ interface ErrorResponse {
 
 type ApiResponse = CardResponse | ErrorResponse;
 
+// API 응답 객체 타입
+export interface MockApiResponse {
+  ok: boolean;
+  status: number;
+  json: () => Promise<ApiResponse>;
+}
+
 // 모킹된 액션들
 export const mockActions = {
-  getCard: vi.fn((id: string) => Promise.resolve({
-    ok: true,
-    status: 200,
-    json: async () => ({
-      id: 'test-card-123',
-      title: '테스트 카드',
-      content: '테스트 내용',
-      cardTags: []
-    } as ApiResponse)
-  })),
+  getCard: vi.fn().mockImplementation((id: string): Promise<MockApiResponse> => {
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({
+        id: 'test-card-123',
+        title: '테스트 카드',
+        content: '테스트 내용',
+        cardTags: []
+      } as CardResponse)
+    });
+  }),
   router: {
     back: vi.fn(),
     push: vi.fn()

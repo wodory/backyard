@@ -28,8 +28,8 @@ interface CreateCardButtonProps {
   customTrigger?: React.ReactNode; // 커스텀 트리거 버튼
 }
 
-export default function CreateCardButton({ 
-  onCardCreated, 
+export default function CreateCardButton({
+  onCardCreated,
   autoOpen = false,
   onClose,
   customTrigger
@@ -53,7 +53,7 @@ export default function CreateCardButton({
   // 모달 상태 변경 처리 핸들러
   const handleOpenChange = (newOpenState: boolean) => {
     setOpen(newOpenState);
-    
+
     // 모달이 닫힐 때 onClose 콜백 호출
     if (!newOpenState && onClose) {
       onClose();
@@ -90,33 +90,36 @@ export default function CreateCardButton({
     if (isComposing.current) {
       return;
     }
-    
+
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      
+
       // 현재 입력된 태그가 비어있는 경우 처리하지 않음
-      if (!tagInput.trim()) {
+      const trimmedTag = tagInput.trim();
+      if (!trimmedTag) {
         return;
       }
-      
+
       // 쉼표로 구분된 여러 태그 처리
-      const newTags = tagInput
+      const newTags = trimmedTag
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag && !tags.includes(tag));
-      
+
       if (newTags.length > 0) {
-        setTags([...tags, ...newTags]);
+        setTags(prevTags => [...prevTags, ...newTags]);
+        setTagInput('');
+      } else {
         setTagInput('');
       }
     }
   };
-  
+
   // IME 조합 시작 핸들러
   const handleCompositionStart = () => {
     isComposing.current = true;
   };
-  
+
   // IME 조합 종료 핸들러
   const handleCompositionEnd = () => {
     isComposing.current = false;
@@ -129,7 +132,7 @@ export default function CreateCardButton({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim() || !content.trim()) {
       toast.error("제목과 내용을 모두 입력해주세요");
       return;
@@ -141,37 +144,37 @@ export default function CreateCardButton({
       toast.error("사용자 ID를 찾을 수 없습니다. 새로고침 후 다시 시도해주세요.");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch("/api/cards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          title, 
+        body: JSON.stringify({
+          title,
           content,
           userId,
           tags: tags // 태그 배열 추가
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "카드 생성에 실패했습니다.");
       }
-      
+
       const createdCard = await response.json();
-      
+
       toast.success("카드가 생성되었습니다.");
       setTitle("");
       setContent("");
       setTags([]);
       setTagInput("");
       setOpen(false);
-      
+
       // 콜백이 제공된 경우 실행
       if (onCardCreated) {
         onCardCreated(createdCard);
@@ -190,22 +193,22 @@ export default function CreateCardButton({
   // 태그 입력 중 쉼표가 입력되면 태그 추가 처리
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     // 쉼표가 포함된 경우 태그 추가 처리
     if (value.includes(',')) {
       const parts = value.split(',');
       const lastPart = parts.pop() || '';
-      
+
       // 새로운 태그들 추가 (마지막 부분 제외)
       const newTags = parts
-        .map(part => part.trim())
-        .filter(part => part && !tags.includes(part));
-        
+        .map(tag => tag.trim())
+        .filter(tag => tag && !tags.includes(tag));
+
       if (newTags.length > 0) {
-        setTags([...tags, ...newTags]);
+        setTags(prevTags => [...prevTags, ...newTags]);
       }
-      
-      // 쉼표 이후 부분만 입력창에 남김
+
+      // 마지막 부분을 입력란에 설정
       setTagInput(lastPart);
     } else {
       setTagInput(value);
@@ -215,10 +218,11 @@ export default function CreateCardButton({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {customTrigger ? (
-          customTrigger
-        ) : (
-          <Button>새 카드 만들기</Button>
+        {customTrigger || (
+          <Button>
+            <PlusCircle className="w-4 h-4" />
+            새 카드 만들기
+          </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -251,6 +255,20 @@ export default function CreateCardButton({
           </div>
           <div className="space-y-2">
             <Label htmlFor="tags">태그</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((tag, index) => (
+                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="text-xs hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
             <Input
               id="tags"
               value={tagInput}
@@ -261,20 +279,6 @@ export default function CreateCardButton({
               placeholder="태그 입력 후 Enter 또는 쉼표(,)로 구분"
               disabled={isSubmitting}
             />
-            <div className="flex flex-wrap gap-1 mt-2">
-              {tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  #{tag}
-                  <button 
-                    type="button" 
-                    onClick={() => removeTag(tag)}
-                    className="text-xs hover:text-destructive"
-                  >
-                    <X size={14} />
-                  </button>
-                </Badge>
-              ))}
-            </div>
           </div>
           <div className="flex justify-between pt-4">
             <DialogClose asChild>

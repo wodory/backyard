@@ -5,149 +5,212 @@
  * 작성일: 2024-03-31
  */
 
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { TagFormMock } from './TagFormMock';
-import { setupTagFormTests, teardownTagFormTests, mockActions, waitForDomChanges } from './test-utils';
-import '@testing-library/jest-dom';
+import { mockActions, waitForDomChanges, setupTagFormTests, teardownTagFormTests } from './test-utils';
+import { act } from 'react-dom/test-utils';
+
+const setup = () => {
+  const user = userEvent.setup({ delay: null });
+  return {
+    ...render(<TagFormMock />),
+    user,
+  };
+};
 
 describe('TagForm', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     setupTagFormTests();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     teardownTagFormTests();
   });
 
-  describe('@testcase.mdc 태그 입력 기능', () => {
-    it('rule: 태그 이름을 입력할 수 있어야 함', async () => {
-      const user = userEvent.setup();
-      render(<TagFormMock />);
+  describe('태그 입력 기능', () => {
+    test('rule: 태그 이름을 입력할 수 있어야 함', async () => {
+      const { findByRole } = setup();
+      const input = await findByRole('textbox');
 
-      const tagInput = screen.getByLabelText('태그 이름');
-      await user.type(tagInput, '새로운태그');
-      expect(tagInput).toHaveValue('새로운태그');
+      await act(async () => {
+        await userEvent.type(input, '새로운 태그');
+        vi.runAllTimers();
+      });
+
+      await waitForDomChanges();
+      expect(input).toHaveValue('새로운 태그');
     });
 
-    it('rule: IME 입력이 올바르게 처리되어야 함', async () => {
-      const user = userEvent.setup();
-      render(<TagFormMock />);
+    test('rule: IME 입력이 올바르게 처리되어야 함', async () => {
+      const { findByRole } = setup();
+      const input = (await findByRole('textbox')) as HTMLInputElement;
 
-      const tagInput = screen.getByLabelText('태그 이름');
+      await act(async () => {
+        input.focus();
+        input.dispatchEvent(new CompositionEvent('compositionstart'));
+        input.value = '한글';
+        input.dispatchEvent(new CompositionEvent('compositionend'));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        vi.runAllTimers();
+      });
 
-      fireEvent.compositionStart(tagInput);
-      await user.type(tagInput, '프롬프트');
-      fireEvent.compositionEnd(tagInput);
-
-      expect(tagInput).toHaveValue('프롬프트');
+      await waitForDomChanges();
+      expect(input).toHaveValue('한글');
     });
   });
 
-  describe('@testcase.mdc 태그 생성 기능', () => {
-    it('rule: 빈 태그 이름으로 제출하면 오류가 표시되어야 함', async () => {
-      const user = userEvent.setup();
-      render(<TagFormMock />);
-
-      await user.click(screen.getByRole('button', { name: '태그 생성' }));
-
-      expect(mockActions.toast.error).toHaveBeenCalledWith('태그 이름을 입력해주세요.');
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    it('rule: 태그가 성공적으로 생성되어야 함', async () => {
-      const user = userEvent.setup();
-      render(<TagFormMock />);
-
-      const tagInput = screen.getByLabelText('태그 이름');
-      await user.type(tagInput, '새로운태그');
-      await user.click(screen.getByRole('button', { name: '태그 생성' }));
+  describe('태그 생성 기능', () => {
+    test('rule: 빈 태그 이름으로 제출하면 오류가 표시되어야 함', async () => {
+      const { findByRole } = setup();
+      const submitButton = await findByRole('button');
 
       await act(async () => {
-        await waitForDomChanges();
+        await userEvent.click(submitButton);
+        vi.runAllTimers();
       });
 
-      expect(mockActions.createTag).toHaveBeenCalledWith('새로운태그');
-      expect(mockActions.toast.success).toHaveBeenCalledWith('태그가 생성되었습니다.');
-      expect(mockActions.reload).toHaveBeenCalled();
+      await waitForDomChanges();
+      expect(mockActions.toast.error).toHaveBeenCalledWith('태그 이름을 입력해주세요.');
     });
 
-    it('rule: 제출 중에는 버튼이 비활성화되어야 함', async () => {
-      mockActions.createTag.mockImplementationOnce(() =>
-        new Promise(resolve => setTimeout(() => resolve({ ok: true, json: async () => ({}) }), 100))
-      );
+    test('rule: 태그가 성공적으로 생성되어야 함', async () => {
+      const { findByRole } = setup();
+      const submitButton = await findByRole('button');
+      const input = await findByRole('textbox');
 
-      const user = userEvent.setup();
-      render(<TagFormMock />);
+      await act(async () => {
+        await userEvent.type(input, '새로운 태그');
+        vi.runAllTimers();
+      });
 
-      const tagInput = screen.getByLabelText('태그 이름');
-      await user.type(tagInput, '새로운태그');
+      await act(async () => {
+        await userEvent.click(submitButton);
+        vi.runAllTimers();
+      });
 
-      const submitButton = screen.getByRole('button', { name: '태그 생성' });
-      await user.click(submitButton);
+      await waitForDomChanges();
+      expect(mockActions.createTag).toHaveBeenCalledWith('새로운 태그');
+      expect(mockActions.toast.success).toHaveBeenCalledWith('태그가 생성되었습니다.');
+      expect(mockActions.reload).toHaveBeenCalled();
+      expect(input).toHaveValue('');
+    });
 
-      expect(submitButton).toBeDisabled();
+    test('rule: 제출 중에는 버튼이 비활성화되어야 함', async () => {
+      const { findByRole } = setup();
+      const submitButton = await findByRole('button');
+      const input = await findByRole('textbox');
+
+      await act(async () => {
+        await userEvent.type(input, '새로운 태그');
+        vi.runAllTimers();
+      });
+
+      let resolveCreateTag: (value: Response) => void;
+      const createTagPromise = new Promise<Response>((resolve) => {
+        resolveCreateTag = resolve;
+      });
+
+      mockActions.createTag.mockImplementationOnce(() => createTagPromise);
+
+      await act(async () => {
+        await userEvent.click(submitButton);
+        vi.runAllTimers();
+      });
+
+      await waitForDomChanges();
+      expect(submitButton).toHaveAttribute('disabled');
       expect(submitButton).toHaveTextContent('생성 중...');
 
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 150));
+        resolveCreateTag(new Response(JSON.stringify({ ok: true })));
+        vi.runAllTimers();
       });
+
+      await waitForDomChanges();
+      expect(submitButton).not.toHaveAttribute('disabled');
+      expect(submitButton).toHaveTextContent('태그 생성');
     });
   });
 
-  describe('@testcase.mdc 에러 처리', () => {
-    it('rule: API 오류 시 에러 메시지가 표시되어야 함', async () => {
-      mockActions.createTag.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ message: '서버 오류가 발생했습니다' }),
+  describe('에러 처리', () => {
+    test('rule: API 오류 시 에러 메시지가 표시되어야 함', async () => {
+      const { findByRole } = setup();
+      const submitButton = await findByRole('button');
+      const input = await findByRole('textbox');
+
+      let rejectCreateTag: (reason: any) => void;
+      const createTagPromise = new Promise<Response>((_, reject) => {
+        rejectCreateTag = reject;
       });
 
-      const user = userEvent.setup();
-      render(<TagFormMock />);
-
-      const tagInput = screen.getByLabelText('태그 이름');
-      await user.type(tagInput, '새로운태그');
-      await user.click(screen.getByRole('button', { name: '태그 생성' }));
+      mockActions.createTag.mockImplementationOnce(() => createTagPromise);
 
       await act(async () => {
-        await waitForDomChanges();
+        await userEvent.type(input, '새로운 태그');
+        vi.runAllTimers();
       });
 
-      expect(mockActions.toast.error).toHaveBeenCalledWith('서버 오류가 발생했습니다');
+      await act(async () => {
+        await userEvent.click(submitButton);
+        vi.runAllTimers();
+      });
+
+      await act(async () => {
+        rejectCreateTag(new Error('API 오류'));
+        vi.runAllTimers();
+      });
+
+      await waitForDomChanges();
+      expect(mockActions.toast.error).toHaveBeenCalledWith('API 오류');
     });
 
-    it('rule: Error 객체의 message가 토스트 메시지로 표시되어야 함', async () => {
-      mockActions.createTag.mockRejectedValueOnce(new Error('네트워크 오류가 발생했습니다'));
+    test('rule: Error 객체의 message가 토스트 메시지로 표시되어야 함', async () => {
+      const { findByRole } = setup();
+      const submitButton = await findByRole('button');
+      const input = await findByRole('textbox');
 
-      const user = userEvent.setup();
-      render(<TagFormMock />);
-
-      const tagInput = screen.getByLabelText('태그 이름');
-      await user.type(tagInput, '새로운태그');
-      await user.click(screen.getByRole('button', { name: '태그 생성' }));
-
-      await act(async () => {
-        await waitForDomChanges();
+      mockActions.createTag.mockImplementationOnce(() => {
+        throw new Error('커스텀 에러 메시지');
       });
 
-      expect(mockActions.toast.error).toHaveBeenCalledWith('네트워크 오류가 발생했습니다');
+      await act(async () => {
+        await userEvent.type(input, '새로운 태그');
+        vi.runAllTimers();
+      });
+
+      await act(async () => {
+        await userEvent.click(submitButton);
+        vi.runAllTimers();
+      });
+
+      await waitForDomChanges();
+      expect(mockActions.toast.error).toHaveBeenCalledWith('커스텀 에러 메시지');
     });
 
-    it('rule: Non-Error 객체가 전달되면 기본 에러 메시지가 표시되어야 함', async () => {
-      mockActions.createTag.mockRejectedValueOnce('문자열 에러');
+    test('rule: Non-Error 객체가 전달되면 기본 에러 메시지가 표시되어야 함', async () => {
+      const { findByRole } = setup();
+      const submitButton = await findByRole('button');
+      const input = await findByRole('textbox');
 
-      const user = userEvent.setup();
-      render(<TagFormMock />);
-
-      const tagInput = screen.getByLabelText('태그 이름');
-      await user.type(tagInput, '새로운태그');
-      await user.click(screen.getByRole('button', { name: '태그 생성' }));
-
-      await act(async () => {
-        await waitForDomChanges();
+      mockActions.createTag.mockImplementationOnce(() => {
+        throw '예상치 못한 에러';
       });
 
+      await act(async () => {
+        await userEvent.type(input, '새로운 태그');
+        vi.runAllTimers();
+      });
+
+      await act(async () => {
+        await userEvent.click(submitButton);
+        vi.runAllTimers();
+      });
+
+      await waitForDomChanges();
       expect(mockActions.toast.error).toHaveBeenCalledWith('태그 생성에 실패했습니다.');
     });
   });

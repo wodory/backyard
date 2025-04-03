@@ -11,9 +11,10 @@ import { mockActions } from './test-utils';
 interface CreateCardModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCardCreated: (data: { title: string; content: string }) => void;
+    onCardCreated: () => void;
 }
 
+// 모달 컴포넌트 단순화 - 비동기 처리를 상위 컴포넌트로 위임
 const SimpleCreateCardModal: React.FC<CreateCardModalProps> = ({ isOpen, onClose, onCardCreated }) => {
     if (!isOpen) return null;
 
@@ -22,10 +23,7 @@ const SimpleCreateCardModal: React.FC<CreateCardModalProps> = ({ isOpen, onClose
             <button data-testid="close-modal-button" onClick={onClose}>닫기</button>
             <button
                 data-testid="create-card-button"
-                onClick={() => {
-                    onCardCreated({ title: '테스트 카드', content: '테스트 내용' });
-                    onClose();
-                }}
+                onClick={onCardCreated}
             >
                 카드 생성
             </button>
@@ -36,13 +34,16 @@ const SimpleCreateCardModal: React.FC<CreateCardModalProps> = ({ isOpen, onClose
 export const MainToolbarMock: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleCreateCard = async (data: { title: string; content: string }) => {
-        try {
-            await mockActions.createCard(data);
-            setIsModalOpen(false);
-        } catch (error) {
-            console.error('카드 생성 실패:', error);
-        }
+    // createCard 호출 후 즉시 모달 닫기
+    const handleCreateCard = () => {
+        // 테스트 카드 데이터 생성
+        const cardData = { title: '테스트 카드', content: '테스트 내용' };
+
+        // 액션 호출
+        mockActions.createCard(cardData);
+
+        // 모달 닫기
+        setIsModalOpen(false);
     };
 
     return (

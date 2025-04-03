@@ -51,6 +51,30 @@ export function createMockSession(options: {
   }
 }
 
+/**
+ * 카드 데이터 타입
+ */
+export interface CardData {
+  id: string;
+  title: string;
+  content: string;
+  cardTags: Array<{ id: string; name: string; }>;
+}
+
+/**
+ * 카드 데이터 생성 함수
+ * @param id - 카드 ID
+ * @returns 카드 데이터 객체
+ */
+export function createMockCard(id: string = 'test-card-123'): CardData {
+  return {
+    id,
+    title: '테스트 카드',
+    content: '테스트 내용',
+    cardTags: []
+  };
+}
+
 // Supabase 인증 API 엔드포인트 핸들러
 export const handlers = [
   // Supabase 세션 교환 API 모킹
@@ -119,5 +143,60 @@ export const handlers = [
       aud: 'authenticated',
       email: 'test@example.com'
     });
+  }),
+
+  // 카드 조회 API - 성공 케이스
+  http.get('/api/cards/:id', ({ params }) => {
+    const { id } = params;
+    
+    // 특정 ID로 에러 케이스 테스트 가능
+    if (id === 'not-found') {
+      return new HttpResponse(null, {
+        status: 404,
+        statusText: 'Not Found'
+      });
+    }
+    
+    if (id === 'server-error') {
+      return new HttpResponse(null, {
+        status: 500,
+        statusText: 'Internal Server Error'
+      });
+    }
+
+    // 성공 응답
+    return HttpResponse.json(createMockCard(id as string));
+  }),
+
+  // 카드 수정 API
+  http.put('/api/cards/:id', async ({ params, request }) => {
+    const { id } = params;
+    
+    try {
+      const requestData = await request.json() as Partial<CardData>;
+
+      // 유효성 검사 실패 케이스
+      if (!requestData || !requestData.title || !requestData.content) {
+        return new HttpResponse(JSON.stringify({ error: '필수 필드가 누락되었습니다' }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+
+      // 성공 응답
+      return HttpResponse.json({
+        ...createMockCard(id as string),
+        ...requestData
+      });
+    } catch (error) {
+      return new HttpResponse(JSON.stringify({ error: '잘못된 요청 형식입니다' }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
   })
 ]; 

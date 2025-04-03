@@ -7,9 +7,11 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { userEvent } from '@testing-library/user-event';
 import AuthTestPage from './page';
 import { signIn, signOut, useSession } from 'next-auth/react';
+
+// 테스트 타임아웃 설정
+const TEST_TIMEOUT = 20000;
 
 // 모듈 모킹
 vi.mock('next-auth/react', () => ({
@@ -20,7 +22,7 @@ vi.mock('next-auth/react', () => ({
 
 vi.mock('@/lib/auth', () => ({
   signInWithGoogle: vi.fn(),
-  getCurrentUser: vi.fn().mockResolvedValue({
+  getCurrentUser: vi.fn().mockReturnValue({
     id: 'test-user-id',
     email: 'test@example.com',
     created_at: '2024-03-31',
@@ -34,7 +36,7 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/auth-storage', () => {
   const storageData: Record<string, string> = {};
-  
+
   return {
     getAuthData: vi.fn((key: string) => storageData[key] || null),
     setAuthData: vi.fn((key: string, value: string) => {
@@ -63,20 +65,10 @@ vi.mock('@/lib/auth-storage', () => {
 describe('AuthTestPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // IndexedDB 모킹
-    const mockIndexedDB = {
-      open: vi.fn(),
-      deleteDatabase: vi.fn(),
-      databases: vi.fn()
-    };
-    Object.defineProperty(window, 'indexedDB', {
-      value: mockIndexedDB,
-      writable: true
-    });
   });
 
   it('인증되지 않은 상태에서 페이지가 올바르게 렌더링되어야 합니다', () => {
+    // 인증되지 않은 상태 모킹
     vi.mocked(useSession).mockReturnValue({
       data: null,
       status: 'unauthenticated',
@@ -91,6 +83,7 @@ describe('AuthTestPage', () => {
   });
 
   it('인증된 상태에서 페이지가 올바르게 렌더링되어야 합니다', () => {
+    // 인증된 상태 모킹
     vi.mocked(useSession).mockReturnValue({
       data: {
         user: {
@@ -110,23 +103,25 @@ describe('AuthTestPage', () => {
     expect(screen.queryByText('Google 로그인 테스트')).not.toBeInTheDocument();
   });
 
-  it('Google 로그인 버튼 클릭 시 signIn이 호출되어야 합니다', async () => {
+  it('Google 로그인 버튼 클릭 시 signIn이 호출되어야 합니다', () => {
+    // 인증되지 않은 상태 모킹
     vi.mocked(useSession).mockReturnValue({
       data: null,
       status: 'unauthenticated',
       update: vi.fn()
     });
-    
+
     render(<AuthTestPage />);
-    
+
     const loginButton = screen.getByText('Google 로그인 테스트');
-    await userEvent.click(loginButton);
-    
+    fireEvent.click(loginButton);
+
     expect(signIn).toHaveBeenCalledWith('google');
     expect(signIn).toHaveBeenCalledTimes(1);
   });
 
-  it('로그아웃 버튼 클릭 시 signOut이 호출되어야 합니다', async () => {
+  it('로그아웃 버튼 클릭 시 signOut이 호출되어야 합니다', () => {
+    // 인증된 상태 모킹
     vi.mocked(useSession).mockReturnValue({
       data: {
         user: {
@@ -138,17 +133,18 @@ describe('AuthTestPage', () => {
       status: 'authenticated',
       update: vi.fn()
     });
-    
+
     render(<AuthTestPage />);
-    
+
     const logoutButton = screen.getByText('로그아웃 테스트');
-    await userEvent.click(logoutButton);
-    
+    fireEvent.click(logoutButton);
+
     expect(signOut).toHaveBeenCalled();
     expect(signOut).toHaveBeenCalledTimes(1);
   });
 
-  it('모든 테스트 실행 버튼 클릭 시 API가 호출되어야 합니다', async () => {
+  it('모든 테스트 실행 버튼 클릭 시 API가 호출되어야 합니다', () => {
+    // 인증된 상태 모킹
     vi.mocked(useSession).mockReturnValue({
       data: {
         user: {
@@ -160,22 +156,23 @@ describe('AuthTestPage', () => {
       status: 'authenticated',
       update: vi.fn()
     });
-    
-    const mockFetch = vi.fn().mockResolvedValue(new Response(null, { 
+
+    // fetch 모킹
+    const mockFetch = vi.fn().mockReturnValue({
       status: 200,
       statusText: 'OK',
       headers: new Headers({
         'Content-Type': 'application/json'
       })
-    }));
-    
+    });
+
     global.fetch = mockFetch;
-    
+
     render(<AuthTestPage />);
-    
+
     const runTestsButton = screen.getByText('모든 테스트 실행');
-    await userEvent.click(runTestsButton);
-    
+    fireEvent.click(runTestsButton);
+
     expect(mockFetch).toHaveBeenCalledWith('/api/test/run-all', {
       method: 'POST'
     });

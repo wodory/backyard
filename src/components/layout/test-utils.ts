@@ -17,7 +17,8 @@ export const mockActions = {
 
   // ShortcutToolbar 액션
   toggleSidebar: vi.fn(),
-  signOut: vi.fn(() => Promise.resolve()),
+  // Promise를 명시적으로 반환하는 모킹 함수
+  signOut: vi.fn().mockImplementation(() => Promise.resolve()),
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -70,9 +71,4 @@ export const teardownMainToolbarTests = () => {
 export const teardownShortcutToolbarTests = () => {
   vi.clearAllMocks();
   vi.resetModules();
-};
-
-/**
- * waitForDomChanges: 비동기 작업의 안전한 완료를 위한 도우미 함수
- */
-export const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 50)); 
+}; 

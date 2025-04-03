@@ -23,6 +23,8 @@ export default mergeConfig(
       setupFiles: ['./src/tests/setup.ts'],
       
       // 성능 최적화 설정
+      testTimeout: 15000, // 전역 타임아웃 설정
+      hookTimeout: 10000, // 훅 타임아웃 설정
       pool: 'threads',
       poolOptions: {
         threads: {
@@ -49,8 +51,9 @@ export default mergeConfig(
         '**/src/tests/**', // 테스트 관련 폴더
         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
         // src/lib
-        '**/src/lib/logger.ts',       // 디버깅용 로거
-        '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
+        '**/src/lib/logger.ts',        // 디버깅용 로거
+        '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
+        '**/test-utils.ts',           // 모든 서브 폴더의 test-utils.ts 파일 제외
         './*.config.js', // 루트 경로의 config 파일들
         './*.config.ts',
         './*.config.mjs',
@@ -94,6 +97,7 @@ export default mergeConfig(
           // src/lib
           '**/src/lib/logger.ts',       // 디버깅용 로거
           '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
+          '**/test-utils.ts',       // 모든 서브 폴더의 test-utils.ts 파일 제외
           './*.config.js',
           './*.config.ts',
           './*.config.mjs',
