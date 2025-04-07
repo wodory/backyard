@@ -519,6 +519,7 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
 - [ ] 사이드바 
   - [ ] 사이드바 크기 조절 -> react flow도 크기 조절 
   - [ ] 사이드바 선택 -> 보드 노드도 선택 
+  - [ ] 멀티 샐랙트 -> 사이드 바 통합 표시 안 됨
 
 
 
