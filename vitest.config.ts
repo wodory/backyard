@@ -51,7 +51,6 @@ export default mergeConfig(
         '**/src/tests/**', // 테스트 관련 폴더
         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
         // src/lib
-        '**/src/lib/logger.ts',        // 디버깅용 로거
         '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
         '**/test-utils.ts',           // 모든 서브 폴더의 test-utils.ts 파일 제외
         './*.config.js', // 루트 경로의 config 파일들
@@ -95,7 +94,7 @@ export default mergeConfig(
           '**/src/contexts/**', // 단순 Context (선택 사항)
           '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
           // src/lib
-          '**/src/lib/logger.ts',       // 디버깅용 로거
+          // '**/src/lib/logger.ts',       // 디버깅용 로거
           '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
           '**/test-utils.ts',       // 모든 서브 폴더의 test-utils.ts 파일 제외
           './*.config.js',

@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: src/**/*.test.ts,src/**/*.test.tsx
 alwaysApply: false
 ---
 **Rule 이름:** 종합적인 코드 경로 및 예외 처리 테스트 규칙 (Comprehensive Code Path and Exception Handling Testing Rule)

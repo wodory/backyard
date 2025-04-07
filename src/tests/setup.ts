@@ -44,25 +44,118 @@ function setupDocument() {
   }
 }
 
-// Logger 모킹 (기존 로직 유지)
+// Logger 모킹 (실제 구현과 일치하도록 수정)
 vi.mock('@/lib/logger', () => {
-  const mockLogger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
-  const createLogger = vi.fn(() => mockLogger);
-  return {
-    default: createLogger,
-    LogLevel: { DEBUG: 'debug', INFO: 'info', WARN: 'warn', ERROR: 'error' },
-    logger: vi.fn(),
-    createLogger,
-    getLogs: vi.fn(() => []),
-    clearLogs: vi.fn(),
-    LogStorage: vi.fn(() => ({
-      getInstance: vi.fn(() => ({
-        getSessionId: vi.fn(() => 'test-session-id'),
-        addLog: vi.fn(),
-        getLogs: vi.fn(() => []),
-        clearLogs: vi.fn()
-      }))
+  const mockLogs: any[] = [];
+  const mockSessionId = 'test-session-id';
+  let isWindowDefined = true;
+
+  const mockLogStorage = {
+    getInstance: vi.fn(() => ({
+      getSessionId: vi.fn(() => mockSessionId),
+      addLog: vi.fn((log: any) => {
+        log.sessionId = mockSessionId;
+        mockLogs.push(log);
+        if (mockLogs.length > 100) mockLogs.shift();
+        
+        if (isWindowDefined) {
+          try {
+            localStorage.setItem('logger.logs', JSON.stringify(mockLogs));
+          } catch (error) {
+            console.error('로그 저장 실패:', error);
+          }
+        }
+      }),
+      getLogs: vi.fn(() => [...mockLogs]),
+      clearLogs: vi.fn(() => {
+        mockLogs.length = 0;
+        if (isWindowDefined) {
+          localStorage.removeItem('logger.logs');
+        }
+      })
     }))
+  };
+
+  const mockLogger = vi.fn((module: string, level: string, message: string, data?: any) => {
+    const timestamp = new Date().toISOString();
+    const logData = { timestamp, level, module, message, data, sessionId: mockSessionId };
+    
+    // 세션 ID 초기화
+    if (isWindowDefined) {
+      if (!localStorage.getItem('logger.sessionId')) {
+        localStorage.setItem('logger.sessionId', mockSessionId);
+      }
+    }
+
+    mockLogStorage.getInstance().addLog(logData);
+
+    const formattedMessage = `[${timestamp.split('T')[1].split('.')[0]}][${module}][${level.toUpperCase()}] ${message}`;
+    switch (level) {
+      case 'debug':
+        console.debug(formattedMessage, data || '');
+        break;
+      case 'info':
+        console.info(formattedMessage, data || '');
+        break;
+      case 'warn':
+        console.warn(formattedMessage, data || '');
+        break;
+      case 'error':
+        console.error(formattedMessage, data || '');
+        break;
+    }
+
+    // 수정: fetchPromise가 undefined일 때 catch 호출 방지
+    if ((level === 'error' || level === 'warn') && isWindowDefined) {
+      try {
+        const fetchPromise = fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(logData),
+          keepalive: true
+        });
+        
+        // 안전하게 catch 호출 - fetchPromise가 유효한 경우에만
+        if (fetchPromise && typeof fetchPromise.catch === 'function') {
+          fetchPromise.catch(() => {});
+        }
+      } catch (error) {
+        // fetch 호출 자체가 실패한 경우 처리
+        console.error('로그 전송 오류:', error);
+      }
+    }
+  });
+
+  // 수정: 각 로그 함수를 vi.fn()으로 명시적으로 만들어 스파이로 인식되도록 함
+  const debugFn = vi.fn((message: string, data?: any) => mockLogger('module', 'debug', message, data));
+  const infoFn = vi.fn((message: string, data?: any) => mockLogger('module', 'info', message, data));
+  const warnFn = vi.fn((message: string, data?: any) => mockLogger('module', 'warn', message, data));
+  const errorFn = vi.fn((message: string, data?: any) => mockLogger('module', 'error', message, data));
+
+  // 수정: createLoggerMock이 각 로그 메소드가 스파이인 객체를 반환하도록 함
+  const createLoggerMock = vi.fn((module: string) => {
+    // 모듈별로 새로운 스파이 함수 생성
+    return {
+      debug: vi.fn((message: string, data?: any) => mockLogger(module, 'debug', message, data)),
+      info: vi.fn((message: string, data?: any) => mockLogger(module, 'info', message, data)),
+      warn: vi.fn((message: string, data?: any) => mockLogger(module, 'warn', message, data)),
+      error: vi.fn((message: string, data?: any) => mockLogger(module, 'error', message, data))
+    };
+  });
+
+  // window 객체 모킹 설정을 위한 함수
+  const setWindowDefined = (defined: boolean) => {
+    isWindowDefined = defined;
+  };
+
+  return {
+    default: createLoggerMock,
+    LogLevel: { DEBUG: 'debug', INFO: 'info', WARN: 'warn', ERROR: 'error' },
+    logger: mockLogger,
+    createLogger: createLoggerMock,
+    getLogs: vi.fn(() => mockLogStorage.getInstance().getLogs()),
+    clearLogs: vi.fn(() => mockLogStorage.getInstance().clearLogs()),
+    __setWindowDefined: setWindowDefined // 테스트용 헬퍼 함수
   };
 });
 

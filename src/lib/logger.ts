@@ -131,7 +131,7 @@ export const logger = (
       console.debug(formattedMessage, data || '');
       break;
     case LogLevel.INFO:
-      console.log(formattedMessage, data || '');
+      console.info(formattedMessage, data || '');
       break;
     case LogLevel.WARN:
       console.warn(formattedMessage, data || '');

@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: src/**/*.test.ts,src/**/*.test.tsx
 alwaysApply: false
 ---
 ## 작업: `{target_folder}` 폴더 종합 테스트 커버리지 90% 달성
