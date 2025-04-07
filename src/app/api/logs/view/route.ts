@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import { getSupabaseInstance } from '@/lib/supabase-instance';
 
 // 로그 파일 경로
 const LOG_DIR = process.env.LOG_DIR || 'logs';
@@ -20,7 +20,7 @@ const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
 export async function GET(request: NextRequest) {
   try {
     // 인증 확인 (관리자만 접근 가능하도록 설정)
-    const supabase = createBrowserSupabaseClient();
+    const supabase = getSupabaseInstance();
     const { data: sessionData } = await supabase.auth.getSession();
     
     // 개발 환경이 아니고 인증되지 않은 경우 접근 거부

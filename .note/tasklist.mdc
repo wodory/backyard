@@ -508,17 +508,17 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
   - [ ] 프로젝트 선택 화면
   - [ ] 프로젝트 삭제 
   - [ ] 프로젝트 삭제하면 카드는 어떻게 해야 하지... 아마 전체 삭제. 단, trashcan으로 이동. (90일 보관)
-- [ ] 카드 공유를 위해 카드 id도 uid로 개선 
 - [ ] 로컬 서버 DB도 supabase로 일원화하기 
-- [ ] 사이드바 
-  - [ ] 사이드바 크기 조절 -> react flow도 크기 조절 
-  - [ ] 사이드바 선택 -> 보드 노드도 선택 
 - [ ] 아이콘
   - [ ] new https://lucide.dev/icons/file-plus
   - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
+  - [ ] import text to tree
 
-
-- [ ] import text to tree
+**버그**
+- [ ] 새 카드 만들기 이후에 화면에 추가 안 되네. 
+- [ ] 사이드바 
+  - [ ] 사이드바 크기 조절 -> react flow도 크기 조절 
+  - [ ] 사이드바 선택 -> 보드 노드도 선택 
 
 
 

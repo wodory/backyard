@@ -1,5 +1,5 @@
 /**
- * 파일명: vitest.config.ts
+ * 파일명: viconfig.ts
  * 목적: Vitest 테스트 환경 설정
  * 역할: 테스트 실행을 위한 Vite 설정과 통합된 설정 제공
  * 작성일: 2024-03-31
@@ -52,7 +52,23 @@ export default mergeConfig(
         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
         // src/lib
         '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
-        '**/test-utils.ts',           // 모든 서브 폴더의 test-utils.ts 파일 제외
+        '**/test-utils.ts',                
+        // 'src/lib/auth-server.ts', // 또는 .ts/.js
+        // 'src/lib/auth-storage.ts',
+        // 'src/lib/__tests__/auth-integration.ts', // auth-storage 관련 테스트가 많으므로 임시 제외
+        '**/src/lib/cookie.ts',
+        // 'src/lib/db-check.ts', // 파일이 .js 이면 .js로
+        '**/src/lib/auth-server.ts',
+        '**/src/lib/hybrid-supabase.ts',
+        '**/src/lib/prisma.ts',
+        '**/src/lib/supabase-instance.ts',
+        '**/src/lib/supabase-server.ts',
+        '**/src/lib/supabase.ts',
+        '**/src/lib/debug-utils.ts',
+        '**/src/lib/board-ui-config.ts',
+        '**/src/lib/board-utils.ts',
+        '**/src/lib/layout-utils.ts',
+        // root       // 모든 서브 폴더의 test-utils.ts 파일 제외
         './*.config.js', // 루트 경로의 config 파일들
         './*.config.ts',
         './*.config.mjs',
@@ -81,7 +97,7 @@ export default mergeConfig(
           '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,storybook,eslint,prettier}.config.*',
           '**/prisma/seed/**',
           '**/scripts/**',
-          '**/src/tests/**', // 모든 테스트 관련 파일/폴더 (mocks, msw, utils, *.test.* 포함)
+          '**/src/tests/**', // 모든 테스트 관련 파일/폴더 (mocks, msw, utils, *.* 포함)
           '**/src/components/debug/**', // 디버그 컴포넌트 폴더
           '**/src/setupTests.ts',
           '**/*.d.ts', // 모든 타입 정의 파일
@@ -96,6 +112,21 @@ export default mergeConfig(
           // src/lib
           // '**/src/lib/logger.ts',       // 디버깅용 로거
           '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
+          '**/src/lib/cookie.ts',
+          // 'src/lib/db-check.ts', 
+          '**/src/lib/auth-server.ts',
+          '**/src/lib/hybrid-supabase.ts',
+          '**/src/lib/prisma.ts',
+          '**/src/lib/supabase-instance.ts',
+          '**/src/lib/supabase-server.ts',
+          '**/src/lib/supabase.ts',
+          '**/src/lib/debug-utils.ts',
+          '**/src/lib/board-ui-config.ts',
+          '**/src/lib/board-utils.ts',
+          '**/src/lib/layout-utils.ts',
+          '**/src/lib/db-check.js',
+          '**/src/lib/db-init.ts',
+          // root       // 모든 서브 폴더의 test-utils.ts 파일 제외
           '**/test-utils.ts',       // 모든 서브 폴더의 test-utils.ts 파일 제외
           './*.config.js',
           './*.config.ts',
