@@ -13,6 +13,9 @@ import { act } from '@testing-library/react';
 import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
 import { CreateCardInput } from '@/types/card';
+import * as layoutUtils from '@/lib/layout-utils';
+import * as graphUtils from '@/components/board/utils/graphUtils';
+import { Node, Edge } from '@xyflow/react';
 
 // 모든 모킹을 파일 상단에 배치
 vi.mock('@/lib/board-utils', () => ({
@@ -28,12 +31,24 @@ vi.mock('@/lib/board-utils', () => ({
   saveBoardSettings: vi.fn()
 }));
 
-// toast 모킹
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
-    error: vi.fn()
+    error: vi.fn(),
+    loading: vi.fn(),
+    dismiss: vi.fn()
   }
+}));
+
+// 레이아웃 유틸리티 모킹
+vi.mock('@/lib/layout-utils', () => ({
+  getLayoutedElements: vi.fn(),
+  getGridLayout: vi.fn()
+}));
+
+// graphUtils 모킹
+vi.mock('@/components/board/utils/graphUtils', () => ({
+  saveAllLayoutData: vi.fn()
 }));
 
 // 초기 상태 정의
@@ -432,6 +447,272 @@ describe('useAppStore', () => {
       
       const state = useAppStore.getState();
       expect(state.layoutDirection).toBe('horizontal');
+    });
+
+    // 새로운 테스트 추가
+    describe('applyLayout 액션 테스트', () => {
+      // 테스트용 React Flow 인스턴스 모킹
+      const mockNodes = [
+        { id: 'node-1', data: { label: 'Node 1' }, position: { x: 0, y: 0 } }
+      ] as Node[];
+      
+      const mockEdges = [
+        { id: 'edge-1', source: 'node-1', target: 'node-2' }
+      ] as Edge[];
+      
+      const mockLayoutedNodes = [
+        { id: 'node-1', data: { label: 'Node 1' }, position: { x: 100, y: 100 } }
+      ] as Node[];
+      
+      const mockLayoutedEdges = [
+        { id: 'edge-1', source: 'node-1', target: 'node-2', animated: true }
+      ] as Edge[];
+      
+      // getNodes와 getEdges를 명시적으로 정의한 mockReactFlowInstance
+      const mockReactFlowInstance = {
+        getNodes: vi.fn(() => mockNodes),
+        getEdges: vi.fn(() => mockEdges),
+        setNodes: vi.fn(),
+        setEdges: vi.fn()
+      };
+
+      beforeEach(() => {
+        vi.clearAllMocks();
+        
+        // 레이아웃 유틸리티 함수 모킹
+        vi.mocked(layoutUtils.getLayoutedElements).mockReturnValue({
+          nodes: mockLayoutedNodes, 
+          edges: mockLayoutedEdges
+        });
+        vi.mocked(layoutUtils.getGridLayout).mockReturnValue(mockLayoutedNodes);
+        
+        // React Flow 인스턴스 설정
+        act(() => {
+          useAppStore.setState({ reactFlowInstance: mockReactFlowInstance });
+        });
+      });
+
+      it('수평 레이아웃을 적용해야 함', () => {
+        act(() => {
+          useAppStore.getState().applyLayout('horizontal');
+        });
+        
+        // 레이아웃 유틸리티 함수 호출 확인
+        expect(layoutUtils.getLayoutedElements).toHaveBeenCalledWith(
+          mockNodes, 
+          mockEdges, 
+          'horizontal'
+        );
+        
+        // React Flow 인스턴스의 메서드 호출 확인
+        expect(mockReactFlowInstance.setNodes).toHaveBeenCalledWith(mockLayoutedNodes);
+        expect(mockReactFlowInstance.setEdges).toHaveBeenCalledWith(mockLayoutedEdges);
+        
+        // 토스트 메시지 확인
+        expect(toast.success).toHaveBeenCalledWith('수평 레이아웃이 적용되었습니다');
+        
+        // 상태 업데이트 확인
+        expect(useAppStore.getState().layoutDirection).toBe('horizontal');
+      });
+
+      it('수직 레이아웃을 적용해야 함', () => {
+        act(() => {
+          useAppStore.getState().applyLayout('vertical');
+        });
+        
+        // 레이아웃 유틸리티 함수 호출 확인
+        expect(layoutUtils.getLayoutedElements).toHaveBeenCalledWith(
+          mockNodes, 
+          mockEdges, 
+          'vertical'
+        );
+        
+        // React Flow 인스턴스의 메서드 호출 확인
+        expect(mockReactFlowInstance.setNodes).toHaveBeenCalledWith(mockLayoutedNodes);
+        expect(mockReactFlowInstance.setEdges).toHaveBeenCalledWith(mockLayoutedEdges);
+        
+        // 토스트 메시지 확인
+        expect(toast.success).toHaveBeenCalledWith('수직 레이아웃이 적용되었습니다');
+        
+        // 상태 업데이트 확인
+        expect(useAppStore.getState().layoutDirection).toBe('vertical');
+      });
+
+      it('자동 배치 레이아웃을 적용해야 함', () => {
+        act(() => {
+          useAppStore.getState().applyLayout('auto');
+        });
+        
+        // 레이아웃 유틸리티 함수 호출 확인
+        expect(layoutUtils.getGridLayout).toHaveBeenCalledWith(mockNodes);
+        
+        // React Flow 인스턴스의 메서드 호출 확인
+        expect(mockReactFlowInstance.setNodes).toHaveBeenCalledWith(mockLayoutedNodes);
+        // 자동 배치는 엣지를 변경하지 않음
+        expect(mockReactFlowInstance.setEdges).not.toHaveBeenCalled();
+        
+        // 토스트 메시지 확인
+        expect(toast.success).toHaveBeenCalledWith('자동 배치 레이아웃이 적용되었습니다');
+        
+        // 상태 업데이트 확인
+        expect(useAppStore.getState().layoutDirection).toBe('auto');
+      });
+
+      it('React Flow 인스턴스가 없을 때 에러를 표시해야 함', () => {
+        // React Flow 인스턴스 제거
+        act(() => {
+          useAppStore.setState({ reactFlowInstance: null });
+        });
+        
+        act(() => {
+          useAppStore.getState().applyLayout('horizontal');
+        });
+        
+        // 에러 토스트 표시 확인
+        expect(toast.error).toHaveBeenCalledWith('React Flow 인스턴스를 찾을 수 없습니다');
+        
+        // 레이아웃 유틸리티 함수가 호출되지 않음
+        expect(layoutUtils.getLayoutedElements).not.toHaveBeenCalled();
+      });
+
+      it('노드가 없을 때 에러를 표시해야 함', () => {
+        // 빈 노드 배열 반환
+        mockReactFlowInstance.getNodes.mockReturnValueOnce([]);
+        
+        act(() => {
+          useAppStore.getState().applyLayout('horizontal');
+        });
+        
+        // 에러 토스트 표시 확인
+        expect(toast.error).toHaveBeenCalledWith('적용할 노드가 없습니다');
+        
+        // 레이아웃 유틸리티 함수가 호출되지 않음
+        expect(layoutUtils.getLayoutedElements).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('saveBoardLayout 액션 테스트', () => {
+      // 테스트용 React Flow 인스턴스 모킹
+      const mockNodes = [
+        { id: 'node-1', data: { label: 'Node 1' }, position: { x: 0, y: 0 } }
+      ] as Node[];
+      
+      const mockEdges = [
+        { id: 'edge-1', source: 'node-1', target: 'node-2' }
+      ] as Edge[];
+      
+      // getNodes와 getEdges를 명시적으로 정의한 mockReactFlowInstance
+      const mockReactFlowInstance = {
+        getNodes: vi.fn(() => mockNodes),
+        getEdges: vi.fn(() => mockEdges)
+      };
+
+      beforeEach(() => {
+        vi.clearAllMocks();
+        
+        // graphUtils 모킹
+        vi.mocked(graphUtils.saveAllLayoutData).mockReturnValue(true);
+        
+        // React Flow 인스턴스 설정
+        act(() => {
+          useAppStore.setState({ reactFlowInstance: mockReactFlowInstance });
+        });
+      });
+
+      it('레이아웃을 저장해야 함', async () => {
+        let result: boolean | undefined;
+        
+        await act(async () => {
+          result = await useAppStore.getState().saveBoardLayout();
+        });
+        
+        // saveAllLayoutData 호출 확인
+        expect(graphUtils.saveAllLayoutData).toHaveBeenCalledWith(mockNodes, mockEdges);
+        
+        // 성공 토스트 표시 확인
+        expect(toast.success).toHaveBeenCalledWith('레이아웃이 저장되었습니다');
+        
+        // 반환값 확인
+        expect(result).toBe(true);
+      });
+
+      it('React Flow 인스턴스가 없을 때 에러를 표시해야 함', async () => {
+        // React Flow 인스턴스 제거
+        act(() => {
+          useAppStore.setState({ reactFlowInstance: null });
+        });
+        
+        let result: boolean | undefined;
+        
+        await act(async () => {
+          result = await useAppStore.getState().saveBoardLayout();
+        });
+        
+        // 에러 토스트 표시 확인
+        expect(toast.error).toHaveBeenCalledWith('React Flow 인스턴스를 찾을 수 없습니다');
+        
+        // saveAllLayoutData가 호출되지 않음
+        expect(graphUtils.saveAllLayoutData).not.toHaveBeenCalled();
+        
+        // 반환값 확인
+        expect(result).toBe(false);
+      });
+
+      it('노드가 없을 때 에러를 표시해야 함', async () => {
+        // 빈 노드 배열 반환
+        mockReactFlowInstance.getNodes.mockReturnValueOnce([]);
+        
+        let result: boolean | undefined;
+        
+        await act(async () => {
+          result = await useAppStore.getState().saveBoardLayout();
+        });
+        
+        // 에러 토스트 표시 확인
+        expect(toast.error).toHaveBeenCalledWith('저장할 노드가 없습니다');
+        
+        // saveAllLayoutData가 호출되지 않음
+        expect(graphUtils.saveAllLayoutData).not.toHaveBeenCalled();
+        
+        // 반환값 확인
+        expect(result).toBe(false);
+      });
+
+      it('저장 실패 시 에러를 표시해야 함', async () => {
+        // 실패 반환값 설정
+        vi.mocked(graphUtils.saveAllLayoutData).mockReturnValueOnce(false);
+        
+        let result: boolean | undefined;
+        
+        await act(async () => {
+          result = await useAppStore.getState().saveBoardLayout();
+        });
+        
+        // 에러 토스트 표시 확인
+        expect(toast.error).toHaveBeenCalledWith('레이아웃 저장에 실패했습니다');
+        
+        // 반환값 확인
+        expect(result).toBe(false);
+      });
+
+      it('예외 발생 시 에러를 처리해야 함', async () => {
+        // 예외 발생 설정
+        vi.mocked(graphUtils.saveAllLayoutData).mockImplementationOnce(() => {
+          throw new Error('테스트 에러');
+        });
+        
+        let result: boolean | undefined;
+        
+        await act(async () => {
+          result = await useAppStore.getState().saveBoardLayout();
+        });
+        
+        // 에러 로깅 및 토스트 표시 확인
+        expect(toast.error).toHaveBeenCalledWith('레이아웃 저장에 실패했습니다');
+        
+        // 반환값 확인
+        expect(result).toBe(false);
+      });
     });
   });
 

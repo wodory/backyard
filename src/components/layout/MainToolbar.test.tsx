@@ -1,116 +1,128 @@
 /**
  * 파일명: MainToolbar.test.tsx
- * 목적: MainToolbar 컴포넌트의 기능 테스트
- * 역할: 메인 툴바의 모든 기능이 정상적으로 동작하는지 검증
- * 작성일: 2024-03-31
+ * 목적: MainToolbar 컴포넌트 테스트
+ * 역할: 레이아웃 컨트롤러 컴포넌트 유닛 테스트
+ * 작성일: 2024-06-07
  */
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { MainToolbarMock } from './MainToolbarMock';
-import { setupMainToolbarTests, teardownMainToolbarTests, mockActions } from './test-utils';
-import '@testing-library/jest-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MainToolbar } from './MainToolbar';
+import React from 'react';
 
-// 테스트 설정
-const TEST_TIMEOUT = 10000;
+// useAppStore와 mockStoreValues 선언
+const mockApplyLayout = vi.fn();
+const mockSaveBoardLayout = vi.fn();
+const mockStoreValues = {
+    applyLayout: mockApplyLayout,
+    saveBoardLayout: mockSaveBoardLayout,
+    layoutDirection: 'auto'
+};
+
+// useAppStore 모킹
+vi.mock('@/store/useAppStore', () => ({
+    useAppStore: () => mockStoreValues
+}));
+
+// CreateCardModal 모킹
+vi.mock('@/components/cards/CreateCardModal', () => ({
+    default: ({ customTrigger }: { customTrigger: React.ReactNode }) => (
+        <div data-testid="mock-create-card-modal">
+            {customTrigger}
+        </div>
+    )
+}));
+
+// window.location.reload 모킹
+const mockReload = vi.fn();
+Object.defineProperty(window, 'location', {
+    value: { reload: mockReload },
+    writable: true
+});
 
 describe('MainToolbar', () => {
     beforeEach(() => {
-        setupMainToolbarTests();
-        // 모든 목 함수 초기화
+        // 각 테스트 전 모킹 초기화
         vi.clearAllMocks();
     });
 
-    afterEach(() => {
-        teardownMainToolbarTests();
+    it('수평 정렬 버튼 클릭 시 applyLayout을 "horizontal" 인자와 함께 호출해야 함', async () => {
+        // 사용자 이벤트 설정
+        const user = userEvent.setup();
+
+        // 컴포넌트 렌더링
+        render(<MainToolbar />);
+
+        // 수평 정렬 버튼 찾기
+        const horizontalButton = screen.getByTitle('수평 정렬');
+
+        // 버튼 클릭
+        await user.click(horizontalButton);
+
+        // applyLayout이 'horizontal' 인자와 함께 호출되었는지 확인
+        expect(mockApplyLayout).toHaveBeenCalledWith('horizontal');
     });
 
-    describe('@testcase.mdc MainToolbar 기본 기능', () => {
-        it('rule: 모든 기본 버튼이 렌더링되어야 함', () => {
-            render(<MainToolbarMock />);
+    it('수직 정렬 버튼 클릭 시 applyLayout을 "vertical" 인자와 함께 호출해야 함', async () => {
+        // 사용자 이벤트 설정
+        const user = userEvent.setup();
 
-            expect(screen.getByTitle('새 카드 추가')).toBeInTheDocument();
-            expect(screen.getByTitle('수평 정렬')).toBeInTheDocument();
-            expect(screen.getByTitle('수직 정렬')).toBeInTheDocument();
-            expect(screen.getByTitle('자동 배치')).toBeInTheDocument();
-            expect(screen.getByTitle('레이아웃 저장')).toBeInTheDocument();
-        });
+        // 컴포넌트 렌더링
+        render(<MainToolbar />);
 
-        it('rule: 새 카드 추가 버튼 클릭 시 모달이 열려야 함', () => {
-            render(<MainToolbarMock />);
+        // 수직 정렬 버튼 찾기
+        const verticalButton = screen.getByTitle('수직 정렬');
 
-            fireEvent.click(screen.getByTitle('새 카드 추가'));
-            expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
-        });
+        // 버튼 클릭
+        await user.click(verticalButton);
+
+        // applyLayout이 'vertical' 인자와 함께 호출되었는지 확인
+        expect(mockApplyLayout).toHaveBeenCalledWith('vertical');
     });
 
-    describe('@testcase.mdc 카드 생성 기능', () => {
-        // Promise.resolve 구현으로 변경하고 테스트 로직 단순화
-        it('rule: 모달에서 카드 생성 시 createCard 액션이 호출되어야 함', () => {
-            // 목 함수를 즉시 해결되는 Promise로 설정
-            mockActions.createCard.mockResolvedValue({ id: 'new-card-id' });
+    it('자동 배치 버튼 클릭 시 applyLayout을 "auto" 인자와 함께 호출해야 함', async () => {
+        // 사용자 이벤트 설정
+        const user = userEvent.setup();
 
-            render(<MainToolbarMock />);
+        // 컴포넌트 렌더링
+        render(<MainToolbar />);
 
-            // 모달 열기
-            fireEvent.click(screen.getByTitle('새 카드 추가'));
+        // 자동 배치 버튼 찾기
+        const autoButton = screen.getByTitle('자동 배치');
 
-            // 카드 생성 버튼 클릭 
-            fireEvent.click(screen.getByTestId('create-card-button'));
+        // 버튼 클릭
+        await user.click(autoButton);
 
-            // 동기적으로 호출 여부만 검증 (Promise 처리는 테스트하지 않음)
-            expect(mockActions.createCard).toHaveBeenCalledWith({
-                title: '테스트 카드',
-                content: '테스트 내용'
-            });
-        }, TEST_TIMEOUT);
-
-        // 모달이 닫히는지만 테스트하는 별도 케이스로 단순화
-        it('rule: 카드 생성 후 모달이 닫혀야 함', () => {
-            // 목 함수를 즉시 해결되는 Promise로 설정
-            mockActions.createCard.mockResolvedValue({ id: 'new-card-id' });
-
-            render(<MainToolbarMock />);
-
-            // 모달 열기
-            fireEvent.click(screen.getByTitle('새 카드 추가'));
-            expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
-
-            // 카드 생성 버튼 클릭
-            fireEvent.click(screen.getByTestId('create-card-button'));
-
-            // 모달이 닫혔는지 확인 (동기적으로 검증)
-            expect(screen.queryByTestId('create-card-modal')).not.toBeInTheDocument();
-        }, TEST_TIMEOUT);
+        // applyLayout이 'auto' 인자와 함께 호출되었는지 확인
+        expect(mockApplyLayout).toHaveBeenCalledWith('auto');
     });
 
-    describe('@testcase.mdc 레이아웃 기능', () => {
-        it('rule: 수평 정렬 버튼 클릭 시 horizontal 레이아웃이 적용되어야 함', () => {
-            render(<MainToolbarMock />);
+    it('저장 버튼 클릭 시 saveBoardLayout을 호출해야 함', async () => {
+        // 사용자 이벤트 설정
+        const user = userEvent.setup();
 
-            fireEvent.click(screen.getByTitle('수평 정렬'));
-            expect(mockActions.applyLayout).toHaveBeenCalledWith('horizontal');
-        });
+        // 컴포넌트 렌더링
+        render(<MainToolbar />);
 
-        it('rule: 수직 정렬 버튼 클릭 시 vertical 레이아웃이 적용되어야 함', () => {
-            render(<MainToolbarMock />);
+        // 저장 버튼 찾기
+        const saveButton = screen.getByTitle('레이아웃 저장');
 
-            fireEvent.click(screen.getByTitle('수직 정렬'));
-            expect(mockActions.applyLayout).toHaveBeenCalledWith('vertical');
-        });
+        // 버튼 클릭
+        await user.click(saveButton);
 
-        it('rule: 자동 배치 버튼 클릭 시 auto 레이아웃이 적용되어야 함', () => {
-            render(<MainToolbarMock />);
+        // saveBoardLayout이 호출되었는지 확인
+        expect(mockSaveBoardLayout).toHaveBeenCalled();
+    });
 
-            fireEvent.click(screen.getByTitle('자동 배치'));
-            expect(mockActions.applyLayout).toHaveBeenCalledWith('auto');
-        });
+    it('새 카드 추가 버튼이 CreateCardModal의 트리거로 사용되어야 함', async () => {
+        // 컴포넌트 렌더링
+        render(<MainToolbar />);
 
-        it('rule: 레이아웃 저장 버튼 클릭 시 설정이 저장되어야 함', () => {
-            render(<MainToolbarMock />);
+        // CreateCardModal이 렌더링되었는지 확인
+        expect(screen.getByTestId('mock-create-card-modal')).toBeInTheDocument();
 
-            fireEvent.click(screen.getByTitle('레이아웃 저장'));
-            expect(mockActions.updateBoardSettings).toHaveBeenCalled();
-        });
+        // 그 내부에 '새 카드 추가' 버튼이 있는지 확인
+        expect(screen.getByTitle('새 카드 추가')).toBeInTheDocument();
     });
 }); 

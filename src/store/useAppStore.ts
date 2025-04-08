@@ -4,6 +4,9 @@ import { BoardSettings, DEFAULT_BOARD_SETTINGS, saveBoardSettings as saveSetting
 import { ReactFlowInstance } from '@xyflow/react';
 import { toast } from 'sonner';
 import { CreateCardInput } from '@/types/card';
+import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
+import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { saveAllLayoutData } from '@/components/board/utils/graphUtils';
 
 // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
 export interface Card {
@@ -51,6 +54,10 @@ export interface AppState {
   layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
   setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto' | 'none') => void;
   
+  // 레이아웃 적용 및 저장 액션
+  applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
+  saveBoardLayout: () => Promise<boolean>;
+  
   // 사이드바 너비
   sidebarWidth: number;
   setSidebarWidth: (width: number) => void;
@@ -70,8 +77,8 @@ export interface AppState {
   clearError: () => void;
   
   // React Flow 인스턴스
-  reactFlowInstance: ReactFlowInstance | null;
-  setReactFlowInstance: (instance: ReactFlowInstance | null) => void;
+  reactFlowInstance: any | null;
+  setReactFlowInstance: (instance: any) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -255,6 +262,88 @@ export const useAppStore = create<AppState>()(
       // 레이아웃 옵션 초기값 및 액션
       layoutDirection: 'auto' as const,
       setLayoutDirection: (direction) => set({ layoutDirection: direction }),
+      
+      // 레이아웃 적용 액션
+      applyLayout: (direction) => {
+        const { reactFlowInstance } = get();
+        
+        if (!reactFlowInstance) {
+          toast.error('React Flow 인스턴스를 찾을 수 없습니다');
+          return;
+        }
+        
+        // React Flow 인스턴스에서 현재 노드와 엣지 가져오기
+        const nodes = reactFlowInstance.getNodes();
+        const edges = reactFlowInstance.getEdges();
+        
+        if (!nodes.length) {
+          toast.error('적용할 노드가 없습니다');
+          return;
+        }
+        
+        let layoutedNodes, layoutedEdges;
+        
+        // 방향에 따라 다른 레이아웃 적용
+        if (direction === 'auto') {
+          // 자동 배치 레이아웃 적용
+          layoutedNodes = getGridLayout(nodes);
+          layoutedEdges = edges; // 자동 배치는 엣지를 변경하지 않음
+          
+          // 변경된 노드만 적용
+          reactFlowInstance.setNodes(layoutedNodes);
+          toast.success('자동 배치 레이아웃이 적용되었습니다');
+        } else {
+          // 수평 또는 수직 레이아웃 적용
+          const result = getLayoutedElements(nodes, edges, direction);
+          layoutedNodes = result.nodes;
+          layoutedEdges = result.edges;
+          
+          // 변경된 노드와 엣지 적용
+          reactFlowInstance.setNodes(layoutedNodes);
+          reactFlowInstance.setEdges(layoutedEdges);
+          toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃이 적용되었습니다`);
+        }
+        
+        // 레이아웃 방향 상태 업데이트
+        set({ layoutDirection: direction });
+      },
+      
+      // 레이아웃 저장 액션
+      saveBoardLayout: async () => {
+        try {
+          const { reactFlowInstance } = get();
+          
+          if (!reactFlowInstance) {
+            toast.error('React Flow 인스턴스를 찾을 수 없습니다');
+            return false;
+          }
+          
+          // React Flow 인스턴스에서 직접 노드와 엣지 데이터 가져오기
+          const nodes = reactFlowInstance.getNodes();
+          const edges = reactFlowInstance.getEdges();
+          
+          if (!nodes.length) {
+            toast.error('저장할 노드가 없습니다');
+            return false;
+          }
+          
+          // 노드와 엣지 데이터 저장 (graphUtils 유틸리티 함수 사용)
+          const saveResult = saveAllLayoutData(nodes, edges);
+          
+          if (saveResult) {
+            toast.success('레이아웃이 저장되었습니다');
+            console.log('레이아웃 저장 완료:', { nodes: nodes.length, edges: edges.length });
+            return true;
+          } else {
+            toast.error('레이아웃 저장에 실패했습니다');
+            return false;
+          }
+        } catch (error) {
+          console.error('레이아웃 저장 실패:', error);
+          toast.error('레이아웃 저장에 실패했습니다');
+          return false;
+        }
+      },
       
       // 사이드바 너비 초기값 및 액션
       sidebarWidth: 320,
