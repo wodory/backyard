@@ -3,13 +3,18 @@ import { persist } from 'zustand/middleware'
 import { BoardSettings, DEFAULT_BOARD_SETTINGS, saveBoardSettings as saveSettingsToLocalStorage } from '@/lib/board-utils';
 import { ReactFlowInstance } from '@xyflow/react';
 import { toast } from 'sonner';
+import { CreateCardInput } from '@/types/card';
 
-// 카드 타입 정의
+// 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
 export interface Card {
   id: string;
   title: string;
-  content: string;
-  tags?: string[];
+  content: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user?: import('@/types/card').User;
+  cardTags?: Array<{ tag: { id: string; name: string; } }>;
   [key: string]: any;
 }
 
@@ -35,6 +40,7 @@ export interface AppState {
   cards: Card[]; // 현재 로드된 카드 목록
   setCards: (cards: Card[]) => void; // 카드 목록 설정
   updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
+  createCard: (input: CreateCardInput) => Promise<Card | null>; // 카드 생성 액션 추가
   
   // 사이드바 상태
   isSidebarOpen: boolean;
@@ -205,6 +211,39 @@ export const useAppStore = create<AppState>()(
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ error: error as Error, isLoading: false });
           toast.error(`카드 업데이트 실패: ${errorMessage}`);
+        }
+      },
+      createCard: async (input) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch('/api/cards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(input),
+          });
+
+          if (!response.ok) {
+            let errorMsg = '카드 생성에 실패했습니다.';
+            try {
+              const errorData = await response.json();
+              errorMsg = errorData.error || errorMsg;
+            } catch (e) { /* JSON 파싱 실패 무시 */ }
+            throw new Error(errorMsg);
+          }
+
+          const newCard = await response.json();
+          set((state) => ({
+            cards: [...state.cards, newCard],
+            isLoading: false
+          }));
+          toast.success('카드가 성공적으로 생성되었습니다.');
+          return newCard;
+
+        } catch (err: any) {
+          console.error("createCard 액션 오류:", err);
+          set({ isLoading: false, error: err.message });
+          toast.error(`카드 생성 오류: ${err.message}`);
+          return null;
         }
       },
       

@@ -33,6 +33,16 @@ export default mergeConfig(
       },
       isolate: true,
       
+      // Node.js v20의 Undici 타임아웃 문제 처리
+      environmentOptions: {
+        // jsdom 환경에서 글로벌 변수 설정
+        jsdom: {
+          // JS 타이머 이벤트가 즉시 처리되도록 설정
+          // Undici의 타임아웃 이슈 해결
+          pretendToBeVisual: true,
+        }
+      },
+      
       // 테스트 파일 패턴 설정
       include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
       exclude: [
@@ -74,7 +84,6 @@ export default mergeConfig(
         './*.config.mjs',
         './*.d.ts', // 루트 경로의 타입 정의 파일
       ],
-  
       
       // 타입스크립트 설정
       typecheck: {

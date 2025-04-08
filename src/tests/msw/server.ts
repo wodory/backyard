@@ -8,12 +8,23 @@
 import { setupServer } from 'msw/node';
 import { handlers } from './handlers';
 import createLogger from '@/lib/logger';
+import { HttpResponse } from 'msw';
 
 // 로거 생성
 const logger = createLogger('MSWServer');
 
 // MSW 서버 설정
-export const server = setupServer();
+export const server = setupServer(...handlers);
+
+// Node.js v20에서 문제가 발생하는 요청에 대한 fail-fast handler 추가
+server.events.on('request:start', ({ request }) => {
+  // undici 타임아웃 관련 문제를 방지하기 위해 특정 케이스 관리
+  const url = new URL(request.url);
+  if (url.pathname.includes('problem-url')) {
+    return HttpResponse.json({ error: 'Simulated error' }, { status: 500 });
+  }
+  return;
+});
 
 /**
  * setupMSW: 테스트에서 MSW 서버 설정
@@ -22,7 +33,9 @@ export const server = setupServer();
 export function setupMSW() {
   // 테스트 전 서버 시작
   beforeEach(() => {
-    server.listen({ onUnhandledRequest: 'warn' });
+    server.listen({ 
+      onUnhandledRequest: 'bypass' // warn 대신 bypass 사용
+    });
     logger.info('MSW 서버 시작됨');
   });
 

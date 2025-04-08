@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: src/**/*.test.ts,src/**/*.test.tsx
 alwaysApply: false
 ---
 # React Test Debugging Playbook for Cursor Agent

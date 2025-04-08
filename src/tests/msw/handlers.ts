@@ -198,5 +198,30 @@ export const handlers = [
         },
       });
     }
-  })
+  }),
+
+  // 카드 생성 API
+  http.post('/api/cards', async ({ request }) => {
+    try {
+      const newCardData = await request.json() as any;
+      // 실패 시뮬레이션 (예: 제목 누락)
+      if (!newCardData || !newCardData.title) {
+        return HttpResponse.json({ error: '제목은 필수입니다.' }, { status: 400 });
+      }
+      // 성공 시뮬레이션
+      const createdCard = {
+        id: `mock-card-${Date.now()}`, // 동적 ID 생성
+        title: newCardData.title,
+        content: newCardData.content || '',
+        userId: newCardData.userId || 'default-user', // userId 처리
+        tags: newCardData.tags || [], // tags 처리
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        cardTags: (newCardData.tags || []).map((tag: string) => ({ id: tag, name: tag })) // cardTags 형식 맞추기
+      };
+      return HttpResponse.json(createdCard, { status: 201 });
+    } catch (error) {
+      return HttpResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+    }
+  }),
 ]; 

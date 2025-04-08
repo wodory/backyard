@@ -18,9 +18,9 @@ export default {
 
     // File filtering
     extensions: [".ts", ".js", ".jsx", ".tsx"], // File extensions to include
-    includeFiles: ["src/**/*.ts", "src/**/*.js", "src/**/*.jsx", "src/**/*.tsx"], // Files to include (glob patterns)
+    // includeFiles: ["/**/*.ts", "/**/*.js", "/**/*.jsx", "src/**/*.tsx"], // Files to include (glob patterns)
     excludeFiles: ["**/*.test.ts", "**/*.md", "**/*.mds", "**/*.db", "**/*.json", "**/*.sh"], // Files to exclude
-    includeDirs: ["src", "lib"], // Directories to include
+    // includeDirs: ["src", "lib"], // Directories to include
     excludeDirs: ["test", "dist", ".note", ".cursor", ".vscode", ".vercel", "node_modules"], // Directories to exclude
 
     // AI/LLM settings

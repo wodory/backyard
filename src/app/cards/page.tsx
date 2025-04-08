@@ -8,7 +8,7 @@
 import { Metadata } from "next";
 import { Suspense } from 'react';
 import CardList from "@/components/cards/CardList";
-import CreateCardButton from "@/components/cards/CreateCardButton";
+import CreateCardModal from "@/components/cards/CreateCardModal";
 import { TagFilter } from "@/components/cards/TagFilter";
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronRight } from "lucide-react";
@@ -51,20 +51,20 @@ export default function CardsPage() {
             </div> */}
             <h1 className="text-3xl font-bold">카드 목록</h1>
           </div>
-          <CreateCardButton />
+          <CreateCardModal />
         </div>
         <p className="text-muted-foreground">
           카드를 생성하고 관리할 수 있습니다. 태그를 사용하여 카드를 필터링할 수 있습니다.
         </p>
       </div>
-      
+
       {/* 메인 콘텐츠 */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 사이드바 - 태그 필터 */}
         <div className="lg:col-span-1">
           <TagFilter />
         </div>
-        
+
         {/* 카드 목록 */}
         <div className="lg:col-span-3">
           <Suspense fallback={<CardListSkeleton />}>

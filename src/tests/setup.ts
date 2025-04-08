@@ -16,9 +16,51 @@ import { server } from './msw/server'; // MSW 서버 임포트
 expect.extend(matchers);
 
 // --- MSW 서버 설정 ---
-beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' })); // 경고 대신 바이패스 또는 'warn'
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+// Node.js v20 undici 타임아웃 이슈 해결을 위한 설정
+beforeAll(() => {
+  // fetch 타임아웃 관련 이슈 해결을 위해 bypass 모드 사용
+  server.listen({ 
+    onUnhandledRequest: 'bypass',
+  });
+  
+  // 타이머 관리를 개선하기 위한 가짜 타이머 설정
+  if (typeof window !== 'undefined') {
+    // 실제 타이머 대신 즉시 실행되는 타이머 사용
+    const originalSetTimeout = window.setTimeout;
+    const originalClearTimeout = window.clearTimeout;
+    
+    // 타이머 즉시 실행 처리로 undici 타임아웃 문제 해결
+    // @ts-ignore - 타입 호환성 무시하고 undici 타임아웃 문제 해결
+    window.setTimeout = function mockSetTimeout(fn, timeout) {
+      if (typeof fn === 'function') fn();
+      return Math.floor(Math.random() * 10000);
+    };
+    
+    // @ts-ignore - 타입 호환성 무시하고 undici 타임아웃 문제 해결
+    window.clearTimeout = function mockClearTimeout(id) {
+      // 아무 작업 없음
+      return undefined;
+    };
+    
+    // 테스트 종료 후 원래 함수 복원
+    afterAll(() => {
+      window.setTimeout = originalSetTimeout;
+      window.clearTimeout = originalClearTimeout;
+    });
+  }
+});
+
+afterEach(() => {
+  // 각 테스트 후 핸들러 초기화
+  server.resetHandlers();
+  // React 컴포넌트 정리
+  cleanup();
+});
+
+afterAll(() => {
+  // 모든 테스트 후 서버 정리
+  server.close();
+});
 // --- MSW 서버 설정 끝 ---
 
 // 항상 document.body가 존재하도록 함

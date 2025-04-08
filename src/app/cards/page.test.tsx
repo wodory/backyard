@@ -29,8 +29,8 @@ vi.mock('@/components/cards/TagFilter', () => ({
 }));
 
 // React.Suspense 모킹
-vi.mock('react', () => {
-  const originalReact = vi.importActual('react');
+vi.mock('react', async () => {
+  const originalReact = await vi.importActual('react');
   return {
     ...originalReact,
     Suspense: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => {
@@ -67,9 +67,10 @@ vi.mock('@/components/cards/CardList', () => {
   };
 });
 
-vi.mock('@/components/cards/CreateCardButton', () => {
+// CreateCardButton 모킹을 CreateCardModal로 변경
+vi.mock('@/components/cards/CreateCardModal', () => {
   return {
-    default: vi.fn(() => <button data-testid="create-card-button">새 카드 만들기</button>)
+    default: vi.fn(() => <button data-testid="create-card-modal-button">새 카드 만들기</button>)
   };
 });
 
@@ -81,31 +82,31 @@ vi.mock('@/components/ui/skeleton', () => ({
 describe('Cards Page', () => {
   it('페이지 제목이 올바르게 렌더링되는지 확인한다', () => {
     render(<CardsPage />);
-    
+
     const heading = screen.getByRole('heading', { name: /카드 목록/i });
     expect(heading).toBeInTheDocument();
   });
-  
+
   it('카드 목록 컴포넌트가 렌더링되는지 확인한다', () => {
     render(<CardsPage />);
-    
+
     const cardListContainer = screen.getByTestId('suspense-children');
     expect(cardListContainer).toBeInTheDocument();
-    
+
     const cardList = screen.getByTestId('card-list');
     expect(cardList).toBeInTheDocument();
   });
-  
+
   it('새 카드 만들기 버튼이 렌더링되는지 확인한다', () => {
     render(<CardsPage />);
-    
-    const createButton = screen.getByTestId('create-card-button');
+
+    const createButton = screen.getByRole('button', { name: /새 카드 만들기/i });
     expect(createButton).toBeInTheDocument();
   });
-  
+
   it('Suspense fallback이 스켈레톤을 사용하는지 확인한다', () => {
     render(<CardsPage />);
-    
+
     const fallbackContainer = screen.getByTestId('suspense-fallback');
     expect(fallbackContainer).toBeInTheDocument();
   });
@@ -114,15 +115,15 @@ describe('Cards Page', () => {
 describe('CardListSkeleton', () => {
   it('6개의 스켈레톤 카드를 렌더링한다', () => {
     render(<CardListSkeleton />);
-    
+
     const skeletons = screen.getAllByTestId('skeleton');
     // 각 카드는 4개의 스켈레톤 요소를 가짐 (제목, 내용, 날짜, 버튼)
     expect(skeletons.length).toBe(6 * 4);
   });
-  
+
   it('그리드 레이아웃을 사용한다', () => {
     render(<CardListSkeleton />);
-    
+
     const gridContainer = screen.getByTestId('skeleton-grid');
     expect(gridContainer).toHaveClass('grid');
     expect(gridContainer).toHaveClass('grid-cols-1');

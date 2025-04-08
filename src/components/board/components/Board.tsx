@@ -20,8 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/useAppStore';
 
 // 보드 관련 컴포넌트 임포트
-import { CreateCardModal } from '@/components/cards/CreateCardModal';
-import { SimpleCreateCardModal } from '@/components/cards/SimpleCreateCardModal';
+import CreateCardModal from '@/components/cards/CreateCardModal';
 import BoardCanvas from './BoardCanvas';
 
 // 보드 관련 훅 임포트
@@ -35,6 +34,7 @@ import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { BoardComponentProps, XYPosition } from '../types/board-types';
 import { Node } from '@xyflow/react';
 import { NodeInspector } from '../nodes/NodeInspector';
+import { Card } from '@/store/useAppStore';
 
 /**
  * Board: 보드 메인 컨테이너 컴포넌트
@@ -310,29 +310,44 @@ export default function Board({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveAllLayoutData, hasUnsavedNodesChanges, hasUnsavedEdgesChanges, hasBoardUtilsUnsavedChanges]);
 
-  // 카드 생성 모달 처리
-  const handleCreateCard = useCallback(() => {
-    setIsCreateModalOpen(true);
-  }, []);
-
   // 엣지 드롭 카드 생성 완료 핸들러
-  const handleEdgeDropCardCreated = useCallback((cardData: any) => {
-    const nodeId = cardData.id;
-    if (edgeDropNodeId && edgeDropHandleType && nodeId) {
-      // handleType에 따라 소스와 타겟 결정
-      const sourceId = edgeDropHandleType === 'source' ? nodeId : edgeDropNodeId;
-      const targetId = edgeDropHandleType === 'target' ? nodeId : edgeDropNodeId;
-
-      // 엣지 생성
-      createEdgeOnDrop(sourceId, targetId);
+  const handleEdgeDropCardCreated = useCallback((cardData: Card) => {
+    if (!reactFlowInstance) {
+      console.error("React Flow 인스턴스가 없습니다.");
+      return;
     }
+
+    if (!edgeDropPosition || !edgeDropNodeId || !edgeDropHandleType) {
+      console.error("엣지 드롭 정보가 누락되었습니다.");
+      return;
+    }
+
+    const newNode: Node = {
+      id: cardData.id,
+      type: 'card',
+      position: edgeDropPosition,
+      data: { ...cardData, type: 'card' },
+      origin: [0.5, 0.0],
+      sourcePosition: Position.Top,
+      targetPosition: Position.Bottom,
+    };
+
+    // 새 노드 추가
+    reactFlowInstance.addNodes(newNode);
+
+    // handleType에 따라 소스와 타겟 결정
+    const sourceId = edgeDropHandleType === 'target' ? edgeDropNodeId : cardData.id;
+    const targetId = edgeDropHandleType === 'target' ? cardData.id : edgeDropNodeId;
+
+    // 엣지 생성
+    createEdgeOnDrop(sourceId, targetId);
 
     // 모달 닫기 및 상태 초기화
     setIsEdgeDropModalOpen(false);
     setEdgeDropPosition(null);
     setEdgeDropNodeId(null);
     setEdgeDropHandleType(null);
-  }, [edgeDropNodeId, edgeDropHandleType, createEdgeOnDrop]);
+  }, [reactFlowInstance, edgeDropPosition, edgeDropNodeId, edgeDropHandleType, createEdgeOnDrop]);
 
   // 자동 저장 기능
   useEffect(() => {
@@ -417,7 +432,7 @@ export default function Board({
         onLayoutChange={handleLayoutChange as any}
         onAutoLayout={handleAutoLayout}
         onSaveLayout={handleSaveLayout}
-        onCreateCard={handleCreateCard}
+        onCreateCard={() => setIsCreateModalOpen(true)}
         showControls={showControls}
         wrapperRef={reactFlowWrapper as React.RefObject<HTMLDivElement>}
         className={className}
@@ -431,17 +446,20 @@ export default function Board({
       {/* 노드 인스펙터 컴포넌트 */}
       <NodeInspector nodes={nodes} />
 
+      {/* 일반 카드 생성 모달 */}
       {isCreateModalOpen && (
-        <SimpleCreateCardModal
-          isOpen={isCreateModalOpen}
+        <CreateCardModal
           onClose={() => setIsCreateModalOpen(false)}
-          onCardCreated={() => { }}
+          onCardCreated={() => { /* 일반 생성 시 추가 작업 필요 시 여기에 구현 */ }}
         />
       )}
 
-      {isEdgeDropModalOpen && edgeDropPosition && (
-        <SimpleCreateCardModal
-          isOpen={isEdgeDropModalOpen}
+      {/* 엣지 드롭 카드 생성 모달 */}
+      {isEdgeDropModalOpen && edgeDropPosition && edgeDropNodeId && edgeDropHandleType && (
+        <CreateCardModal
+          position={edgeDropPosition}
+          connectingNodeId={edgeDropNodeId}
+          handleType={edgeDropHandleType}
           onClose={() => setIsEdgeDropModalOpen(false)}
           onCardCreated={handleEdgeDropCardCreated}
         />
