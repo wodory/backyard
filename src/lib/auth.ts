@@ -287,12 +287,12 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
   try {
     const client = getAuthClient();
     const { data: { user }, error } = await client.auth.getUser();
-    
+    // 사용자 정보 가져오기 실패 시 로그 기록
     if (error) {
       logger.error('사용자 정보 가져오기 실패:', error);
       return null;
     }
-    
+    // 사용자 정보가 없으면 null 반환. 이 케이스가 언제 발생할까? 
     if (!user) {
       return null;
     }
