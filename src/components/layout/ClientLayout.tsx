@@ -37,6 +37,16 @@ export function ClientLayout({ children }: { children: ReactNode }) {
         localStorage.setItem('client_layout_test', 'test');
         localStorage.removeItem('client_layout_test');
         logger.info('localStorage 접근 가능');
+
+        // 저장된 사용자 ID 확인 (디버깅용)
+        const userId = localStorage.getItem('user_id');
+        if (userId) {
+          console.log('=== 로컬 스토리지에 저장된 사용자 ID ===');
+          console.log('user_id:', userId);
+          console.log('==================');
+        } else {
+          console.log('로컬 스토리지에 user_id가 없습니다.');
+        }
       } catch (error) {
         logger.warn('localStorage 접근 불가', error);
       }

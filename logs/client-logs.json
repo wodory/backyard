@@ -1173,5 +1173,77 @@
     "message": "code_verifier를 찾을 수 없음",
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-09T11:45:44.156Z"
+  },
+  {
+    "timestamp": "2025-04-09T11:52:56.491Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T11:52:57.111Z"
+  },
+  {
+    "timestamp": "2025-04-09T11:53:35.182Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T11:53:35.267Z"
+  },
+  {
+    "timestamp": "2025-04-09T11:59:05.479Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T11:59:06.321Z"
+  },
+  {
+    "timestamp": "2025-04-09T12:01:07.465Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T12:01:07.708Z"
+  },
+  {
+    "timestamp": "2025-04-09T12:01:15.452Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T12:01:16.018Z"
+  },
+  {
+    "timestamp": "2025-04-09T12:03:07.494Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T12:03:08.221Z"
+  },
+  {
+    "timestamp": "2025-04-09T12:05:34.644Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T12:05:35.653Z"
+  },
+  {
+    "timestamp": "2025-04-09T12:09:07.820Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T12:09:09.913Z"
+  },
+  {
+    "timestamp": "2025-04-09T12:21:02.440Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-09T12:21:04.196Z"
   }
 ]

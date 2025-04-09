@@ -135,6 +135,75 @@ export async function loadBoardSettingsFromServer(userId: string): Promise<Board
 }
 
 /**
+ * 서버 API를 통해 보드 설정을 부분 업데이트하는 함수
+ */
+export async function updateBoardSettingsOnServer(userId: string, partialSettings: Partial<BoardSettings>): Promise<boolean> {
+  try {
+    // 요청 데이터 깊은 복사 및 문자열 변환 확인
+    // markerEnd 값이 null인 경우 명시적으로 null로 처리
+    const safeSettings = JSON.parse(JSON.stringify(partialSettings));
+    
+    console.log('보드 설정 업데이트 요청:', {
+      userId,
+      settings: safeSettings
+    });
+    
+    const response = await fetch('/api/board-settings', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        settings: safeSettings,
+      }),
+    });
+
+    // 응답 정보 로깅
+    console.log('응답 상태:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
+      console.error('응답 오류 데이터:', errorData);
+      throw new Error(
+        errorData.details || errorData.error || '서버에 보드 설정을 업데이트하는데 실패했습니다.'
+      );
+    }
+
+    // 성공적인 응답 처리
+    const responseData = await response.json();
+    console.log('업데이트 성공 응답:', responseData);
+
+    // 로컬 설정도 업데이트 (기존 설정과 병합)
+    const currentSettings = loadBoardSettings();
+    const updatedSettings = {
+      ...currentSettings,
+      ...safeSettings,
+    };
+    
+    // 로컬 스토리지에 저장
+    saveBoardSettings(updatedSettings);
+    console.log('로컬 설정 업데이트 완료:', updatedSettings);
+    
+    return true;
+  } catch (error) {
+    console.error('서버 보드 설정 부분 업데이트 중 오류:', error);
+    // 로컬 저장소에만 저장 (서버 저장 실패시 임시 대안)
+    try {
+      const currentSettings = loadBoardSettings();
+      saveBoardSettings({
+        ...currentSettings,
+        ...partialSettings,
+      });
+      console.log('서버 저장 실패, 로컬에만 저장됨');
+    } catch (localError) {
+      console.error('로컬 설정 저장 중 오류:', localError);
+    }
+    return false;
+  }
+}
+
+/**
  * 보드 설정에 따라 엣지 스타일을 적용하는 함수
  * 모든 연결선에 설정이 즉시 반영되도록 함
  */

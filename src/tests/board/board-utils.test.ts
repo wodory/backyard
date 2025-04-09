@@ -13,7 +13,8 @@ import {
   loadBoardSettingsFromServer,
   applyEdgeSettings,
   DEFAULT_BOARD_SETTINGS,
-  type BoardSettings
+  type BoardSettings,
+  updateBoardSettingsOnServer
 } from '@/lib/board-utils';
 import { ConnectionLineType, MarkerType, type EdgeMarker } from '@xyflow/react';
 import { BOARD_SETTINGS_KEY } from '@/lib/board-constants';
@@ -183,6 +184,109 @@ describe('보드 유틸리티 테스트', () => {
       expect(mockFetch).toHaveBeenCalled();
       // 설정이 없을 때 localStorage는 수정되지 않아야 함
       expect(mockStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    // 부분 업데이트 함수 테스트 추가
+    it('서버에 설정 부분 업데이트 성공', async () => {
+      const partialSettings = { connectionLineType: ConnectionLineType.Straight };
+      
+      // 기존 설정 저장
+      const existingSettings = { ...DEFAULT_BOARD_SETTINGS };
+      storageMap.set(BOARD_SETTINGS_KEY, JSON.stringify(existingSettings));
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.resolve({ success: true, message: '설정이 업데이트되었습니다.' }),
+      });
+
+      const result = await updateBoardSettingsOnServer(userId, partialSettings);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/board-settings',
+        expect.objectContaining({
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            settings: partialSettings,
+          }),
+        })
+      );
+      
+      expect(result).toBe(true);
+      
+      // 설정이 localStorage에 업데이트되었는지 확인
+      const expectedSettings = { ...existingSettings, ...partialSettings };
+      expect(mockStorage.setItem).toHaveBeenCalledWith(
+        BOARD_SETTINGS_KEY,
+        JSON.stringify(expectedSettings)
+      );
+      
+      // 실제로 Map에 저장되었는지 확인
+      const savedSettings = JSON.parse(storageMap.get(BOARD_SETTINGS_KEY) || '{}');
+      expect(savedSettings).toEqual(expectedSettings);
+    });
+    
+    it('서버 업데이트 실패 시 로컬에만 저장', async () => {
+      const partialSettings = { connectionLineType: ConnectionLineType.Straight };
+      
+      // 기존 설정 저장
+      const existingSettings = { ...DEFAULT_BOARD_SETTINGS };
+      storageMap.set(BOARD_SETTINGS_KEY, JSON.stringify(existingSettings));
+      
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () => Promise.resolve({ 
+          error: '보드 설정을 부분 업데이트하는 데 실패했습니다.',
+          details: 'Foreign key constraint violated: `foreign key`' 
+        }),
+      });
+
+      const result = await updateBoardSettingsOnServer(userId, partialSettings);
+
+      expect(result).toBe(false);
+      
+      // 서버 업데이트 실패 후에도 설정이 localStorage에 저장되었는지 확인
+      const expectedSettings = { ...existingSettings, ...partialSettings };
+      expect(mockStorage.setItem).toHaveBeenCalledWith(
+        BOARD_SETTINGS_KEY,
+        JSON.stringify(expectedSettings)
+      );
+      
+      // 실제로 Map에 저장되었는지 확인
+      const savedSettings = JSON.parse(storageMap.get(BOARD_SETTINGS_KEY) || '{}');
+      expect(savedSettings).toEqual(expectedSettings);
+    });
+    
+    it('네트워크 오류 시 로컬에만 저장', async () => {
+      const partialSettings = { connectionLineType: ConnectionLineType.Straight };
+      
+      // 기존 설정 저장
+      const existingSettings = { ...DEFAULT_BOARD_SETTINGS };
+      storageMap.set(BOARD_SETTINGS_KEY, JSON.stringify(existingSettings));
+      
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await updateBoardSettingsOnServer(userId, partialSettings);
+
+      expect(result).toBe(false);
+      
+      // 네트워크 오류 후에도 설정이 localStorage에 저장되었는지 확인
+      const expectedSettings = { ...existingSettings, ...partialSettings };
+      expect(mockStorage.setItem).toHaveBeenCalledWith(
+        BOARD_SETTINGS_KEY,
+        JSON.stringify(expectedSettings)
+      );
+      
+      // 실제로 Map에 저장되었는지 확인
+      const savedSettings = JSON.parse(storageMap.get(BOARD_SETTINGS_KEY) || '{}');
+      expect(savedSettings).toEqual(expectedSettings);
     });
   });
 

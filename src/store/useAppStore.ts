@@ -1,12 +1,17 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { BoardSettings, DEFAULT_BOARD_SETTINGS, saveBoardSettings as saveSettingsToLocalStorage } from '@/lib/board-utils';
-import { ReactFlowInstance } from '@xyflow/react';
-import { toast } from 'sonner';
-import { CreateCardInput } from '@/types/card';
-import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
-import { saveAllLayoutData } from '@/components/board/utils/graphUtils';
+import { persist, subscribeWithSelector } from 'zustand/middleware'
+import { toast } from 'sonner'
+import type { CreateCardInput } from '@/types/card'
+import { 
+  BoardSettings, 
+  DEFAULT_BOARD_SETTINGS, 
+  loadBoardSettings,
+  saveBoardSettings
+} from '@/lib/board-utils'
+import { ReactFlowInstance } from '@xyflow/react'
+import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
+import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants'
+import { saveAllLayoutData } from '@/components/board/utils/graphUtils'
 
 // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
 export interface Card {
@@ -355,24 +360,34 @@ export const useAppStore = create<AppState>()(
       updateBoardSettings: async (settings) => {
         set({ isLoading: true });
         try {
-          const response = await fetch('/api/board-settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-          });
-
-          if (!response.ok) {
-            throw new Error(response.statusText);
+          // 현재 사용자 ID 가져오기 (로컬 스토리지에서)
+          const userId = localStorage.getItem('user_id');
+          
+          // 디버깅: 사용자 ID 로깅
+          console.log('=== 보드 설정 업데이트 중 ===');
+          console.log('userId from localStorage:', userId);
+          console.log('settings to update:', settings);
+          console.log('==================');
+          
+          if (!userId) {
+            throw new Error('사용자 ID를 찾을 수 없습니다. 로그인이 필요합니다.');
+          }
+          
+          // 서버에 설정 업데이트
+          const success = await updateBoardSettingsOnServer(userId, settings);
+          
+          if (!success) {
+            throw new Error('서버에 설정을 저장하는데 실패했습니다.');
           }
 
+          // 스토어 상태 업데이트
           set((state) => ({
             boardSettings: { ...state.boardSettings, ...settings },
             isLoading: false,
             error: null
           }));
-
-          // 로컬 스토리지에도 저장
-          saveSettingsToLocalStorage({ ...get().boardSettings, ...settings });
+          
+          toast.success('보드 설정이 업데이트되었습니다.');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ error: error as Error, isLoading: false });
@@ -406,3 +421,72 @@ export const useAppStore = create<AppState>()(
     }
   )
 ); 
+
+// 로컬 함수로 선언된 updateBoardSettingsOnServer 함수를 유지하되, 수정
+const updateBoardSettingsOnServer = async (userId: string, partialSettings: Partial<BoardSettings>): Promise<{ success: boolean; settings?: BoardSettings; message?: string }> => {
+  try {
+    // 깊은 복사를 통해 설정 객체의 안전한 복사본 생성
+    const settingsCopy = JSON.parse(JSON.stringify(partialSettings));
+    
+    // 요청 전 사용자 ID와 함께 설정 데이터 출력
+    console.log('=== 서버에 보드 설정 업데이트 요청 시작 ===');
+    console.log('userId:', userId);
+    console.log('보드 설정 데이터:', settingsCopy);
+    
+    // API 요청
+    const response = await fetch('/api/board-settings', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        settings: settingsCopy,
+      }),
+    });
+    
+    // 응답 상태 및 데이터 로깅
+    console.log('서버 응답 상태:', response.status);
+    
+    const data = await response.json();
+    console.log('서버 응답 데이터:', data);
+    console.log('==================');
+    
+    // 성공적인 응답 처리
+    if (response.ok) {
+      // ... 기존 성공 처리 코드
+      
+      // 로컬 스토리지에 저장
+      try {
+        // 현재 설정 가져오기
+        const currentSettings = loadBoardSettings();
+        // 병합된 설정 저장
+        const mergedSettings = { ...currentSettings, ...settingsCopy };
+        saveBoardSettings(mergedSettings);
+      } catch (storageError) {
+        console.error('로컬 스토리지 저장 오류:', storageError);
+      }
+      
+      return { success: true, settings: data.settings, message: data.message };
+    } else {
+      throw new Error(data.message || '서버 오류 발생');
+    }
+  } catch (error) {
+    console.error('보드 설정 업데이트 오류:', error);
+    
+    // 오류 발생 시에도 로컬 스토리지에는 저장 시도 (폴백)
+    try {
+      const currentSettings = loadBoardSettings();
+      const mergedSettings = { ...currentSettings, ...partialSettings };
+      saveBoardSettings(mergedSettings);
+      console.log('서버 저장 실패, 로컬 저장소에 백업 완료');
+    } catch (storageError) {
+      console.error('로컬 스토리지 저장도 실패:', storageError);
+    }
+    
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '알 수 없는 오류 발생',
+    };
+  }
+}; 

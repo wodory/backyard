@@ -197,6 +197,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               user_id: data.session.user?.id?.substring(0, 8) + '...',
               provider: data.session.user?.app_metadata?.provider
             });
+
+            // 로그인 시 사용자 정보 출력 (디버깅용)
+            console.log('=== 로그인 성공: 사용자 정보 ===');
+            console.log('ID:', data.session.user?.id);
+            console.log('이메일:', data.session.user?.email);
+            console.log('이름:', data.session.user?.user_metadata?.full_name);
+            console.log('로그인 제공자:', data.session.user?.app_metadata?.provider);
+            console.log('마지막 로그인:', new Date(data.session.user?.last_sign_in_at || '').toLocaleString());
+            console.log('사용자 메타데이터:', data.session.user?.user_metadata);
+            console.log('앱 메타데이터:', data.session.user?.app_metadata);
+            console.log('==================');
           } else {
             logger.info('활성 세션 없음');
           }
@@ -245,6 +256,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (newSession.user?.app_metadata?.provider) {
             localStorage.setItem(STORAGE_KEYS.PROVIDER, newSession.user.app_metadata.provider);
           }
+
+          // 로그인 시 사용자 정보 출력 (디버깅용)
+          console.log('=== 로그인 성공: 사용자 정보 ===');
+          console.log('ID:', newSession.user?.id);
+          console.log('이메일:', newSession.user?.email);
+          console.log('이름:', newSession.user?.user_metadata?.full_name);
+          console.log('로그인 제공자:', newSession.user?.app_metadata?.provider);
+          console.log('마지막 로그인:', new Date(newSession.user?.last_sign_in_at || '').toLocaleString());
+          console.log('사용자 메타데이터:', newSession.user?.user_metadata);
+          console.log('앱 메타데이터:', newSession.user?.app_metadata);
+          console.log('==================');
         } else if (event === 'SIGNED_OUT') {
           logger.info('로그아웃 이벤트 발생');
           setUser(null);
