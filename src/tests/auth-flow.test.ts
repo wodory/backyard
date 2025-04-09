@@ -6,7 +6,22 @@
  */
 
 import { describe, test, expect, vi } from 'vitest';
-import { STORAGE_KEYS, getAuthData, setAuthData, clearTestEnvironment } from './setup';
+import { STORAGE_KEYS } from './setup';
+
+// STORAGE_KEYS를 직접 정의
+// const STORAGE_KEYS = {
+//   ACCESS_TOKEN: 'sb-access-token',
+//   REFRESH_TOKEN: 'sb-refresh-token',
+//   CODE_VERIFIER: 'code_verifier'
+// };
+
+// localStorage 모킹 함수 사용
+const getAuthData = (key: string) => localStorage.getItem(key);
+const setAuthData = (key: string, value: string) => localStorage.setItem(key, value);
+const clearTestEnvironment = () => {
+  localStorage.clear();
+  sessionStorage.clear();
+};
 
 // 타입 정의
 interface AuthOptions {
@@ -47,9 +62,9 @@ const mockCheckBrowserEnvironment = () => {
   return true;
 };
 
-// getSupabaseInstance 모킹
-vi.mock('@/lib/supabase-instance', () => ({
-  getSupabaseInstance: vi.fn(() => {
+// Supabase 클라이언트 모킹
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: vi.fn(() => {
     mockCheckBrowserEnvironment();
     return {
       auth: {
@@ -73,13 +88,13 @@ describe('서버/클라이언트 컴포넌트 분리', () => {
 });
 
 describe('Supabase 클라이언트 초기화', () => {
-  test('getSupabaseInstance는 브라우저 환경에서만 작동해야 함', () => {
+  test('createClient는 브라우저 환경에서만 작동해야 함', () => {
     // 1. window 객체를 undefined로 설정
     const originalWindow = global.window;
     // @ts-ignore
     global.window = undefined;
     
-    // 2. getSupabaseInstance 함수 호출 시 에러 확인
+    // 2. createClient 함수 호출 시 에러 확인
     expect(() => mockCheckBrowserEnvironment()).toThrow('브라우저 환경에서만 사용 가능합니다');
     
     // 3. window 객체 복원

@@ -59,11 +59,17 @@ vi.mock('@supabase/supabase-js', async () => {
   };
 });
 
-// 모킹 전용 팩토리 함수로 정의
-vi.mock('./hybrid-supabase', () => {
+// 새로운 모킹 추가 (supabase/client)
+vi.mock('./supabase/client', () => {
   return {
-    getHybridSupabaseClient: vi.fn(),
-    isClientEnvironment: vi.fn().mockReturnValue(true),
+    createClient: vi.fn().mockReturnValue({
+      auth: {
+        signUp: vi.fn(),
+        signInWithPassword: vi.fn(),
+        signInWithOAuth: vi.fn(),
+        exchangeCodeForSession: vi.fn(),
+      }
+    }),
   };
 });
 

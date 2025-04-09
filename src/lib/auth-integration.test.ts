@@ -45,18 +45,17 @@ vi.mock('./auth-storage', () => ({
   }
 }));
 
-// 모킹 전용 팩토리 함수로 정의
-vi.mock('./hybrid-supabase', () => {
+// Supabase 클라이언트 모킹
+vi.mock('./supabase/client', () => {
   return {
-    getHybridSupabaseClient: vi.fn(),
-    isClientEnvironment: vi.fn().mockReturnValue(true),
+    createClient: vi.fn(),
   };
 });
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { signIn, signUp, signOut, getCurrentUser, signInWithGoogle } from './auth';
 import * as authStorage from './auth-storage';
-import * as hybridSupabase from './hybrid-supabase';
+import { createClient } from './supabase/client';
 
 describe('Auth 모듈 통합 테스트', () => {
   // 모킹된 auth 객체
@@ -79,9 +78,8 @@ describe('Auth 모듈 통합 테스트', () => {
     // 모든 모킹 초기화
     vi.clearAllMocks();
     
-    // getHybridSupabaseClient 모킹 설정
-    vi.mocked(hybridSupabase.getHybridSupabaseClient).mockReturnValue(mockClient as any);
-    vi.mocked(hybridSupabase.isClientEnvironment).mockReturnValue(true);
+    // Supabase 클라이언트 모킹 설정
+    vi.mocked(createClient).mockReturnValue(mockClient as any);
     
     // localStorage 모킹
     const localStorageMock = {
@@ -104,12 +102,20 @@ describe('Auth 모듈 통합 테스트', () => {
           // 단순화된 해시 함수 모킹
           return new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
         }),
+        encrypt: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+        decrypt: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+        sign: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+        verify: vi.fn().mockResolvedValue(true),
+        deriveBits: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+        deriveKey: vi.fn().mockResolvedValue({}),
+        importKey: vi.fn().mockResolvedValue({}),
+        exportKey: vi.fn().mockResolvedValue({}),
+        wrapKey: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+        unwrapKey: vi.fn().mockResolvedValue({}),
+        generateKey: vi.fn().mockResolvedValue({})
       },
       // randomUUID 추가
-      randomUUID: vi.fn(() => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      })),
+      randomUUID: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000'),
     };
     
     // 전역 crypto 직접 모킹

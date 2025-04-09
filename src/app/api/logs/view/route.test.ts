@@ -69,12 +69,12 @@ vi.mock('next/server', () => ({
 }));
 
 // Supabase 모킹
-vi.mock('@/lib/supabase-instance', () => ({
-  getSupabaseInstance: vi.fn(() => ({
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn().mockResolvedValue({
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null } })
     }
-  }))
+  })
 }));
 
 // process.cwd() 모킹
@@ -87,7 +87,7 @@ vi.mock('process', () => ({
 }));
 
 // 모듈 임포트
-import { getSupabaseInstance } from '@/lib/supabase-instance';
+import { createClient } from '@/lib/supabase/server';
 
 describe('로그 조회 API', () => {
   // 테스트 샘플 로그 데이터
@@ -254,7 +254,7 @@ describe('로그 조회 API', () => {
       vi.stubEnv('NODE_ENV', 'production');
       
       // 인증되지 않은 세션 모킹
-      const supabaseMock = getSupabaseInstance as Mock;
+      const supabaseMock = createClient as Mock;
       supabaseMock.mockReturnValueOnce({
         auth: {
           getSession: vi.fn().mockResolvedValueOnce({ data: { session: null } })
@@ -273,7 +273,7 @@ describe('로그 조회 API', () => {
       vi.stubEnv('NODE_ENV', 'production');
       
       // 인증된 세션 모킹
-      const supabaseMock = getSupabaseInstance as Mock;
+      const supabaseMock = createClient as Mock;
       supabaseMock.mockReturnValueOnce({
         auth: {
           getSession: vi.fn().mockResolvedValueOnce({ 

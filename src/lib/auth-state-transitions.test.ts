@@ -8,8 +8,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as auth from './auth';
 import * as authStorage from './auth-storage';
-import * as hybridSupabase from './hybrid-supabase';
+import * as environment from './environment';
 import { STORAGE_KEYS } from './auth-storage';
+import { createClient } from './supabase/client';
 
 // 공통 모킹 상수
 const MOCK_USER_ID = 'mock-user-id-123';
@@ -96,9 +97,11 @@ describe('인증 상태 전환 테스트', () => {
       return true;
     });
 
-    // hybrid-supabase 모킹
-    vi.spyOn(hybridSupabase, 'getHybridSupabaseClient').mockReturnValue(mockSupabaseClient as any);
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockReturnValue(true);
+    // environment 모킹
+    vi.spyOn(environment, 'isClient').mockReturnValue(true);
+
+    // supabase/client 모킹
+    vi.mocked(createClient).mockReturnValue(mockSupabaseClient as any);
 
     // auth 함수 직접 모킹
     vi.spyOn(auth, 'signIn').mockImplementation(async (email, password) => {

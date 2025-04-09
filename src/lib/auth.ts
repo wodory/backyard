@@ -7,7 +7,6 @@
 
 'use client';
 
-import { getHybridSupabaseClient, isClientEnvironment } from './hybrid-supabase';
 import { User } from '@supabase/supabase-js';
 import { 
   getAuthData, 
@@ -19,6 +18,7 @@ import {
 import createLogger from './logger';
 import { base64UrlEncode, stringToArrayBuffer } from './base64';
 import { isClient } from './environment';
+import { createClient } from './supabase/client';
 
 // 모듈별 로거 생성
 const logger = createLogger('Auth');
@@ -93,13 +93,13 @@ export const generateCodeChallenge = async (verifier: string): Promise<string> =
   }
 };
 
-// 환경에 맞는 Supabase 클라이언트 가져오기
+// 클라이언트 환경에서 Supabase 클라이언트 가져오기
 export const getAuthClient = () => {
-  if (!isClientEnvironment()) {
+  if (!isClient()) {
     throw new Error('브라우저 환경에서만 사용 가능합니다.');
   }
   
-  return getHybridSupabaseClient();
+  return createClient();
 };
 
 // ExtendedUser 타입 정의
@@ -206,7 +206,7 @@ export async function signIn(email: string, password: string) {
 export const signInWithGoogle = async (): Promise<{ success: boolean; url?: string; error?: string }> => {
   try {
     // 브라우저 환경 확인
-    if (!isClientEnvironment()) {
+    if (!isClient()) {
       throw new Error('브라우저 환경에서만 실행 가능합니다.');
     }
     
@@ -282,31 +282,14 @@ export async function signOut() {
   try {
     logger.info('로그아웃 시작');
     
-    // code_verifier 백업
-    const codeVerifier = getAuthData(STORAGE_KEYS.CODE_VERIFIER);
-    if (codeVerifier) {
-      // 이 값은 보존해야 하므로 따로 저장
-      sessionStorage.setItem('auth.code_verifier.backup', codeVerifier);
-    }
-    
     // Supabase 로그아웃
     const client = getAuthClient();
-    await client.auth.signOut();
-    
-    // 인증 데이터 삭제 (code_verifier 제외)
-    Object.values(STORAGE_KEYS).forEach(key => {
-      if (key !== STORAGE_KEYS.CODE_VERIFIER) {
-        removeAuthData(key);
-      }
-    });
-    
-    // code_verifier 복원
-    if (codeVerifier) {
-      setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier, { expiry: 60 * 60 });
-      logger.info('code_verifier 보존됨');
+    const { error } = await client.auth.signOut();
+    if (error) {
+      throw error; // Supabase 오류 다시 던지기
     }
     
-    logger.info('로그아웃 완료');
+    logger.info('로그아웃 완료 (Supabase 호출)');
   } catch (error) {
     logger.error('로그아웃 중 오류 발생:', error);
     throw error;

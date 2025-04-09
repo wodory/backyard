@@ -1,7 +1,7 @@
 /**
  * 파일명: src/lib/__tests__/auth-integration.test.ts
  * 목적: 인증 관련 모듈의 통합 테스트
- * 역할: auth.ts, auth-storage.ts, hybrid-supabase.ts 간의 상호작용 테스트
+ * 역할: auth.ts, auth-storage.ts 간의 상호작용 테스트
  * 작성일: 2024-04-16
  */
 
@@ -12,7 +12,7 @@ import { server } from '@/tests/msw/server';
 // 테스트 대상 모듈들을 모킹 설정 이후에 임포트하기 위해 동적 임포트 사용
 let auth: typeof import('../auth');
 let authStorage: typeof import('../auth-storage');
-let hybridSupabase: typeof import('../hybrid-supabase');
+let environment: typeof import('../environment');
 
 // 모킹된 Supabase 클라이언트와 함수들
 const mockSupabaseAuth = {
@@ -56,6 +56,11 @@ vi.mock('next/headers', () => ({
     set: vi.fn(),
     delete: vi.fn()
   })
+}));
+
+// supabase/client 모듈 모킹
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: vi.fn(() => mockSupabaseClient)
 }));
 
 // 스토리지 모킹
@@ -174,11 +179,11 @@ beforeAll(async () => {
   // 모듈을 동적으로 임포트하여 모킹 설정이 적용된 상태에서 로드
   auth = await import('../auth');
   authStorage = await import('../auth-storage');
-  hybridSupabase = await import('../hybrid-supabase');
+  environment = await import('../environment');
   
-  // hybridSupabase 모듈의 함수를 모킹
-  vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => true);
-  vi.spyOn(hybridSupabase, 'isServerEnvironment').mockImplementation(() => false);
+  // 환경 함수를 모킹
+  vi.spyOn(environment, 'isClient').mockImplementation(() => true);
+  vi.spyOn(environment, 'isServer').mockImplementation(() => false);
 });
 
 afterAll(() => {
@@ -220,8 +225,8 @@ describe('인증 모듈 통합 테스트', () => {
     server.resetHandlers();
     
     // 클라이언트 환경으로 설정
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => true);
-    vi.spyOn(hybridSupabase, 'isServerEnvironment').mockImplementation(() => false);
+    vi.spyOn(environment, 'isClient').mockReturnValue(true);
+    vi.spyOn(environment, 'isServer').mockReturnValue(false);
     
     // 모의 응답 설정
     mockSupabaseAuth.signInWithOAuth.mockResolvedValue({
@@ -288,92 +293,110 @@ describe('인증 모듈 통합 테스트', () => {
     mockStorage.clear.mockReset();
   });
 
-  describe('환경 감지', () => {
-    it('클라이언트 환경을 올바르게 감지한다', () => {
-      simulateClientEnvironment();
-      expect(hybridSupabase.isClientEnvironment()).toBe(true);
-      expect(hybridSupabase.isServerEnvironment()).toBe(false);
-    });
-
-    it('서버 환경을 올바르게 감지한다', () => {
-      simulateServerEnvironment();
-      vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => false);
-      vi.spyOn(hybridSupabase, 'isServerEnvironment').mockImplementation(() => true);
+  describe('로그인 테스트', () => {
+    it('성공적인 로그인 처리', async () => {
+      // storage 모킹 설정
+      vi.mocked(authStorage.getAuthData).mockImplementation((key) => null);
+      vi.mocked(authStorage.setAuthData).mockImplementation(() => true);
       
-      expect(hybridSupabase.isServerEnvironment()).toBe(true);
-      expect(hybridSupabase.isClientEnvironment()).toBe(false);
+      // 로그인 수행
+      const result = await auth.signIn('test@example.com', 'password123');
+      
+      // 결과 검증
+      expect(result.success).toBe(true);
+      expect(result.session).toBeDefined();
+      expect(result.user).toBeDefined();
+      expect(result.user?.id).toBe('test_user_id');
+      
+      // Supabase 호출 검증
+      expect(mockSupabaseAuth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123'
+      });
+      
+      // 세션 저장 검증
+      expect(authStorage.setAuthData).toHaveBeenCalledWith(
+        authStorage.STORAGE_KEYS.ACCESS_TOKEN,
+        'test_access_token',
+        expect.anything()
+      );
+    });
+    
+    it('로그인 오류 처리', async () => {
+      // 오류 응답 설정
+      mockSupabaseAuth.signInWithPassword.mockResolvedValueOnce({
+        data: { session: null, user: null },
+        error: { message: '잘못된 로그인 정보', status: 400 }
+      });
+      
+      // 로그인 수행
+      const result = await auth.signIn('wrong@example.com', 'wrongpass');
+      
+      // 결과 검증
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+      expect(result.error?.message).toContain('잘못된 로그인 정보');
+      
+      // 세션이 저장되지 않았는지 확인
+      expect(authStorage.setAuthData).not.toHaveBeenCalledWith(
+        authStorage.STORAGE_KEYS.ACCESS_TOKEN,
+        expect.anything(),
+        expect.anything()
+      );
+    });
+  });
+  
+  describe('로그아웃 테스트', () => {
+    it('성공적인 로그아웃 처리', async () => {
+      // 로그아웃 테스트 준비
+      vi.mocked(authStorage.getAuthData).mockImplementation((key) => 
+        key === authStorage.STORAGE_KEYS.ACCESS_TOKEN ? 'test_access_token' : null
+      );
+      
+      // 로그아웃 수행
+      const result = await auth.signOut();
+      
+      // 결과 검증
+      expect(result.success).toBe(true);
+      
+      // Supabase signOut 호출 검증
+      expect(mockSupabaseAuth.signOut).toHaveBeenCalled();
+      
+      // 스토리지 정리 검증
+      expect(authStorage.removeAuthData).toHaveBeenCalled();
     });
   });
 
-  describe('Supabase 클라이언트 생성', () => {
-    it('클라이언트 환경에서 Supabase 클라이언트를 생성한다', () => {
+  describe('환경 검사 테스트', () => {
+    it('클라이언트 환경 확인', async () => {
       simulateClientEnvironment();
-      vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => true);
-      vi.spyOn(hybridSupabase, 'isServerEnvironment').mockImplementation(() => false);
-      
-      // 기존 스파이 초기화 후 다시 설정
-      createBrowserClientSpy.mockClear();
-      
-      hybridSupabase.getHybridSupabaseClient();
-      
-      expect(createBrowserClientSpy).toHaveBeenCalled();
-    });
+      vi.spyOn(environment, 'isClient').mockReturnValue(true);
+      vi.spyOn(environment, 'isServer').mockReturnValue(false);
 
-    it('서버 환경에서 Supabase 클라이언트를 생성한다', async () => {
-      // 환경 설정을 초기화하고 필요한 스파이 초기화
-      vi.resetModules();
-      createClientSpy.mockClear();
+      expect(environment.isClient()).toBe(true);
+      expect(environment.isServer()).toBe(false);
       
-      // MSW 서버 재설정
-      try {
-        server.close();
-      } catch (error) {
-        // 무시
-      }
-      
-      // 서버 환경 모킹
+      // 클라이언트 환경에서 정상 작동 확인
+      const checkResult = await auth.getAuthClient();
+      expect(checkResult).toBeDefined();
+    });
+    
+    it('서버 환경 확인', async () => {
       simulateServerEnvironment();
+      vi.spyOn(environment, 'isClient').mockReturnValue(false);
+      vi.spyOn(environment, 'isServer').mockReturnValue(true);
       
-      // process.env 설정 확인
-      expect(process.env.NEXT_PUBLIC_SUPABASE_URL).toBe('https://example.supabase.co');
-      expect(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBe('test-anon-key');
+      expect(environment.isServer()).toBe(true);
+      expect(environment.isClient()).toBe(false);
       
-      // 서버 환경 변수 환경 확인
-      expect(typeof window).toBe('undefined');
-      expect(typeof process).not.toBe('undefined');
-      expect(process.versions).not.toBe(undefined);
-      
-      // 모듈 다시 임포트
-      auth = await import('../auth');
-      authStorage = await import('../auth-storage');
-      hybridSupabase = await import('../hybrid-supabase');
-      
-      // 서버 환경 설정
-      vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => false);
-      vi.spyOn(hybridSupabase, 'isServerEnvironment').mockImplementation(() => true);
-      
-      // 직접 서버 환경 클라이언트 호출
+      // 서버 환경에서 auth.getAuthClient 호출 시 예외 발생 확인
       try {
-        const serverClient = hybridSupabase.getHybridSupabaseClient();
-        expect(serverClient).toBeDefined();
-        expect(createClientSpy).toHaveBeenCalledWith(
-          'https://example.supabase.co',
-          'test-anon-key',
-          expect.anything()
-        );
-      } finally {
-        // 테스트 환경 복구
-        simulateClientEnvironment();
-        auth = await import('../auth');
-        authStorage = await import('../auth-storage');
-        hybridSupabase = await import('../hybrid-supabase');
-        
-        // 클라이언트 환경으로 복원
-        vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => true);
-        vi.spyOn(hybridSupabase, 'isServerEnvironment').mockImplementation(() => false);
-        
-        // MSW 서버 재설정
-        server.listen();
+        await auth.getAuthClient();
+        // 여기에 도달하면 안 됨 (예외가 발생해야 함)
+        expect(true).toBe(false); // 테스트 실패 강제
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect((error as Error).message).toContain('브라우저 환경에서만 사용');
       }
     });
   });
@@ -412,7 +435,7 @@ describe('인증 모듈 통합 테스트', () => {
   describe('Google OAuth 인증 흐름', () => {
     it('Google 로그인을 시작하고 code_verifier를 저장한다', async () => {
       // 클라이언트 환경 확인
-      expect(hybridSupabase.isClientEnvironment()).toBe(true);
+      expect(environment.isClient()).toBe(true);
       
       const result = await auth.signInWithGoogle();
       
@@ -483,45 +506,7 @@ describe('인증 모듈 통합 테스트', () => {
     });
   });
 
-  describe('로그인/로그아웃', () => {
-    beforeEach(() => {
-      // 클라이언트 환경 확인
-      vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => true);
-    });
-    
-    it('이메일/비밀번호로 로그인하고 세션 정보를 저장한다', async () => {
-      const result = await auth.signIn('test@example.com', 'password123');
-      
-      // 로그인 API 호출 확인
-      expect(mockSupabaseAuth.signInWithPassword).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123'
-      });
-      
-      // 세션 정보 저장 확인
-      expect(mockStorage.setItem).toHaveBeenCalled();
-      
-      // 세션 반환 확인
-      expect(result).toHaveProperty('session');
-    });
-
-    it('로그아웃 시 Supabase 로그아웃을 호출하고 스토리지를 정리한다', async () => {
-      await auth.signOut();
-      
-      // Supabase 로그아웃 호출 확인
-      expect(mockSupabaseAuth.signOut).toHaveBeenCalled();
-      
-      // 스토리지 정리 확인
-      expect(mockStorage.removeItem).toHaveBeenCalled();
-    });
-  });
-
   describe('세션 관리', () => {
-    beforeEach(() => {
-      // 클라이언트 환경 확인
-      vi.spyOn(hybridSupabase, 'isClientEnvironment').mockImplementation(() => true);
-    });
-    
     it('현재 사용자 정보를 가져온다', async () => {
       const user = await auth.getCurrentUser();
       
@@ -682,20 +667,20 @@ describe('auth-storage 고급 기능 테스트', () => {
 describe('auth 모듈 추가 테스트', () => {
   beforeEach(() => {
     // 클라이언트 환경으로 복원
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockReturnValue(true);
-    vi.spyOn(hybridSupabase, 'isServerEnvironment').mockReturnValue(false);
+    vi.spyOn(environment, 'isClient').mockReturnValue(true);
+    vi.spyOn(environment, 'isServer').mockReturnValue(false);
   });
   
   it('브라우저 환경이 아닐 때 getAuthClient 호출 시 에러를 발생시킨다', () => {
     // 서버 환경으로 설정
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockReturnValue(false);
+    vi.spyOn(environment, 'isClient').mockReturnValue(false);
     
     expect(() => auth.getAuthClient()).toThrow('브라우저 환경에서만 사용 가능합니다');
   });
   
   it('Google 로그인 시 브라우저 환경이 아닐 때 오류를 반환한다', async () => {
     // 서버 환경으로 설정
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockReturnValue(false);
+    vi.spyOn(environment, 'isClient').mockReturnValue(false);
     
     const result = await auth.signInWithGoogle();
     
@@ -792,7 +777,7 @@ describe('auth 모듈 추가 테스트', () => {
 describe('세션 관리 고급 테스트', () => {
   beforeEach(() => {
     simulateClientEnvironment();
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockReturnValue(true);
+    vi.spyOn(environment, 'isClient').mockReturnValue(true);
     
     // setAuthData 모킹
     vi.spyOn(authStorage, 'setAuthData').mockReturnValue(true);
@@ -885,7 +870,7 @@ describe('세션 관리 심층 테스트', () => {
   
   beforeEach(() => {
     simulateClientEnvironment();
-    vi.spyOn(hybridSupabase, 'isClientEnvironment').mockReturnValue(true);
+    vi.spyOn(environment, 'isClient').mockReturnValue(true);
     
     // authStorage 메서드를 스파이로 설정
     vi.spyOn(authStorage, 'setAuthData').mockReturnValue(true);

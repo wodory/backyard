@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getHybridSupabaseClient } from '@/lib/hybrid-supabase';
+import { createClient } from '@/lib/supabase/client';
 import { generateCodeChallenge } from '@/lib/auth';
 import { STORAGE_KEYS, getAuthData, setAuthData } from '@/lib/auth-storage';
 import { SupabaseClient, OAuthResponse } from '@supabase/supabase-js';
@@ -48,9 +48,9 @@ vi.mock('@/lib/auth-storage', () => {
   };
 });
 
-// Supabase 모킹
-vi.mock('@/lib/hybrid-supabase', () => ({
-  getHybridSupabaseClient: vi.fn(() => {
+// Supabase 클라이언트 모킹
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: vi.fn(() => {
     const mockClient = {
       supabaseUrl: 'http://localhost:54321',
       supabaseKey: 'test-key',
@@ -103,7 +103,7 @@ describe('PKCE 인증 테스트', () => {
 
   beforeEach(() => {
     // Supabase 클라이언트 초기화
-    mockSupabase = getHybridSupabaseClient();
+    mockSupabase = createClient();
     mockSignInWithOAuth = vi.fn().mockImplementation(async () => ({
       data: { url: 'https://example.com/oauth/google' },
       error: null

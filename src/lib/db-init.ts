@@ -1,4 +1,11 @@
-import { createSupabaseClient } from './supabase';
+/**
+ * 파일명: db-init.ts
+ * 목적: 데이터베이스 초기화 및 테이블 생성
+ * 역할: 애플리케이션 시작 시 필요한 데이터베이스 구조 설정
+ * 작성일: 2024-03-30
+ */
+
+import { createClient } from './supabase/server';
 import { PrismaClient } from '@prisma/client';
 
 // 테이블 정의 및 생성 SQL

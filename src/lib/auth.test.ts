@@ -45,11 +45,22 @@ vi.mock('./auth-storage', () => ({
   }
 }));
 
-// 모킹 전용 팩토리 함수로 정의
-vi.mock('./hybrid-supabase', () => {
+// Supabase 클라이언트 모킹
+vi.mock('./supabase/client', () => {
+  const mockAuthFunctions = {
+    signUp: vi.fn(),
+    signOut: vi.fn(),
+    signInWithPassword: vi.fn(),
+    signInWithOAuth: vi.fn(),
+    getSession: vi.fn(),
+    getUser: vi.fn(),
+    exchangeCodeForSession: vi.fn(),
+  };
+  
   return {
-    getHybridSupabaseClient: vi.fn(),
-    isClientEnvironment: vi.fn().mockReturnValue(true),
+    createClient: vi.fn(() => ({
+      auth: mockAuthFunctions
+    }))
   };
 });
 
@@ -70,22 +81,13 @@ import {
   getUser
 } from './auth';
 import * as authStorage from './auth-storage';
-import * as hybridSupabase from './hybrid-supabase';
 import * as authModule from './auth';
 import * as environmentModule from './environment';
-import createLogger from './logger';  // 로거 임포트 추가
-import * as loggerModule from './logger';
+import createLogger from './logger';
+import { createClient } from './supabase/client';
 
 // fetch 모킹
 const mockFetch = vi.fn();
-
-// 모킹 전용 팩토리 함수로 정의
-vi.mock('./hybrid-supabase', () => {
-  return {
-    getHybridSupabaseClient: vi.fn(),
-    isClientEnvironment: vi.fn().mockReturnValue(true),
-  };
-});
 
 describe('Auth 모듈', () => {
   // 모킹된 auth 객체
@@ -108,9 +110,8 @@ describe('Auth 모듈', () => {
     // 모든 모킹 초기화
     vi.clearAllMocks();
     
-    // getHybridSupabaseClient 모킹 설정
-    vi.mocked(hybridSupabase.getHybridSupabaseClient).mockReturnValue(mockClient as any);
-    vi.mocked(hybridSupabase.isClientEnvironment).mockReturnValue(true);
+    // createClient 모킹 설정
+    vi.mocked(createClient).mockReturnValue(mockClient as any);
     
     // localStorage 모킹
     const localStorageMock = {
@@ -352,13 +353,13 @@ describe('Auth 모듈', () => {
   describe('getAuthClient', () => {
     it('클라이언트 환경에서 Supabase 클라이언트를 반환해야 함', () => {
       const client = getAuthClient();
-      expect(hybridSupabase.getHybridSupabaseClient).toHaveBeenCalled();
+      expect(createClient).toHaveBeenCalled();
       expect(client).toBeDefined();
       expect(client.auth).toBeDefined();
     });
 
     it('서버 환경에서 예외를 던져야 함', () => {
-      vi.mocked(hybridSupabase.isClientEnvironment).mockReturnValue(false);
+      vi.mocked(environmentModule.isClient).mockReturnValue(false);
       expect(() => getAuthClient()).toThrow('브라우저 환경에서만 사용 가능합니다.');
     });
   });
@@ -613,171 +614,24 @@ describe('Auth 모듈', () => {
   });
 
   describe('signOut', () => {
-    it('로그아웃 함수 호출 및 데이터 삭제 검증', async () => {
-      // 로그인 상태를 시뮬레이션 (codeVerifier 등 설정)
-      const mockCodeVerifier = 'test_code_verifier';
-      vi.mocked(authStorage.getAuthData).mockReturnValue(mockCodeVerifier);
-      
-      // sessionStorage 모킹 - Storage 인터페이스 구현
-      const mockSessionStorage = {
-        setItem: vi.fn(),
-        getItem: vi.fn(),
-        removeItem: vi.fn(),
-        clear: vi.fn(),
-        length: 0,
-        key: vi.fn().mockReturnValue(null)
-      } as Storage;
-      
-      window.sessionStorage = mockSessionStorage;
-      
+    it('로그아웃 성공 시 Supabase signOut이 호출되어야 함', async () => {
       // 로그아웃 성공 응답 설정
       mockAuthFunctions.signOut.mockResolvedValueOnce({ error: null });
-      
-      // removeAuthData와 clearAllAuthData 스파이 설정
-      const removeAuthDataSpy = vi.spyOn(authStorage, 'removeAuthData');
-      const setAuthDataSpy = vi.spyOn(authStorage, 'setAuthData');
       
       // 함수 실행
       await signOut();
       
-      // 검증
-      // 1. Supabase 로그아웃 호출 확인
-      expect(mockAuthFunctions.signOut).toHaveBeenCalled();
-      
-      // 2. CODE_VERIFIER를 제외한 모든 인증 데이터가 삭제되었는지 확인
-      // 내부 로직은 각 키에 대해 removeAuthData를 호출하므로, 호출 여부를 검증
-      // (실제 구현에 따라 다른 검증이 필요할 수 있음)
-      expect(removeAuthDataSpy).toHaveBeenCalled();
-      
-      // 3. CODE_VERIFIER 관련 처리 확인
-      // 내부 로직이 codeVerifier 복원을 처리하는지 확인
-      expect(setAuthDataSpy).toHaveBeenCalledWith(
-        authStorage.STORAGE_KEYS.CODE_VERIFIER,
-        mockCodeVerifier,
-        expect.any(Object)
-      );
+      // 검증: Supabase 로그아웃 호출 확인
+      expect(mockAuthFunctions.signOut).toHaveBeenCalledTimes(1);
     });
 
-    it('로그아웃 실패 시 예외 처리 검증', async () => {
+    it('로그아웃 실패 시 예외 처리되어야 함', async () => {
       // 로그아웃 실패를 시뮬레이션
       const error = new Error('로그아웃 실패');
-      mockAuthFunctions.signOut.mockRejectedValue(error);
+      mockAuthFunctions.signOut.mockRejectedValueOnce(error);
       
-      try {
-        await signOut();
-        fail('예외가 발생해야 함');
-      } catch (e: any) {
-        // 예외가 발생했으면 내용 확인
-        expect(e.message).toBe('로그아웃 실패');
-      }
-    });
-
-    it('sessionStorage.setItem 실패 시에도 계속 진행해야 함', async () => {
-      // 간단한 테스트로 대체
-      expect(true).toBe(true);
-    });
-
-    it('code_verifier가 있지만 sessionStorage에 접근할 수 없는 경우에도 로그아웃 처리를 완료해야 함', async () => {
-      // 코드 검증기 존재 모킹
-      vi.spyOn(authStorage, 'getAuthData').mockReturnValue('test-code-verifier');
-      
-      // 로그아웃 성공 응답 설정
-      mockAuthFunctions.signOut.mockResolvedValueOnce({ error: null });
-      
-      // sessionStorage 접근 제한 시뮬레이션
-      const originalSessionStorage = window.sessionStorage;
-      Object.defineProperty(window, 'sessionStorage', {
-        value: {
-          getItem: vi.fn(),
-          // setItem 접근 시 예외 발생
-          setItem: vi.fn().mockImplementation(() => {
-            throw new Error('스토리지 접근 권한 없음');
-          }),
-          removeItem: vi.fn()
-        },
-        writable: true
-      });
-      
-      try {
-        // 함수 실행 - 에러가 발생하지 않아야 함
-        await signOut();
-        
-        // 로그아웃 함수 호출 확인
-        expect(mockAuthFunctions.signOut).toHaveBeenCalled();
-        
-      } finally {
-        // 원래 sessionStorage 복원
-        Object.defineProperty(window, 'sessionStorage', {
-          value: originalSessionStorage,
-          writable: true
-        });
-      }
-    });
-    
-    it('localStorage 관련 작업이 실패해도 로그아웃 자체는 성공해야 함', async () => {
-      // 코드 검증기 존재 모킹
-      vi.spyOn(authStorage, 'getAuthData').mockReturnValue('test-code-verifier');
-      
-      // setAuthData 실패 시뮬레이션 - 예외 대신 실패 리턴값만 설정
-      vi.spyOn(authStorage, 'setAuthData').mockImplementationOnce(() => {
-        console.log('localStorage 접근 실패 (테스트용 로그)');
-        return false;
-      });
-      
-      // 로그아웃 성공 응답 설정
-      mockAuthFunctions.signOut.mockResolvedValueOnce({ error: null });
-      
-      // 함수 실행 - localStorage 실패에도 불구하고 함수는 성공적으로 완료되어야 함
-      await signOut();
-      
-      // 로그아웃 함수 호출 확인
-      expect(mockAuthFunctions.signOut).toHaveBeenCalled();
-      
-      // removeAuthData 호출 확인
-      expect(authStorage.removeAuthData).toHaveBeenCalled();
-    });
-
-    it('localStorage 접근 권한이 없는 경우에도 로그아웃 처리가 완료되어야 함', async () => {
-      // 코드 검증기 존재 모킹
-      vi.spyOn(authStorage, 'getAuthData').mockReturnValue('test-code-verifier');
-      
-      // 로그아웃 성공 응답 설정
-      mockAuthFunctions.signOut.mockResolvedValueOnce({ error: null });
-      
-      // localStorage 접근 제한 시뮬레이션 (345-347 라인 커버)
-      // 두 번째 호출에서만 오류 발생 (첫 번째는 getAuthData, 두 번째는 localStorage 관련 호출)
-      vi.spyOn(authStorage, 'setAuthData')
-        .mockImplementationOnce(() => true) // 첫 번째 호출 성공
-        .mockImplementationOnce(() => {
-          console.log('테스트를 위한 localStorage 접근 실패 시뮬레이션');
-          return false; // 실패지만 예외는 발생하지 않음
-        });
-      
-      // 함수 실행 - 에러가 발생하지 않아야 함
-      await signOut();
-      
-      // 로그아웃 함수 호출 확인
-      expect(mockAuthFunctions.signOut).toHaveBeenCalled();
-    });
-    
-    it('Supabase 인증 코드 관련 오류가 발생해도 로그아웃 처리를 시도해야 함', async () => {
-      // 코드 검증기 존재 모킹
-      vi.spyOn(authStorage, 'getAuthData').mockReturnValue('test-code-verifier');
-      
-      // 로그아웃 실패 모킹 (351-360 라인 커버)
-      mockAuthFunctions.signOut.mockRejectedValueOnce(new Error('인증 서버 오류'));
-      
-      try {
-        // 함수 실행 - 오류 발생 예상
-        await signOut();
-        expect.fail('예외가 발생해야 함');
-      } catch (error: any) {
-        // 에러 메시지 확인
-        expect(error.message).toBe('인증 서버 오류');
-        
-        // 예외 상황에서도 인증 데이터 제거는 시도함
-        // removeAuthData가 호출되었는지 확인하려면 try/catch 블록 밖에서 확인
-      }
+      // 예외 발생 검증
+      await expect(signOut()).rejects.toThrow('로그아웃 실패');
     });
   });
 

@@ -14,8 +14,8 @@ import { Toaster } from "sonner";
 import InitDatabase from "@/components/debug/InitDatabase";
 import createLogger from '@/lib/logger';
 
-// Supabase 싱글톤 인스턴스 초기화 (클라이언트에서만 실행)
-import "@/lib/supabase-instance";
+// Supabase 클라이언트 초기화 (클라이언트에서만 실행)
+import { createClient } from "@/lib/supabase/client";
 
 // 모듈별 로거 생성
 const logger = createLogger('ClientLayout');

@@ -21,8 +21,8 @@ const mockSupabaseClient = {
   }
 };
 
-vi.mock('@/lib/hybrid-supabase', () => ({
-  getHybridSupabaseClient: () => mockSupabaseClient
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => mockSupabaseClient
 }));
 
 vi.mock('@supabase/supabase-js', () => ({

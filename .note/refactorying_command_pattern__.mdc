@@ -1,0 +1,117 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+**리팩토링 목표:**
+
+1.  Zustand 스토어 액션을 중심으로 상태 변경 로직을 중앙화 (커맨드 패턴 적용).
+2.  노드 '펼침/접힘' 상태를 Zustand 전역 상태(`expandedCardId`)로 이전하여 관리.
+3.  '카드 선택' 및 '카드 펼침/접힘' 상태 전이 로직을 명확히 하여 초기 버그 수정 (두 번 클릭 문제 등).
+4.  이벤트 전파(`stopPropagation`)를 적용하여 의도치 않은 동작 방지.
+5.  MSW를 이용한 테스트 환경 설정.
+6.  (Optional) 개발용 콘솔 커맨드 추가.
+
+---
+
+**리팩토링 계획 (Cursor Agent Task)**
+
+**Phase 0: 준비 및 환경 설정**
+
+*   **Task 0.2: MSW 기본 설정**
+    *   **지시:** `src/tests/msw/handlers.ts` 파일을 생성하고, 초기 핸들러 배열(`export const handlers = []`)을 정의합니다.
+    *   **지시:** `src/tests/msw/server.ts` 파일을 생성하고, `setupServer(...handlers)`를 사용하여 MSW 노드 서버를 설정합니다. 테스트 전후 서버 시작/종료 및 핸들러 리셋 로직을 포함하는 `setupMSW` 유틸리티 함수를 정의합니다 (`src/tests/msw/server.ts` 코드베이스 내용 참고).
+    *   **지시:** `src/tests/setup.ts` (또는 Vitest 설정 파일)에 `setupMSW`를 임포트하고, `beforeAll`, `afterEach`, `afterAll` 훅을 사용하여 MSW 서버를 테스트 라이프사이클에 통합합니다. `server.listen({ onUnhandledRequest: 'warn' })` 옵션을 사용합니다.
+*   **Task 0.3: Vitest 설정 검토**
+    *   **지시:** `vitest.config.ts` 와 `src/tests/setup.ts` 파일을 검토하여 다음 사항을 확인합니다:
+        *   `jsdom` 환경 설정 여부.
+        *   `setupFiles` 경로의 정확성.
+        *   `@testing-library/jest-dom` 확장이 `expect.extend`를 통해 적용되었는지 확인.
+        *   `localStorage`, `fetch`, `console` 등의 전역 API 모킹이 `src/tests/setup.ts`에 구현되어 있는지 확인.
+
+**Phase 1: 펼침 상태 전역 관리로 전환**
+
+*   **Task 1.1: Zustand 스토어 상태 추가**
+    *   **지시:** `src/store/useAppStore.ts` 파일에서 `AppState` 인터페이스를 찾아 `expandedCardId: string | null;` 속성을 추가합니다. 스토어 초기 상태 객체에도 `expandedCardId: null`을 추가합니다.
+*   **Task 1.2: Zustand 스토어 액션 추가/수정 (`toggleExpandCard`)**
+    *   **지시:** `src/store/useAppStore.ts` 파일에서 `useAppStore`의 액션 정의 부분에 `toggleExpandCard(cardId: string): void` 함수를 추가/수정합니다. 이 함수는 `set`과 `get`을 사용하여 다음 로직을 구현해야 합니다:
+        1.  `const currentExpanded = get().expandedCardId;` 를 사용하여 현재 펼쳐진 카드 ID를 가져옵니다.
+        2.  만약 `currentExpanded === cardId` 이면 (이미 펼쳐진 카드를 토글):
+            `set({ expandedCardId: null, selectedCardId: null, selectedCardIds: [] });` 를 호출합니다.
+        3.  만약 `currentExpanded !== cardId` 이면 (새로운 카드를 펼침):
+            `set({ expandedCardId: cardId, selectedCardId: cardId, selectedCardIds: [cardId] });` 를 호출합니다.
+*   **Task 1.3: `CardNode`에서 로컬 펼침 상태 제거**
+    *   **지시:** `src/components/board/nodes/CardNode.tsx` 컴포넌트 내에서 `useState`를 사용하여 선언된 `isExpanded` 상태 변수와 이를 업데이트하는 `setIsExpanded` 함수를 제거합니다.
+*   **Task 1.4: `CardNode`가 전역 펼침 상태 사용하도록 수정**
+    *   **지시:** `src/components/board/nodes/CardNode.tsx` 컴포넌트 내에서 `useAppStore` 훅을 사용하여 `expandedCardId` 상태를 구독합니다. 컴포넌트 본문에서 `const isExpanded = expandedCardId === props.id;` 를 사용하여 현재 노드의 펼침 상태를 계산합니다. 이 `isExpanded` 변수를 사용하여 카드 내용 표시 여부 및 펼침/접힘 아이콘(Chevron)을 조건부 렌더링하도록 수정합니다.
+*   **Task 1.5: `CardNode` 펼침 버튼 이벤트 핸들러 수정**
+    *   **지시:** `src/components/board/nodes/CardNode.tsx`에서 펼침/접힘 아이콘을 포함하는 `Button` 컴포넌트를 찾습니다. 해당 버튼의 `onClick` 핸들러를 다음과 같이 수정합니다:
+        1.  핸들러 함수의 첫 줄에 `event.stopPropagation();`을 추가합니다.
+        2.  `useAppStore` 훅을 사용하여 `toggleExpandCard` 액션을 가져옵니다.
+        3.  핸들러 내부에서 `toggleExpandCard(props.id);`를 호출합니다.
+*   **Task 1.6: `useUpdateNodeInternals` 호출 추가**
+    *   **지시:** `src/components/board/nodes/CardNode.tsx` 컴포넌트 내에서 `useUpdateNodeInternals` 훅을 임포트하고 호출합니다 (`const updateNodeInternals = useUpdateNodeInternals();`). `useEffect` 훅을 추가하여 `expandedCardId` 상태가 변경될 때 해당 노드의 `updateNodeInternals(props.id)` 함수를 호출하도록 구현합니다. 의존성 배열에 `expandedCardId`, `props.id`, `updateNodeInternals`를 포함합니다. *참고: `isExpanded` 대신 `expandedCardId` 변화를 감지해야 합니다.*
+
+**Phase 2: 선택 상태 로직 리팩토링 및 버그 수정**
+
+*   **Task 2.1: Zustand 스토어 액션 수정 (`selectCard`, `clearSelection`)**
+    *   **지시:** `src/store/useAppStore.ts` 파일의 `selectCard(cardId: string | null): void` 액션을 다음과 같이 수정합니다:
+        1.  `cardId`가 `null`이 아닐 경우 (특정 카드 선택):
+            *   `const currentExpanded = get().expandedCardId;` 를 가져옵니다.
+            *   `const shouldCollapse = currentExpanded !== null && currentExpanded !== cardId;` 를 계산합니다.
+            *   `set({ selectedCardId: cardId, selectedCardIds: [cardId], expandedCardId: shouldCollapse ? null : currentExpanded });` 를 호출합니다. (다른 카드 선택 시 기존 펼쳐진 카드 접기)
+        2.  `cardId`가 `null`일 경우 (선택 해제):
+            `set({ selectedCardId: null, selectedCardIds: [], expandedCardId: null });` 를 호출합니다. (선택 해제 시 펼쳐진 카드도 접기)
+    *   **지시:** `src/store/useAppStore.ts` 파일의 `clearSelection(): void` 액션을 다음과 같이 수정합니다:
+        *   `set({ selectedCardId: null, selectedCardIds: [], expandedCardId: null });` 를 호출합니다.
+*   **Task 2.2: `CardNode` 노드 클릭 핸들러 수정**
+    *   **지시:** `src/components/board/nodes/CardNode.tsx` 컴포넌트에서 카드 노드의 루트 요소(예: `Card`)에 적용된 `onClick` 핸들러(이름이 `handleNodeClick` 등일 수 있음)를 찾습니다. 핸들러 내부에서 `useAppStore`의 `selectCard(props.id)` 액션을 호출하도록 수정하거나 확인합니다. (펼침 버튼 클릭 시에는 이 핸들러가 호출되지 않도록 `event.stopPropagation()`이 적용되어 있어야 합니다.)
+*   **Task 2.3: `Board` 또는 `useBoardHandlers`의 `onPaneClick` 핸들러 수정**
+    *   **지시:** `src/components/board/components/Board.tsx` 또는 `src/components/board/hooks/useBoardHandlers.ts` 파일에서 React Flow의 `onPaneClick` 이벤트 핸들러를 찾습니다. 해당 핸들러 내부에서 `useAppStore`의 `clearSelection()` 액션을 호출하도록 수정하거나 확인합니다.
+*   **Task 2.4: `Sidebar` 카드 목록 아이템 클릭 핸들러 수정**
+    *   **지시:** `src/components/layout/Sidebar.tsx` 컴포넌트에서 카드 목록의 각 아이템(예: `li` 또는 `Button`)에 적용된 `onClick` 핸들러를 찾습니다. 해당 핸들러 내부에서 `useAppStore`의 `selectCard(cardId)` 액션을 호출하도록 수정합니다. `cardId`는 해당 리스트 아이템의 카드 ID입니다.
+
+**Phase 3: 테스트 및 검증**
+
+*   **Task 3.1: Zustand 액션 단위 테스트 작성**
+    *   **지시:** Vitest를 사용하여 `src/store/useAppStore.test.ts` 파일에 다음 액션들에 대한 단위 테스트를 추가/수정합니다: `toggleExpandCard`, `selectCard`, `clearSelection`. `act` 함수를 사용하여 상태 변경을 테스트하고, 각 액션 호출 후 `expandedCardId`, `selectedCardId`, `selectedCardIds` 상태가 기대하는 값으로 변경되었는지 `expect`를 사용하여 검증합니다.
+*   **Task 3.2: 컴포넌트 인터랙션 테스트**
+    *   **지시:** Vitest와 `@testing-library/react`를 사용하여 `src/components/board/nodes/CardNode.test.tsx` 파일에 다음 테스트를 추가/수정합니다:
+        *   펼침 버튼 클릭 시 `useAppStore`의 `toggleExpandCard` 액션이 올바른 `cardId`와 함께 호출되는지 `expect(mockToggleExpandAction).toHaveBeenCalledWith(nodeId)` 등으로 검증합니다. `event.stopPropagation`이 호출되었는지도 확인합니다.
+        *   카드 노드 본문 클릭 시 `useAppStore`의 `selectCard` 액션이 올바른 `cardId`와 함께 호출되는지 검증합니다.
+    *   **지시:** `src/components/board/components/Board.test.tsx` (또는 관련 핸들러 훅 테스트) 파일에 다음 테스트를 추가/수정합니다:
+        *   React Flow 캔버스(`react-flow-container`)의 빈 공간 클릭(`fireEvent.click`) 시 `useAppStore`의 `clearSelection` 액션이 호출되는지 검증합니다.
+    *   **지시:** (액션 내 API 호출 시) MSW 핸들러를 `src/tests/msw/handlers.ts`에 추가하고, 테스트 파일의 `beforeEach` 등에서 `server.use(...)`를 사용하여 API 요청을 모킹하고 테스트합니다.
+*   **Task 3.3: 수동 테스트 (Agent 외부 작업)**
+    *   **지시:** 애플리케이션을 실행하여 다음 시나리오를 수동으로 테스트하고, 버그가 해결되었는지 확인합니다:
+        *   펼침 버튼 첫 클릭 시 카드가 즉시 펼쳐지고 선택되는가?
+        *   펼쳐진 카드가 있을 때, 다른 카드를 클릭하면 이전 카드가 접히고 새 카드가 선택되는가?
+        *   펼쳐진 카드가 있을 때, 빈 캔버스를 한 번 클릭하면 카드가 접히고 선택 해제되는가?
+        *   사이드바에서 카드를 선택하면 보드의 해당 노드가 선택되는가?
+
+**Phase 4: (Optional) 개발용 콘솔 커맨드 추가**
+
+*   **Task 4.1: 전역 커맨드 객체 생성**
+    *   **지시:** `src/components/layout/ClientLayout.tsx` (또는 앱 초기화 지점)의 `useEffect` 훅 내부에 다음 코드를 추가합니다 (개발 환경에서만 실행되도록 조건 추가):
+        ```typescript
+        if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+          if (!(window as any).appCommands) { // 중복 할당 방지
+             const { selectCard, clearSelection, toggleExpandCard /*, ...otherActions */ } = useAppStore.getState();
+             (window as any).appCommands = {
+               selectCard,
+               clearSelection,
+               toggleExpandCard,
+               // otherActions...
+             };
+             console.log('Development commands initialized: window.appCommands');
+          }
+        }
+        ```
+        *필요한 액션들을 `appCommands` 객체에 추가하십시오.*
+
+**Phase 5: 코드 정리**
+
+*   **Task 5.1: 사용하지 않는 코드 제거**
+    *   **지시:** `src/components/board/nodes/CardNode.tsx` 및 관련 파일에서 Phase 1 및 2 리팩토링으로 인해 더 이상 사용되지 않는 변수, 함수, 주석 처리된 코드 등을 식별하고 제거합니다. (예: 제거된 `isExpanded` 로컬 상태 관련 코드)
+*   **Task 5.2: 최종 검토 및 머지 (수동 작업 권장)**
+    *   **지시:** 모든 변경 사항을 검토하고, 모든 자동 테스트가 통과하는지 확인합니다. 메인 브랜치로 변경 사항을 병합합니다. (이 작업은 일반적으로 Agent 외부에서 수행합니다.)

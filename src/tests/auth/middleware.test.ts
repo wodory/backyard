@@ -32,9 +32,9 @@ vi.mock('@/middleware', () => ({
   default: middleware
 }));
 
-// Supabase 모킹
-vi.mock('@/lib/hybrid-supabase', () => ({
-  createServerSupabaseClient: vi.fn(() => mockServerClient)
+// Supabase 서버 모킹
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(() => mockServerClient)
 }));
 
 // Next.js 모킹

@@ -69,7 +69,6 @@ export default mergeConfig(
         '**/src/lib/cookie.ts',
         // 'src/lib/db-check.ts', // 파일이 .js 이면 .js로
         '**/src/lib/auth-server.ts',
-        '**/src/lib/hybrid-supabase.ts',
         '**/src/lib/prisma.ts',
         '**/src/lib/supabase-instance.ts',
         '**/src/lib/supabase-server.ts',
@@ -124,7 +123,6 @@ export default mergeConfig(
           '**/src/lib/cookie.ts',
           // 'src/lib/db-check.ts', 
           '**/src/lib/auth-server.ts',
-          '**/src/lib/hybrid-supabase.ts',
           '**/src/lib/prisma.ts',
           '**/src/lib/supabase-instance.ts',
           '**/src/lib/supabase-server.ts',
