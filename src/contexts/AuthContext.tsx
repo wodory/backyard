@@ -10,7 +10,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session, SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { getAuthData, setAuthData, removeAuthData, clearAllAuthData, STORAGE_KEYS } from '@/lib/auth-storage';
+import { STORAGE_KEYS } from '@/lib/auth';
 import { Database } from '@/types/supabase';
 import createLogger from '@/lib/logger';
 import { isClient } from '@/lib/environment';
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRecoveryAttempts(prev => prev + 1);
 
       // 1. 리프레시 토큰으로 복구 시도
-      const refreshToken = getAuthData(STORAGE_KEYS.REFRESH_TOKEN);
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       if (refreshToken) {
         logger.info('리프레시 토큰으로 세션 복구 시도');
 
@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logger.info('인증 컨텍스트 초기화 시작');
 
         // code_verifier 복원 시도 (여러 스토리지 확인)
-        const storedVerifier = getAuthData(STORAGE_KEYS.CODE_VERIFIER);
+        const storedVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
 
         if (storedVerifier) {
           setCodeVerifier(storedVerifier);
@@ -181,10 +181,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(data.session);
             setUser(data.session.user);
 
-            // 세션 토큰 저장 (여러 스토리지에)
-            setAuthData(STORAGE_KEYS.ACCESS_TOKEN, data.session.access_token, { expiry: 60 * 60 });
+            // 세션 토큰 저장
+            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.session.access_token);
             if (data.session.refresh_token) {
-              setAuthData(STORAGE_KEYS.REFRESH_TOKEN, data.session.refresh_token, { expiry: 60 * 60 * 24 * 7 });
+              localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.session.refresh_token);
+            }
+            if (data.session.user?.id) {
+              localStorage.setItem(STORAGE_KEYS.USER_ID, data.session.user.id);
+            }
+            if (data.session.user?.app_metadata?.provider) {
+              localStorage.setItem(STORAGE_KEYS.PROVIDER, data.session.user.app_metadata.provider);
             }
 
             logger.info('현재 세션 복원 성공', {
@@ -199,155 +205,129 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAuthError(sessionError instanceof Error ? sessionError : new Error('세션 초기화 오류'));
         }
 
+        // 초기화 완료
         setIsLoading(false);
         setIsInitialized(true);
         logger.info('인증 컨텍스트 초기화 완료');
-      } catch (error) {
-        logger.error('인증 초기화 실패', error);
-        setAuthError(error instanceof Error ? error : new Error('인증 초기화 오류'));
+      } catch (initError) {
+        logger.error('인증 컨텍스트 초기화 오류', initError);
+        setAuthError(initError instanceof Error ? initError : new Error('인증 초기화 실패'));
         setIsLoading(false);
-        setIsInitialized(true);
       }
     }
 
     initializeAuth();
+  }, [attemptSessionRecovery]);
 
-    // 세션 상태 구독
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      logger.info('인증 상태 변경 이벤트', { event });
+  // Supabase 세션 상태 변경 감지
+  useEffect(() => {
+    if (!isClientEnv) return;
 
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+    try {
+      const {
+        data: { subscription }
+      } = supabase.auth.onAuthStateChange((event, newSession) => {
+        logger.info('Supabase 인증 상태 변경 감지', { event });
 
-      if (currentSession) {
-        // 오류 상태 초기화
-        setAuthError(null);
-        setRecoveryAttempts(0);
+        if (event === 'SIGNED_IN' && newSession) {
+          logger.info('로그인 이벤트 발생');
+          setUser(newSession.user);
+          setSession(newSession);
 
-        logger.info('인증 상태 변경', {
-          event,
-          user_id: currentSession.user?.id.substring(0, 8) + '...',
-          provider: currentSession.user?.app_metadata?.provider
-        });
+          // 세션 토큰 저장
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newSession.access_token);
+          if (newSession.refresh_token) {
+            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newSession.refresh_token);
+          }
+          if (newSession.user?.id) {
+            localStorage.setItem(STORAGE_KEYS.USER_ID, newSession.user.id);
+          }
+          if (newSession.user?.app_metadata?.provider) {
+            localStorage.setItem(STORAGE_KEYS.PROVIDER, newSession.user.app_metadata.provider);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          logger.info('로그아웃 이벤트 발생');
+          setUser(null);
+          setSession(null);
 
-        // 인증 성공 시 액세스 토큰과 리프레시 토큰 저장
-        setAuthData(
-          STORAGE_KEYS.ACCESS_TOKEN,
-          currentSession.access_token,
-          { expiry: 60 }
-        );
+          // 인증 데이터 제거
+          localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+          localStorage.removeItem(STORAGE_KEYS.USER_ID);
+          localStorage.removeItem(STORAGE_KEYS.PROVIDER);
+          sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
+        } else if (event === 'TOKEN_REFRESHED' && newSession) {
+          logger.info('토큰 갱신 이벤트 발생');
+          setUser(newSession.user);
+          setSession(newSession);
 
-        setAuthData(
-          STORAGE_KEYS.REFRESH_TOKEN,
-          currentSession.refresh_token,
-          { expiry: 60 * 24 * 14 }
-        );
-
-        if (currentSession.user) {
-          setAuthData(STORAGE_KEYS.USER_ID, currentSession.user.id, { expiry: 60 });
-
-          if (currentSession.user.app_metadata?.provider) {
-            setAuthData(
-              STORAGE_KEYS.PROVIDER,
-              currentSession.user.app_metadata.provider,
-              { expiry: 60 }
-            );
+          // 새로운 토큰 저장
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newSession.access_token);
+          if (newSession.refresh_token) {
+            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newSession.refresh_token);
           }
         }
-      } else {
-        logger.info('인증 상태 변경', { event, user: null });
+      });
 
-        if (event === 'SIGNED_OUT') {
-          // 로그아웃 시 코드 검증기를 제외한 인증 데이터 삭제
-          removeAuthData(STORAGE_KEYS.ACCESS_TOKEN);
-          removeAuthData(STORAGE_KEYS.REFRESH_TOKEN);
-          removeAuthData(STORAGE_KEYS.USER_ID);
-          removeAuthData(STORAGE_KEYS.PROVIDER);
-          removeAuthData(STORAGE_KEYS.SESSION);
-        } else if (event === 'TOKEN_REFRESHED') {
-          // 토큰 리프레시 이벤트는 세션이 없어도 발생할 수 있음
-          logger.info('토큰 리프레시 이벤트 발생, 세션 복구 시도');
-          attemptSessionRecovery();
-        }
-      }
-    });
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (error) {
+      logger.error('인증 이벤트 리스너 설정 오류', error);
+    }
+  }, []);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [isInitialized, attemptSessionRecovery]);
-
+  // 로그아웃 처리
   const signOut = async () => {
     try {
       logger.info('로그아웃 시작');
 
-      // code_verifier 백업 (여러 스토리지에 저장)
-      if (codeVerifier) {
-        setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier, { expiry: 60 });
-        logger.info('code_verifier 백업 완료');
-      } else {
-        logger.warn('로그아웃 시 code_verifier가 없음');
-      }
-
       // Supabase 로그아웃
-      logger.info('Supabase 로그아웃 호출');
-      await supabase.auth.signOut();
-
-      // 인증 데이터 삭제 (code_verifier는 보존)
-      Object.values(STORAGE_KEYS).forEach(key => {
-        if (key !== STORAGE_KEYS.CODE_VERIFIER) {
-          removeAuthData(key);
-        }
-      });
-
-      // code_verifier 복원
-      if (codeVerifier) {
-        setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier, { expiry: 60 });
-        logger.info('code_verifier 복원 완료');
-      } else {
-        const storedVerifier = getAuthData(STORAGE_KEYS.CODE_VERIFIER);
-
-        if (storedVerifier) {
-          setCodeVerifier(storedVerifier);
-          logger.info('code_verifier 스토리지에서 복원 완료');
-        } else {
-          logger.warn('code_verifier 복원 실패 - 저장된 값 없음');
-        }
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
       }
 
-      // 상태 초기화
+      // 상태 업데이트 (이벤트 리스너에서도 처리하지만 중복 실행 안전함)
       setUser(null);
       setSession(null);
-      setAuthError(null);
-      setRecoveryAttempts(0);
 
-      logger.info('로그아웃 완료');
+      // 인증 데이터 제거
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_ID);
+      localStorage.removeItem(STORAGE_KEYS.PROVIDER);
+      sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
+
+      logger.info('로그아웃 성공');
     } catch (error) {
       logger.error('로그아웃 오류', error);
       throw error;
     }
   };
 
-  const value = {
-    user,
-    session,
-    isLoading,
-    signOut,
-    codeVerifier,
-    error: authError,
-    setCodeVerifier: (value: string | null) => {
-      if (value) {
-        setAuthData(STORAGE_KEYS.CODE_VERIFIER, value, { expiry: 60 });
-      } else {
-        removeAuthData(STORAGE_KEYS.CODE_VERIFIER);
-      }
-      setCodeVerifier(value);
-    },
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        signOut,
+        codeVerifier,
+        error: authError,
+        setCodeVerifier: (value) => {
+          setCodeVerifier(value);
+          if (value) {
+            sessionStorage.setItem(STORAGE_KEYS.CODE_VERIFIER, value);
+          } else {
+            sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
+          }
+        },
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {

@@ -8,13 +8,6 @@
 'use client';
 
 import { User } from '@supabase/supabase-js';
-import { 
-  getAuthData, 
-  setAuthData, 
-  removeAuthData, 
-  clearAllAuthData, 
-  STORAGE_KEYS 
-} from './auth-storage';
 import createLogger from './logger';
 import { base64UrlEncode, stringToArrayBuffer } from './base64';
 import { isClient } from './environment';
@@ -27,6 +20,15 @@ const logger = createLogger('Auth');
 const OAUTH_CONFIG = {
   codeVerifierLength: 128, // PKCE 코드 검증기 길이
   codeChallengeMethod: 'S256', // SHA-256 해시 사용
+};
+
+// 스토리지 키 정의
+export const STORAGE_KEYS = {
+  CODE_VERIFIER: 'code_verifier', // sessionStorage에서 사용
+  ACCESS_TOKEN: 'access_token',   // localStorage에서 사용
+  REFRESH_TOKEN: 'refresh_token', // localStorage에서 사용
+  USER_ID: 'user_id',             // localStorage에서 사용
+  PROVIDER: 'provider'            // localStorage에서 사용
 };
 
 /**
@@ -166,26 +168,9 @@ export async function signIn(email: string, password: string) {
       throw error;
     }
 
-    // 로그인 성공 시 여러 스토리지에 세션 정보 저장
+    // 세션 정보는 Supabase 클라이언트가 자동으로 관리함
     if (data.session) {
-      // 액세스 토큰 저장
-      setAuthData(STORAGE_KEYS.ACCESS_TOKEN, data.session.access_token, { expiry: 60 * 60 * 24 * 7 });
-      
-      // 리프레시 토큰 저장
-      if (data.session.refresh_token) {
-        setAuthData(STORAGE_KEYS.REFRESH_TOKEN, data.session.refresh_token, { expiry: 60 * 60 * 24 * 30 });
-      }
-      
-      // 사용자 정보 저장
-      if (data.session.user) {
-        setAuthData(STORAGE_KEYS.USER_ID, data.session.user.id, { expiry: 60 * 60 * 24 });
-        
-        if (data.session.user.app_metadata?.provider) {
-          setAuthData(STORAGE_KEYS.PROVIDER, data.session.user.app_metadata.provider, { expiry: 60 * 60 * 24 });
-        }
-      }
-      
-      logger.info('로그인 성공: 여러 스토리지에 인증 정보 저장됨', {
+      logger.info('로그인 성공: Supabase 클라이언트가 세션 관리 중', {
         환경: process.env.NODE_ENV
       });
     } else {
@@ -213,7 +198,7 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; url?: stri
     logger.info('Google 로그인 시작');
     
     // code_verifier가 이미 존재하는지 확인
-    const existingVerifier = getAuthData(STORAGE_KEYS.CODE_VERIFIER);
+    const existingVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
     
     let codeVerifier: string;
     if (existingVerifier) {
@@ -227,13 +212,8 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; url?: stri
         첫_5글자: codeVerifier.substring(0, 5)
       });
       
-      // 코드 검증기를 여러 스토리지에 저장
-      const saved = await setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier, {
-        expiry: 60 * 5 // 5분 유효
-      });
-      if (!saved) {
-        throw new Error('코드 검증기 저장 실패');
-      }
+      // 코드 검증기를 sessionStorage에 저장
+      sessionStorage.setItem(STORAGE_KEYS.CODE_VERIFIER, codeVerifier);
       logger.debug('코드 검증기 저장 성공');
     }
     
@@ -281,6 +261,12 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; url?: stri
 export async function signOut() {
   try {
     logger.info('로그아웃 시작');
+    
+    // 로컬 스토리지에서 인증 데이터 제거
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_ID);
+    localStorage.removeItem(STORAGE_KEYS.PROVIDER);
     
     // Supabase 로그아웃
     const client = getAuthClient();
@@ -343,102 +329,28 @@ export async function getUser() {
 }
 
 /**
- * googleLogin: Google OAuth 로그인 시작
- * @returns {Promise<void>}
- */
-export const googleLogin = async (): Promise<void> => {
-  if (!isClient()) {
-    throw new Error('Google 로그인은 클라이언트 환경에서만 시작할 수 있습니다.');
-  }
-  
-  // 코드 검증기 생성 및 로컬 스토리지에 저장
-  const codeVerifier = generateCodeVerifier();
-  setAuthData(STORAGE_KEYS.CODE_VERIFIER, codeVerifier);
-  
-  // 코드 검증기로부터 코드 챌린지 생성
-  const codeChallenge = await generateCodeChallenge(codeVerifier);
-  
-  // Google OAuth 로그인 URL 생성
-  const authParams = new URLSearchParams({
-    client_id: OAUTH_CONFIG.clientId,
-    redirect_uri: OAUTH_CONFIG.redirectUri,
-    response_type: OAUTH_CONFIG.responseType,
-    scope: OAUTH_CONFIG.scope,
-    code_challenge: codeChallenge,
-    code_challenge_method: OAUTH_CONFIG.codeChallengeMethod,
-    // 추가 옵션
-    prompt: 'select_account', // 항상 계정 선택 화면 표시
-    access_type: 'offline', // 리프레시 토큰 요청
-    state: crypto.randomUUID(), // CSRF 방지용 상태값
-  });
-  
-  // Google 로그인 페이지로 리디렉션
-  window.location.href = `${OAUTH_CONFIG.authEndpoint}?${authParams.toString()}`;
-};
-
-/**
  * exchangeCodeForSession: 인증 코드를 세션으로 교환
  * @param {string} code - Google OAuth 인증 코드
  * @returns {Promise<any>} 세션 정보
  */
 export const exchangeCodeForSession = async (code: string): Promise<any> => {
   // 코드 검증기 가져오기
-  const codeVerifier = getAuthData(STORAGE_KEYS.CODE_VERIFIER);
+  const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
   
   if (!codeVerifier) {
     throw new Error('코드 검증기를 찾을 수 없습니다. 로그인 과정이 중단되었을 수 있습니다.');
   }
   
-  // 토큰 교환 요청
-  const tokenParams = new URLSearchParams({
-    client_id: OAUTH_CONFIG.clientId,
-    redirect_uri: OAUTH_CONFIG.redirectUri,
-    grant_type: OAUTH_CONFIG.grantType,
-    code,
-    code_verifier: codeVerifier
-  });
+  // 사용 후에는 sessionStorage에서 제거
+  sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
   
-  // 요청 전송
-  const response = await fetch(OAUTH_CONFIG.tokenEndpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: tokenParams.toString()
-  });
+  // Supabase 클라이언트로 코드 교환
+  const client = getAuthClient();
+  const { data, error } = await client.auth.exchangeCodeForSession(code);
   
-  // 응답 처리
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(`토큰 교환 실패: ${errorData.error || response.statusText}`);
+  if (error) {
+    throw error;
   }
   
-  // 세션 정보 파싱
-  const sessionData = await response.json();
-  
-  // 코드 검증기 제거 (1회용)
-  removeAuthData(STORAGE_KEYS.CODE_VERIFIER);
-  
-  // 세션 정보 반환
-  return sessionData;
-};
-
-/**
- * validateSession: 현재 세션이 유효한지 확인
- * @returns {boolean} 세션 유효 여부
- */
-export const validateSession = (): boolean => {
-  // 액세스 토큰 확인
-  const accessToken = getAuthData(STORAGE_KEYS.ACCESS_TOKEN);
-  if (!accessToken) return false;
-  
-  // 세션 만료 시간 확인
-  const expiryTime = getAuthData(STORAGE_KEYS.SESSION);
-  if (!expiryTime) return false;
-  
-  // 현재 시간과 비교
-  const expiry = parseInt(expiryTime, 10);
-  const currentTime = Date.now();
-  
-  return currentTime < expiry;
+  return data;
 }; 

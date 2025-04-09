@@ -5,8 +5,7 @@
  * 작성일: 2024-10-12
  */
 
-import { getAuthClient } from '@/lib/auth';
-import { getAuthDataAsync, setAuthData, getAuthData, STORAGE_KEYS } from '@/lib/auth-storage';
+import { getAuthClient, STORAGE_KEYS } from '@/lib/auth';
 import createLogger from '@/lib/logger';
 
 // 로거 생성
@@ -65,7 +64,7 @@ export class AuthService {
       logger.info('인증 코드 확인됨', { codeLength: code.length });
       
       // 코드 검증기 복구
-      const codeVerifier = await getAuthDataAsync(STORAGE_KEYS.CODE_VERIFIER);
+      const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
       
       if (!codeVerifier) {
         logger.warn('코드 검증기를 찾을 수 없음');
@@ -131,23 +130,23 @@ export class AuthService {
       
       // 토큰 저장
       if (result.accessToken) {
-        setAuthData(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken, { expiry: 60 * 60 * 24 });
+        localStorage.setItem('access_token', result.accessToken);
         logger.debug('액세스 토큰 저장됨');
       }
       
       if (result.refreshToken) {
-        setAuthData(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken, { expiry: 60 * 60 * 24 * 14 });
+        localStorage.setItem('refresh_token', result.refreshToken);
         logger.debug('리프레시 토큰 저장됨');
       }
       
       // 사용자 정보 저장
       if (result.userId) {
-        setAuthData(STORAGE_KEYS.USER_ID, result.userId, { expiry: 60 * 60 * 24 });
+        localStorage.setItem('user_id', result.userId);
         logger.debug('사용자 ID 저장됨');
       }
       
       if (result.provider) {
-        setAuthData(STORAGE_KEYS.PROVIDER, result.provider, { expiry: 60 * 60 * 24 });
+        localStorage.setItem('provider', result.provider);
         logger.debug('인증 제공자 정보 저장됨');
       }
       
@@ -169,9 +168,9 @@ export class AuthService {
     provider?: string;
   } {
     try {
-      const accessToken = getAuthData(STORAGE_KEYS.ACCESS_TOKEN);
-      const userId = getAuthData(STORAGE_KEYS.USER_ID);
-      const provider = getAuthData(STORAGE_KEYS.PROVIDER);
+      const accessToken = localStorage.getItem('access_token');
+      const userId = localStorage.getItem('user_id');
+      const provider = localStorage.getItem('provider');
       
       return {
         isAuthenticated: !!accessToken,
@@ -181,6 +180,31 @@ export class AuthService {
     } catch (error) {
       logger.error('인증 데이터 확인 실패', error);
       return { isAuthenticated: false };
+    }
+  }
+  
+  /**
+   * 인증 결과에 따른 리디렉션 URL 생성
+   * @param result 인증 결과
+   * @returns 리디렉션 URL
+   */
+  static getRedirectUrl(result: AuthResult): string {
+    if (result.status === 'success') {
+      // 인증 성공 시 대시보드로 리디렉션
+      return '/dashboard';
+    } else {
+      // 인증 실패 시 로그인 페이지로 오류 정보와 함께 리디렉션
+      const params = new URLSearchParams();
+      
+      if (result.error) {
+        params.set('error', result.error);
+      }
+      
+      if (result.errorDescription) {
+        params.set('error_description', result.errorDescription);
+      }
+      
+      return `/login${params.toString() ? `?${params.toString()}` : ''}`;
     }
   }
 } 
