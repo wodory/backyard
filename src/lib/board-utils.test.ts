@@ -2,7 +2,7 @@
  * 파일명: src/lib/board-utils.test.ts
  * 목적: board-utils.ts 기능 테스트
  * 역할: 보드 설정 관리 유틸리티 기능 검증
- * 작성일: 2024-03-30
+ * 작성일: 2025-04-01
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';

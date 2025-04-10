@@ -2,7 +2,8 @@
  * 파일명: src/lib/logger.test.ts
  * 목적: logger.ts의 모든 기능 테스트
  * 역할: 로깅 시스템의 정상 동작 및 에러 처리 검증
- * 작성일: 2024-03-28
+ * 작성일: 2025-04-07
+ * 수정일: 2025-04-08
  */
 
 import { vi, describe, beforeEach, afterEach, it, expect, beforeAll, afterAll } from 'vitest';

@@ -2,7 +2,8 @@
  * 파일명: useBoardHandlers.test.tsx
  * 목적: 보드 핸들러 훅의 기능 테스트
  * 역할: 선택, 드래그 앤 드롭, 카드 생성 핸들러 테스트
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';

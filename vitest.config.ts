@@ -3,6 +3,7 @@
  * 목적: Vitest 테스트 환경 설정
  * 역할: 테스트 실행을 위한 Vite 설정과 통합된 설정 제공
  * 작성일: 2024-03-31
+ * 수정일: 2025-04-09
  */
 
 import { defineConfig, mergeConfig } from 'vitest/config';
@@ -23,8 +24,8 @@ export default mergeConfig(
       setupFiles: ['./src/tests/setup.ts'],
       
       // 성능 최적화 설정
-      testTimeout: 15000, // 전역 타임아웃 설정
-      hookTimeout: 10000, // 훅 타임아웃 설정
+      testTimeout: 2000, // 전역 타임아웃 설정 (2초로 변경)
+      hookTimeout: 2000, // 훅 타임아웃 설정 (2초로 변경)
       pool: 'threads',
       poolOptions: {
         threads: {

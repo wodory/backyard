@@ -2,7 +2,8 @@
  * 파일명: auth-service.ts
  * 목적: 인증 관련 비즈니스 로직 분리
  * 역할: OAuth 콜백 처리와 인증 데이터 관리 서비스 제공
- * 작성일: 2024-10-12
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-09
  */
 
 import { getAuthClient, STORAGE_KEYS } from '@/lib/auth';

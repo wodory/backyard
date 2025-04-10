@@ -2,7 +2,7 @@
  * 파일명: actions.test.ts
  * 목적: 로그인 관련 서버 액션 테스트
  * 역할: 로그인/회원가입 함수의 동작을 검증
- * 작성일: 2024-05-27
+ * 작성일: 2025-03-27
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

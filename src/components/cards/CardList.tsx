@@ -208,7 +208,7 @@ export default function CardList() {
                         <DialogHeader>
                           <DialogTitle>{card.title}</DialogTitle>
                           <DialogDescription>
-                            작성일: {formatDate(card.createdAt)}
+                            작성일: 2025-03-05
                           </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">

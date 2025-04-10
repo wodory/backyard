@@ -1,0 +1,189 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+**Task List for Cursor Agent: 인증 콜백 리팩토링 및 테스트 업데이트**
+
+**목표:** `CallbackHandler` 컴포넌트의 로직을 `useAuthCallback` 훅으로 분리하고, 관련 테스트를 작성 및 수정하여 코드 구조 개선, 테스트 가능성 향상, 그리고 기존의 테스트 타임아웃/`act` 문제를 해결합니다.
+
+**Phase 1: 로직 추출 및 훅 생성 (이전 Task List 내용)**
+
+1.  **파일 생성:** `src/hooks/useAuthCallback.ts` 파일을 생성합니다.
+2.  **훅 구조 작성:** `useAuthCallback.ts`에 아래 기본 구조를 작성합니다. (상태 정의 포함)
+    ```typescript
+    import { useState, useEffect } from 'react';
+    import { useRouter } from 'next/navigation';
+    import createLogger from '@/lib/logger';
+    import { AuthService } from '@/services/auth-service';
+    import type { AuthResult } from '@/services/auth-service';
+
+    const logger = createLogger('useAuthCallback');
+
+    type ProcessingState = '초기화 중' | '인증 코드 처리 중' | '오류 발생' | '인증 데이터 저장 중' | '완료, 리디렉션 중' | '예외 발생';
+
+    interface UseAuthCallbackReturn {
+      processingState: ProcessingState;
+      error: string | null;
+    }
+
+    export function useAuthCallback(): UseAuthCallbackReturn {
+      const router = useRouter(); // router는 훅 내부에서 계속 사용
+      const [processingState, setProcessingState] = useState<ProcessingState>('초기화 중');
+      const [error, setError] = useState<string | null>(null);
+
+      useEffect(() => {
+        let mounted = true;
+
+        const processCallback = async () => {
+          // 여기에 로직 이동 (Task 1.3에서 수행)
+        };
+
+        processCallback();
+
+        return () => {
+          mounted = false;
+        };
+      }, [router]); // router 의존성 유지
+
+      return { processingState, error };
+    }
+    ```
+3.  **로직 이동:**
+    * `src/app/auth/callback/page.tsx` 파일의 `useEffect` 훅 내부 `async function handleCallback() { ... }` 로직 전체 (`try...catch` 포함)를 복사합니다.
+    * `src/hooks/useAuthCallback.ts` 파일의 `useEffect` 내부 `async const processCallback = async () => { ... }` 함수의 **내용**으로 붙여넣습니다.
+    * 훅 내부의 `router.push(...)` 호출은 **모두 주석 처리하거나 제거**합니다.
+4.  **컴포넌트 수정 (1단계):** `src/app/auth/callback/page.tsx` 파일을 수정합니다.
+    * `useAuthCallback` 훅을 임포트합니다: `import { useAuthCallback } from '@/hooks/useAuthCallback';`
+    * 기존 `useState` 선언(`processingState`, `error`) 및 `useEffect` 훅 전체를 **제거**합니다.
+    * 컴포넌트 함수 최상단에서 훅을 호출합니다: `const { processingState, error } = useAuthCallback();`
+    * JSX 부분은 그대로 둡니다.
+5.  **파일 저장:** 변경된 `src/hooks/useAuthCallback.ts` 와 `src/app/auth/callback/page.tsx` 파일을 저장합니다.
+
+**Phase 2: 리다이렉션 처리 로직 추가**
+
+1.  **훅 수정 (리다이렉션 URL 반환):** `src/hooks/useAuthCallback.ts` 파일을 수정합니다.
+    * 훅이 리다이렉션 목표 URL을 상태로 관리하고 반환하도록 수정합니다.
+        * `useState` 추가: `const [redirectUrl, setRedirectUrl] = useState<string | null>(null);`
+        * `UseAuthCallbackReturn` 인터페이스 수정: `redirectUrl: string | null;` 추가
+        * 훅의 `return` 문 수정: `{ processingState, error, redirectUrl }` 반환
+    * `processCallback` 함수 내부에서 이전에 주석 처리/제거했던 `router.push(...)` 호출 대신, 해당 URL을 `setRedirectUrl(...)`을 사용하여 상태로 설정하도록 변경합니다.
+        * 예: `router.push('/')` 대신 `setRedirectUrl('/');`
+        * 예: `router.push('/auth/error?...')` 대신 `setRedirectUrl('/auth/error?...');`
+2.  **컴포넌트 수정 (리다이렉션 실행):** `src/app/auth/callback/page.tsx` 파일을 수정합니다.
+    * 훅 호출 시 `redirectUrl`도 받도록 수정: `const { processingState, error, redirectUrl } = useAuthCallback();`
+    * `useRouter` 훅을 컴포넌트 내에서 직접 호출합니다: `const router = useRouter();`
+    * `redirectUrl` 값이 변경되었을 때 실제 리다이렉션을 수행하는 **새로운 `useEffect`**를 추가합니다.
+        ```typescript
+        useEffect(() => {
+          if (redirectUrl) {
+            logger.info(`리다이렉션 실행: ${redirectUrl}`);
+            router.push(redirectUrl);
+          }
+        }, [redirectUrl, router, logger]); // logger도 의존성 배열에 추가 (선택 사항)
+        ```
+    * 파일 상단에서 `useRouter` 임포트를 확인합니다. (`next/navigation`)
+3.  **파일 저장:** 변경된 `src/hooks/useAuthCallback.ts` 와 `src/app/auth/callback/page.tsx` 파일을 저장합니다.
+
+**Phase 3: 커스텀 훅 테스트 작성**
+
+1.  **테스트 파일 생성:** `src/hooks/useAuthCallback.test.ts` 파일을 생성합니다.
+2.  **기본 설정:** `@testing-library/react`의 `renderHook`과 `waitFor`, 그리고 `vitest`의 모킹 기능을 임포트합니다. `AuthService`와 `next/navigation`을 모킹합니다.
+    ```typescript
+    import { renderHook, waitFor } from '@testing-library/react';
+    import { describe, it, expect, vi, beforeEach } from 'vitest';
+    import { useAuthCallback } from './useAuthCallback'; // 실제 훅 경로
+    import { AuthService } from '@/services/auth-service';
+    import type { AuthResult } from '@/services/auth-service';
+    import { useRouter } from 'next/navigation';
+
+    // Mocking
+    const mockPush = vi.fn();
+    vi.mock('next/navigation', () => ({
+      useRouter: () => ({ push: mockPush }),
+    }));
+    vi.mock('@/services/auth-service');
+    vi.mock('@/lib/logger', () => ({ default: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() })}));
+
+    // 테스트 데이터 (필요 시 사용)
+    const successResult: AuthResult = { /* ... */ };
+    const errorResult: AuthResult = { /* ... */ };
+    ```
+3.  **테스트 케이스 작성:** `renderHook`을 사용하여 훅을 렌더링하고, `result.current`를 통해 반환값을 확인합니다. `waitFor`를 사용하여 비동기 작업 후의 상태 변화(processingState, error, redirectUrl)를 검증합니다.
+    * **성공 케이스:** `AuthService.handleCallback`이 성공 결과를 반환하고 `AuthService.saveAuthData`가 true를 반환할 때, 최종 상태가 `processingState: '완료, 리디렉션 중'`, `error: null`, `redirectUrl: '/'`이 되는지 확인합니다.
+    * **인증 오류 케이스:** `AuthService.handleCallback`이 에러 결과를 반환할 때, 최종 상태가 `processingState: '오류 발생'`, `error: '에러메시지'`, `redirectUrl: '/auth/error?...'`이 되는지 확인합니다.
+    * **데이터 저장 실패 케이스:** `AuthService.handleCallback`은 성공했지만 `AuthService.saveAuthData`가 false를 반환할 때, 최종 상태와 `redirectUrl`이 올바른지 확인합니다. (`error` 상태 업데이트 및 `redirectUrl: '/'`)
+    * **예외 발생 케이스:** `AuthService.handleCallback` 호출 시 예외가 발생하도록 모킹하고, 최종 상태와 `redirectUrl`이 올바른지 확인합니다. (`processingState: '예외 발생'`, `error: '...'`, `redirectUrl: '/auth/error?...'`)
+    * **초기 상태 테스트:** 훅이 처음 렌더링될 때 `processingState: '초기화 중'`, `error: null`, `redirectUrl: null`인지 확인합니다.
+
+4.  **테스트 실행 및 디버깅:** 테스트를 실행하고 실패하는 경우, 모킹 설정이나 단언 부분을 수정합니다.
+5.  **파일 저장:** `src/hooks/useAuthCallback.test.ts` 파일을 저장합니다.
+
+**Phase 4: 컴포넌트 테스트 수정**
+
+1.  **테스트 파일 열기:** `src/app/auth/callback/page.test.tsx` 파일을 엽니다.
+2.  **모킹 변경:**
+    * 기존의 `vi.mock('@/services/auth-service')` 모킹을 **제거**합니다.
+    * 새로 만든 `useAuthCallback` 훅을 모킹합니다. 파일 상단 또는 `describe` 블록 위에 추가합니다.
+        ```typescript
+        import { useAuthCallback } from '@/hooks/useAuthCallback'; // 실제 훅 경로 확인
+        // ... 다른 mock들 ...
+
+        vi.mock('@/hooks/useAuthCallback'); // 훅 모킹
+        const mockUseAuthCallback = vi.mocked(useAuthCallback);
+        ```
+    * `next/navigation` 모킹(`mockPush`)은 **유지**합니다 (리다이렉션 테스트에 필요).
+3.  **테스트 케이스 재작성:** 기존 테스트 케이스들을 다음 방식으로 수정하거나 재작성합니다.
+    * **`beforeEach`**: `mockUseAuthCallback.mockReturnValue({ processingState: '초기화 중', error: null, redirectUrl: null });` 와 같이 훅의 기본 반환값을 설정합니다.
+    * **각 테스트 케이스 (`it`)**:
+        * 테스트하려는 시나리오에 맞게 `mockUseAuthCallback.mockReturnValueOnce(...)`를 사용하여 훅이 특정 상태(`processingState`, `error`, `redirectUrl`)를 반환하도록 설정합니다.
+        * `render(<CallbackHandler />);`를 호출합니다. (이제 `act`로 감쌀 필요가 없을 가능성이 높습니다.)
+        * `screen.getByText(...)` 등을 사용하여 훅의 상태에 따라 **UI가 올바르게 렌더링되는지 확인**합니다. (예: 로딩 스피너, "인증 처리 중...", 오류 메시지 등)
+        * 리다이렉션이 예상되는 경우, **`waitFor`를 사용하여 `mockPush`가 올바른 URL로 호출되었는지 확인**합니다. (컴포넌트의 `useEffect`가 `redirectUrl` 변경을 감지하고 `push`를 호출하는 것을 기다려야 할 수 있습니다.)
+        * 이전에 `AuthService` 호출 등을 확인하던 단언은 제거합니다 (이제 훅 테스트에서 검증됨).
+
+    **컴포넌트 테스트 예시 (성공 케이스):**
+    ```typescript
+    it("훅이 성공 상태와 리다이렉션 URL을 반환하면 홈페이지로 이동해야 함", async () => {
+      // 훅이 최종 성공 상태 및 리다이렉션 URL을 반환하도록 모킹
+      mockUseAuthCallback.mockReturnValue({
+        processingState: '완료, 리디렉션 중',
+        error: null,
+        redirectUrl: '/'
+      });
+
+      render(<CallbackHandler />);
+
+      // UI 상태 확인 (선택 사항, '완료, 리디렉션 중' 텍스트 확인 등)
+      expect(screen.getByText("완료, 리디렉션 중")).toBeInTheDocument();
+
+      // 리다이렉션 확인
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/');
+      });
+    });
+    ```
+    **컴포넌트 테스트 예시 (오류 케이스):**
+    ```typescript
+    it("훅이 오류 상태를 반환하면 오류 메시지를 표시하고 에러 페이지로 이동해야 함", async () => {
+      // 훅이 오류 상태 및 에러 리다이렉션 URL을 반환하도록 모킹
+      mockUseAuthCallback.mockReturnValue({
+        processingState: '오류 발생',
+        error: '테스트 에러 발생',
+        redirectUrl: '/auth/error?error=test_error'
+      });
+
+      render(<CallbackHandler />);
+
+      // UI 상태 확인 (오류 메시지 표시 확인)
+      expect(screen.getByText("오류: 테스트 에러 발생")).toBeInTheDocument();
+
+      // 리다이렉션 확인
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/auth/error?error=test_error');
+      });
+    });
+    ```
+4.  **불필요한 코드 제거:** 테스트 파일 내에서 더 이상 사용되지 않는 `AuthResult` 타입 정의, `AuthService` 모킹 관련 설정 등을 정리합니다. 이전의 복잡한 `act` 래핑이나 다단계 `waitFor`도 제거합니다.
+5.  **파일 저장:** 수정된 `src/app/auth/callback/page.test.tsx` 파일을 저장합니다.

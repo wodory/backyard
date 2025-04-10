@@ -2,7 +2,7 @@
  * 파일명: board-ui-config.test.ts
  * 목적: board-ui-config.ts 모듈의 기능 테스트
  * 역할: 보드 UI 설정과 관련된 유틸리티 함수 테스트
- * 작성일: 2024-07-09
+ * 작성일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

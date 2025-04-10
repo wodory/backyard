@@ -2,7 +2,8 @@
  * 파일명: flow-constants.ts
  * 목적: React Flow 관련 상수 정의
  * 역할: 싱글톤 패턴으로 구현하여 항상 동일한 객체 참조를 유지함
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-09
+ * 수정일: 2025-03-28
  */
 
 import CardNode from '@/components/board/nodes/CardNode';

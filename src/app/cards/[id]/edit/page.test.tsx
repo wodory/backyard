@@ -2,7 +2,8 @@
  * 파일명: src/app/cards/[id]/edit/page.test.tsx
  * 목적: 카드 편집 페이지의 기능 테스트
  * 역할: 페이지 로딩, 네비게이션, API 요청, 에러 처리 등의 기능 검증
- * 작성일: 2024-05-16
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-03
  */
 
 import { describe, test, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';

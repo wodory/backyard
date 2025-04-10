@@ -2,7 +2,8 @@
  * 파일명: layout.test.tsx
  * 목적: RootLayout 컴포넌트 테스트
  * 역할: 레이아웃 컴포넌트의 기능과 구조 검증
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-05
+ * 수정일: 2025-03-30
  */
 
 import { render, screen } from '@testing-library/react';

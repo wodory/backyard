@@ -2,7 +2,7 @@
  * 파일명: MainCanvas.test.tsx
  * 목적: MainCanvas 컴포넌트 테스트
  * 역할: MainCanvas가 적절하게 렌더링되고 Board 컴포넌트에 올바른 props를 전달하는지 테스트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
  */
 
 import { render, screen } from '@testing-library/react';

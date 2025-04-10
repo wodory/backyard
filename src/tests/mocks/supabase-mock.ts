@@ -2,7 +2,7 @@
  * 파일명: supabase-mock.ts
  * 목적: Supabase 클라이언트 모킹
  * 역할: 테스트 환경에서 Supabase 인증 및 API 호출 시뮬레이션
- * 작성일: 2024-03-26
+ * 작성일: 2025-03-27
  */
 
 import { User, Session } from '@supabase/supabase-js';

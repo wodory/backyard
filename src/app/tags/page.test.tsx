@@ -9,7 +9,8 @@ import '@testing-library/jest-dom/vitest';
  * 파일명: page.test.tsx
  * 목적: 태그 관리 페이지 테스트
  * 역할: 태그 페이지 렌더링 및 기능 검증
- * 작성일: 2024-05-27
+ * 작성일: 2025-03-05
+ * 수정일: 2025-03-27
  */
 
 // vi.hoisted를 사용하여 모킹 객체 생성

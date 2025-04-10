@@ -2,7 +2,8 @@
  * 파일명: pkce.test.ts
  * 목적: PKCE 인증 테스트
  * 역할: PKCE 인증 흐름 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';

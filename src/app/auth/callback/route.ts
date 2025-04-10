@@ -2,7 +2,7 @@
  * 파일명: route.ts
  * 목적: OAuth 콜백 처리
  * 역할: OAuth 인증 완료 후 사용자를 적절한 페이지로 리다이렉트
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
  */
 
 import { createClient } from '@/utils/supabase/server'

@@ -2,7 +2,7 @@
  * 파일명: src/lib/environment.test.ts
  * 목적: environment.ts 모듈의 환경 감지 및 조건부 실행 함수 테스트
  * 역할: 클라이언트/서버 환경 감지 및 각 환경별 코드 실행 로직 검증
- * 작성일: 2024-07-18
+ * 작성일: 2025-04-07
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

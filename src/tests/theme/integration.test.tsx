@@ -2,7 +2,7 @@
  * 파일명: integration.test.tsx
  * 목적: 테마 관련 컴포넌트 통합 테스트
  * 역할: ThemeContext와 NodeSizeSettings의 통합 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-03-27
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';

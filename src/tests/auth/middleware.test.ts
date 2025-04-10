@@ -2,7 +2,8 @@
  * 파일명: middleware.test.ts
  * 목적: Next.js 미들웨어 인증 테스트
  * 역할: 미들웨어의 인증 및 권한 검사 기능 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';

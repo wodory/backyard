@@ -2,7 +2,7 @@
  * 파일명: useCardData.ts
  * 목적: 카드 데이터를 API에서 로드하고 관리하는 훅
  * 역할: API 호출 및 응답 처리, 데이터 캐싱, 전역 상태 업데이트 담당
- * 작성일: 2024-05-27
+ * 작성일: 2025-03-28
  */
 
 import { useState, useEffect, useCallback } from 'react';

@@ -2,7 +2,7 @@
  * 파일명: src/lib/supabase/client.ts
  * 목적: 클라이언트 환경에서 Supabase 클라이언트 제공
  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
- * 작성일: 2024-04-16
+ * 작성일: 2025-04-09
  */
 
 import { createBrowserClient } from '@supabase/ssr'

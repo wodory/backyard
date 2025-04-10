@@ -2,7 +2,7 @@
  * 파일명: route.test.ts
  * 목적: 인증 상태 API 엔드포인트 테스트
  * 역할: 로그인 상태 확인 및 사용자 정보 반환 API 기능 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-04-01
  */
 
 import { NextResponse } from 'next/server';

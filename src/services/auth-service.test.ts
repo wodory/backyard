@@ -2,7 +2,8 @@
  * 파일명: auth-service.test.ts
  * 목적: AuthService 단위 테스트
  * 역할: 인증 서비스의 비즈니스 로직을 검증
- * 작성일: 2024-10-12
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-09
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

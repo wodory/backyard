@@ -2,7 +2,7 @@
  * 파일명: NodeSizeSettings.test.tsx
  * 목적: NodeSizeSettings 컴포넌트 테스트
  * 역할: 노드 크기 설정 컴포넌트 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-03-27
  */
 
 import React from 'react';

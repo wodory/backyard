@@ -2,7 +2,7 @@
  * 파일명: middleware.ts
  * 목적: Supabase 인증 토큰 새로고침 처리
  * 역할: 토큰 만료 시 자동으로 새로고침하고 쿠키에 저장
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
  */
 
 import { NextResponse, type NextRequest } from 'next/server'

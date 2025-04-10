@@ -2,7 +2,7 @@
  * 파일명: route.ts
  * 목적: 로그인 상태 확인 API
  * 역할: 현재 로그인 상태와 사용자 정보 반환
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
  */
 
 import { createClient } from '@/utils/supabase/server'

@@ -2,7 +2,8 @@
  * 파일명: src/app/auth/test/page.test.tsx
  * 목적: 인증 테스트 페이지의 기능을 테스트
  * 역할: 로그인, 로그아웃, 스토리지 테스트 등의 기능을 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-03
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';

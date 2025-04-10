@@ -2,7 +2,8 @@
  * 파일명: src/app/api/tags/route.ts
  * 목적: 태그 관련 API 엔드포인트 제공
  * 역할: 태그 목록 조회, 태그 사용 횟수 집계, 태그 생성 등 기능 제공
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-05
+ * 수정일: 2025-03-27
  */
 
 import { NextRequest, NextResponse } from 'next/server';

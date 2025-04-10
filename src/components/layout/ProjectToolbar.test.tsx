@@ -2,7 +2,8 @@
  * 파일명: ProjectToolbar.test.tsx
  * 목적: ProjectToolbar 컴포넌트 테스트
  * 역할: 프로젝트 설정 및 컨트롤 기능을 검증하는 테스트
- * 작성일: 2024-06-05
+ * 작성일: 2025-04-01
+ * 수정일: 2025-04-03
  */
 
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';

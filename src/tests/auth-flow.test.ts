@@ -2,7 +2,8 @@
  * 파일명: auth-flow.test.ts
  * 목적: 인증 흐름 테스트
  * 역할: 인증 관련 기능의 통합 테스트
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { describe, test, expect, vi } from 'vitest';

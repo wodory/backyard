@@ -2,7 +2,7 @@
  * 파일명: useBoardUtils.ts
  * 목적: 보드 유틸리티 함수 관련 로직 분리
  * 역할: 보드 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
- * 작성일: 2024-05-11
+ * 작성일: 2025-03-28
  */
 
 import { useCallback, useRef } from 'react';

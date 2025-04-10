@@ -8353,7 +8353,7 @@ lib/hybrid-supabase.test.ts
 3 |  * 목적: hybrid-supabase.ts의 환경 감지 및 Supabase 클라이언트 생성 기능 테스트
 4 |  * 역할: 서버/클라이언트 환경에 따른 적절한 Supabase 클라이언트 생성 검증
 5 |  * 작성일: 2024-04-01
-6 |  * 수정일: 2024-07-09
+6 |  * 수정일: 2025-04-07
 7 |  */
 8 | 
 9 | import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';

@@ -2,7 +2,8 @@
  * 파일명: CardNode.tsx
  * 목적: 보드에 표시되는 카드 노드 컴포넌트
  * 역할: React Flow의 노드로 사용되는 카드 UI 컴포넌트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-05
+ * 수정일: 2025-03-31
  */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';

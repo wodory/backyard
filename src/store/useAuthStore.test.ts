@@ -2,7 +2,7 @@
  * 파일명: src/store/useAuthStore.test.ts
  * 목적: useAuthStore의 기능 테스트
  * 역할: Zustand 기반 인증 스토어의 상태 관리와 액션을 검증
- * 작성일: 2024-04-17
+ * 작성일: 2025-04-09
  */
 
 import { vi } from 'vitest';

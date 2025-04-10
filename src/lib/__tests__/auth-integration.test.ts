@@ -2,7 +2,8 @@
  * 파일명: src/lib/__tests__/auth-integration.test.ts
  * 목적: 인증 관련 모듈의 통합 테스트
  * 역할: auth.ts와 Supabase 인증 간의 상호작용 테스트
- * 작성일: 2024-04-16
+ * 작성일: 2025-04-02
+ * 수정일: 2025-04-09
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';

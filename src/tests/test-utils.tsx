@@ -2,7 +2,8 @@
  * 파일명: test-utils.tsx
  * 목적: 테스트 유틸리티 함수 및 래퍼 제공
  * 역할: Next.js, React 컴포넌트를 테스트하기 위한 유틸리티 제공
- * 작성일: 2024-06-24
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-01
  */
 
 import React, { ReactElement } from 'react';

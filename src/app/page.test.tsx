@@ -2,7 +2,8 @@
  * 파일명: page.test.tsx
  * 목적: 홈 페이지 컴포넌트 테스트
  * 역할: 홈 페이지의 렌더링과 기능 검증
- * 작성일: 2024-03-28
+ * 작성일: 2025-03-05
+ * 수정일: 2025-03-30
  */
 
 import { render, screen } from '@testing-library/react';

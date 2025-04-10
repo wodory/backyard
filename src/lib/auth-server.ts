@@ -2,7 +2,8 @@
  * 파일명: auth-server.ts
  * 목적: 서버 측 인증 기능 및 세션 처리
  * 역할: API 라우트에서 사용할 서버 측 인증 함수 제공
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { createClient } from './supabase/server';

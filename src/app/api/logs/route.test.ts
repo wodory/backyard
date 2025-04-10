@@ -2,7 +2,7 @@
  * 파일명: route.test.ts
  * 목적: 로그 API 엔드포인트 테스트
  * 역할: 클라이언트 로그를 서버에 저장하는 API 기능 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-04-01
  */
 
 import { NextRequest, NextResponse } from 'next/server';

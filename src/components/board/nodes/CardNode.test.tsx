@@ -2,7 +2,7 @@
  * 파일명: CardNode.test.tsx
  * 목적: CardNode 컴포넌트 테스트
  * 역할: 카드 노드 컴포넌트의 기능 테스트
- * 작성일: 2024-05-31
+ * 작성일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';

@@ -3,6 +3,62 @@ description:
 globs: 
 alwaysApply: false
 ---
+**프로젝트 개념 도입 + DB 리펙토링**
+
+***개념***
+User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --- User Z
+        +              +- tree & node info
+        +              +- project info
+        +         
+        +-> Project 2  +- card a, b, c, q
+                       +- tree & node info
+                       +- project info
+                  
+
+- [ ] 프로젝트 + 프로젝트 속성 스키마
+  - [ ] 프로젝트 이름
+  - [ ] 소유자 
+  - [ ] 생성일
+  - [ ] 수정일
+  - [ ] uid
+- [ ] 프로젝트 기능 구현
+  - [ ] 툴바에 프로젝트 이름 표시
+  - [ ] 프로젝트 툴바 -> 메뉴에 프로젝트 정보 수정.   
+- [ ] 소유자별 프로젝트/카드 
+  - [ ] 프로젝트 선택 화면
+  - [ ] 프로젝트 삭제 
+  - [ ] 프로젝트 삭제하면 카드는 어떻게 해야 하지... 아마 전체 삭제. 단, trashcan으로 이동. (90일 보관)
+- [ ] 로컬 서버 DB도 supabase로 일원화하기 
+- [ ] 아이콘
+  - [ ] new https://lucide.dev/icons/file-plus
+  - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
+  - [ ] import text to tree
+
+**버그**
+- [ ] 새 카드 만들기 이후에 화면에 추가 안 되네. 
+- [ ] 기존 카드를 수정하면 사이드바에 바로 업데이트 (왜나면 이미 사이드바에 내용이 나타나니까)
+  - [ ] 실시간으로 보여야 할까??? 
+- [ ] 사이드바 
+  - [ ] 사이드바 크기 조절 -> react flow도 크기 조절 
+  - [ ] 사이드바 선택 -> 보드 노드도 선택 
+  - [ ] 멀티 샐랙트 -> 사이드 바 통합 표시 안 됨
+
+
+**개선**
+
+- [ ] React 컴포넌트 테스트에서 act() 관련 경고
+
+**Todo**
+- [ ] 카드 리스트 삭제 -> 캔버스 삭제 
+- [ ] Sidebar 필터 
+- [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows
+- [ ] z-index 문제 -> https://reactflow.dev/learn/advanced-use/state-management
+- [ ] 찾기 
+- [ ] 색상이나 사이즈 시맨틱 + 프리미티브 정리 
+- [ ] 오토 레이아웃에서 노드 크기를 유지하기
+
+**Previous Tasks**
+
 [ ] 카드 보드의 카드 구조
 - 카드 보드의 카드는 해더와 콘텐츠 영억으로 나뉜다
 - 카드는 접고 펼수 있다. 기본값은 접은 상태이다.
@@ -44,9 +100,6 @@ alwaysApply: false
 [ ] 카드 클릭, 선택
 - 카드 위를 클릭하면 카드 선택 상태가 된다
 - 카드를 드래스, 클릭, 선택하면 z-index가 가장 높다.
-
-
-
 
 ** 토요일 - 원격 환경 적용 및 인증 ** 
 
@@ -468,62 +521,3 @@ const { user, session, error } = await supabase.auth.signIn({
 ## 5. 다음 단계 (useEdges 훅 구현)
 
 현재 진행 중인 리팩토링에서 다음 단계는 엣지 관련 로직을 분리하는 것입니다. useNodes와 유사한 패턴으로 useEdges 훅을 구현하여 BoardComponent에서 엣지 관리 로직을 분리하겠습니다.
-
-
-
-
-** Todo **
-- [ ] 카드 리스트 삭제 -> 캔버스 삭제 
-- [ ] Sidebar 필터 
-
-- [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows
-- [ ] z-index 문제 -> https://reactflow.dev/learn/advanced-use/state-management
-- [ ] 찾기 
-- [ ] 색상이나 사이즈 시맨틱 + 프리미티브 정리 
-- [ ] 오토 레이아웃에서 노드 크기를 유지하기
-
-
-**프로젝트 개념 도입 + DB 리펙토링**
-
-***개념***
-User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --- User Z
-        +              +- tree & node info
-        +              +- project info
-        +         
-        +-> Project 2  +- card a, b, c, q
-                       +- tree & node info
-                       +- project info
-                  
-
-- [ ] 프로젝트 + 프로젝트 속성 스키마
-  - [ ] 프로젝트 이름
-  - [ ] 소유자 
-  - [ ] 생성일
-  - [ ] 수정일
-  - [ ] uid
-- [ ] 프로젝트 기능 구현
-  - [ ] 툴바에 프로젝트 이름 표시
-  - [ ] 프로젝트 툴바 -> 메뉴에 프로젝트 정보 수정.   
-- [ ] 소유자별 프로젝트/카드 
-  - [ ] 프로젝트 선택 화면
-  - [ ] 프로젝트 삭제 
-  - [ ] 프로젝트 삭제하면 카드는 어떻게 해야 하지... 아마 전체 삭제. 단, trashcan으로 이동. (90일 보관)
-- [ ] 로컬 서버 DB도 supabase로 일원화하기 
-- [ ] 아이콘
-  - [ ] new https://lucide.dev/icons/file-plus
-  - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
-  - [ ] import text to tree
-
-**버그**
-- [ ] 새 카드 만들기 이후에 화면에 추가 안 되네. 
-- [ ] 기존 카드를 수정하면 사이드바에 바로 업데이트 (왜나면 이미 사이드바에 내용이 나타나니까)
-  - [ ] 실시간으로 보여야 할까??? 
-- [ ] 사이드바 
-  - [ ] 사이드바 크기 조절 -> react flow도 크기 조절 
-  - [ ] 사이드바 선택 -> 보드 노드도 선택 
-  - [ ] 멀티 샐랙트 -> 사이드 바 통합 표시 안 됨
-
-
-
-
-

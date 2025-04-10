@@ -2,7 +2,7 @@
  * 파일명: global.d.ts
  * 목적: 전역 타입 선언
  * 역할: 전역 변수 및 확장 타입을 선언
- * 작성일: 2024-03-29
+ * 작성일: 2025-03-27
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';

@@ -2,7 +2,7 @@
  * 파일명: board-types.ts
  * 목적: BoardComponent 및 관련 컴포넌트에서 사용되는 타입 정의
  * 역할: 타입 정의를 중앙화하여 코드 중복을 방지하고 타입 안정성 제공
- * 작성일: 2024-05-09
+ * 작성일: 2025-03-28
  */
 
 import { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode } from '@xyflow/react';

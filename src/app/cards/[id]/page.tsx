@@ -80,7 +80,7 @@ export default async function CardPage({ params }: PageProps) {
           {/* @ts-ignore - Prisma 타입 오류 무시 */}
           <p>작성자: {card.user?.name || card.user?.email}</p>
           <span>•</span>
-          <p>작성일: {formatDate(card.createdAt)}</p>
+          <p>작성일: 2025-03-05
         </div>
         
         {/* @ts-ignore - Prisma 타입 오류 무시 */}

@@ -2,7 +2,8 @@
  * 파일명: graphUtils.test.ts
  * 목적: 그래프 유틸리티 함수 테스트
  * 역할: 그래프 관련 순수 함수들의 정상 동작 검증
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

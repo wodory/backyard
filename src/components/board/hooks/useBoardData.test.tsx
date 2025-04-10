@@ -2,7 +2,8 @@
  * 파일명: useBoardData.test.tsx
  * 목적: useBoardData 훅을 테스트
  * 역할: 보드 데이터 로드 및 뷰포트 저장/복원 기능 테스트
- * 작성일: 2024-06-20
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { renderHook, act } from '@testing-library/react';

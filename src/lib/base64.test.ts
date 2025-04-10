@@ -2,7 +2,7 @@
  * 파일명: base64.test.ts
  * 목적: base64.ts의 인코딩/디코딩 기능 테스트
  * 역할: Base64 인코딩/디코딩 함수의 정상 동작 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-04-01
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';

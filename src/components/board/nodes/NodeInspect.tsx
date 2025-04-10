@@ -2,7 +2,7 @@
  * 파일명: NodeInspect.tsx
  * 목적: React Flow 노드 검사 컴포넌트
  * 역할: 노드 정보를 표시해주는 디버깅용 컴포넌트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
  */
 
 import { useEffect, useState } from 'react';

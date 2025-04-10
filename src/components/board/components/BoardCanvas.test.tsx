@@ -2,7 +2,8 @@
  * 파일명: BoardCanvas.test.tsx
  * 목적: BoardCanvas 컴포넌트 테스트
  * 역할: BoardCanvas 컴포넌트의 렌더링과 기능을 테스트
- * 작성일: 2024-03-27
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import React from 'react';

@@ -2,7 +2,8 @@
  * 파일명: constants.ts
  * 목적: 보드 컴포넌트 관련 상수 정의
  * 역할: 보드 컴포넌트에서 사용되는 모든 상수값 제공
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
+ * 수정일: 2025-03-30
  */
 
 import { ConnectionLineType, Position } from '@xyflow/react';

@@ -2,7 +2,7 @@
  * 파일명: layout-utils.test.ts
  * 목적: 레이아웃 유틸리티 함수 테스트
  * 역할: 노드 배치 및 그래프 레이아웃 유틸리티 테스트
- * 작성일: 2024-03-30
+ * 작성일: 2025-04-01
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';

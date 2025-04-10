@@ -2,7 +2,7 @@
  * 파일명: useBoardData.ts
  * 목적: 보드 데이터 로드 및 관리를 위한 커스텀 훅
  * 역할: API에서 카드 데이터를 가져와 React Flow 노드와 엣지로 변환하는 로직 제공
- * 작성일: 2024-05-30
+ * 작성일: 2025-03-28
  */
 
 import { useState, useCallback } from 'react';

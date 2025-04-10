@@ -2,7 +2,7 @@
  * 파일명: useNodeStore.test.ts
  * 목적: useNodeStore 상태 관리 테스트
  * 역할: 노드 인스펙터 관련 상태 관리 로직 테스트
- * 작성일: 2024-03-27
+ * 작성일: 2025-03-30
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';

@@ -2,7 +2,8 @@
  * 파일명: supabase-server.ts
  * 목적: 서버 컴포넌트에서 Supabase 클라이언트 접근
  * 역할: 서버 측 Supabase 인스턴스 생성 및 관리
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-08
+ * 수정일: 2025-03-27
  */
 
 import { createServerClient } from '@supabase/ssr';

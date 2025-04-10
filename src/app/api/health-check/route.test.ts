@@ -2,7 +2,7 @@
  * 파일명: route.test.ts
  * 목적: 헬스 체크 API 엔드포인트 테스트
  * 역할: 데이터베이스 연결 상태를 확인하는 API 기능 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-04-01
  */
 
 import { NextRequest, NextResponse } from 'next/server';

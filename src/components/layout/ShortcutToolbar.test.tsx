@@ -2,7 +2,8 @@
  * 파일명: ShortcutToolbar.test.tsx
  * 목적: ShortcutToolbar 컴포넌트의 기능 테스트
  * 역할: 단축 기능 툴바의 모든 기능이 정상적으로 동작하는지 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-04-01
+ * 수정일: 2025-04-03
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';

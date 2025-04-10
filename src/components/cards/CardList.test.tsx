@@ -186,7 +186,7 @@ describe('CardList 컴포넌트', () => {
     await waitForDomChanges();
     // Dialog의 내용이 표시되는지 확인
     expect(screen.getAllByText('테스트 카드 1').length).toBeGreaterThan(1); // 카드 목록과 Dialog 두 곳에 표시
-    // '작성일:' 대신 Dialog 내에 표시된 날짜 형식 확인
+    // '작성일: 2025-03-05
     expect(screen.getByText('2023년 1월 1일')).toBeInTheDocument();
     expect(screen.getByText('닫기')).toBeInTheDocument(); // Dialog의 닫기 버튼
   });

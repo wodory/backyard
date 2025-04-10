@@ -2,7 +2,8 @@
  * 파일명: board-utils.test.ts
  * 목적: 보드 유틸리티 함수 테스트
  * 역할: 보드 설정 관리 및 엣지 스타일 적용 테스트
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-09
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';

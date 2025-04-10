@@ -2,7 +2,7 @@
  * 파일명: ThemeContext.tsx
  * 목적: 중앙화된 테마 관리 시스템 구현
  * 역할: React Flow 노드 및 엣지 스타일링을 위한 전역 테마 컨텍스트 제공
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';

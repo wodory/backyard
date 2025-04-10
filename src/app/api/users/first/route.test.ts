@@ -2,7 +2,7 @@
  * 파일명: route.test.ts
  * 목적: 첫 번째 사용자 조회 API 엔드포인트 테스트
  * 역할: GET /api/users/first 엔드포인트의 다양한 시나리오에 대한 단위 테스트
- * 작성일: 2024-05-23
+ * 작성일: 2025-03-27
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

@@ -2,7 +2,8 @@
  * 파일명: useNodes.test.tsx
  * 목적: useNodes 커스텀 훅 테스트
  * 역할: 노드 관련 기능의 정상 작동 검증
- * 작성일: 2024-05-09
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';

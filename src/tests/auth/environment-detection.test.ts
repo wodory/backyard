@@ -2,7 +2,8 @@
  * 파일명: environment-detection.test.ts
  * 목적: 서버/클라이언트 환경 감지 기능 테스트
  * 역할: 환경 감지 유틸리티 함수의 정확성 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-03-30
  */
 
 import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';

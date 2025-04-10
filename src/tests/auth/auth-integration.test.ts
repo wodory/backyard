@@ -2,7 +2,7 @@
  * 파일명: auth-integration.test.ts
  * 목적: Google OAuth 인증 통합 테스트
  * 역할: 인증 관련 모든 기능의 통합 테스트
- * 작성일: 2024-03-26
+ * 작성일: 2025-03-27
  */
 
 import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';

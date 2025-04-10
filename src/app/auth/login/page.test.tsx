@@ -2,7 +2,8 @@
  * 파일명: src/app/auth/login/page.test.tsx
  * 목적: 로그인 페이지의 기능 테스트
  * 역할: 로그인 UI 및 소셜 로그인 기능 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-03
  */
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';

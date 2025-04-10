@@ -2,7 +2,7 @@
  * 파일명: graphUtils.ts
  * 목적: 그래프 관련 순수 함수 모음
  * 역할: 노드, 엣지 처리를 위한 순수 유틸리티 함수 제공
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
  */
 
 import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';

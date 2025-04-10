@@ -2,7 +2,8 @@
  * 파일명: ThemeContext.test.tsx
  * 목적: ThemeContext 및 ThemeProvider 테스트
  * 역할: 테마 관련 기능 검증
- * 작성일: 2024-04-01
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-01
  */
 
 import React from 'react';

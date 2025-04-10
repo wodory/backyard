@@ -2,7 +2,8 @@
  * 파일명: useBoardStore.test.ts
  * 목적: useBoardStore 상태 관리 테스트
  * 역할: 보드 상태 관리 로직 테스트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll, beforeAll } from 'vitest';

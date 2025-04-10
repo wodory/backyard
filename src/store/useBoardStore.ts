@@ -2,7 +2,7 @@
  * 파일명: useBoardStore.ts
  * 목적: Zustand를 활용한 보드 관련 전역 상태 관리
  * 역할: 보드의 노드, 엣지, 설정 등 모든 상태를 중앙 관리
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
  */
 
 import { create } from 'zustand';

@@ -2,7 +2,8 @@
  * 파일명: CustomEdge.test.tsx
  * 목적: CustomEdge 컴포넌트 테스트
  * 역할: 엣지 컴포넌트의 기능 테스트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

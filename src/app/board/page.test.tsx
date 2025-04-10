@@ -2,7 +2,8 @@
  * 파일명: page.test.tsx
  * 목적: 보드 페이지 컴포넌트 테스트
  * 역할: Board 컴포넌트를 사용하는 페이지 컴포넌트 테스트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-05
+ * 수정일: 2025-03-30
  */
 
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';

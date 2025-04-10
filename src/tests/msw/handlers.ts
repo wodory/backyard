@@ -2,7 +2,8 @@
  * 파일명: handlers.ts
  * 목적: MSW 핸들러 정의
  * 역할: API 요청을 가로채기 위한 MSW 핸들러 제공
- * 작성일: 2024-10-12
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-08
  */
 
 import { http, HttpResponse } from 'msw';

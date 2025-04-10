@@ -2,7 +2,8 @@
  * 파일명: session-management.test.ts
  * 목적: 세션 관리 및 복구 테스트
  * 역할: 세션 관리 기능의 통합 테스트
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';

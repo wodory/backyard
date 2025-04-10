@@ -2,7 +2,8 @@
  * 파일명: route.test.ts
  * 목적: OAuth 콜백 핸들러 테스트
  * 역할: 인증 코드 처리와 리다이렉션 로직 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-03-30
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

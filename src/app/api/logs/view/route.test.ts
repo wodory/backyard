@@ -2,7 +2,8 @@
  * 파일명: route.test.ts
  * 목적: 로그 조회 API 엔드포인트 테스트
  * 역할: GET /api/logs/view 엔드포인트에 대한 다양한 시나리오의 단위 테스트
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';

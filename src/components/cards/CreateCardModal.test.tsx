@@ -2,7 +2,7 @@
  * 파일명: src/components/cards/CreateCardModal.test.tsx
  * 목적: CreateCardModal 컴포넌트의 기능 테스트
  * 역할: 카드 생성 모달의 동작, 입력 유효성 검사, API 호출, 태그 관리 등을 테스트
- * 작성일: 2024-03-26
+ * 작성일: 2025-04-08
  */
 
 import { render, screen, waitFor } from '@testing-library/react';

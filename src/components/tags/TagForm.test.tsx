@@ -2,7 +2,8 @@
  * 파일명: TagForm.test.tsx
  * 목적: TagForm 컴포넌트의 기능 테스트
  * 역할: 태그 생성 폼의 모든 기능이 정상적으로 동작하는지 검증
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-05
+ * 수정일: 2025-04-03
  */
 
 import { render, screen } from '@testing-library/react';

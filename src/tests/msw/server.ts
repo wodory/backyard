@@ -2,7 +2,8 @@
  * 파일명: server.ts
  * 목적: MSW 테스트 서버 설정
  * 역할: API 요청을 모킹하기 위한 MSW 서버 제공
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-08
  */
 
 import { setupServer } from 'msw/node';

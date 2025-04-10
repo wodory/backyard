@@ -2,7 +2,8 @@
  * 파일명: auth-storage.test.ts
  * 목적: 인증 스토리지 유틸리티 테스트
  * 역할: 인증 데이터의 저장, 조회, 삭제 기능 검증
- * 작성일: 2024-03-30
+ * 작성일: 2025-03-27
+ * 수정일: 2025-03-30
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';

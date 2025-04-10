@@ -2,8 +2,8 @@
  * 파일명: setup.ts
  * 목적: Vitest 테스트 설정
  * 역할: 테스트 환경 설정 및 전역 설정 제공
- * 작성일: 2024-03-31
- * 수정일: [오늘 날짜] - localStorage/sessionStorage 모킹 방식을 vi.stubGlobal로 변경하고, Supabase 모킹에서 storageMap 의존성 제거 시도
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-08 - waitFor 제대로 작동하도록 setTimeout 모킹 방식 수정
  */
 
 import '@testing-library/jest-dom/vitest';
@@ -23,30 +23,11 @@ beforeAll(() => {
     onUnhandledRequest: 'bypass',
   });
   
-  // 타이머 관리를 개선하기 위한 가짜 타이머 설정
+  // 타이머 모킹 제거 - wait-for가 정상적으로 작동하도록 수정
+  // 실제 타이머를 사용하도록 설정
   if (typeof window !== 'undefined') {
-    // 실제 타이머 대신 즉시 실행되는 타이머 사용
-    const originalSetTimeout = window.setTimeout;
-    const originalClearTimeout = window.clearTimeout;
-    
-    // 타이머 즉시 실행 처리로 undici 타임아웃 문제 해결
-    // @ts-ignore - 타입 호환성 무시하고 undici 타임아웃 문제 해결
-    window.setTimeout = function mockSetTimeout(fn, timeout) {
-      if (typeof fn === 'function') fn();
-      return Math.floor(Math.random() * 10000);
-    };
-    
-    // @ts-ignore - 타입 호환성 무시하고 undici 타임아웃 문제 해결
-    window.clearTimeout = function mockClearTimeout(id) {
-      // 아무 작업 없음
-      return undefined;
-    };
-    
-    // 테스트 종료 후 원래 함수 복원
-    afterAll(() => {
-      window.setTimeout = originalSetTimeout;
-      window.clearTimeout = originalClearTimeout;
-    });
+    // 실제 타이머를 사용 (모킹하지 않음)
+    vi.useRealTimers(); // waitFor가 의존하는 실제 타이머 사용
   }
 });
 

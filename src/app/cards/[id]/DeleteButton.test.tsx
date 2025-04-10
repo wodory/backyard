@@ -1,6 +1,14 @@
+/**
+ * 파일명: DeleteButton.test.tsx
+ * 목적: 카드 삭제 버튼 컴포넌트 테스트
+ * 역할: 카드 삭제 버튼 클릭 시 API 호출 테스트
+ * 작성일: 2025-04-09
+ * 수정일: 2025-04-01
+ */
 /// <reference types="vitest" />
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import DeleteButton, { callIfExists } from './DeleteButton';
 import '@testing-library/jest-dom/vitest';
@@ -42,18 +50,6 @@ const mockFetchNetworkError = () => {
   global.fetch = vi.fn().mockRejectedValue(new Error('네트워크 오류'));
 };
 
-// 삭제 버튼 클릭하는 유틸리티 함수
-const clickDeleteButton = () => {
-  const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
-  fireEvent.click(deleteButton);
-};
-
-// 삭제 확인 다이얼로그에서 삭제 버튼 클릭하는 유틸리티 함수
-const clickConfirmDeleteButton = () => {
-  const confirmButton = screen.getByRole('button', { name: '삭제' });
-  fireEvent.click(confirmButton);
-};
-
 // 테스트를 위한 유틸리티 함수
 describe('callIfExists', () => {
   it('콜백이 존재하면, 콜백을 호출해야 함', () => {
@@ -87,9 +83,12 @@ describe('DeleteButton', () => {
       expect(deleteButton).toBeInTheDocument();
     });
 
-    it('삭제 버튼 클릭 시 확인 다이얼로그가 표시되어야 함', () => {
+    it('삭제 버튼 클릭 시 확인 다이얼로그가 표시되어야 함', async () => {
+      const user = userEvent.setup();
       render(<DeleteButton cardId={cardId} />);
-      clickDeleteButton();
+
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      await user.click(deleteButton);
 
       // h2 역할을 가진 요소에서 카드 삭제 찾기
       const dialogTitle = screen.getByRole('heading', { name: '카드 삭제' });
@@ -99,12 +98,15 @@ describe('DeleteButton', () => {
       expect(confirmText).toBeInTheDocument();
     });
 
-    it('취소 버튼 클릭 시 다이얼로그가 닫혀야 함', () => {
+    it('취소 버튼 클릭 시 다이얼로그가 닫혀야 함', async () => {
+      const user = userEvent.setup();
       render(<DeleteButton cardId={cardId} />);
-      clickDeleteButton();
+
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      await user.click(deleteButton);
 
       const cancelButton = screen.getByRole('button', { name: '취소' });
-      fireEvent.click(cancelButton);
+      await user.click(cancelButton);
 
       // 다이얼로그가 닫히면 확인 메시지는 화면에서 사라짐
       expect(screen.queryByText('이 카드를 정말로 삭제하시겠습니까?')).not.toBeInTheDocument();
@@ -112,9 +114,14 @@ describe('DeleteButton', () => {
 
     // 삭제 버튼 클릭 시 API 호출 테스트
     it('삭제 확인 버튼 클릭 시 API 호출이 이루어져야 함', async () => {
+      const user = userEvent.setup();
       render(<DeleteButton cardId={cardId} />);
-      clickDeleteButton();
-      clickConfirmDeleteButton();
+
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      await user.click(deleteButton);
+
+      const confirmButton = screen.getByRole('button', { name: '삭제' });
+      await user.click(confirmButton);
 
       // fetch 호출 확인
       expect(global.fetch).toHaveBeenCalledWith(`/api/cards/${cardId}`, {
@@ -125,14 +132,19 @@ describe('DeleteButton', () => {
 
   describe('콜백 테스트', () => {
     it('성공 응답 시 올바른 함수들이 호출되어야 함', async () => {
+      const user = userEvent.setup();
       const mockSuccessCallback = vi.fn();
 
       // 성공 응답 모킹
       mockFetchSuccess();
 
       render(<DeleteButton cardId={cardId} onSuccessfulDelete={mockSuccessCallback} />);
-      clickDeleteButton();
-      clickConfirmDeleteButton();
+
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      await user.click(deleteButton);
+
+      const confirmButton = screen.getByRole('button', { name: '삭제' });
+      await user.click(confirmButton);
 
       // 비동기 처리가 완료될 때까지 대기
       await vi.waitFor(() => {
@@ -145,14 +157,19 @@ describe('DeleteButton', () => {
 
   describe('오류 테스트', () => {
     it('API 오류 응답 시 에러 처리가 올바르게 동작해야 함', async () => {
+      const user = userEvent.setup();
       const errorMessage = '카드 삭제에 실패했습니다';
 
       // 에러 응답 모킹
       mockFetchError(errorMessage);
 
       render(<DeleteButton cardId={cardId} />);
-      clickDeleteButton();
-      clickConfirmDeleteButton();
+
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      await user.click(deleteButton);
+
+      const confirmButton = screen.getByRole('button', { name: '삭제' });
+      await user.click(confirmButton);
 
       // 비동기 처리가 완료될 때까지 대기
       await vi.waitFor(() => {
@@ -162,12 +179,17 @@ describe('DeleteButton', () => {
     });
 
     it('네트워크 오류 발생 시 오류 처리가 올바르게 동작해야 함', async () => {
+      const user = userEvent.setup();
       // 네트워크 오류 모킹
       mockFetchNetworkError();
 
       render(<DeleteButton cardId={cardId} />);
-      clickDeleteButton();
-      clickConfirmDeleteButton();
+
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      await user.click(deleteButton);
+
+      const confirmButton = screen.getByRole('button', { name: '삭제' });
+      await user.click(confirmButton);
 
       // 비동기 처리가 완료될 때까지 대기
       await vi.waitFor(() => {

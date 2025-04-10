@@ -2,15 +2,18 @@
  * 파일명: callback/page.tsx
  * 목적: OAuth 콜백 처리 및 인증 완료
  * 역할: Google 로그인 후 리디렉션된 콜백을 처리하고 세션을 설정
- * 작성일: 2024-03-30
+ * 작성일: 2025-04-09
+ * 수정일: 2025-03-30
+ * 수정일: 2023-04-10 : useAuthCallback 훅으로 로직 분리
+ * 수정일: 2023-04-10 : 리다이렉션 처리 로직 추가
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import createLogger from '@/lib/logger';
-import { AuthService } from '@/services/auth-service';
+import { useAuthCallback } from '@/hooks/useAuthCallback';
 
 // 모듈별 로거 생성
 const logger = createLogger('Callback');
@@ -21,62 +24,15 @@ const logger = createLogger('Callback');
  */
 export default function CallbackHandler() {
   const router = useRouter();
-  const [processingState, setProcessingState] = useState<string>('초기화 중');
-  const [error, setError] = useState<string | null>(null);
+  const { processingState, error, redirectUrl } = useAuthCallback();
 
+  // redirectUrl이 변경되면 리다이렉션 실행
   useEffect(() => {
-    let mounted = true;
-
-    async function handleCallback() {
-      try {
-        if (!mounted) return;
-        logger.info('콜백 처리 시작');
-        setProcessingState('인증 코드 처리 중');
-
-        // 현재 URL 가져오기
-        const currentUrl = new URL(window.location.href);
-
-        // AuthService를 사용하여 콜백 처리
-        const authResult = await AuthService.handleCallback(currentUrl);
-
-        // 결과에 따른 처리
-        if (authResult.status === 'error') {
-          logger.error('인증 오류 발생', { error: authResult.error, description: authResult.errorDescription });
-          setProcessingState('오류 발생');
-          setError(`${authResult.error}: ${authResult.errorDescription}`);
-
-          router.push(`/auth/error?error=${encodeURIComponent(authResult.error || 'unknown')}&error_description=${encodeURIComponent(authResult.errorDescription || '')}`);
-          return;
-        }
-
-        // 인증 성공, 데이터 저장
-        setProcessingState('인증 데이터 저장 중');
-        const saveSuccess = AuthService.saveAuthData(authResult);
-
-        if (!saveSuccess) {
-          logger.warn('인증 데이터 저장 실패');
-          setError('인증 데이터를 저장하지 못했습니다');
-        }
-
-        setProcessingState('완료, 리디렉션 중');
-        // 홈페이지로 리디렉션
-        logger.info('인증 완료, 홈페이지로 리디렉션');
-        router.push('/');
-      } catch (error) {
-        logger.error('콜백 처리 실패', error);
-        setProcessingState('예외 발생');
-        setError('콜백 처리 중 예외 발생');
-        router.push('/auth/error?error=callback_error&error_description=인증 콜백 처리 중 오류가 발생했습니다.');
-      }
+    if (redirectUrl) {
+      logger.info(`리다이렉션 실행: ${redirectUrl}`);
+      router.push(redirectUrl);
     }
-
-    // 즉시 콜백 처리 실행
-    handleCallback();
-
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
+  }, [redirectUrl, router, logger]);
 
   // 로딩 UI 표시
   return (

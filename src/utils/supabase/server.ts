@@ -2,7 +2,7 @@
  * 파일명: server.ts
  * 목적: 서버 환경에서 Supabase 클라이언트 제공
  * 역할: 서버 컴포넌트, 서버 액션, 라우트 핸들러에서 Supabase에 접근할 때 사용
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
  */
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'

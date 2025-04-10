@@ -2,7 +2,8 @@
  * 파일명: EditCardPageMock.tsx
  * 목적: 카드 편집 페이지의 테스트를 위한 모킹 컴포넌트
  * 역할: 실제 컴포넌트의 동작을 시뮬레이션
- * 작성일: 2024-03-31
+ * 작성일: 2025-04-01
+ * 수정일: 2025-04-03
  */
 
 import React, { useEffect, useState } from 'react';

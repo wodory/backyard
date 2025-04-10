@@ -2,7 +2,8 @@
  * 파일명: useBoardUtils.test.tsx
  * 목적: useBoardUtils 훅을 테스트
  * 역할: 보드 유틸리티 함수 관련 로직 테스트
- * 작성일: 2024-05-11
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-01
  */
 
 import { renderHook, act } from '@testing-library/react';

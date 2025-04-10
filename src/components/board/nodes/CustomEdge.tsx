@@ -2,7 +2,8 @@
  * 파일명: CustomEdge.tsx
  * 목적: React Flow에서 사용할 커스텀 엣지 컴포넌트
  * 역할: 노드 간 연결선을 시각화하는 컴포넌트
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-08
+ * 수정일: 2025-03-31
  */
 
 import React, { useMemo, useEffect } from 'react';

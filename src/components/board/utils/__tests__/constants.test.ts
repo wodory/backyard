@@ -2,7 +2,7 @@
  * 파일명: constants.test.ts
  * 목적: 보드 컴포넌트 상수 테스트
  * 역할: 상수 정의가 올바르게 되었는지 검증
- * 작성일: 2024-05-31
+ * 작성일: 2025-03-28
  */
 
 import { describe, it, expect } from 'vitest';

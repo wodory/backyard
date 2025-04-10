@@ -103,7 +103,7 @@ describe('CardPage', () => {
     
     // 작성자 정보와 날짜가 렌더링되었는지 확인
     expect(screen.getByText(/작성자: 테스트 사용자/)).toBeInTheDocument();
-    expect(screen.getByText(/작성일: 2023년 1월 1일/)).toBeInTheDocument();
+    expect(screen.getByText(/작성일: 2025-03-05
     
     // 태그가 렌더링되었는지 확인
     expect(screen.getByText('태그1')).toBeInTheDocument();

@@ -2,7 +2,8 @@
  * 파일명: useAppStore.test.ts
  * 목적: useAppStore 상태 관리 테스트
  * 역할: 앱 전역 상태 관리 로직 테스트
- * 작성일: 2024-03-27
+ * 작성일: 2025-03-30
+ * 수정일: 2025-04-09
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';

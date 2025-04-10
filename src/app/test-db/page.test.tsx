@@ -2,7 +2,7 @@
  * 파일명: page.test.tsx
  * 목적: 데이터베이스 연결 테스트 페이지 컴포넌트 테스트
  * 역할: TestDatabasePage 컴포넌트의 다양한 상태 및 동작 검증
- * 작성일: 2024-04-02
+ * 작성일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

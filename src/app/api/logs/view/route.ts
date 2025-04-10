@@ -2,7 +2,8 @@
  * 파일명: route.ts
  * 목적: 저장된 로그를 확인할 수 있는 API 엔드포인트
  * 역할: 서버에 저장된 로그를 조회하고 필터링하여 제공
- * 작성일: 2024-03-28
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-09
  */
 
 import { NextRequest, NextResponse } from 'next/server';

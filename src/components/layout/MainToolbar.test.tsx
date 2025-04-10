@@ -2,7 +2,8 @@
  * 파일명: MainToolbar.test.tsx
  * 목적: MainToolbar 컴포넌트 테스트
  * 역할: 레이아웃 컨트롤러 컴포넌트 유닛 테스트
- * 작성일: 2024-06-07
+ * 작성일: 2025-04-01
+ * 수정일: 2025-04-08
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

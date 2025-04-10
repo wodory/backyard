@@ -2,7 +2,7 @@
  * 파일명: not-found.test.tsx
  * 목적: NotFound 컴포넌트의 기능 검증
  * 역할: 404 페이지가 올바르게 렌더링되는지 확인
- * 작성일: 2024-10-10
+ * 작성일: 2025-04-01
  */
 
 import { render, screen } from '@testing-library/react';

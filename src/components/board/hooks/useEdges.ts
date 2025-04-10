@@ -2,7 +2,7 @@
  * 파일명: useEdges.ts
  * 목적: 엣지 관련 상태 및 로직 관리
  * 역할: 엣지 생성, 업데이트, 삭제 및 이벤트 핸들링 로직 캡슐화
- * 작성일: 2024-05-11
+ * 작성일: 2025-03-28
  */
 
 import { useCallback, useRef, useEffect } from 'react';

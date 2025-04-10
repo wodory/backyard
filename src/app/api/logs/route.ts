@@ -2,7 +2,7 @@
  * 파일명: route.ts
  * 목적: 클라이언트 로그를 서버에 저장하는 API 엔드포인트
  * 역할: 로그 데이터를 받아 서버 로그에 기록하고 필요시 데이터베이스에 저장
- * 작성일: 2024-03-28
+ * 작성일: 2025-03-27
  */
 
 import { NextRequest, NextResponse } from 'next/server';

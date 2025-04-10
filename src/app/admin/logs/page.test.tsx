@@ -2,7 +2,8 @@
  * 파일명: page.test.tsx
  * 목적: 로그 뷰어 관리자 페이지 테스트
  * 역할: 로그 조회 및 필터링 기능 테스트
- * 작성일: 2024-03-31
+ * 작성일: 2025-03-27
+ * 수정일: 2025-04-01
  */
 
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
