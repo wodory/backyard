@@ -22,6 +22,11 @@ import { DEFAULT_USER_ID } from "@/lib/constants";
 import { useAppStore } from "@/store/useAppStore";
 import { CreateCardInput, Card } from "@/types/card";
 import { XYPosition } from "@xyflow/react";
+import { useAuth } from "@/contexts/AuthContext";
+import createLogger from '@/lib/logger';
+
+// 로거 생성
+const logger = createLogger('CreateCardModal');
 
 // 컴포넌트에 props 타입 정의
 interface CreateCardModalProps {
@@ -48,8 +53,10 @@ export default function CreateCardModal({
   const [content, setContent] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [firstUserId, setFirstUserId] = useState<string>("");
   const isComposing = useRef(false);
+
+  // 인증 컨텍스트에서 사용자 정보 가져오기
+  const { user } = useAuth();
 
   // useAppStore 훅 사용
   const { createCard, isLoading } = useAppStore();
@@ -70,30 +77,6 @@ export default function CreateCardModal({
       onClose();
     }
   };
-
-  // 사용자 ID 가져오기
-  useEffect(() => {
-    async function fetchFirstUserId() {
-      try {
-        const response = await fetch('/api/users/first');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.id) {
-            setFirstUserId(data.id);
-            console.log('사용자 ID 가져옴:', data.id);
-          } else {
-            console.error('사용자 ID를 가져오지 못함');
-          }
-        } else {
-          console.error('사용자 조회 실패:', response.status);
-        }
-      } catch (error) {
-        console.error('사용자 ID 가져오기 오류:', error);
-      }
-    }
-
-    fetchFirstUserId();
-  }, []);
 
   // 태그 추가 처리
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -145,14 +128,19 @@ export default function CreateCardModal({
     e.preventDefault();
 
     if (!title.trim() || !content.trim()) {
+      toast.error('제목과 내용을 모두 입력해주세요.');
       return;
     }
 
     // 사용자 ID 확인
-    const userId = firstUserId || DEFAULT_USER_ID;
+    const userId = user ? user.id : DEFAULT_USER_ID;
+
     if (!userId) {
+      toast.error('사용자 정보를 찾을 수 없습니다.');
       return;
     }
+
+    logger.info('카드 생성 시작', { userId, title });
 
     const cardInput: CreateCardInput = {
       title: title.trim(),
@@ -161,19 +149,26 @@ export default function CreateCardModal({
       tags: tags,
     };
 
-    const createdCard = await createCard(cardInput);
+    try {
+      const createdCard = await createCard(cardInput);
 
-    if (createdCard) {
-      setTitle("");
-      setContent("");
-      setTags([]);
-      setTagInput("");
-      setOpen(false);
+      if (createdCard) {
+        logger.info('카드 생성 성공', { cardId: createdCard.id });
+        setTitle("");
+        setContent("");
+        setTags([]);
+        setTagInput("");
+        setOpen(false);
+        toast.success('카드가 생성되었습니다.');
 
-      // 콜백이 제공된 경우 실행
-      if (onCardCreated) {
-        onCardCreated(createdCard);
+        // 콜백이 제공된 경우 실행
+        if (onCardCreated) {
+          onCardCreated(createdCard);
+        }
       }
+    } catch (error) {
+      logger.error('카드 생성 실패', error);
+      toast.error('카드 생성에 실패했습니다.');
     }
   };
 
@@ -248,10 +243,9 @@ export default function CreateCardModal({
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="text-xs hover:text-destructive"
-                    disabled={isLoading}
+                    className="text-xs rounded-full p-0.5 hover:bg-zinc-300 dark:hover:bg-zinc-500"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="h-3 w-3" />
                   </button>
                 </Badge>
               ))}
@@ -263,24 +257,24 @@ export default function CreateCardModal({
               onKeyDown={handleAddTag}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              placeholder="태그 입력 후 Enter 또는 쉼표(,)로 구분"
+              placeholder="태그를 입력하고 Enter 키를 누르세요 (쉼표로 구분)"
               disabled={isLoading}
             />
           </div>
           <div className="flex justify-end space-x-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isLoading}>
+              <Button variant="outline" type="button" disabled={isLoading}>
                 취소
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !title.trim() || !content.trim()}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   생성 중...
                 </>
               ) : (
-                "카드 생성"
+                "생성하기"
               )}
             </Button>
           </div>

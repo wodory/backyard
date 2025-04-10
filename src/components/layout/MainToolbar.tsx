@@ -4,11 +4,13 @@ import {
   AlignHorizontalJustifyCenter,
   AlignVerticalJustifyCenter,
   PlusCircle,
-  Save
+  Save,
+  UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
 import CreateCardModal from '@/components/cards/CreateCardModal';
+import UpdateCardsButton from '@/features/project/components/UpdateCardsButton';
 
 export function MainToolbar() {
   const {
@@ -81,6 +83,12 @@ export function MainToolbar() {
         <Save className="h-8 w-8" />
         <span className="sr-only">레이아웃 저장</span>
       </Button>
+
+      <UpdateCardsButton
+        variant="ghost"
+        size="icon"
+        className="rounded-full h-[60px] w-[60px]"
+      />
     </div>
   );
 } 

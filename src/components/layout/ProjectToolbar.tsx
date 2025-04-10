@@ -36,6 +36,7 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { useAppStore } from '@/store/useAppStore';
+import { useProjectStore } from '@/store/useProjectStore';
 import { toast } from 'sonner';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import { BoardSettings, DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
@@ -57,7 +58,8 @@ import createLogger from '@/lib/logger';
 const logger = createLogger('ProjectToolbar');
 
 export function ProjectToolbar() {
-  const [projectName, setProjectName] = useState('프로젝트 이름');
+  const activeProject = useProjectStore(state => state.selectActiveProject());
+
   const {
     layoutDirection,
     setLayoutDirection,
@@ -417,7 +419,15 @@ export function ProjectToolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <h1 className="text-l font-semibold pr-2">{projectName}</h1>
+      <div className="font-medium text-sm">
+        {activeProject ? (
+          <span>
+            {activeProject.name} - {activeProject.ownerNickname || '소유자 정보 없음'}
+          </span>
+        ) : (
+          <span>선택된 프로젝트 없음</span>
+        )}
+      </div>
     </div>
   );
 } 

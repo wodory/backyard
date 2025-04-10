@@ -28,6 +28,7 @@ import { EditCardModal } from '@/components/cards/EditCardModal';
 import { Portal } from '@/components/ui/portal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { ProjectSelector } from './ProjectSelector';
 
 // 카드 인터페이스 정의
 interface Tag {
@@ -563,8 +564,8 @@ export function Sidebar({ className }: SidebarProps) {
       const auth = useAuth();
       console.log('[로그아웃] 로그아웃 버튼 클릭됨, AuthContext 사용');
 
-      // AuthContext의 logout 함수 사용
-      await auth.logout();
+      // AuthContext의 signOut 함수 사용 (logout 대신 signOut 사용)
+      await auth.signOut();
       toast.success('로그아웃되었습니다.');
     } catch (error) {
       console.error('[로그아웃] 오류 발생:', error);
@@ -587,9 +588,21 @@ export function Sidebar({ className }: SidebarProps) {
         )}
         style={{ width: `${width}px` }}
       >
-        <div className="flex items-center justify-between p-3 border-b">
-          <h2 className="text-lg font-semibold">카드 목록</h2>
-          <div className="flex items-center space-x-1">
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* 사이드바 헤더 - 프로젝트 선택기 추가 */}
+          <div className="flex items-center justify-between p-3 border-b">
+            <div className="flex-1 mr-2">
+              <ProjectSelector />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/trash')}
+              title="휴지통"
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -599,224 +612,216 @@ export function Sidebar({ className }: SidebarProps) {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
 
-        {/* 삭제 확인 다이얼로그 */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>카드 삭제</DialogTitle>
-              <DialogDescription>
-                이 카드를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex gap-2 justify-end pt-4">
-              <DialogClose asChild>
-                <Button variant="outline">취소</Button>
-              </DialogClose>
-              <Button
-                variant="destructive"
-                onClick={() => deletingCardId && handleDeleteCard(deletingCardId)}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "삭제 중..." : "삭제"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* 카드 수정 모달 - Portal을 사용하여 body에 직접 렌더링 */}
-        {isEditModalOpen && editingCardId && (
-          <Portal>
-            <EditCardModal
-              cardId={editingCardId}
-              onClose={() => {
-                console.log('수정 모달 닫기');
-                setIsEditModalOpen(false);
-                setEditingCardId(null);
-              }}
-              onCardUpdated={handleCardUpdated}
-            />
-          </Portal>
-        )}
-
-        {selectedCardId && selectedCard && !isMultiSelectMode ? (
-          // 단일 카드 선택 모드
-          <div className="h-full flex flex-col">
-            {/* 카드 헤더 */}
-            <div className="border-b p-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-l font-semibold truncate">{selectedCard.title}</h2>
+          {/* 삭제 확인 다이얼로그 */}
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>카드 삭제</DialogTitle>
+                <DialogDescription>
+                  이 카드를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex gap-2 justify-end pt-4">
+                <DialogClose asChild>
+                  <Button variant="outline">취소</Button>
+                </DialogClose>
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => selectCard(null)}
+                  variant="destructive"
+                  onClick={() => deletingCardId && handleDeleteCard(deletingCardId)}
+                  disabled={isDeleting}
                 >
-                  목록으로
+                  {isDeleting ? "삭제 중..." : "삭제"}
                 </Button>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm text-muted-foreground">작성일</span>
-                <span className="text-sm text-muted-foreground">
-                  {formatDate(selectedCard.createdAt)}
-                </span>
-              </div>
-            </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-            {/* DocumentViewer를 사용하여 단일 카드 내용 표시 */}
-            <div className="flex-1 overflow-y-auto">
-              <DocumentViewer
-                cards={[selectedCard]}
-                isMultiSelection={false}
-                loading={loading}
+          {/* 카드 수정 모달 - Portal을 사용하여 body에 직접 렌더링 */}
+          {isEditModalOpen && editingCardId && (
+            <Portal>
+              <EditCardModal
+                cardId={editingCardId}
+                onClose={() => {
+                  console.log('수정 모달 닫기');
+                  setIsEditModalOpen(false);
+                  setEditingCardId(null);
+                }}
+                onCardUpdated={handleCardUpdated}
               />
-            </div>
-          </div>
-        ) : isMultiSelectMode ? (
-          // 다중 선택 모드
-          <div className="h-full flex flex-col">
-            {/* 카드 헤더 - 다중 선택 모드 */}
-            <div className="border-b p-4 bg-muted/30">
-              <div className="flex justify-between items-center">
-                <h2
-                  ref={titleRef}
-                  className="text-l font-semibold truncate max-w-[calc(100%-70px)]"
-                  title={selectedCardsInfo.map(card => card.title).join(', ')}
-                >
-                  <span className="text-green-500 mr-1">📑</span>
-                  {selectedCardsInfo.length > 1
-                    ? (selectedCardsInfo.map(card => card.title).join(', ').length > 50
-                      ? selectedCardsInfo.map(card => card.title).join(', ').substring(0, 50) + '...'
-                      : selectedCardsInfo.map(card => card.title).join(', '))
-                    : '선택된 카드들'}
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => selectCard(null)}
-                >
-                  목록으로
-                </Button>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm text-green-600 font-medium">다중 선택 모드</span>
-                <span className="text-sm text-muted-foreground">
-                  {selectedCardsInfo.length}개 카드
-                </span>
-              </div>
-            </div>
+            </Portal>
+          )}
 
-            {/* DocumentViewer를 사용하여 다중 선택 모드의 내용 표시 */}
-            <div className="flex-1 overflow-y-auto">
-              <DocumentViewer
-                cards={documentViewerProps.cards}
-                isMultiSelection={documentViewerProps.isMultiSelection}
-                loading={documentViewerProps.loading}
-              />
-            </div>
-          </div>
-        ) : (
-          // 카드 목록 (선택된 카드 없음)
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="flex justify-center items-center h-20">
-                  <p className="text-sm text-muted-foreground">로딩 중...</p>
+          {selectedCardId && selectedCard && !isMultiSelectMode ? (
+            // 단일 카드 선택 모드
+            <div className="h-full flex flex-col">
+              {/* 카드 헤더 */}
+              <div className="border-b p-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-l font-semibold truncate">{selectedCard.title}</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => selectCard(null)}
+                  >
+                    목록으로
+                  </Button>
                 </div>
-              ) : cards.length === 0 ? (
-                <div className="p-4 text-center">
-                  <p className="text-sm text-muted-foreground">카드가 없습니다. 새 카드를 추가해보세요!</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm text-muted-foreground">작성일</span>
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(selectedCard.createdAt)}
+                  </span>
                 </div>
-              ) : (
-                <div className="p-2 space-y-2">
-                  {cards.map((card) => (
-                    <div
-                      key={card.id}
-                      className={cn(
-                        "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group relative sidebar-card-item",
-                        selectedCardIds.includes(card.id) && "selected"
-                      )}
-                      onClick={(e) => {
-                        // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
-                        const isMultiSelection = e.ctrlKey || e.metaKey;
+              </div>
 
-                        if (isMultiSelection) {
-                          // 토글 선택: 이미 선택된 카드라면 제거, 아니면 추가
-                          const isSelected = selectedCardIds.includes(card.id);
-                          if (isSelected) {
-                            const appStore = useAppStore.getState();
-                            appStore.removeSelectedCard(card.id);
-                            toast.info(`'${card.title}' 선택 해제됨`);
+              {/* DocumentViewer를 사용하여 단일 카드 내용 표시 */}
+              <div className="flex-1 overflow-y-auto">
+                <DocumentViewer
+                  cards={[selectedCard]}
+                  isMultiSelection={false}
+                  loading={loading}
+                />
+              </div>
+            </div>
+          ) : isMultiSelectMode ? (
+            // 다중 선택 모드
+            <div className="h-full flex flex-col">
+              {/* 카드 헤더 - 다중 선택 모드 */}
+              <div className="border-b p-4 bg-muted/30">
+                <div className="flex justify-between items-center">
+                  <h2
+                    ref={titleRef}
+                    className="text-l font-semibold truncate max-w-[calc(100%-70px)]"
+                    title={selectedCardsInfo.map(card => card.title).join(', ')}
+                  >
+                    <span className="text-green-500 mr-1">📑</span>
+                    {selectedCardsInfo.length > 1
+                      ? (selectedCardsInfo.map(card => card.title).join(', ').length > 50
+                        ? selectedCardsInfo.map(card => card.title).join(', ').substring(0, 50) + '...'
+                        : selectedCardsInfo.map(card => card.title).join(', '))
+                      : '선택된 카드들'}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => selectCard(null)}
+                  >
+                    목록으로
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm text-green-600 font-medium">다중 선택 모드</span>
+                  <span className="text-sm text-muted-foreground">
+                    {selectedCardsInfo.length}개 카드
+                  </span>
+                </div>
+              </div>
+
+              {/* DocumentViewer를 사용하여 다중 선택 모드의 내용 표시 */}
+              <div className="flex-1 overflow-y-auto">
+                <DocumentViewer
+                  cards={documentViewerProps.cards}
+                  isMultiSelection={documentViewerProps.isMultiSelection}
+                  loading={documentViewerProps.loading}
+                />
+              </div>
+            </div>
+          ) : (
+            // 카드 목록 (선택된 카드 없음)
+            <div className="h-full flex flex-col">
+              <div className="flex-1 overflow-y-auto">
+                {loading ? (
+                  <div className="flex justify-center items-center h-20">
+                    <p className="text-sm text-muted-foreground">로딩 중...</p>
+                  </div>
+                ) : cards.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">카드가 없습니다. 새 카드를 추가해보세요!</p>
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-2">
+                    {cards.map((card) => (
+                      <div
+                        key={card.id}
+                        className={cn(
+                          "p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors group relative sidebar-card-item",
+                          selectedCardIds.includes(card.id) && "selected"
+                        )}
+                        onClick={(e) => {
+                          // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
+                          const isMultiSelection = e.ctrlKey || e.metaKey;
+
+                          if (isMultiSelection) {
+                            // 토글 선택: 이미 선택된 카드라면 제거, 아니면 추가
+                            const isSelected = selectedCardIds.includes(card.id);
+                            if (isSelected) {
+                              const appStore = useAppStore.getState();
+                              appStore.removeSelectedCard(card.id);
+                              toast.info(`'${card.title}' 선택 해제됨`);
+                            } else {
+                              const appStore = useAppStore.getState();
+                              appStore.addSelectedCard(card.id);
+                              toast.info(`'${card.title}' 선택됨`);
+                            }
                           } else {
-                            const appStore = useAppStore.getState();
-                            appStore.addSelectedCard(card.id);
-                            toast.info(`'${card.title}' 선택됨`);
+                            // 일반 클릭: 단일 선택
+                            selectCard(card.id);
                           }
-                        } else {
-                          // 일반 클릭: 단일 선택
-                          selectCard(card.id);
-                        }
-                      }}
-                      onDoubleClick={(e) => {
-                        // 더블클릭은 전파 중지 - 카드 선택 이벤트가 발생하지 않도록
-                        e.stopPropagation();
-                        console.log('카드 더블클릭됨:', card.id);
-                        openEditModal(card.id);
-                      }}
-                      draggable
-                      onDragStart={(e) => {
-                        // 캔버스에 노드로 추가하기 위한 데이터 설정
-                        e.dataTransfer.setData('application/reactflow', JSON.stringify({
-                          type: 'card',
-                          id: card.id,
-                          data: {
-                            ...card,
-                            tags: card.cardTags ? card.cardTags.map((ct: any) => ct.tag.name) : []
-                          }
-                        }));
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                    >
-                      <div className="flex justify-between">
-                        <h3 className="font-medium">{card.title}</h3>
-                        <div className="flex items-center space-x-1">
-                          {/* 수정 버튼 */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => openEditModal(card.id, e)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          {/* 삭제 버튼 */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => openDeleteDialog(card.id, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        }}
+                        onDoubleClick={(e) => {
+                          // 더블클릭은 전파 중지 - 카드 선택 이벤트가 발생하지 않도록
+                          e.stopPropagation();
+                          console.log('카드 더블클릭됨:', card.id);
+                          openEditModal(card.id);
+                        }}
+                        draggable
+                        onDragStart={(e) => {
+                          // 캔버스에 노드로 추가하기 위한 데이터 설정
+                          e.dataTransfer.setData('application/reactflow', JSON.stringify({
+                            type: 'card',
+                            id: card.id,
+                            data: {
+                              ...card,
+                              tags: card.cardTags ? card.cardTags.map((ct: any) => ct.tag.name) : []
+                            }
+                          }));
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                      >
+                        <div className="flex justify-between">
+                          <h3 className="font-medium">{card.title}</h3>
+                          <div className="flex items-center space-x-1">
+                            {/* 수정 버튼 */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => openEditModal(card.id, e)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            {/* 삭제 버튼 */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => openDeleteDialog(card.id, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          <TiptapViewer content={card.content} />
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        <TiptapViewer content={card.content} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-        <div
-          onMouseDown={handleMouseDown}
-          className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-muted-foreground/50 flex items-center justify-center group z-50"
-        >
-          <div className="w-4 h-8 flex items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 bg-muted-foreground/50">
-            <GripVertical className="h-4 w-4 text-muted" />
-          </div>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>

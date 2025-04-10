@@ -4,6 +4,7 @@
  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
  * 작성일: 2025-03-28
  * 수정일: 2025-04-08
+ * 수정일: 2025-04-15 : 프로젝트 변경 시 보드 데이터 다시 로드하는 기능 추가
  */
 
 'use client';
@@ -19,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/useAppStore';
+import { useProjectStore, selectIsBoardDataLoading } from '@/store/useProjectStore';
 
 // 보드 관련 컴포넌트 임포트
 import CreateCardModal from '@/components/cards/CreateCardModal';
@@ -32,7 +34,7 @@ import { useBoardData } from '../hooks/useBoardData';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 
 // 타입 임포트
-import { BoardComponentProps, XYPosition } from '../types/board-types';
+import { BoardComponentProps, XYPosition, CardData } from '../types/board-types';
 import { Node } from '@xyflow/react';
 import { NodeInspector } from '../nodes/NodeInspector';
 import { Card } from '@/store/useAppStore';
@@ -231,19 +233,41 @@ export default function Board({
     }
   }, [reactFlowInstance, setReactFlowInstance]);
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    const initializeBoardData = async () => {
-      try {
-        // 노드와 엣지 데이터 로드
-        await loadNodesAndEdges(reactFlowInstance);
-      } catch (err) {
-        console.error('초기 데이터 로드 실패:', err);
-      }
-    };
+  // 프로젝트 스토어에서 activeProjectId와 isBoardDataLoading 가져오기
+  const activeProjectId = useProjectStore(state => state.activeProjectId);
+  const isBoardDataLoading = useProjectStore(selectIsBoardDataLoading);
 
-    initializeBoardData();
-  }, [loadNodesAndEdges, reactFlowInstance]);
+  // 프로젝트 ID 변경 감지용 ref
+  const prevProjectIdRef = useRef<string | null>(null);
+
+  // 프로젝트 변경 시 데이터 로드 (단일 useEffect)
+  useEffect(() => {
+    // 초기 렌더링이거나 이미 로딩 중이면 무시
+    if (!reactFlowInstance || isLoading) {
+      return;
+    }
+
+    // 프로젝트 ID가 변경된 경우에만 로드 (초기 렌더링 포함)
+    if (activeProjectId !== prevProjectIdRef.current) {
+      console.log('[Board] 프로젝트 변경 감지:', activeProjectId, '이전:', prevProjectIdRef.current);
+
+      // 현재 프로젝트 ID 저장
+      prevProjectIdRef.current = activeProjectId;
+
+      // 데이터 로드
+      loadNodesAndEdges(reactFlowInstance)
+        .then(() => {
+          console.log('[Board] 프로젝트 데이터 로드 완료:', activeProjectId);
+          if (activeProjectId) {
+            toast.success('프로젝트가 변경되었습니다.');
+          }
+        })
+        .catch(err => {
+          console.error('[Board] 프로젝트 데이터 로드 실패:', err);
+          toast.error('프로젝트 데이터 로드에 실패했습니다.');
+        });
+    }
+  }, [activeProjectId, reactFlowInstance, loadNodesAndEdges, isLoading]);
 
   // 인증 상태 변경 시 보드 설정 로드
   useEffect(() => {
@@ -264,6 +288,7 @@ export default function Board({
     if (storeCards.length === 0 || nodes.length === 0 || isLoading) return;
 
     // 노드 데이터 업데이트 (카드 ID가 일치하는 노드들만)
+    // as Node<CardData>[]를 사용하여 타입 문제 해결
     setNodes(currentNodes =>
       currentNodes.map(node => {
         // 대응되는 카드 데이터 찾기
@@ -286,7 +311,7 @@ export default function Board({
         }
 
         return node;
-      })
+      }) as Node<CardData>[]
     );
   }, [storeCards, setNodes, isLoading, nodes.length]);
 
