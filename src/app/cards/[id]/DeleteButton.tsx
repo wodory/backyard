@@ -29,9 +29,9 @@ export function callIfExists(callback?: () => void): void {
   }
 }
 
-export default function DeleteButton({ 
-  cardId, 
-  onSuccessfulDelete 
+export default function DeleteButton({
+  cardId,
+  onSuccessfulDelete
 }: DeleteButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [open, setOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function DeleteButton({
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    
+
     try {
       // API 호출
       const response = await fetch(`/api/cards/${cardId}`, {
@@ -53,33 +53,33 @@ export default function DeleteButton({
       }
 
       // 성공 시에만 다음 코드 실행
-      
+
       // 성공 시 다이얼로그 닫기
       setOpen(false);
-      
+
       // 성공적인 삭제 후 토스트 메시지 표시
       toast.success("카드가 성공적으로 삭제되었습니다.");
-      
+
       // 성공 시에만 리디렉션 수행
       router.push("/cards");
-      
+
       // 성공 시에만 콜백 호출
       if (onSuccessfulDelete) {
         onSuccessfulDelete();
       }
-      
+
       // 성공 시에만 여기까지 실행됨
-      
+
     } catch (error) {
       // 모든 종류의 오류 처리 (네트워크 오류, 응답 오류 등)
       console.error("Error deleting card:", error);
-      
+
       // 오류 메시지 표시
       toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
-      
+
       // 오류 발생 시 다이얼로그만 닫음 (리디렉션 없음)
       setOpen(false);
-      
+
       // 오류 시 리디렉션이 발생하지 않음
     } finally {
       setIsDeleting(false);
@@ -106,9 +106,9 @@ export default function DeleteButton({
           <DialogClose asChild>
             <Button variant="outline">취소</Button>
           </DialogClose>
-          <Button 
-            variant="destructive" 
-            onClick={handleDelete} 
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
             disabled={isDeleting}
           >
             {isDeleting ? "삭제 중..." : "삭제"}

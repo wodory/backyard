@@ -18,13 +18,13 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const cardId = String(params.id);
   const card = await getCard(cardId);
-  
+
   if (!card) {
     return {
       title: "카드를 찾을 수 없음",
     };
   }
-  
+
   return {
     title: `${card.title} | Backyard`,
   };
@@ -55,13 +55,13 @@ async function getCard(id: string) {
 export default async function CardPage({ params }: PageProps) {
   const cardId = String(params.id);
   const card = await getCard(cardId);
-  
+
   if (!card) {
     notFound();
     // 테스트를 위해 빈 컴포넌트 반환 (notFound 이후에도 코드가 실행될 수 있음)
     return <div data-testid="not-found"></div>;
   }
-  
+
   return (
     <div className="container max-w-4xl py-6 space-y-8">
       <div className="flex justify-between items-center">
@@ -73,16 +73,16 @@ export default async function CardPage({ params }: PageProps) {
         </Link>
         <DeleteButton cardId={cardId} />
       </div>
-      
+
       <div className="space-y-4">
         <h1 className="text-3xl font-bold">{card.title}</h1>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {/* @ts-ignore - Prisma 타입 오류 무시 */}
           <p>작성자: {card.user?.name || card.user?.email}</p>
           <span>•</span>
-          <p>작성일: 2025-03-05
+          <p>작성일: 2025-03-05</p>
         </div>
-        
+
         {/* @ts-ignore - Prisma 타입 오류 무시 */}
         {card.cardTags && card.cardTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -97,7 +97,7 @@ export default async function CardPage({ params }: PageProps) {
             ))}
           </div>
         )}
-        
+
         <ClientContent cardId={cardId} initialContent={card.content || ''} />
       </div>
     </div>

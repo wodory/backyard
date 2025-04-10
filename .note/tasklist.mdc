@@ -13,26 +13,33 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
         +-> Project 2  +- card a, b, c, q
                        +- tree & node info
                        +- project info
-                  
 
-- [ ] 프로젝트 + 프로젝트 속성 스키마
+**Phase 1: UI 초기 개발**            
+1.  **ProjectToolbar 기능 확장** ProjectToolbar에 "프로젝트 이름"이란 static text 대신 "{프로젝트 이름} - {작성자}" 표시. 작성자는 user nickname.
+2.  **프로젝트 스키마 작성:** 
   - [ ] 프로젝트 이름
   - [ ] 소유자 
   - [ ] 생성일
   - [ ] 수정일
-  - [ ] uid
-- [ ] 프로젝트 기능 구현
+  - [ ] 프로젝트 uid
+  - [ ] 프로젝트 설정 정보
+  - [ ] 프로젝트 카드 배열
+  - [ ] 기타 필요한 데이터 
+  - [ ] 지금의 카드는 프로젝트 정보를 오늘 생성한 것으로 설정해서 생성하고 프로젝트에 추가
+3.  **프로젝트 UI 구현:**  
   - [ ] 툴바에 프로젝트 이름 표시
   - [ ] 프로젝트 툴바 -> 메뉴에 프로젝트 정보 수정.   
-- [ ] 소유자별 프로젝트/카드 
+
+4.  **소유자별 프로젝트 선택 화면 구현:**  
   - [ ] 프로젝트 선택 화면
   - [ ] 프로젝트 삭제 
   - [ ] 프로젝트 삭제하면 카드는 어떻게 해야 하지... 아마 전체 삭제. 단, trashcan으로 이동. (90일 보관)
-- [ ] 로컬 서버 DB도 supabase로 일원화하기 
-- [ ] 아이콘
-  - [ ] new https://lucide.dev/icons/file-plus
-  - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
-  - [ ] import text to tree
+
+5.  **DB 설정**  
+  - [ ] 로컬 서버 저장 테스트 
+  - [ ] 프로덕션 빌드 -> supabase DB 테스트 
+
+~~~
 
 **버그**
 - [ ] 새 카드 만들기 이후에 화면에 추가 안 되네. 
@@ -43,11 +50,6 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
   - [ ] 사이드바 선택 -> 보드 노드도 선택 
   - [ ] 멀티 샐랙트 -> 사이드 바 통합 표시 안 됨
 
-
-**개선**
-
-- [ ] React 컴포넌트 테스트에서 act() 관련 경고
-
 **Todo**
 - [ ] 카드 리스트 삭제 -> 캔버스 삭제 
 - [ ] Sidebar 필터 
@@ -56,6 +58,10 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
 - [ ] 찾기 
 - [ ] 색상이나 사이즈 시맨틱 + 프리미티브 정리 
 - [ ] 오토 레이아웃에서 노드 크기를 유지하기
+- [ ] 아이콘
+  - [ ] new https://lucide.dev/icons/file-plus
+  - [ ] tree https://thenounproject.com/icon/hierachy-6606217/
+  - [ ] import text to tree
 
 **Previous Tasks**
 

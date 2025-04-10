@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+do exe
+
+@ProjectToolbar.test.tsx 의 테스트 커버리지가 목표에 여전히 미달하고 있어.
+
+  ProjectToolbar.tsx                      |      75 |       75 |      50 |      75 | 72-95,100-106,111-115,120-123,128-131,136-139,144-147,152-155,160-163,168-171,176,181-203 
+
+
+1. @explicit-error-throw-testing.mdc @global-env-mocking.mdc @vitest-mocking.mdc 규칙을 준수해서 테스트 커버리지 목표 달성
+2. @tests 의 모킹을 최대한 활용 
+3. 한 코드 블럭을 커버하면 yarn test run src/components/layout/ProjectToolbar.test.ts --coverage 를 실행해서 커버 여부를 확인한 후 다음 코드 블럭 커버 진행. 
