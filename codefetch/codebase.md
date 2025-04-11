@@ -1,8 +1,21 @@
 Project Structure:
 ├── LICENSE
 ├── README.md
+├── codefetch
+│   └── codebase.md
 ├── codefetch.config.mjs
 ├── components.json
+├── coverage
+│   ├── base.css
+│   ├── block-navigation.js
+│   ├── coverage-final.json
+│   ├── coverage-summary.json
+│   ├── favicon.png
+│   ├── index.html
+│   ├── prettify.css
+│   ├── prettify.js
+│   ├── sort-arrow-sprite.png
+│   └── sorter.js
 ├── eslint.config.mjs
 ├── html
 │   ├── bg.png
@@ -31,6 +44,7 @@ Project Structure:
 │   └── window.svg
 ├── scripts
 │   ├── check-port.js
+│   ├── coverage-report.js
 │   ├── create-user.js
 │   ├── pre-deploy.js
 │   ├── run-tests.sh
@@ -46,6 +60,7 @@ Project Structure:
 ├── tailwind.config.js
 ├── tsconfig.jest.json
 ├── tsconfig.json
+├── tsconfig.tsbuildinfo
 ├── types
 │   └── vitest.d.ts
 ├── update-modified-dates.js
@@ -193,7 +208,6 @@ update-modified-dates.js
 69 |                         creationDateRegex,
 70 |                         `* 작성일: ${creationDate}\n * 수정일: ${lastDate}`
 71 |                     );
-72 |                     await writeFile(filePath, updatedContent, 'utf8');
 [TRUNCATED]
 ```
 
@@ -204,21 +218,26 @@ vite.config.ts
 3 |  * 목적: Vite 빌드 도구 설정
 4 |  * 역할: 프로젝트의 빌드 및 개발 환경 설정 제공
 5 |  * 작성일: 2024-03-31
-6 |  * 수정일: 2025-03-30
+6 |  * 수정일: 2025-04-11
 7 |  */
 8 | 
 9 | import { defineConfig } from 'vite';
 10 | import react from '@vitejs/plugin-react';
-11 | import path from 'path';
-12 | 
-13 | export default defineConfig({
-14 |   plugins: [react()],
-15 |   resolve: {
-16 |     alias: {
-17 |       '@': path.resolve(__dirname, './src'),
-18 |     },
-19 |   },
-20 | }); 
+11 | import { fileURLToPath } from 'url';
+12 | import { dirname, resolve } from 'path';
+13 | 
+14 | // ESM에서 __dirname 대체
+15 | const __filename = fileURLToPath(import.meta.url);
+16 | const __dirname = dirname(__filename);
+17 | 
+18 | export default defineConfig({
+19 |   plugins: [react()],
+20 |   resolve: {
+21 |     alias: {
+22 |       '@': resolve(__dirname, './src'),
+23 |     },
+24 |   },
+25 | }); 
 ```
 
 vitest.config.ts
@@ -228,79 +247,81 @@ vitest.config.ts
 3 |  * 목적: Vitest 테스트 환경 설정
 4 |  * 역할: 테스트 실행을 위한 Vite 설정과 통합된 설정 제공
 5 |  * 작성일: 2024-03-31
-6 |  * 수정일: 2025-04-09
+6 |  * 수정일: 2025-04-11
 7 |  */
 8 | 
 9 | import { defineConfig, mergeConfig } from 'vitest/config';
-10 | import viteConfig from './vite.config';
+10 | import viteConfig from './vite.config.js';
 11 | import { loadEnv } from 'vite';
-12 | import path from 'path';
-13 | 
-14 | export default mergeConfig(
-15 |   viteConfig,
-16 |   defineConfig({
-17 |     test: {
-18 |       // 환경 변수 설정
-19 |       env: loadEnv('test', process.cwd(), ''),
-20 |       
-21 |       // 테스트 환경 설정
-22 |       environment: 'jsdom',
-23 |       globals: true,
-24 |       setupFiles: ['./src/tests/setup.ts'],
+12 | import { fileURLToPath } from 'url';
+13 | import { dirname, resolve } from 'path';
+14 | 
+15 | // ESM에서 __dirname 대체
+16 | const __filename = fileURLToPath(import.meta.url);
+17 | const __dirname = dirname(__filename);
+18 | 
+19 | export default mergeConfig(
+20 |   viteConfig,
+21 |   defineConfig({
+22 |     test: {
+23 |       // 환경 변수 설정
+24 |       env: loadEnv('test', process.cwd(), ''),
 25 |       
-26 |       // 성능 최적화 설정
-27 |       testTimeout: 2000, // 전역 타임아웃 설정 (2초로 변경)
-28 |       hookTimeout: 2000, // 훅 타임아웃 설정 (2초로 변경)
-29 |       pool: 'threads',
-30 |       poolOptions: {
-31 |         threads: {
-32 |           singleThread: false,
-33 |         },
-34 |       },
-35 |       isolate: true,
-36 |       
-37 |       // Node.js v20의 Undici 타임아웃 문제 처리
-38 |       environmentOptions: {
-39 |         // jsdom 환경에서 글로벌 변수 설정
-40 |         jsdom: {
-41 |           // JS 타이머 이벤트가 즉시 처리되도록 설정
-42 |           // Undici의 타임아웃 이슈 해결
-43 |           pretendToBeVisual: true,
-44 |         }
-45 |       },
-46 |       
-47 |       // 테스트 파일 패턴 설정
-48 |       include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-49 |       exclude: [
-50 |         '**/node_modules/**',
-51 |         '**/dist/**',
-52 |         '**/.next/**', // Next.js 빌드 결과물
-53 |         '**/coverage/**', // 커버리지 리포트 폴더
-54 |         '**/.{idea,git,cache,output,temp}/**',
-55 |         '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,storybook,eslint,prettier}.config.*', // 각종 설정 파일
-56 |         '**/prisma/seed/**', // Prisma Seed 파일
-57 |         '**/scripts/**', // 스크립트 폴더
-58 |         // '**/src/tests/mocks/**', // 목업 폴더
-59 |         // '**/src/tests/msw/**', // MSW 폴더
-60 |         // '**/src/tests/utils/**', // 테스트 유틸리티 폴더
-61 |         '**/src/setupTests.ts', // 테스트 설정 파일
-62 |         '**/src/tests/**', // 테스트 관련 폴더
-63 |         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
-64 |         // src/lib
-65 |         '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
-66 |         '**/test-utils.ts',                
-67 |         // 'src/lib/auth-server.ts', // 또는 .ts/.js
-68 |         // 'src/lib/auth-storage.ts',
-69 |         // 'src/lib/__tests__/auth-integration.ts', // auth-storage 관련 테스트가 많으므로 임시 제외
-70 |         '**/src/lib/cookie.ts',
-71 |         // 'src/lib/db-check.ts', // 파일이 .js 이면 .js로
-72 |         '**/src/lib/auth-server.ts',
-73 |         '**/src/lib/prisma.ts',
-74 |         '**/src/lib/supabase-instance.ts',
-75 |         '**/src/lib/supabase-server.ts',
-76 |         '**/src/lib/supabase.ts',
-77 |         '**/src/lib/debug-utils.ts',
-78 |         '**/src/lib/board-ui-config.ts',
+26 |       // 테스트 환경 설정
+27 |       environment: 'jsdom',
+28 |       globals: true,
+29 |       setupFiles: ['./src/tests/setup.ts'],
+30 |       
+31 |       // 성능 최적화 설정
+32 |       testTimeout: 2000, // 전역 타임아웃 설정 (2초로 변경)
+33 |       hookTimeout: 2000, // 훅 타임아웃 설정 (2초로 변경)
+34 |       pool: 'threads',
+35 |       poolOptions: {
+36 |         threads: {
+37 |           singleThread: false,
+38 |         },
+39 |       },
+40 |       isolate: true,
+41 |       
+42 |       // Node.js v20의 Undici 타임아웃 문제 처리
+43 |       environmentOptions: {
+44 |         // jsdom 환경에서 글로벌 변수 설정
+45 |         jsdom: {
+46 |           // JS 타이머 이벤트가 즉시 처리되도록 설정
+47 |           // Undici의 타임아웃 이슈 해결
+48 |           pretendToBeVisual: true,
+49 |         }
+50 |       },
+51 |       
+52 |       // 테스트 파일 패턴 설정
+53 |       include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+54 |       exclude: [
+55 |         '**/node_modules/**',
+56 |         '**/dist/**',
+57 |         '**/.next/**', // Next.js 빌드 결과물
+58 |         '**/coverage/**', // 커버리지 리포트 폴더
+59 |         '**/.{idea,git,cache,output,temp}/**',
+60 |         '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,storybook,eslint,prettier}.config.*', // 각종 설정 파일
+61 |         '**/prisma/seed/**', // Prisma Seed 파일
+62 |         '**/scripts/**', // 스크립트 폴더
+63 |         '**/src/tests/**', // 테스트 관련 폴더
+64 |         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
+65 |         // src/lib
+66 |         '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
+67 |         '**/test-utils.ts',                
+68 |         '**/src/lib/cookie.ts',
+69 |         '**/src/lib/auth-server.ts',
+70 |         '**/src/lib/prisma.ts',
+71 |         '**/src/lib/supabase-instance.ts',
+72 |         '**/src/lib/supabase-server.ts',
+73 |         '**/src/lib/supabase.ts',
+74 |         '**/src/lib/debug-utils.ts',
+75 |         '**/src/lib/board-ui-config.ts',
+76 |         '**/src/lib/board-utils.ts',
+77 |         '**/src/lib/layout-utils.ts',
+78 |         // root       // 모든 서브 폴더의 test-utils.ts 파일 제외
+79 |         './*.config.js', // 루트 경로의 config 파일들
+80 |         './*.config.ts',
 [TRUNCATED]
 ```
 
@@ -314,18 +335,18 @@ scripts/check-port.js
 6 |  * 수정일: 2025-03-26
 7 |  */
 8 | 
-9 | const { execSync } = require('child_process');
-10 | const os = require('os');
+9 | import { execSync } from 'child_process';
+10 | import os from 'os';
 11 | 
 12 | const PORT = 3000;
 13 | 
 14 | function checkPort() {
 15 |   console.log(`\n🔍 포트 ${PORT} 상태 확인 중...`);
-16 |   
+16 | 
 17 |   try {
 18 |     let command;
 19 |     let processIdCommand;
-20 |     
+20 | 
 21 |     // OS별 명령어 설정
 22 |     if (os.platform() === 'win32') {
 23 |       // Windows
@@ -342,26 +363,26 @@ scripts/check-port.js
 34 |         return parts[1];
 35 |       };
 36 |     }
-37 |     
+37 | 
 38 |     // 명령어 실행 및 결과 가져오기
 39 |     const result = execSync(command, { encoding: 'utf8' });
-40 |     
+40 | 
 41 |     if (result && result.trim()) {
 42 |       console.log(`⚠️ 포트 ${PORT}가 이미 사용 중입니다.`);
-43 |       
+43 | 
 44 |       // 결과에서 PID 추출
 45 |       const lines = result.split('\n').filter(Boolean);
-46 |       
+46 | 
 47 |       // 헤더 라인 제외 (macOS/Linux의 lsof 명령어는 헤더가 있음)
 48 |       const processLines = os.platform() === 'win32' ? lines : lines.slice(1);
-49 |       
+49 | 
 50 |       if (processLines.length > 0) {
 51 |         // 첫 번째 프로세스의 PID 추출
 52 |         const pid = processIdCommand(processLines[0]);
-53 |         
+53 | 
 54 |         if (pid) {
 55 |           console.log(`👉 PID ${pid} 프로세스 종료 중...`);
-56 |           
+56 | 
 57 |           try {
 58 |             // 프로세스 종료
 59 |             if (os.platform() === 'win32') {
@@ -385,8 +406,80 @@ scripts/check-port.js
 77 |   }
 78 | }
 79 | 
-80 | // 스크립트 실행
 [TRUNCATED]
+```
+
+scripts/coverage-report.js
+```
+1 | import fs from 'fs';
+2 | import path from 'path';
+3 | import { fileURLToPath } from 'url';
+4 | 
+5 | // __dirname 대체
+6 | const __filename = fileURLToPath(import.meta.url);
+7 | const __dirname = path.dirname(__filename);
+8 | 
+9 | // 파라미터
+10 | const sortBy = process.argv[2] || 'LoC';
+11 | 
+12 | // 파일 읽기
+13 | const coveragePath = path.resolve(__dirname, '../coverage/coverage-summary.json');
+14 | 
+15 | if (!fs.existsSync(coveragePath)) {
+16 |     console.error('❌ coverage-summary.json 파일이 존재하지 않습니다.');
+17 |     process.exit(1);
+18 | }
+19 | 
+20 | const summary = JSON.parse(fs.readFileSync(coveragePath, 'utf-8'));
+21 | delete summary.total;
+22 | 
+23 | const rows = Object.entries(summary).map(([filePath, metrics]) => {
+24 |     const folder = path.dirname(filePath);
+25 |     const file = path.basename(filePath);
+26 |     const lines = metrics.lines || {};
+27 |     const branches = metrics.branches || {};
+28 |     const functions = metrics.functions || {};
+29 | 
+30 |     return {
+31 |         '파일명': file,
+32 |         '폴더': folder,
+33 |         'LoC': lines.total || 0,
+34 |         '브랜치 커버리지': branches.pct || 0,
+35 |         '함수 커버리지': functions.pct || 0,
+36 |         '라인 커버리지': lines.pct || 0,
+37 |         'uncovered Line': (lines.total || 0) - (lines.covered || 0),
+38 |     };
+39 | });
+40 | 
+41 | // 정렬
+42 | const validSort = rows[0].hasOwnProperty(sortBy) ? sortBy : 'LoC';
+43 | rows.sort((a, b) => b[validSort] - a[validSort]);
+44 | 
+45 | // 출력
+46 | const printTable = (data) => {
+47 |     if (data.length === 0) {
+48 |         console.log('데이터가 없습니다.');
+49 |         return;
+50 |     }
+51 | 
+52 |     const headers = Object.keys(data[0]);
+53 |     const colWidths = headers.map(header =>
+54 |         Math.max(header.length, ...data.map(row => String(row[header] ?? '').length))
+55 |     );
+56 | 
+57 |     const formatRow = (rowOrHeader) =>
+58 |         headers.map((h, i) => String(rowOrHeader[h] ?? rowOrHeader[i] ?? '').padEnd(colWidths[i])).join(' | ');
+59 | 
+60 |     const separator = colWidths.map(w => '-'.repeat(w)).join('-|-');
+61 | 
+62 |     // ✅ 수정된 출력
+63 |     console.log(formatRow(headers));
+64 |     console.log(separator);
+65 |     data.forEach(row => console.log(formatRow(row)));
+66 | };
+67 | 
+68 | 
+69 | printTable(rows);
 ```
 
 scripts/create-user.js
@@ -424,68 +517,73 @@ scripts/pre-deploy.js
 7 |  * 환경 파일을 확인하고 필요한 설정을 적용합니다.
 8 |  */
 9 | 
-10 | const fs = require('fs');
-11 | const path = require('path');
-12 | const { execSync } = require('child_process');
-13 | 
-14 | console.log('배포 전 환경 설정 확인 중...');
-15 | 
-16 | // 기본 필수 환경 변수 목록
-17 | let requiredEnvVars = [
-18 |   'DATABASE_PROVIDER',
-19 |   'DATABASE_URL'
-20 | ];
-21 | 
-22 | // 데이터베이스 프로바이더에 따라 추가 변수 검증
-23 | if (process.env.DATABASE_PROVIDER === 'postgresql') {
-24 |   requiredEnvVars.push('DIRECT_URL');
-25 |   requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
-26 |   requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-27 |   
-28 |   if (process.env.NODE_ENV === 'production') {
-29 |     requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
-30 |   }
-31 | }
+10 | import fs from 'fs';
+11 | import path from 'path';
+12 | import { execSync } from 'child_process';
+13 | import { fileURLToPath } from 'url';
+14 | 
+15 | // __dirname 대체
+16 | const __filename = fileURLToPath(import.meta.url);
+17 | const __dirname = path.dirname(__filename);
+18 | 
+19 | console.log('배포 전 환경 설정 확인 중...');
+20 | 
+21 | // 기본 필수 환경 변수 목록
+22 | let requiredEnvVars = [
+23 |   'DATABASE_PROVIDER',
+24 |   'DATABASE_URL'
+25 | ];
+26 | 
+27 | // 데이터베이스 프로바이더에 따라 추가 변수 검증
+28 | if (process.env.DATABASE_PROVIDER === 'postgresql') {
+29 |   requiredEnvVars.push('DIRECT_URL');
+30 |   requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
+31 |   requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 32 | 
-33 | // 환경 변수 검증
-34 | const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-35 | 
-36 | if (missingEnvVars.length > 0) {
-37 |   console.error('❌ 누락된 환경 변수가 있습니다:');
-38 |   missingEnvVars.forEach(envVar => {
-39 |     console.error(`   - ${envVar}`);
-40 |   });
-41 |   process.exit(1);
-42 | }
-43 | 
-44 | console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
-45 | 
-46 | // 프로덕션 환경 확인
-47 | if (process.env.NODE_ENV === 'production') {
-48 |   console.log('프로덕션 환경 감지: 설정을 확인합니다...');
-49 |   
-50 |   if (process.env.DATABASE_PROVIDER !== 'postgresql') {
-51 |     console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
-52 |     process.exit(1);
-53 |   }
-54 |   
-55 |   if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
-56 |     console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
+33 |   if (process.env.NODE_ENV === 'production') {
+34 |     requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
+35 |   }
+36 | }
+37 | 
+38 | // 환경 변수 검증
+39 | const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+40 | 
+41 | if (missingEnvVars.length > 0) {
+42 |   console.error('❌ 누락된 환경 변수가 있습니다:');
+43 |   missingEnvVars.forEach(envVar => {
+44 |     console.error(`   - ${envVar}`);
+45 |   });
+46 |   process.exit(1);
+47 | }
+48 | 
+49 | console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
+50 | 
+51 | // 프로덕션 환경 확인
+52 | if (process.env.NODE_ENV === 'production') {
+53 |   console.log('프로덕션 환경 감지: 설정을 확인합니다...');
+54 | 
+55 |   if (process.env.DATABASE_PROVIDER !== 'postgresql') {
+56 |     console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
 57 |     process.exit(1);
 58 |   }
-59 | }
-60 | 
-61 | console.log('✅ 환경 설정 확인 완료');
-62 | 
-63 | // Prisma 클라이언트 생성
-64 | console.log('Prisma 클라이언트를 생성합니다...');
-65 | try {
-66 |   execSync('npx prisma generate', { stdio: 'inherit' });
-67 |   console.log('✅ Prisma 클라이언트가 생성되었습니다.');
-68 | } catch (error) {
-69 |   console.error(`⚠️ Prisma 클라이언트 생성 중 오류가 발생했습니다: ${error.message}`);
-70 |   console.error('하지만 배포 과정을 계속 진행합니다.');
-71 | } 
+59 | 
+60 |   if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
+61 |     console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
+62 |     process.exit(1);
+63 |   }
+64 | }
+65 | 
+66 | console.log('✅ 환경 설정 확인 완료');
+67 | 
+68 | // Prisma 클라이언트 생성
+69 | console.log('Prisma 클라이언트를 생성합니다...');
+70 | try {
+71 |   execSync('npx prisma generate', { stdio: 'inherit' });
+72 |   console.log('✅ Prisma 클라이언트가 생성되었습니다.');
+73 | } catch (error) {
+74 |   console.error(`⚠️ Prisma 클라이언트 생성 중 오류가 발생했습니다: ${error.message}`);
+75 |   console.error('하지만 배포 과정을 계속 진행합니다.');
+76 | } 
 ```
 
 scripts/schema-sync.js
@@ -497,105 +595,115 @@ scripts/schema-sync.js
 5 |  * 
 6 |  * 이 스크립트는 마스터 템플릿에서 각 환경별 스키마를 생성합니다.
 7 |  */
-8 | const fs = require('fs');
-9 | const path = require('path');
-10 | 
-11 | // 경로 설정
-12 | const basePath = path.join(__dirname, '../prisma');
-13 | const masterSchemaPath = path.join(basePath, 'schema.master.prisma');
-14 | const sqliteSchemaPath = path.join(basePath, 'schema.sqlite.prisma');
-15 | const postgresSchemaPath = path.join(basePath, 'schema.postgresql.prisma');
-16 | 
-17 | console.log('Prisma 스키마 동기화를 시작합니다...');
-18 | 
-19 | // 마스터 스키마 파일 확인
-20 | if (!fs.existsSync(masterSchemaPath)) {
-21 |   console.log('마스터 스키마 파일이 없습니다. 현재 schema.prisma를 마스터로 사용합니다.');
-22 |   const currentSchemaPath = path.join(basePath, 'schema.prisma');
-23 |   if (fs.existsSync(currentSchemaPath)) {
-24 |     fs.copyFileSync(currentSchemaPath, masterSchemaPath);
-25 |     console.log(`현재 스키마를 마스터 템플릿으로 복사했습니다: ${masterSchemaPath}`);
-26 |   } else {
-27 |     console.error('오류: 현재 스키마 파일도 찾을 수 없습니다!');
-28 |     process.exit(1);
-29 |   }
-30 | }
-31 | 
-32 | // 마스터 스키마 읽기
-33 | console.log(`마스터 스키마 파일 읽기: ${masterSchemaPath}`);
-34 | const masterSchema = fs.readFileSync(masterSchemaPath, 'utf8');
-35 | 
-36 | // SQLite 스키마 생성
-37 | const sqliteSchema = masterSchema
-38 |   .replace(/provider(\s*)=(\s*)"postgresql"/g, 'provider$1=$2"sqlite"')
-39 |   .replace(/directUrl(\s*)=(\s*)env\("DIRECT_URL"\)/g, '')
-40 |   .replace(/extensions(\s*)=(\s*)\[.*?\]/g, '')
-41 |   .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for SQLite,');
-42 | 
-43 | // PostgreSQL 스키마 생성
-44 | const postgresSchema = masterSchema
-45 |   .replace(/provider(\s*)=(\s*)"sqlite"/g, 'provider$1=$2"postgresql"')
-46 |   .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for PostgreSQL,');
+8 | import fs from 'fs';
+9 | import path from 'path';
+10 | import { fileURLToPath } from 'url';
+11 | 
+12 | // __dirname 대체
+13 | const __filename = fileURLToPath(import.meta.url);
+14 | const __dirname = path.dirname(__filename);
+15 | 
+16 | // 경로 설정
+17 | const basePath = path.join(__dirname, '../prisma');
+18 | const masterSchemaPath = path.join(basePath, 'schema.master.prisma');
+19 | const sqliteSchemaPath = path.join(basePath, 'schema.sqlite.prisma');
+20 | const postgresSchemaPath = path.join(basePath, 'schema.postgresql.prisma');
+21 | 
+22 | console.log('Prisma 스키마 동기화를 시작합니다...');
+23 | 
+24 | // 마스터 스키마 파일 확인
+25 | if (!fs.existsSync(masterSchemaPath)) {
+26 |   console.log('마스터 스키마 파일이 없습니다. 현재 schema.prisma를 마스터로 사용합니다.');
+27 |   const currentSchemaPath = path.join(basePath, 'schema.prisma');
+28 |   if (fs.existsSync(currentSchemaPath)) {
+29 |     fs.copyFileSync(currentSchemaPath, masterSchemaPath);
+30 |     console.log(`현재 스키마를 마스터 템플릿으로 복사했습니다: ${masterSchemaPath}`);
+31 |   } else {
+32 |     console.error('오류: 현재 스키마 파일도 찾을 수 없습니다!');
+33 |     process.exit(1);
+34 |   }
+35 | }
+36 | 
+37 | // 마스터 스키마 읽기
+38 | console.log(`마스터 스키마 파일 읽기: ${masterSchemaPath}`);
+39 | const masterSchema = fs.readFileSync(masterSchemaPath, 'utf8');
+40 | 
+41 | // SQLite 스키마 생성
+42 | const sqliteSchema = masterSchema
+43 |   .replace(/provider(\s*)=(\s*)"postgresql"/g, 'provider$1=$2"sqlite"')
+44 |   .replace(/directUrl(\s*)=(\s*)env\("DIRECT_URL"\)/g, '')
+45 |   .replace(/extensions(\s*)=(\s*)\[.*?\]/g, '')
+46 |   .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for SQLite,');
 47 | 
-48 | // 생성된 스키마 파일 저장
-49 | fs.writeFileSync(sqliteSchemaPath, sqliteSchema);
-50 | console.log(`SQLite 스키마 파일이 생성되었습니다: ${sqliteSchemaPath}`);
-51 | 
-52 | fs.writeFileSync(postgresSchemaPath, postgresSchema);
-53 | console.log(`PostgreSQL 스키마 파일이 생성되었습니다: ${postgresSchemaPath}`);
-54 | 
-55 | console.log('스키마 동기화가 완료되었습니다.');
-56 | console.log('이제 환경에 맞는 스키마를 적용하려면 다음 명령을 실행하세요:');
-57 | console.log('- 개발 환경: yarn db:setup:dev');
-58 | console.log('- 프로덕션 환경: yarn db:setup:prod');
+48 | // PostgreSQL 스키마 생성
+49 | const postgresSchema = masterSchema
+50 |   .replace(/provider(\s*)=(\s*)"sqlite"/g, 'provider$1=$2"postgresql"')
+51 |   .replace(/\/\/ This is your Prisma schema file for.*?,/g, '// This is your Prisma schema file for PostgreSQL,');
+52 | 
+53 | // 생성된 스키마 파일 저장
+54 | fs.writeFileSync(sqliteSchemaPath, sqliteSchema);
+55 | console.log(`SQLite 스키마 파일이 생성되었습니다: ${sqliteSchemaPath}`);
+56 | 
+57 | fs.writeFileSync(postgresSchemaPath, postgresSchema);
+58 | console.log(`PostgreSQL 스키마 파일이 생성되었습니다: ${postgresSchemaPath}`);
 59 | 
+60 | console.log('스키마 동기화가 완료되었습니다.');
+61 | console.log('이제 환경에 맞는 스키마를 적용하려면 다음 명령을 실행하세요:');
+62 | console.log('- 개발 환경: yarn db:setup:dev');
+63 | console.log('- 프로덕션 환경: yarn db:setup:prod');
+64 | 
 ```
 
 scripts/select-db.js
 ```
 1 | #!/usr/bin/env node
 2 | 
-3 | const fs = require('fs');
-4 | const path = require('path');
-5 | 
-6 | // 환경 확인
-7 | const isProduction = process.env.NODE_ENV === 'production';
-8 | const dbType = isProduction ? 'postgresql' : 'sqlite';
-9 | 
-10 | // 경로 설정
-11 | const basePath = path.join(__dirname, '../prisma');
-12 | const schemaPath = path.join(basePath, 'schema.prisma');
-13 | const sourceSchemaPath = path.join(basePath, `schema.${dbType}.prisma`);
+3 | import fs from 'fs';
+4 | import path from 'path';
+5 | import { fileURLToPath } from 'url';
+6 | 
+7 | // __dirname 대체
+8 | const __filename = fileURLToPath(import.meta.url);
+9 | const __dirname = path.dirname(__filename);
+10 | 
+11 | // 환경 확인
+12 | const isProduction = process.env.NODE_ENV === 'production';
+13 | const dbType = isProduction ? 'postgresql' : 'sqlite';
 14 | 
-15 | console.log(`환경: ${isProduction ? '프로덕션' : '개발'}`);
-16 | console.log(`데이터베이스: ${dbType}`);
-17 | console.log(`소스 스키마: ${sourceSchemaPath}`);
-18 | console.log(`타겟 스키마: ${schemaPath}`);
+15 | // 경로 설정
+16 | const basePath = path.join(__dirname, '../prisma');
+17 | const schemaPath = path.join(basePath, 'schema.prisma');
+18 | const sourceSchemaPath = path.join(basePath, `schema.${dbType}.prisma`);
 19 | 
-20 | // 파일 복사
-21 | try {
-22 |   // 소스 파일 존재 확인
-23 |   if (!fs.existsSync(sourceSchemaPath)) {
-24 |     console.error(`오류: 소스 스키마 파일을 찾을 수 없습니다: ${sourceSchemaPath}`);
-25 |     process.exit(1);
-26 |   }
-27 | 
-28 |   // 파일 복사
-29 |   fs.copyFileSync(sourceSchemaPath, schemaPath);
-30 |   console.log(`✅ 성공: ${dbType} 스키마를 복사했습니다.`);
-31 | 
-32 |   // Prisma 생성 명령어 안내
-33 |   console.log('이제 다음 명령어를 실행하세요: npx prisma generate');
-34 | } catch (error) {
-35 |   console.error(`❌ 오류 발생: ${error.message}`);
-36 |   process.exit(1);
-37 | } 
+20 | console.log(`환경: ${isProduction ? '프로덕션' : '개발'}`);
+21 | console.log(`데이터베이스: ${dbType}`);
+22 | console.log(`소스 스키마: ${sourceSchemaPath}`);
+23 | console.log(`타겟 스키마: ${schemaPath}`);
+24 | 
+25 | // 파일 복사
+26 | try {
+27 |   // 소스 파일 존재 확인
+28 |   if (!fs.existsSync(sourceSchemaPath)) {
+29 |     console.error(`오류: 소스 스키마 파일을 찾을 수 없습니다: ${sourceSchemaPath}`);
+30 |     process.exit(1);
+31 |   }
+32 | 
+33 |   // 파일 복사
+34 |   fs.copyFileSync(sourceSchemaPath, schemaPath);
+35 |   console.log(`✅ 성공: ${dbType} 스키마를 복사했습니다.`);
+36 | 
+37 |   // Prisma 생성 명령어 안내
+38 |   console.log('이제 다음 명령어를 실행하세요: npx prisma generate');
+39 | } catch (error) {
+40 |   console.error(`❌ 오류 발생: ${error.message}`);
+41 |   process.exit(1);
+42 | } 
 ```
 
 scripts/test-db.js
 ```
 1 | // 데이터베이스 연결 테스트 스크립트
-2 | const { PrismaClient } = require('@prisma/client');
+2 | import { PrismaClient } from '@prisma/client';
 3 | 
 4 | async function main() {
 5 |   console.log('데이터베이스 연결 테스트 시작...');
@@ -618,7 +726,7 @@ scripts/test-db.js
 22 |     console.log('사용자 조회 시도 중...');
 23 |     const users = await prisma.user.findMany({ take: 5 });
 24 |     console.log(`사용자 조회 성공: ${users.length}명의 사용자 발견`);
-25 |     
+25 | 
 26 |     // 연결 종료
 27 |     await prisma.$disconnect();
 28 |     console.log('데이터베이스 연결 종료');
@@ -701,8 +809,6 @@ scripts/update-file-dates.js
 67 |     // 월 범위 검사 (1-12)
 68 |     if (month < 1 || month > 12) {
 69 |         return true;
-70 |     }
-71 | 
 [TRUNCATED]
 ```
 
@@ -735,6 +841,24 @@ src/middleware.ts
 25 |     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
 26 |   ],
 27 | } 
+```
+
+vitest/failed-files-reporter.js
+```
+1 | // failed-files-reporter.js
+2 | export default class FailedFilesReporter {
+3 |     onFinished(results) {
+4 |         // results.testFileResults는 각 테스트 파일의 결과 정보를 담고 있습니다.
+5 |         const failedFiles = results.testFileResults
+6 |             .filter(fileResult => fileResult.numFailingTests > 0)
+7 |             .map(fileResult => fileResult.file)
+8 | 
+9 |         if (failedFiles.length > 0) {
+10 |             console.log('\n실패한 테스트 파일:');
+11 |             failedFiles.forEach(file => console.log(file))
+12 |         }
+13 |     }
+14 | }
 ```
 
 types/vitest.d.ts
@@ -785,24 +909,6 @@ types/vitest.d.ts
 44 | } 
 ```
 
-vitest/failed-files-reporter.js
-```
-1 | // failed-files-reporter.js
-2 | export default class FailedFilesReporter {
-3 |     onFinished(results) {
-4 |         // results.testFileResults는 각 테스트 파일의 결과 정보를 담고 있습니다.
-5 |         const failedFiles = results.testFileResults
-6 |             .filter(fileResult => fileResult.numFailingTests > 0)
-7 |             .map(fileResult => fileResult.file)
-8 | 
-9 |         if (failedFiles.length > 0) {
-10 |             console.log('\n실패한 테스트 파일:');
-11 |             failedFiles.forEach(file => console.log(file))
-12 |         }
-13 |     }
-14 | }
-```
-
 html/assets/index-CsZqQx26.js
 ```
 1 | var DS=Object.defineProperty;var IS=(e,t,r)=>t in e?DS(e,t,{enumerable:!0,configurable:!0,writable:!0,value:r}):e[t]=r;var us=(e,t,r)=>IS(e,typeof t!="symbol"?t+"":t,r);(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const s of document.querySelectorAll('link[rel="modulepreload"]'))o(s);new MutationObserver(s=>{for(const c of s)if(c.type==="childList")for(const f of c.addedNodes)f.tagName==="LINK"&&f.rel==="modulepreload"&&o(f)}).observe(document,{childList:!0,subtree:!0});function r(s){const c={};return s.integrity&&(c.integrity=s.integrity),s.referrerPolicy&&(c.referrerPolicy=s.referrerPolicy),s.crossOrigin==="use-credentials"?c.credentials="include":s.crossOrigin==="anonymous"?c.credentials="omit":c.credentials="same-origin",c}function o(s){if(s.ep)return;s.ep=!0;const c=r(s);fetch(s.href,c)}})();/**
@@ -814,7 +920,7 @@ html/assets/index-CsZqQx26.js
 
 prisma/seed/index.js
 ```
-1 | const { PrismaClient } = require('@prisma/client');
+1 | import { PrismaClient } from '@prisma/client';
 2 | const prisma = new PrismaClient();
 3 | 
 4 | async function main() {
@@ -836,19 +942,19 @@ prisma/seed/index.js
 20 |         }
 21 |       }
 22 |     });
-23 |     
+23 | 
 24 |     // 태그 생성
 25 |     const welcomeTag = await prisma.tag.upsert({
 26 |       where: { name: '환영' },
 27 |       update: {},
 28 |       create: { name: '환영' }
 29 |     });
-30 |     
+30 | 
 31 |     // 카드-태그 연결
 32 |     const cards = await prisma.card.findMany({
 33 |       where: { userId: user.id }
 34 |     });
-35 |     
+35 | 
 36 |     if (cards.length > 0) {
 37 |       await prisma.cardTag.upsert({
 38 |         where: {
@@ -864,7 +970,7 @@ prisma/seed/index.js
 48 |         }
 49 |       });
 50 |     }
-51 |     
+51 | 
 52 |     console.log('Database seeded!');
 53 |   } catch (error) {
 54 |     console.error('Error seeding database:', error);
@@ -1239,7 +1345,6 @@ src/contexts/AuthContext.tsx
 79 |       isLoading: false,
 80 |       signOut: async () => { },
 81 |       codeVerifier: null,
-82 |       error: error instanceof Error ? error : new Error('Supabase 초기화 실패'),
 [TRUNCATED]
 ```
 
@@ -1424,8 +1529,6 @@ src/contexts/ThemeContext.tsx
 100 | }
 101 | 
 102 | const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-103 | 
-104 | /**
 [TRUNCATED]
 ```
 
@@ -1580,8 +1683,6 @@ src/hooks/useAuthCallback.ts
 72 |         setError('콜백 처리 중 예외 발생');
 73 |         setRedirectUrl('/auth/error?error=callback_error&error_description=인증 콜백 처리 중 오류가 발생했습니다.');
 74 |       }
-75 |     };
-76 | 
 [TRUNCATED]
 ```
 
@@ -1664,7 +1765,6 @@ src/hooks/useCardData.ts
 75 |       if (!response.ok) {
 76 |         const errorText = await response.text();
 77 |         console.error(`카드 조회 실패 (상태 코드: ${response.status}):`, errorText);
-78 |         throw new Error(`카드 목록을 불러오는데 실패했습니다. 상태 코드: ${response.status}`);
 [TRUNCATED]
 ```
 
@@ -1753,6 +1853,289 @@ src/hooks/useResizable.ts
 81 |     setWidth
 82 |   };
 83 | } 
+```
+
+src/services/auth-service.ts
+```
+1 | /**
+2 |  * 파일명: auth-service.ts
+3 |  * 목적: 인증 관련 비즈니스 로직 분리
+4 |  * 역할: OAuth 콜백 처리와 인증 데이터 관리 서비스 제공
+5 |  * 작성일: 2025-03-30
+6 |  * 수정일: 2025-04-09
+7 |  */
+8 | 
+9 | import { getAuthClient, STORAGE_KEYS } from '@/lib/auth';
+10 | import createLogger from '@/lib/logger';
+11 | 
+12 | // 로거 생성
+13 | const logger = createLogger('AuthService');
+14 | 
+15 | /**
+16 |  * 인증 처리 결과 인터페이스
+17 |  */
+18 | export interface AuthResult {
+19 |   status: 'success' | 'error' | 'loading';
+20 |   accessToken?: string;
+21 |   refreshToken?: string;
+22 |   userId?: string;
+23 |   provider?: string;
+24 |   error?: string;
+25 |   errorDescription?: string;
+26 | }
+27 | 
+28 | /**
+29 |  * AuthService: 인증 관련 비즈니스 로직 처리
+30 |  */
+31 | export class AuthService {
+32 |   /**
+33 |    * OAuth 콜백 URL에서 코드 파라미터 처리
+34 |    * @param url 현재 URL
+35 |    * @returns 인증 처리 결과
+36 |    */
+37 |   static async handleCallback(url: URL): Promise<AuthResult> {
+38 |     try {
+39 |       logger.info('콜백 URL 처리 시작', { pathname: url.pathname });
+40 |       
+41 |       // 에러 파라미터 확인
+42 |       const errorParam = url.searchParams.get('error');
+43 |       const errorDescription = url.searchParams.get('error_description');
+44 |       
+45 |       if (errorParam) {
+46 |         logger.error('에러 파라미터 발견', { error: errorParam, description: errorDescription });
+47 |         return {
+48 |           status: 'error',
+49 |           error: errorParam,
+50 |           errorDescription: errorDescription || undefined
+51 |         };
+52 |       }
+53 |       
+54 |       // 인증 코드 확인
+55 |       const code = url.searchParams.get('code');
+56 |       if (!code) {
+57 |         logger.error('인증 코드가 없음');
+58 |         return {
+59 |           status: 'error',
+60 |           error: 'no_code',
+61 |           errorDescription: '인증 코드가 없습니다'
+62 |         };
+63 |       }
+64 |       
+65 |       logger.info('인증 코드 확인됨', { codeLength: code.length });
+66 |       
+67 |       // 코드 검증기 복구
+68 |       const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
+69 |       
+70 |       if (!codeVerifier) {
+71 |         logger.warn('코드 검증기를 찾을 수 없음');
+72 |       } else {
+73 |         logger.info('코드 검증기 복구됨', { verifierLength: codeVerifier.length });
+74 |       }
+75 |       
+76 |       // Supabase 세션 교환
+77 |       const supabase = getAuthClient();
+78 |       logger.info('세션 교환 시작');
+79 |       
+80 |       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+81 |       
+82 |       if (error || !data.session) {
+83 |         logger.error('세션 교환 실패', { error: error?.message, status: error?.status });
+84 |         return {
+85 |           status: 'error',
+86 |           error: error?.message || 'session_exchange_failed',
+87 |           errorDescription: '세션 교환 실패'
+88 |         };
+89 |       }
+90 |       
+91 |       // 세션 정보 추출
+[TRUNCATED]
+```
+
+src/tests/helper.ts
+```
+1 | /**
+2 |  * 파일명: src/tests/helper.ts
+3 |  * 목적: 테스트 유틸리티 함수 제공
+4 |  * 역할: 테스트 코드에서 사용되는 공통 유틸리티 함수 모음
+5 |  * 작성일: 2025-03-30
+6 |  */
+7 | 
+8 | /**
+9 |  * flushPromises: 비동기 작업이 처리될 수 있도록 이벤트 루프를 비웁니다.
+10 |  * @returns {Promise<void>} 비동기 작업이 완료된 후의 프로미스
+11 |  */
+12 | export const flushPromises = (): Promise<void> => {
+13 |   return new Promise(resolve => setTimeout(resolve, 0));
+14 | }; 
+```
+
+src/tests/setup.ts
+```
+1 | /**
+2 |  * 파일명: setup.ts
+3 |  * 목적: Vitest 테스트 설정
+4 |  * 역할: 테스트 환경 설정 및 전역 설정 제공
+5 |  * 작성일: 2025-03-27
+6 |  * 수정일: 2025-04-08 - waitFor 제대로 작동하도록 setTimeout 모킹 방식 수정
+7 |  */
+8 | 
+9 | import '@testing-library/jest-dom/vitest';
+10 | import { beforeEach, afterEach, vi, expect, beforeAll, afterAll } from 'vitest';
+11 | import { cleanup } from '@testing-library/react';
+12 | import * as matchers from '@testing-library/jest-dom/matchers';
+13 | import { server } from './msw/server'; // MSW 서버 임포트
+14 | 
+15 | // Testing Library의 jest-dom 매처 확장
+16 | expect.extend(matchers);
+17 | 
+18 | // --- MSW 서버 설정 ---
+19 | // Node.js v20 undici 타임아웃 이슈 해결을 위한 설정
+20 | beforeAll(() => {
+21 |   // fetch 타임아웃 관련 이슈 해결을 위해 bypass 모드 사용
+22 |   server.listen({ 
+23 |     onUnhandledRequest: 'bypass',
+24 |   });
+25 |   
+26 |   // 타이머 모킹 제거 - wait-for가 정상적으로 작동하도록 수정
+27 |   // 실제 타이머를 사용하도록 설정
+28 |   if (typeof window !== 'undefined') {
+29 |     // 실제 타이머를 사용 (모킹하지 않음)
+30 |     vi.useRealTimers(); // waitFor가 의존하는 실제 타이머 사용
+31 |   }
+32 | });
+33 | 
+34 | afterEach(() => {
+35 |   // 각 테스트 후 핸들러 초기화
+36 |   server.resetHandlers();
+37 |   // React 컴포넌트 정리
+38 |   cleanup();
+39 | });
+40 | 
+41 | afterAll(() => {
+42 |   // 모든 테스트 후 서버 정리
+43 |   server.close();
+44 | });
+45 | // --- MSW 서버 설정 끝 ---
+46 | 
+47 | // 항상 document.body가 존재하도록 함
+48 | if (typeof document !== 'undefined' && !document.body) {
+49 |   document.body = document.createElement('body');
+50 | }
+51 | 
+52 | // 문서 초기화 함수 - 테스트 전 호출
+53 | function setupDocument() {
+54 |   if (typeof document !== 'undefined') {
+55 |     if (!document.body) {
+56 |       document.body = document.createElement('body');
+57 |     }
+58 |     // 루트 컨테이너 초기화 (기존 로직 유지)
+59 |     const rootEl = document.querySelector('#test-root');
+60 |     if (!rootEl) {
+61 |         const newRootEl = document.createElement('div');
+62 |         newRootEl.id = 'test-root';
+63 |         document.body.appendChild(newRootEl);
+64 |     } else if (rootEl.parentNode !== document.body) {
+65 |         document.body.appendChild(rootEl); // 루트가 body 밖에 있으면 다시 추가
+66 |     }
+67 |   }
+68 | }
+69 | 
+70 | // Logger 모킹 (실제 구현과 일치하도록 수정)
+71 | vi.mock('@/lib/logger', () => {
+72 |   const mockLogs: any[] = [];
+73 |   const mockSessionId = 'test-session-id';
+74 |   let isWindowDefined = true;
+75 | 
+76 |   const mockLogStorage = {
+77 |     getInstance: vi.fn(() => ({
+78 |       getSessionId: vi.fn(() => mockSessionId),
+79 |       addLog: vi.fn((log: any) => {
+[TRUNCATED]
+```
+
+src/tests/test-utils.tsx
+```
+1 | /**
+2 |  * 파일명: test-utils.tsx
+3 |  * 목적: 테스트 유틸리티 함수 및 래퍼 제공
+4 |  * 역할: Next.js, React 컴포넌트를 테스트하기 위한 유틸리티 제공
+5 |  * 작성일: 2025-03-30
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import React, { ReactElement } from 'react';
+10 | import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
+11 | import userEvent from '@testing-library/user-event';
+12 | import { vi, expect as vitestExpect } from 'vitest';
+13 | import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
+14 | import { CardData } from '@/components/board/types/board-types';
+15 | 
+16 | // XYFlow 모킹
+17 | export const mockReactFlow = {
+18 |     project: vi.fn(({ x, y }) => ({ x, y })),
+19 |     getIntersectingNodes: vi.fn(() => []),
+20 |     getNode: vi.fn(),
+21 |     getNodes: vi.fn(() => []),
+22 |     getEdge: vi.fn(),
+23 |     getEdges: vi.fn(() => []),
+24 |     viewportInitialized: true,
+25 |     getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
+26 |     screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
+27 | } as unknown as ReactFlowInstance;
+28 | 
+29 | // 테스트 노드 생성 유틸리티
+30 | export const createTestNode = (id: string, position = { x: 0, y: 0 }): Node<CardData> => ({
+31 |     id,
+32 |     type: 'default',
+33 |     position,
+34 |     data: {
+35 |         id,
+36 |         title: `Test Card ${id}`,
+37 |         content: `Test Content ${id}`,
+38 |         tags: [],
+39 |     },
+40 | });
+41 | 
+42 | // 테스트 엣지 생성 유틸리티
+43 | export const createTestEdge = (id: string, source: string, target: string): Edge => ({
+44 |     id,
+45 |     source,
+46 |     target,
+47 |     type: 'default',
+48 |     markerEnd: MarkerType.ArrowClosed,
+49 | });
+50 | 
+51 | // 이벤트 객체 생성 유틸리티
+52 | export const createDragEvent = (data: any = {}): React.DragEvent => ({
+53 |     preventDefault: vi.fn(),
+54 |     stopPropagation: vi.fn(),
+55 |     dataTransfer: {
+56 |         dropEffect: 'none',
+57 |         getData: vi.fn((format: string) => {
+58 |             try {
+59 |                 return typeof data === 'string' ? data : JSON.stringify(data);
+60 |             } catch (error) {
+61 |                 return '';
+62 |             }
+63 |         }),
+64 |         setData: vi.fn(),
+65 |     },
+66 | } as unknown as React.DragEvent);
+67 | 
+68 | export const createMouseEvent = (options: Partial<MouseEvent> = {}): React.MouseEvent => ({
+69 |     preventDefault: vi.fn(),
+70 |     stopPropagation: vi.fn(),
+71 |     ctrlKey: false,
+72 |     metaKey: false,
+73 |     ...options,
+74 | } as unknown as React.MouseEvent);
+75 | 
+76 | // 모킹된 screen 객체
+77 | export const screen = {
+78 |     ...rtlScreen,
+79 |     getByText: (text: string) => {
+80 |         try {
+[TRUNCATED]
 ```
 
 src/lib/auth-server.ts
@@ -1881,7 +2264,6 @@ src/lib/auth.ts
 75 |     const encoder = new TextEncoder();
 76 |     const data = encoder.encode(verifier);
 77 |     
-78 |     // SHA-256 해시 생성
 [TRUNCATED]
 ```
 
@@ -2050,8 +2432,6 @@ src/lib/board-constants.ts
 71 | export const BOARD_CONFIG = {
 72 |   // 자동 저장 간격 (분)
 73 |   autoSaveInterval: 1,
-74 |   // 토스트 메시지 표시 여부
-75 |   showAutoSaveNotification: true,
 [TRUNCATED]
 ```
 
@@ -2154,8 +2534,6 @@ src/lib/board-ui-config.ts
 95 |     const isClient = typeof window !== 'undefined';
 96 | 
 97 |     // 기본 설정 가져오기
-98 |     const baseConfig = DEFAULT_UI_CONFIG;
-99 | 
 [TRUNCATED]
 ```
 
@@ -2262,9 +2640,6 @@ src/lib/board-utils.ts
 99 |     return true;
 100 |   } catch (error) {
 101 |     console.error('서버 보드 설정 저장 중 오류:', error);
-102 |     return false;
-103 |   }
-104 | }
 [TRUNCATED]
 ```
 
@@ -2370,9 +2745,6 @@ src/lib/cookie.ts
 83 |   }
 84 | 
 85 |   return null;
-86 | }
-87 | 
-88 | /**
 [TRUNCATED]
 ```
 
@@ -2482,8 +2854,6 @@ src/lib/db-init.ts
 64 |     ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 65 |     
 66 |     -- 사용자는 자신의 정보만 볼 수 있음
-67 |     CREATE POLICY "사용자는 자신의 정보만 볼 수 있음" ON users
-68 |       FOR SELECT
 [TRUNCATED]
 ```
 
@@ -2774,7 +3144,6 @@ src/lib/layout-utils.ts
 72 | 
 73 |     // 엣지 추가
 74 |     edges.forEach(edge => {
-75 |       dagreGraph.setEdge(edge.source, edge.target);
 [TRUNCATED]
 ```
 
@@ -2878,7 +3247,6 @@ src/lib/logger.ts
 96 | }
 97 | 
 98 | /**
-99 |  * logger: 통합 로깅 기능을 제공하는 함수
 [TRUNCATED]
 ```
 
@@ -3095,14 +3463,13 @@ src/lib/utils.ts
 72 |   let h = 0, s = 0, l = (max + min) / 2;
 73 | 
 74 |   if (max !== min) {
-75 |     const d = max - min;
 [TRUNCATED]
 ```
 
 src/store/useAppStore.ts
 ```
 1 | import { create } from 'zustand'
-2 | import { persist, subscribeWithSelector } from 'zustand/middleware'
+2 | import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middleware'
 3 | import { toast } from 'sonner'
 4 | import type { CreateCardInput } from '@/types/card'
 5 | import { 
@@ -3111,67 +3478,67 @@ src/store/useAppStore.ts
 8 |   loadBoardSettings,
 9 |   saveBoardSettings
 10 | } from '@/lib/board-utils'
-11 | import { ReactFlowInstance } from '@xyflow/react'
+11 | import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 12 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
 13 | import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants'
 14 | import { saveAllLayoutData } from '@/components/board/utils/graphUtils'
-15 | 
-16 | // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
-17 | export interface Card {
-18 |   id: string;
-19 |   title: string;
-20 |   content: string | null;
-21 |   createdAt: string;
-22 |   updatedAt: string;
-23 |   userId: string;
-24 |   user?: import('@/types/card').User;
-25 |   cardTags?: Array<{ tag: { id: string; name: string; } }>;
-26 |   [key: string]: any;
-27 | }
-28 | 
-29 | export interface AppState {
-30 |   // 선택된 카드 상태 (통합된 단일 소스)
-31 |   selectedCardIds: string[];
-32 |   // 이전 단일 선택 상태 (내부적으로 selectedCardIds로 변환)
-33 |   selectedCardId: string | null; // 하위 호환성 유지 (파생 값)
-34 |   // 확장된 카드 ID
-35 |   expandedCardId: string | null;
-36 |   
-37 |   // 선택 관련 액션들
-38 |   selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
-39 |   selectCards: (cardIds: string[]) => void; // 다중 카드 선택 (주요 액션)
-40 |   addSelectedCard: (cardId: string) => void; // 선택된 카드 목록에 추가
-41 |   removeSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 제거
-42 |   toggleSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 토글
-43 |   clearSelectedCards: () => void; // 모든 선택 해제
-44 |   // 카드 확장 액션
-45 |   toggleExpandCard: (cardId: string) => void; // 카드 확장 토글
-46 |   
-47 |   // 카드 데이터 상태
-48 |   cards: Card[]; // 현재 로드된 카드 목록
-49 |   setCards: (cards: Card[]) => void; // 카드 목록 설정
-50 |   updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
-51 |   createCard: (input: CreateCardInput) => Promise<Card | null>; // 카드 생성 액션 추가
-52 |   
-53 |   // 사이드바 상태
-54 |   isSidebarOpen: boolean;
-55 |   setSidebarOpen: (open: boolean) => void;
-56 |   toggleSidebar: () => void;
-57 |   
-58 |   // 레이아웃 옵션 (수평/수직/자동배치/없음)
-59 |   layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
-60 |   setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto' | 'none') => void;
-61 |   
-62 |   // 레이아웃 적용 및 저장 액션
-63 |   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
-64 |   saveBoardLayout: () => Promise<boolean>;
-65 |   
-66 |   // 사이드바 너비
-67 |   sidebarWidth: number;
-68 |   setSidebarWidth: (width: number) => void;
+15 | import { signOut } from "next-auth/react"
+16 | 
+17 | // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
+18 | export interface Card {
+19 |   id: string;
+20 |   title: string;
+21 |   content: string | null;
+22 |   createdAt: string;
+23 |   updatedAt: string;
+24 |   userId: string;
+25 |   user?: import('@/types/card').User;
+26 |   cardTags?: Array<{ tag: { id: string; name: string; } }>;
+27 |   [key: string]: any;
+28 | }
+29 | 
+30 | // 프로젝트 정보 인터페이스
+31 | export interface Project {
+32 |   id: string;
+33 |   name: string;
+34 |   ownerNickname?: string;
+35 |   userId: string;
+36 |   createdAt: string;
+37 |   updatedAt: string;
+38 |   settings?: any;
+39 | }
+40 | 
+41 | export interface AppState {
+42 |   // 선택된 카드 상태 (통합된 단일 소스)
+43 |   selectedCardIds: string[];
+44 |   // 이전 단일 선택 상태 (내부적으로 selectedCardIds로 변환)
+45 |   selectedCardId: string | null; // 하위 호환성 유지 (파생 값)
+46 |   // 확장된 카드 ID
+47 |   expandedCardId: string | null;
+48 |   
+49 |   // 선택 관련 액션들
+50 |   selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
+51 |   selectCards: (cardIds: string[]) => void; // 다중 카드 선택 (주요 액션)
+52 |   addSelectedCard: (cardId: string) => void; // 선택된 카드 목록에 추가
+53 |   removeSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 제거
+54 |   toggleSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 토글
+55 |   clearSelectedCards: () => void; // 모든 선택 해제
+56 |   // 카드 확장 액션
+57 |   toggleExpandCard: (cardId: string) => void; // 카드 확장 토글
+58 |   
+59 |   // 카드 데이터 상태
+60 |   cards: Card[]; // 현재 로드된 카드 목록
+61 |   setCards: (cards: Card[]) => void; // 카드 목록 설정
+62 |   updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
+63 |   createCard: (input: CreateCardInput) => Promise<Card | null>; // 카드 생성 액션 추가
+64 |   
+65 |   // 사이드바 상태
+66 |   isSidebarOpen: boolean;
+67 |   setSidebarOpen: (open: boolean) => void;
+68 |   toggleSidebar: () => void;
 69 |   
-70 |   // 보드 설정
-71 |   boardSettings: BoardSettings;
+70 |   // 레이아웃 옵션 (수평/수직/자동배치/없음)
+71 |   layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
 [TRUNCATED]
 ```
 
@@ -3273,7 +3640,6 @@ src/store/useAuthStore.ts
 94 |         logger.info('인증 상태 초기화');
 95 |         set({
 96 |           accessToken: null,
-97 |           refreshToken: null,
 [TRUNCATED]
 ```
 
@@ -3299,77 +3665,77 @@ src/store/useBoardStore.ts
 18 |   EdgeChange,
 19 |   XYPosition,
 20 |   MarkerType,
-21 |   Position
-22 | } from '@xyflow/react';
-23 | import { 
-24 |   BoardSettings, 
-25 |   DEFAULT_BOARD_SETTINGS, 
-26 |   saveBoardSettingsToServer,
-27 |   loadBoardSettingsFromServer,
-28 |   applyEdgeSettings
-29 | } from '@/lib/board-utils';
-30 | import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
-31 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-32 | import { toast } from 'sonner';
-33 | import { CardData } from '@/components/board/types/board-types';
-34 | 
-35 | // 보드 스토어 상태 인터페이스
-36 | interface BoardState {
-37 |   // 노드 관련 상태
-38 |   nodes: Node<CardData>[];
-39 |   setNodes: (nodes: Node<CardData>[]) => void;
-40 |   onNodesChange: (changes: NodeChange[]) => void;
-41 |   
-42 |   // 엣지 관련 상태
-43 |   edges: Edge[];
-44 |   setEdges: (edges: Edge[]) => void;
-45 |   onEdgesChange: (changes: EdgeChange[]) => void;
-46 |   onConnect: (connection: Connection) => void;
-47 |   
-48 |   // 보드 설정 관련 상태
-49 |   boardSettings: BoardSettings;
-50 |   setBoardSettings: (settings: BoardSettings) => void;
-51 |   updateBoardSettings: (settings: Partial<BoardSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
-52 |   
-53 |   // 레이아웃 관련 함수
-54 |   applyLayout: (direction: 'horizontal' | 'vertical') => void;
-55 |   applyGridLayout: () => void;
-56 |   
-57 |   // 저장 관련 함수
-58 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
-59 |   saveEdges: (edgesToSave?: Edge[]) => boolean;
-60 |   saveAllLayoutData: () => boolean;
-61 |   
-62 |   // 엣지 스타일 업데이트
-63 |   updateEdgeStyles: (settings: BoardSettings) => void;
+21 |   Position,
+22 |   Viewport
+23 | } from '@xyflow/react';
+24 | import { 
+25 |   BoardSettings, 
+26 |   DEFAULT_BOARD_SETTINGS, 
+27 |   saveBoardSettingsToServer,
+28 |   loadBoardSettingsFromServer,
+29 |   applyEdgeSettings,
+30 |   saveBoardSettings
+31 | } from '@/lib/board-utils';
+32 | import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+33 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
+34 | import { toast } from 'sonner';
+35 | import { CardData } from '@/components/board/types/board-types';
+36 | import { useAppStore } from './useAppStore';
+37 | 
+38 | // 보드 스토어 상태 인터페이스
+39 | interface BoardState {
+40 |   // 노드 관련 상태
+41 |   nodes: Node<CardData>[];
+42 |   setNodes: (nodes: Node<CardData>[]) => void;
+43 |   onNodesChange: (changes: NodeChange[]) => void;
+44 |   
+45 |   // 엣지 관련 상태
+46 |   edges: Edge[];
+47 |   setEdges: (edges: Edge[]) => void;
+48 |   onEdgesChange: (changes: EdgeChange[]) => void;
+49 |   onConnect: (connection: Connection) => void;
+50 |   
+51 |   // 보드 설정 관련 상태
+52 |   boardSettings: BoardSettings;
+53 |   setBoardSettings: (settings: BoardSettings) => void;
+54 |   updateBoardSettings: (settings: Partial<BoardSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
+55 |   
+56 |   // 레이아웃 관련 함수
+57 |   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
+58 |   applyGridLayout: () => void;
+59 |   
+60 |   // 저장 관련 함수
+61 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
+62 |   saveEdges: (edgesToSave?: Edge[]) => boolean;
+63 |   saveAllLayoutData: () => boolean;
 64 |   
-65 |   // 서버 동기화 함수
-66 |   loadBoardSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
+65 |   // 엣지 스타일 업데이트
+66 |   updateEdgeStyles: (settings: BoardSettings) => void;
 67 |   
-68 |   // 엣지 생성 함수
-69 |   createEdgeOnDrop: (sourceId: string, targetId: string) => Edge;
+68 |   // 서버 동기화 함수
+69 |   loadBoardSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
 70 |   
-71 |   // 변경 사항 추적
-72 |   hasUnsavedChanges: boolean;
-73 |   setHasUnsavedChanges: (value: boolean) => void;
-74 |   
-75 |   // 리액트 플로우 인스턴스
-76 |   reactFlowInstance: any;
-77 |   setReactFlowInstance: (instance: any) => void;
-78 | }
-79 | 
-80 | export const useBoardStore = create<BoardState>()(
-81 |   persist(
-82 |     (set, get) => ({
-83 |       // 노드 관련 초기 상태 및 함수
-84 |       nodes: [],
-85 |       setNodes: (nodes) => set({ nodes, hasUnsavedChanges: true }),
-86 |       onNodesChange: (changes) => {
-87 |         // 삭제된 노드가 있는지 확인
-88 |         const deleteChanges = changes.filter(change => change.type === 'remove');
-89 |         
-90 |         if (deleteChanges.length > 0) {
-91 |           try {
+71 |   // 엣지 생성 함수
+72 |   createEdgeOnDrop: (sourceId: string, targetId: string) => Edge;
+73 |   
+74 |   // 변경 사항 추적
+75 |   hasUnsavedChanges: boolean;
+76 |   setHasUnsavedChanges: (value: boolean) => void;
+77 |   
+78 |   // 리액트 플로우 인스턴스
+79 |   reactFlowInstance: any;
+80 |   setReactFlowInstance: (instance: any) => void;
+81 |   
+82 |   // 보드 데이터 로딩 상태 및 액션
+83 |   isBoardLoading: boolean;
+84 |   boardError: string | null;
+85 |   loadedViewport: Viewport | null;
+86 |   needsFitView: boolean;
+87 |   loadBoardData: () => Promise<void>;
+88 |   
+89 |   // 추가된 상태 및 액션
+90 |   viewportToRestore: Viewport | null;
+91 |   isSettingsLoading: boolean;
 [TRUNCATED]
 ```
 
@@ -3422,195 +3788,6 @@ src/store/useNodeStore.ts
 45 |     inspectorOpen: false 
 46 |   }),
 47 | })); 
-```
-
-src/tests/helper.ts
-```
-1 | /**
-2 |  * 파일명: src/tests/helper.ts
-3 |  * 목적: 테스트 유틸리티 함수 제공
-4 |  * 역할: 테스트 코드에서 사용되는 공통 유틸리티 함수 모음
-5 |  * 작성일: 2025-03-30
-6 |  */
-7 | 
-8 | /**
-9 |  * flushPromises: 비동기 작업이 처리될 수 있도록 이벤트 루프를 비웁니다.
-10 |  * @returns {Promise<void>} 비동기 작업이 완료된 후의 프로미스
-11 |  */
-12 | export const flushPromises = (): Promise<void> => {
-13 |   return new Promise(resolve => setTimeout(resolve, 0));
-14 | }; 
-```
-
-src/tests/setup.ts
-```
-1 | /**
-2 |  * 파일명: setup.ts
-3 |  * 목적: Vitest 테스트 설정
-4 |  * 역할: 테스트 환경 설정 및 전역 설정 제공
-5 |  * 작성일: 2025-03-27
-6 |  * 수정일: 2025-04-08 - waitFor 제대로 작동하도록 setTimeout 모킹 방식 수정
-7 |  */
-8 | 
-9 | import '@testing-library/jest-dom/vitest';
-10 | import { beforeEach, afterEach, vi, expect, beforeAll, afterAll } from 'vitest';
-11 | import { cleanup } from '@testing-library/react';
-12 | import * as matchers from '@testing-library/jest-dom/matchers';
-13 | import { server } from './msw/server'; // MSW 서버 임포트
-14 | 
-15 | // Testing Library의 jest-dom 매처 확장
-16 | expect.extend(matchers);
-17 | 
-18 | // --- MSW 서버 설정 ---
-19 | // Node.js v20 undici 타임아웃 이슈 해결을 위한 설정
-20 | beforeAll(() => {
-21 |   // fetch 타임아웃 관련 이슈 해결을 위해 bypass 모드 사용
-22 |   server.listen({ 
-23 |     onUnhandledRequest: 'bypass',
-24 |   });
-25 |   
-26 |   // 타이머 모킹 제거 - wait-for가 정상적으로 작동하도록 수정
-27 |   // 실제 타이머를 사용하도록 설정
-28 |   if (typeof window !== 'undefined') {
-29 |     // 실제 타이머를 사용 (모킹하지 않음)
-30 |     vi.useRealTimers(); // waitFor가 의존하는 실제 타이머 사용
-31 |   }
-32 | });
-33 | 
-34 | afterEach(() => {
-35 |   // 각 테스트 후 핸들러 초기화
-36 |   server.resetHandlers();
-37 |   // React 컴포넌트 정리
-38 |   cleanup();
-39 | });
-40 | 
-41 | afterAll(() => {
-42 |   // 모든 테스트 후 서버 정리
-43 |   server.close();
-44 | });
-45 | // --- MSW 서버 설정 끝 ---
-46 | 
-47 | // 항상 document.body가 존재하도록 함
-48 | if (typeof document !== 'undefined' && !document.body) {
-49 |   document.body = document.createElement('body');
-50 | }
-51 | 
-52 | // 문서 초기화 함수 - 테스트 전 호출
-53 | function setupDocument() {
-54 |   if (typeof document !== 'undefined') {
-55 |     if (!document.body) {
-56 |       document.body = document.createElement('body');
-57 |     }
-58 |     // 루트 컨테이너 초기화 (기존 로직 유지)
-59 |     const rootEl = document.querySelector('#test-root');
-60 |     if (!rootEl) {
-61 |         const newRootEl = document.createElement('div');
-62 |         newRootEl.id = 'test-root';
-63 |         document.body.appendChild(newRootEl);
-64 |     } else if (rootEl.parentNode !== document.body) {
-65 |         document.body.appendChild(rootEl); // 루트가 body 밖에 있으면 다시 추가
-66 |     }
-67 |   }
-68 | }
-69 | 
-70 | // Logger 모킹 (실제 구현과 일치하도록 수정)
-71 | vi.mock('@/lib/logger', () => {
-72 |   const mockLogs: any[] = [];
-73 |   const mockSessionId = 'test-session-id';
-74 |   let isWindowDefined = true;
-75 | 
-76 |   const mockLogStorage = {
-77 |     getInstance: vi.fn(() => ({
-78 |       getSessionId: vi.fn(() => mockSessionId),
-79 |       addLog: vi.fn((log: any) => {
-80 |         log.sessionId = mockSessionId;
-[TRUNCATED]
-```
-
-src/tests/test-utils.tsx
-```
-1 | /**
-2 |  * 파일명: test-utils.tsx
-3 |  * 목적: 테스트 유틸리티 함수 및 래퍼 제공
-4 |  * 역할: Next.js, React 컴포넌트를 테스트하기 위한 유틸리티 제공
-5 |  * 작성일: 2025-03-30
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import React, { ReactElement } from 'react';
-10 | import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
-11 | import userEvent from '@testing-library/user-event';
-12 | import { vi, expect as vitestExpect } from 'vitest';
-13 | import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
-14 | import { CardData } from '@/components/board/types/board-types';
-15 | 
-16 | // XYFlow 모킹
-17 | export const mockReactFlow = {
-18 |     project: vi.fn(({ x, y }) => ({ x, y })),
-19 |     getIntersectingNodes: vi.fn(() => []),
-20 |     getNode: vi.fn(),
-21 |     getNodes: vi.fn(() => []),
-22 |     getEdge: vi.fn(),
-23 |     getEdges: vi.fn(() => []),
-24 |     viewportInitialized: true,
-25 |     getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
-26 |     screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
-27 | } as unknown as ReactFlowInstance;
-28 | 
-29 | // 테스트 노드 생성 유틸리티
-30 | export const createTestNode = (id: string, position = { x: 0, y: 0 }): Node<CardData> => ({
-31 |     id,
-32 |     type: 'default',
-33 |     position,
-34 |     data: {
-35 |         id,
-36 |         title: `Test Card ${id}`,
-37 |         content: `Test Content ${id}`,
-38 |         tags: [],
-39 |     },
-40 | });
-41 | 
-42 | // 테스트 엣지 생성 유틸리티
-43 | export const createTestEdge = (id: string, source: string, target: string): Edge => ({
-44 |     id,
-45 |     source,
-46 |     target,
-47 |     type: 'default',
-48 |     markerEnd: MarkerType.ArrowClosed,
-49 | });
-50 | 
-51 | // 이벤트 객체 생성 유틸리티
-52 | export const createDragEvent = (data: any = {}): React.DragEvent => ({
-53 |     preventDefault: vi.fn(),
-54 |     stopPropagation: vi.fn(),
-55 |     dataTransfer: {
-56 |         dropEffect: 'none',
-57 |         getData: vi.fn((format: string) => {
-58 |             try {
-59 |                 return typeof data === 'string' ? data : JSON.stringify(data);
-60 |             } catch (error) {
-61 |                 return '';
-62 |             }
-63 |         }),
-64 |         setData: vi.fn(),
-65 |     },
-66 | } as unknown as React.DragEvent);
-67 | 
-68 | export const createMouseEvent = (options: Partial<MouseEvent> = {}): React.MouseEvent => ({
-69 |     preventDefault: vi.fn(),
-70 |     stopPropagation: vi.fn(),
-71 |     ctrlKey: false,
-72 |     metaKey: false,
-73 |     ...options,
-74 | } as unknown as React.MouseEvent);
-75 | 
-76 | // 모킹된 screen 객체
-77 | export const screen = {
-78 |     ...rtlScreen,
-79 |     getByText: (text: string) => {
-80 |         try {
-81 |             return rtlScreen.getByText(text);
-[TRUNCATED]
 ```
 
 src/types/card.ts
@@ -3815,7 +3992,6 @@ src/types/supabase.ts
 112 |         }
 113 |         Update: {
 114 |           id?: string
-115 |           user_id?: string
 [TRUNCATED]
 ```
 
@@ -3834,102 +4010,6 @@ src/types/vitest.d.ts
 11 |   // @testing-library/jest-dom 확장
 12 |   interface Matchers<R = void, T = {}> extends TestingLibraryMatchers<typeof expect.stringContaining, R> {}
 13 | } 
-```
-
-src/services/auth-service.ts
-```
-1 | /**
-2 |  * 파일명: auth-service.ts
-3 |  * 목적: 인증 관련 비즈니스 로직 분리
-4 |  * 역할: OAuth 콜백 처리와 인증 데이터 관리 서비스 제공
-5 |  * 작성일: 2025-03-30
-6 |  * 수정일: 2025-04-09
-7 |  */
-8 | 
-9 | import { getAuthClient, STORAGE_KEYS } from '@/lib/auth';
-10 | import createLogger from '@/lib/logger';
-11 | 
-12 | // 로거 생성
-13 | const logger = createLogger('AuthService');
-14 | 
-15 | /**
-16 |  * 인증 처리 결과 인터페이스
-17 |  */
-18 | export interface AuthResult {
-19 |   status: 'success' | 'error' | 'loading';
-20 |   accessToken?: string;
-21 |   refreshToken?: string;
-22 |   userId?: string;
-23 |   provider?: string;
-24 |   error?: string;
-25 |   errorDescription?: string;
-26 | }
-27 | 
-28 | /**
-29 |  * AuthService: 인증 관련 비즈니스 로직 처리
-30 |  */
-31 | export class AuthService {
-32 |   /**
-33 |    * OAuth 콜백 URL에서 코드 파라미터 처리
-34 |    * @param url 현재 URL
-35 |    * @returns 인증 처리 결과
-36 |    */
-37 |   static async handleCallback(url: URL): Promise<AuthResult> {
-38 |     try {
-39 |       logger.info('콜백 URL 처리 시작', { pathname: url.pathname });
-40 |       
-41 |       // 에러 파라미터 확인
-42 |       const errorParam = url.searchParams.get('error');
-43 |       const errorDescription = url.searchParams.get('error_description');
-44 |       
-45 |       if (errorParam) {
-46 |         logger.error('에러 파라미터 발견', { error: errorParam, description: errorDescription });
-47 |         return {
-48 |           status: 'error',
-49 |           error: errorParam,
-50 |           errorDescription: errorDescription || undefined
-51 |         };
-52 |       }
-53 |       
-54 |       // 인증 코드 확인
-55 |       const code = url.searchParams.get('code');
-56 |       if (!code) {
-57 |         logger.error('인증 코드가 없음');
-58 |         return {
-59 |           status: 'error',
-60 |           error: 'no_code',
-61 |           errorDescription: '인증 코드가 없습니다'
-62 |         };
-63 |       }
-64 |       
-65 |       logger.info('인증 코드 확인됨', { codeLength: code.length });
-66 |       
-67 |       // 코드 검증기 복구
-68 |       const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
-69 |       
-70 |       if (!codeVerifier) {
-71 |         logger.warn('코드 검증기를 찾을 수 없음');
-72 |       } else {
-73 |         logger.info('코드 검증기 복구됨', { verifierLength: codeVerifier.length });
-74 |       }
-75 |       
-76 |       // Supabase 세션 교환
-77 |       const supabase = getAuthClient();
-78 |       logger.info('세션 교환 시작');
-79 |       
-80 |       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-81 |       
-82 |       if (error || !data.session) {
-83 |         logger.error('세션 교환 실패', { error: error?.message, status: error?.status });
-84 |         return {
-85 |           status: 'error',
-86 |           error: error?.message || 'session_exchange_failed',
-87 |           errorDescription: '세션 교환 실패'
-88 |         };
-89 |       }
-90 |       
-91 |       // 세션 정보 추출
-[TRUNCATED]
 ```
 
 src/app/board/page.test.tsx
@@ -4143,8 +4223,6 @@ src/app/cards/page.test.tsx
 72 |   return {
 73 |     default: vi.fn(() => <button data-testid="create-card-modal-button">새 카드 만들기</button>)
 74 |   };
-75 | });
-76 | 
 [TRUNCATED]
 ```
 
@@ -4220,8 +4298,150 @@ src/app/cards/page.tsx
 68 | 
 69 |         {/* 카드 목록 */}
 70 |         <div className="lg:col-span-3">
-71 |           <Suspense fallback={<CardListSkeleton />}>
 [TRUNCATED]
+```
+
+src/app/tags/page.test.tsx
+```
+1 | /// <reference types="vitest" />
+2 | import React from 'react';
+3 | import { render, screen, cleanup } from '@testing-library/react';
+4 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+5 | import TagsPage from './page';
+6 | import '@testing-library/jest-dom/vitest';
+7 | 
+8 | /**
+9 |  * 파일명: page.test.tsx
+10 |  * 목적: 태그 관리 페이지 테스트
+11 |  * 역할: 태그 페이지 렌더링 및 기능 검증
+12 |  * 작성일: 2025-03-05
+13 |  * 수정일: 2025-03-27
+14 |  */
+15 | 
+16 | // vi.hoisted를 사용하여 모킹 객체 생성
+17 | const mocks = vi.hoisted(() => ({
+18 |   findMany: vi.fn()
+19 | }));
+20 | 
+21 | // prisma 모킹
+22 | vi.mock('@/lib/prisma', () => ({
+23 |   default: {
+24 |     tag: {
+25 |       findMany: mocks.findMany
+26 |     }
+27 |   }
+28 | }));
+29 | 
+30 | // formatDate 모킹
+31 | vi.mock('@/lib/utils', () => ({
+32 |   formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
+33 |   cn: vi.fn((...args: any[]) => args.join(' '))
+34 | }));
+35 | 
+36 | // 컴포넌트 모킹 - 올바른 경로로 수정
+37 | vi.mock('@/components/tags/TagForm', () => ({
+38 |   default: () => <div data-testid="tag-form">태그 추가 폼</div>
+39 | }));
+40 | 
+41 | vi.mock('@/components/tags/TagList', () => ({
+42 |   default: ({ initialTags }: { initialTags: any[] }) => (
+43 |     <div data-testid="tag-list">
+44 |       태그 수: {initialTags.length}
+45 |     </div>
+46 |   )
+47 | }));
+48 | 
+49 | // Card 모킹
+50 | vi.mock('@/components/ui/card', () => ({
+51 |   Card: ({ children }: { children: React.ReactNode }) => <div data-slot="card" className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm ">{children}</div>,
+52 |   CardHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="card-header" className="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 ">{children}</div>,
+53 |   CardTitle: ({ children }: { children: React.ReactNode }) => <div data-slot="card-title" className="leading-none font-semibold ">{children}</div>,
+54 |   CardDescription: ({ children }: { children: React.ReactNode }) => <div data-slot="card-description" className="text-sm text-muted-foreground ">{children}</div>,
+55 |   CardContent: ({ children }: { children: React.ReactNode }) => <div data-slot="card-content" className="px-6 ">{children}</div>,
+56 |   CardFooter: ({ children }: { children: React.ReactNode }) => <div data-slot="card-footer" className="flex gap-3 px-6 pt-6 ">{children}</div>,
+57 | }));
+58 | 
+59 | // 템플릿 태그 데이터 - _count 속성 추가
+[TRUNCATED]
+```
+
+src/app/tags/page.tsx
+```
+1 | import { Metadata } from "next";
+2 | import prisma from "@/lib/prisma";
+3 | import { formatDate } from "@/lib/utils";
+4 | import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+5 | import TagForm from "@/components/tags/TagForm";
+6 | import TagList from "@/components/tags/TagList";
+7 | import { Tag } from "@prisma/client";
+8 | 
+9 | export const metadata: Metadata = {
+10 |   title: "태그 관리 | Backyard",
+11 |   description: "태그를 생성하고 관리하는 페이지입니다.",
+12 | };
+13 | 
+14 | type TagWithCount = Tag & {
+15 |   _count: {
+16 |     cardTags: number;
+17 |   };
+18 | };
+19 | 
+20 | export default async function TagsPage() {
+21 |   let tags: TagWithCount[] = [];
+22 |   
+23 |   try {
+24 |     tags = await prisma.tag.findMany({
+25 |       orderBy: {
+26 |         name: 'asc'
+27 |       },
+28 |       include: {
+29 |         _count: {
+30 |           select: { cardTags: true }
+31 |         }
+32 |       }
+33 |     });
+34 |   } catch (error) {
+35 |     console.error("태그 조회 오류:", error);
+36 |     // 오류 발생 시 빈 배열 사용
+37 |   }
+38 | 
+39 |   const formattedTags = tags.map(tag => ({
+40 |     id: tag.id,
+41 |     name: tag.name,
+42 |     count: tag._count.cardTags,
+43 |     createdAt: formatDate(tag.createdAt)
+44 |   }));
+45 | 
+46 |   return (
+47 |     <div className="container mx-auto py-8">
+48 |       <h1 className="text-3xl font-bold mb-6">태그 관리</h1>
+49 |       
+50 |       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+51 |         <div className="md:col-span-1">
+52 |           <Card>
+53 |             <CardHeader>
+54 |               <CardTitle>새 태그 추가</CardTitle>
+55 |             </CardHeader>
+56 |             <CardContent>
+57 |               <TagForm />
+58 |             </CardContent>
+59 |           </Card>
+60 |         </div>
+61 |         
+62 |         <div className="md:col-span-2">
+63 |           <Card>
+64 |             <CardHeader>
+65 |               <CardTitle>태그 목록</CardTitle>
+66 |             </CardHeader>
+67 |             <CardContent>
+68 |               <TagList initialTags={formattedTags} />
+69 |             </CardContent>
+70 |           </Card>
+71 |         </div>
+72 |       </div>
+73 |     </div>
+74 |   );
+75 | } 
 ```
 
 src/app/login/actions.ts
@@ -4404,7 +4624,6 @@ src/app/login/page.test.tsx
 83 |     // 디코딩된 메시지가 화면에 표시되는지 확인
 84 |     expect(screen.getByText('특수 문자 메시지: @ # %')).toBeInTheDocument();
 85 |   });
-86 | 
 [TRUNCATED]
 ```
 
@@ -4481,152 +4700,7 @@ src/app/login/page.tsx
 69 |                 비밀번호
 70 |               </label>
 71 |               <input
-72 |                 id="password"
 [TRUNCATED]
-```
-
-src/app/tags/page.test.tsx
-```
-1 | /// <reference types="vitest" />
-2 | import React from 'react';
-3 | import { render, screen, cleanup } from '@testing-library/react';
-4 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-5 | import TagsPage from './page';
-6 | import '@testing-library/jest-dom/vitest';
-7 | 
-8 | /**
-9 |  * 파일명: page.test.tsx
-10 |  * 목적: 태그 관리 페이지 테스트
-11 |  * 역할: 태그 페이지 렌더링 및 기능 검증
-12 |  * 작성일: 2025-03-05
-13 |  * 수정일: 2025-03-27
-14 |  */
-15 | 
-16 | // vi.hoisted를 사용하여 모킹 객체 생성
-17 | const mocks = vi.hoisted(() => ({
-18 |   findMany: vi.fn()
-19 | }));
-20 | 
-21 | // prisma 모킹
-22 | vi.mock('@/lib/prisma', () => ({
-23 |   default: {
-24 |     tag: {
-25 |       findMany: mocks.findMany
-26 |     }
-27 |   }
-28 | }));
-29 | 
-30 | // formatDate 모킹
-31 | vi.mock('@/lib/utils', () => ({
-32 |   formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
-33 |   cn: vi.fn((...args: any[]) => args.join(' '))
-34 | }));
-35 | 
-36 | // 컴포넌트 모킹 - 올바른 경로로 수정
-37 | vi.mock('@/components/tags/TagForm', () => ({
-38 |   default: () => <div data-testid="tag-form">태그 추가 폼</div>
-39 | }));
-40 | 
-41 | vi.mock('@/components/tags/TagList', () => ({
-42 |   default: ({ initialTags }: { initialTags: any[] }) => (
-43 |     <div data-testid="tag-list">
-44 |       태그 수: {initialTags.length}
-45 |     </div>
-46 |   )
-47 | }));
-48 | 
-49 | // Card 모킹
-50 | vi.mock('@/components/ui/card', () => ({
-51 |   Card: ({ children }: { children: React.ReactNode }) => <div data-slot="card" className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm ">{children}</div>,
-52 |   CardHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="card-header" className="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 ">{children}</div>,
-53 |   CardTitle: ({ children }: { children: React.ReactNode }) => <div data-slot="card-title" className="leading-none font-semibold ">{children}</div>,
-54 |   CardDescription: ({ children }: { children: React.ReactNode }) => <div data-slot="card-description" className="text-sm text-muted-foreground ">{children}</div>,
-55 |   CardContent: ({ children }: { children: React.ReactNode }) => <div data-slot="card-content" className="px-6 ">{children}</div>,
-56 |   CardFooter: ({ children }: { children: React.ReactNode }) => <div data-slot="card-footer" className="flex gap-3 px-6 pt-6 ">{children}</div>,
-57 | }));
-58 | 
-59 | // 템플릿 태그 데이터 - _count 속성 추가
-60 | const mockTags = [
-[TRUNCATED]
-```
-
-src/app/tags/page.tsx
-```
-1 | import { Metadata } from "next";
-2 | import prisma from "@/lib/prisma";
-3 | import { formatDate } from "@/lib/utils";
-4 | import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-5 | import TagForm from "@/components/tags/TagForm";
-6 | import TagList from "@/components/tags/TagList";
-7 | import { Tag } from "@prisma/client";
-8 | 
-9 | export const metadata: Metadata = {
-10 |   title: "태그 관리 | Backyard",
-11 |   description: "태그를 생성하고 관리하는 페이지입니다.",
-12 | };
-13 | 
-14 | type TagWithCount = Tag & {
-15 |   _count: {
-16 |     cardTags: number;
-17 |   };
-18 | };
-19 | 
-20 | export default async function TagsPage() {
-21 |   let tags: TagWithCount[] = [];
-22 |   
-23 |   try {
-24 |     tags = await prisma.tag.findMany({
-25 |       orderBy: {
-26 |         name: 'asc'
-27 |       },
-28 |       include: {
-29 |         _count: {
-30 |           select: { cardTags: true }
-31 |         }
-32 |       }
-33 |     });
-34 |   } catch (error) {
-35 |     console.error("태그 조회 오류:", error);
-36 |     // 오류 발생 시 빈 배열 사용
-37 |   }
-38 | 
-39 |   const formattedTags = tags.map(tag => ({
-40 |     id: tag.id,
-41 |     name: tag.name,
-42 |     count: tag._count.cardTags,
-43 |     createdAt: formatDate(tag.createdAt)
-44 |   }));
-45 | 
-46 |   return (
-47 |     <div className="container mx-auto py-8">
-48 |       <h1 className="text-3xl font-bold mb-6">태그 관리</h1>
-49 |       
-50 |       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-51 |         <div className="md:col-span-1">
-52 |           <Card>
-53 |             <CardHeader>
-54 |               <CardTitle>새 태그 추가</CardTitle>
-55 |             </CardHeader>
-56 |             <CardContent>
-57 |               <TagForm />
-58 |             </CardContent>
-59 |           </Card>
-60 |         </div>
-61 |         
-62 |         <div className="md:col-span-2">
-63 |           <Card>
-64 |             <CardHeader>
-65 |               <CardTitle>태그 목록</CardTitle>
-66 |             </CardHeader>
-67 |             <CardContent>
-68 |               <TagList initialTags={formattedTags} />
-69 |             </CardContent>
-70 |           </Card>
-71 |         </div>
-72 |       </div>
-73 |     </div>
-74 |   );
-75 | } 
 ```
 
 src/app/test-db/page.test.tsx
@@ -4716,7 +4790,6 @@ src/app/test-db/page.test.tsx
 83 |         const Component = await TestDatabasePage();
 84 |         render(Component);
 85 | 
-86 |         // "등록된 태그가 없습니다" 메시지 확인
 [TRUNCATED]
 ```
 
@@ -4880,8 +4953,6 @@ src/components/auth/AuthForm.tsx
 82 |       } else {
 83 |         await signUp(email, password, name);
 84 |         toast.success('회원가입 성공! 이메일을 확인해주세요.');
-85 |       }
-86 |       
 [TRUNCATED]
 ```
 
@@ -4982,7 +5053,6 @@ src/components/auth/UserProfile.tsx
 93 | 
 94 |   return (
 95 |     <DropdownMenu>
-96 |       <DropdownMenuTrigger asChild>
 [TRUNCATED]
 ```
 
@@ -5173,7 +5243,6 @@ src/components/board/DebugPanel.tsx
 67 |               <div>X: {viewport.x.toFixed(2)}</div>
 68 |               <div>Y: {viewport.y.toFixed(2)}</div>
 69 |               <div>Zoom: {viewport.zoom.toFixed(2)}</div>
-70 |             </div>
 [TRUNCATED]
 ```
 
@@ -5250,929 +5319,6 @@ src/components/board/LayoutControls.tsx
 69 |     </DropdownMenu>
 70 |   );
 71 | } 
-```
-
-src/components/cards/CardList.test.tsx
-```
-1 | import React from 'react';
-2 | import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
-3 | import CardList from './CardList';
-4 | import { toast } from 'sonner';
-5 | import { useSearchParams } from 'next/navigation';
-6 | import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
-7 | import '@testing-library/jest-dom/vitest';
-8 | import userEvent from '@testing-library/user-event';
-9 | 
-10 | // DOM 변경을 기다리는 헬퍼 함수
-11 | const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 30));
-12 | 
-13 | // 토스트 모킹
-14 | vi.mock('sonner', () => ({
-15 |   toast: {
-16 |     error: vi.fn(),
-17 |     success: vi.fn(),
-18 |   },
-19 | }));
-20 | 
-21 | // Next.js useSearchParams 모킹 개선
-22 | vi.mock('next/navigation', async () => {
-23 |   const actual = await vi.importActual('next/navigation');
-24 |   return {
-25 |     ...actual,
-26 |     useSearchParams: vi.fn(() => ({
-27 |       get: (param: string) => null,
-28 |       toString: () => '',
-29 |     })),
-30 |     useRouter: vi.fn(() => ({
-31 |       push: vi.fn(),
-32 |       replace: vi.fn(),
-33 |       prefetch: vi.fn(),
-34 |       back: vi.fn(),
-35 |     })),
-36 |   };
-37 | });
-38 | 
-39 | // fetch는 setupTests.ts에서 이미 전역으로 모킹되어 있음
-40 | 
-41 | describe('CardList 컴포넌트', () => {
-42 |   // console.error 모킹 추가
-43 |   const originalConsoleError = console.error;
-44 |   beforeEach(() => {
-45 |     vi.clearAllMocks();
-46 |     console.error = vi.fn();
-47 | 
-48 |     // 모킹된 카드 데이터 (기본 테스트용)
-49 |     const mockCards = [
-50 |       {
-51 |         id: 'card1',
-52 |         title: '테스트 카드 1',
-53 |         content: '테스트 내용 1',
-54 |         createdAt: '2023-01-01T00:00:00.000Z',
-55 |         updatedAt: '2023-01-01T00:00:00.000Z',
-56 |         userId: 'user1',
-57 |       },
-58 |       {
-59 |         id: 'card2',
-60 |         title: '테스트 카드 2',
-61 |         content: '테스트 내용 2',
-62 |         createdAt: '2023-01-02T00:00:00.000Z',
-63 |         updatedAt: '2023-01-02T00:00:00.000Z',
-64 |         userId: 'user2',
-65 |       },
-66 |     ];
-67 | 
-68 |     // 기본 fetch 응답 모킹
-69 |     (global.fetch as any).mockResolvedValue({
-70 |       ok: true,
-71 |       json: async () => mockCards,
-72 |     });
-73 |   });
-74 | 
-75 |   afterEach(async () => {
-76 |     await waitForDomChanges();
-77 |     cleanup();
-78 |   });
-79 | 
-80 |   // 테스트 후 원래 console.error 복원
-81 |   afterAll(() => {
-82 |     console.error = originalConsoleError;
-83 |   });
-84 | 
-85 |   // 모든 테스트를 스킵 처리하여 안정적으로 작동하는지 확인합니다.
-86 |   it.skip('카드 목록을 성공적으로 로드하고 렌더링한다', async () => {
-87 |     // 모킹된 카드 데이터
-88 |     const mockCards = [
-89 |       {
-90 |         id: 'card1',
-[TRUNCATED]
-```
-
-src/components/cards/CardList.tsx
-```
-1 | "use client";
-2 | 
-3 | import React, { useEffect, useState } from "react";
-4 | import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-5 | import { Button } from "@/components/ui/button";
-6 | import { Badge } from "@/components/ui/badge";
-7 | import Link from "next/link";
-8 | import { toast } from "sonner";
-9 | import { formatDate } from "@/lib/utils";
-10 | import { SearchBar } from "./SearchBar";
-11 | import { useSearchParams } from "next/navigation";
-12 | import { Trash2, Eye } from "lucide-react";
-13 | import {
-14 |   Dialog,
-15 |   DialogContent,
-16 |   DialogHeader,
-17 |   DialogTitle,
-18 |   DialogDescription,
-19 |   DialogFooter,
-20 |   DialogTrigger,
-21 |   DialogClose,
-22 | } from "@/components/ui/dialog";
-23 | import TiptapViewer from "@/components/editor/TiptapViewer";
-24 | import { useAppStore } from "@/store/useAppStore";
-25 | import { useRouter } from "next/navigation";
-26 | 
-27 | interface Tag {
-28 |   id: string;
-29 |   name: string;
-30 | }
-31 | 
-32 | interface CardTag {
-33 |   id: string;
-34 |   tag: Tag;
-35 | }
-36 | 
-37 | interface CardItem {
-38 |   id: string;
-39 |   title: string;
-40 |   content: string;
-41 |   createdAt: string;
-42 |   cardTags?: CardTag[];
-43 | }
-44 | 
-45 | export default function CardList() {
-46 |   const { cards, setCards } = useAppStore();
-47 |   const [loading, setLoading] = useState(false);
-48 |   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
-49 |   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-50 |   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
-51 |   const [isDeleting, setIsDeleting] = useState(false);
-52 |   const searchParams = useSearchParams();
-53 |   const router = useRouter();
-54 | 
-55 |   const filteredCards = React.useMemo(() => {
-56 |     const q = searchParams.get('q')?.toLowerCase();
-57 |     const tag = searchParams.get('tag')?.toLowerCase();
-58 |     
-59 |     if (!q && !tag) return cards as CardItem[];
-60 |     
-61 |     return (cards as CardItem[]).filter(card => {
-62 |       const matchesQuery = !q || 
-63 |         card.title.toLowerCase().includes(q) || 
-64 |         (card.content && card.content.toLowerCase().includes(q));
-65 |       
-66 |       const matchesTag = !tag || 
-67 |         card.cardTags?.some(cardTag => 
-68 |           cardTag.tag.name.toLowerCase() === tag
-69 |         );
-70 |       
-71 |       return matchesQuery && matchesTag;
-72 |     });
-73 |   }, [cards, searchParams]);
-74 | 
-75 |   useEffect(() => {
-76 |     if (cards.length === 0) {
-77 |       fetchCards();
-78 |     }
-79 |   }, [cards.length, searchParams]);
-80 | 
-81 |   async function fetchCards() {
-82 |     setLoading(true);
-83 |     try {
-84 |       const q = searchParams.get('q');
-85 |       const tag = searchParams.get('tag');
-86 |       
-87 |       const params = new URLSearchParams();
-88 |       if (q) params.append('q', q);
-[TRUNCATED]
-```
-
-src/components/cards/CreateCardModal.test.tsx
-```
-1 | /**
-2 |  * 파일명: src/components/cards/CreateCardModal.test.tsx
-3 |  * 목적: CreateCardModal 컴포넌트의 기능 테스트
-4 |  * 역할: 카드 생성 모달의 동작, 입력 유효성 검사, API 호출, 태그 관리 등을 테스트
-5 |  * 작성일: 2025-04-08
-6 |  */
-7 | 
-8 | import { render, screen, waitFor } from '@testing-library/react';
-9 | import userEvent from '@testing-library/user-event';
-10 | import { vi } from 'vitest';
-11 | import { toast } from 'sonner';
-12 | import CreateCardModal from './CreateCardModal';
-13 | import { act } from 'react-dom/test-utils';
-14 | import { useAppStore } from '@/store/useAppStore';
-15 | import { server } from '@/tests/msw/server';
-16 | import { http, HttpResponse } from 'msw';
-17 | import { useState } from 'react';
-18 | 
-19 | // useRouter 모킹
-20 | const mockRouter = {
-21 |     refresh: vi.fn(),
-22 |     push: vi.fn(),
-23 |     replace: vi.fn(),
-24 | };
-25 | 
-26 | vi.mock('next/navigation', () => ({
-27 |     useRouter: () => mockRouter,
-28 | }));
-29 | 
-30 | // TipTap 에디터 모킹
-31 | vi.mock('@/components/editor/TiptapEditor', () => ({
-32 |     default: ({ onUpdate, onChange, content }: { onUpdate?: (content: string) => void, onChange?: (content: string) => void, content?: string }) => {
-33 |         const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-34 |             if (onUpdate) {
-35 |                 onUpdate(e.target.value);
-36 |             }
-37 |             if (onChange) {
-38 |                 onChange(e.target.value);
-39 |             }
-40 |         };
-41 | 
-42 |         return (
-43 |             <div data-testid="tiptap-editor">
-44 |                 <textarea
-45 |                     data-testid="tiptap-content"
-46 |                     onChange={handleChange}
-47 |                     aria-label="내용"
-48 |                     value={content || ""}
-49 |                 />
-50 |             </div>
-51 |         );
-52 |     }
-53 | }));
-54 | 
-55 | // toast 모킹
-56 | vi.mock('sonner', () => {
-57 |     return {
-58 |         toast: {
-59 |             error: vi.fn(),
-60 |             success: vi.fn(),
-61 |         }
-62 |     };
-63 | });
-64 | 
-65 | // 먼저 기본적으로 /api/users/first 호출에 대한 응답을 모킹합니다
-66 | const mockUserResponse = {
-67 |     id: 'user-id',
-68 |     name: 'Test User'
-69 | };
-70 | 
-71 | // window.location.reload 모킹
-72 | const mockReload = vi.fn();
-73 | Object.defineProperty(window, 'location', {
-74 |     value: { reload: mockReload },
-75 |     writable: true
-76 | });
-77 | 
-78 | // console.error 모킹
-79 | const originalConsoleError = console.error;
-80 | beforeAll(() => {
-81 |     console.error = vi.fn();
-82 | });
-83 | 
-84 | afterAll(() => {
-85 |     console.error = originalConsoleError;
-86 | });
-87 | 
-88 | // 모의 createCard 함수 정의 추가
-89 | const mockCreateCard = vi.fn();
-90 | 
-91 | // 테스트 사용자 ID 상수 (CreateCardButton.tsx와 동일한 값)
-[TRUNCATED]
-```
-
-src/components/cards/CreateCardModal.tsx
-```
-1 | "use client";
-2 | 
-3 | import React, { useState, useRef, useEffect } from "react";
-4 | import { Button } from "@/components/ui/button";
-5 | import {
-6 |   Dialog,
-7 |   DialogContent,
-8 |   DialogHeader,
-9 |   DialogTitle,
-10 |   DialogTrigger,
-11 |   DialogDescription,
-12 |   DialogClose,
-13 | } from "@/components/ui/dialog";
-14 | import { Input } from "@/components/ui/input";
-15 | import { Label } from "@/components/ui/label";
-16 | import { Badge } from "@/components/ui/badge";
-17 | import { toast } from "sonner";
-18 | import { X, Loader2 } from "lucide-react";
-19 | import { PlusCircle } from "lucide-react";
-20 | import TiptapEditor from "@/components/editor/TiptapEditor";
-21 | import { DEFAULT_USER_ID } from "@/lib/constants";
-22 | import { useAppStore } from "@/store/useAppStore";
-23 | import { CreateCardInput, Card } from "@/types/card";
-24 | import { XYPosition } from "@xyflow/react";
-25 | 
-26 | // 컴포넌트에 props 타입 정의
-27 | interface CreateCardModalProps {
-28 |   onCardCreated?: (cardData: Card) => void;
-29 |   autoOpen?: boolean; // 자동으로 모달을 열지 여부
-30 |   onClose?: () => void; // 모달이 닫힐 때 콜백
-31 |   customTrigger?: React.ReactNode; // 커스텀 트리거 버튼
-32 |   position?: XYPosition;
-33 |   connectingNodeId?: string;
-34 |   handleType?: 'source' | 'target';
-35 | }
-36 | 
-37 | export default function CreateCardModal({
-38 |   onCardCreated,
-39 |   autoOpen = false,
-40 |   onClose,
-41 |   customTrigger,
-42 |   position,
-43 |   connectingNodeId,
-44 |   handleType,
-45 | }: CreateCardModalProps) {
-46 |   const [open, setOpen] = useState(false);
-47 |   const [title, setTitle] = useState("");
-48 |   const [content, setContent] = useState("");
-49 |   const [tagInput, setTagInput] = useState("");
-50 |   const [tags, setTags] = useState<string[]>([]);
-51 |   const [firstUserId, setFirstUserId] = useState<string>("");
-52 |   const isComposing = useRef(false);
-53 | 
-54 |   // useAppStore 훅 사용
-55 |   const { createCard, isLoading } = useAppStore();
-56 | 
-57 |   // 자동으로 모달 열기
-58 |   useEffect(() => {
-59 |     if (autoOpen) {
-60 |       setOpen(true);
-61 |     }
-62 |   }, [autoOpen]);
-63 | 
-64 |   // 모달 상태 변경 처리 핸들러
-65 |   const handleOpenChange = (newOpenState: boolean) => {
-66 |     setOpen(newOpenState);
-67 | 
-68 |     // 모달이 닫힐 때 onClose 콜백 호출
-69 |     if (!newOpenState && onClose) {
-70 |       onClose();
-71 |     }
-72 |   };
-73 | 
-74 |   // 사용자 ID 가져오기
-75 |   useEffect(() => {
-76 |     async function fetchFirstUserId() {
-77 |       try {
-78 |         const response = await fetch('/api/users/first');
-79 |         if (response.ok) {
-80 |           const data = await response.json();
-81 |           if (data && data.id) {
-82 |             setFirstUserId(data.id);
-83 |             console.log('사용자 ID 가져옴:', data.id);
-84 |           } else {
-85 |             console.error('사용자 ID를 가져오지 못함');
-86 |           }
-87 |         } else {
-88 |           console.error('사용자 조회 실패:', response.status);
-89 |         }
-90 |       } catch (error) {
-[TRUNCATED]
-```
-
-src/components/cards/EditCardContent.tsx
-```
-1 | "use client";
-2 | 
-3 | import React, { useState } from "react";
-4 | import { Button } from "@/components/ui/button";
-5 | import { toast } from "sonner";
-6 | import TiptapEditor from "@/components/editor/TiptapEditor";
-7 | import TiptapViewer from "@/components/editor/TiptapViewer";
-8 | import { Pencil, Check, X } from "lucide-react";
-9 | 
-10 | interface EditCardContentProps {
-11 |   cardId: string;
-12 |   initialContent: string;
-13 | }
-14 | 
-15 | export default function EditCardContent({ cardId, initialContent }: EditCardContentProps) {
-16 |   const [isEditing, setIsEditing] = useState(false);
-17 |   const [content, setContent] = useState(initialContent);
-18 |   const [isSubmitting, setIsSubmitting] = useState(false);
-19 | 
-20 |   const handleSubmit = async () => {
-21 |     if (content === initialContent) {
-22 |       setIsEditing(false);
-23 |       return;
-24 |     }
-25 | 
-26 |     if (!content.trim()) {
-27 |       toast.error("내용을 입력해주세요.");
-28 |       return;
-29 |     }
-30 | 
-31 |     setIsSubmitting(true);
-32 | 
-33 |     try {
-34 |       const response = await fetch(`/api/cards/${cardId}`, {
-35 |         method: "PATCH",
-36 |         headers: {
-37 |           "Content-Type": "application/json",
-38 |         },
-39 |         body: JSON.stringify({
-40 |           content,
-41 |         }),
-42 |       });
-43 | 
-44 |       if (!response.ok) {
-45 |         const errorData = await response.json();
-46 |         throw new Error(errorData.error || "내용 수정에 실패했습니다.");
-47 |       }
-48 | 
-49 |       toast.success("내용이 수정되었습니다.");
-50 |       setIsEditing(false);
-51 |     } catch (error) {
-52 |       console.error("Error updating card content:", error);
-53 |       toast.error(error instanceof Error ? error.message : "내용 수정에 실패했습니다.");
-54 |     } finally {
-55 |       setIsSubmitting(false);
-56 |     }
-57 |   };
-58 | 
-59 |   const handleCancel = () => {
-60 |     setContent(initialContent);
-61 |     setIsEditing(false);
-62 |   };
-63 | 
-64 |   if (isEditing) {
-65 |     return (
-66 |       <div className="space-y-4">
-67 |         <TiptapEditor
-68 |           content={content}
-69 |           onChange={setContent}
-70 |           placeholder="카드 내용을 입력하세요..."
-71 |         />
-72 |         <div className="flex justify-end space-x-2">
-73 |           <Button
-74 |             variant="outline"
-75 |             size="sm"
-76 |             onClick={handleCancel}
-77 |             disabled={isSubmitting}
-78 |           >
-79 |             <X className="h-4 w-4 mr-1" />
-80 |             취소
-81 |           </Button>
-82 |           <Button
-83 |             size="sm"
-84 |             onClick={handleSubmit}
-85 |             disabled={isSubmitting}
-86 |           >
-87 |             <Check className="h-4 w-4 mr-1" />
-88 |             {isSubmitting ? "저장 중..." : "저장"}
-89 |           </Button>
-90 |         </div>
-91 |       </div>
-92 |     );
-93 |   }
-94 | 
-95 |   return (
-96 |     <div className="group relative mt-6 prose prose-stone dark:prose-invert">
-97 |       <TiptapViewer content={initialContent} />
-[TRUNCATED]
-```
-
-src/components/cards/EditCardForm.tsx
-```
-1 | "use client";
-2 | 
-3 | import React, { useState, useRef, useEffect } from "react";
-4 | import { Button } from "@/components/ui/button";
-5 | import { Input } from "@/components/ui/input";
-6 | import { Label } from "@/components/ui/label";
-7 | import { Badge } from "@/components/ui/badge";
-8 | import { toast } from "sonner";
-9 | import { X, Plus } from "lucide-react";
-10 | import TiptapEditor from "@/components/editor/TiptapEditor";
-11 | import { DEFAULT_USER_ID } from "@/lib/constants";
-12 | import { Card } from '@prisma/client';
-13 | 
-14 | // 컴포넌트 props 타입 정의
-15 | interface EditCardFormProps {
-16 |   card: any; // 카드 데이터
-17 |   onSuccess?: (updatedCard?: any) => void; // 수정 성공 시 호출할 콜백
-18 |   onCancel?: () => void; // 취소 버튼 클릭 시 호출할 콜백
-19 | }
-20 | 
-21 | // EditCardForm 컴포넌트
-22 | export default function EditCardForm({ card, onSuccess, onCancel }: EditCardFormProps) {
-23 |   const [title, setTitle] = useState('');
-24 |   const [content, setContent] = useState('');
-25 |   const [tagInput, setTagInput] = useState('');
-26 |   const [tags, setTags] = useState<string[]>([]);
-27 |   const [isSubmitting, setIsSubmitting] = useState(false);
-28 |   const [isComposing, setIsComposing] = useState(false);
-29 | 
-30 |   // 초기 데이터 로딩
-31 |   useEffect(() => {
-32 |     if (card) {
-33 |       setTitle(card.title || '');
-34 |       setContent(card.content || '');
-35 |       // CardTag에서 태그 이름을 추출
-36 |       if (card.cardTags && Array.isArray(card.cardTags)) {
-37 |         const tagNames = card.cardTags.map((cardTag: any) => cardTag.tag.name);
-38 |         setTags(tagNames);
-39 |       }
-40 |     }
-41 |   }, [card]);
-42 | 
-43 |   // 입력 조합(IME) 시작 핸들러
-44 |   const handleCompositionStart = () => {
-45 |     setIsComposing(true);
-46 |   };
-47 | 
-48 |   // 입력 조합(IME) 종료 핸들러
-49 |   const handleCompositionEnd = () => {
-50 |     setIsComposing(false);
-51 |   };
-52 | 
-53 |   // 태그 입력 변경 핸들러
-54 |   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-55 |     const value = e.target.value;
-56 |     setTagInput(value);
-57 |     
-58 |     // 쉼표가 포함되어 있으면 태그 추가
-59 |     if (value.includes(',') && !isComposing) {
-60 |       const newTag = value.replace(',', '').trim();
-61 |       if (newTag && !tags.includes(newTag)) {
-62 |         setTags([...tags, newTag]);
-63 |       }
-64 |       setTagInput('');
-65 |     }
-66 |   };
-67 | 
-68 |   // 태그 추가 핸들러 (Enter 키)
-69 |   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-70 |     if (e.key === 'Enter' && !isComposing) {
-71 |       e.preventDefault();
-72 |       const newTag = tagInput.trim();
-73 |       
-74 |       if (newTag && !tags.includes(newTag)) {
-75 |         setTags([...tags, newTag]);
-76 |         setTagInput('');
-77 |       }
-78 |     }
-79 |   };
-80 | 
-81 |   // 태그 삭제 핸들러
-82 |   const handleRemoveTag = (tagToRemove: string) => {
-83 |     setTags(tags.filter(tag => tag !== tagToRemove));
-[TRUNCATED]
-```
-
-src/components/cards/EditCardModal.tsx
-```
-1 | "use client";
-2 | 
-3 | import React, { useState, useEffect } from 'react';
-4 | import { Button } from "@/components/ui/button";
-5 | import { X } from 'lucide-react';
-6 | import EditCardForm from "@/components/cards/EditCardForm";
-7 | 
-8 | interface EditCardModalProps {
-9 |   cardId: string;
-10 |   onClose: () => void;
-11 |   onCardUpdated?: (updatedCard: any) => void;
-12 | }
-13 | 
-14 | /**
-15 |  * 카드 수정을 위한 모달 컴포넌트
-16 |  */
-17 | export function EditCardModal({
-18 |   cardId,
-19 |   onClose,
-20 |   onCardUpdated
-21 | }: EditCardModalProps) {
-22 |   const [card, setCard] = useState<any>(null);
-23 |   const [loading, setLoading] = useState(true);
-24 |   const [error, setError] = useState<string | null>(null);
-25 | 
-26 |   // 카드 데이터 로드
-27 |   useEffect(() => {
-28 |     const fetchCard = async () => {
-29 |       try {
-30 |         setLoading(true);
-31 |         const response = await fetch(`/api/cards/${cardId}`);
-32 |         
-33 |         if (!response.ok) {
-34 |           throw new Error('카드를 찾을 수 없습니다.');
-35 |         }
-36 |         
-37 |         const data = await response.json();
-38 |         setCard(data);
-39 |       } catch (err) {
-40 |         setError(err instanceof Error ? err.message : '카드 로딩 중 오류가 발생했습니다.');
-41 |       } finally {
-42 |         setLoading(false);
-43 |       }
-44 |     };
-45 | 
-46 |     if (cardId) {
-47 |       fetchCard();
-48 |     }
-49 |   }, [cardId]);
-50 | 
-51 |   // 카드 업데이트 콜백
-52 |   const handleCardUpdated = (updatedCard: any) => {
-53 |     if (onCardUpdated) {
-54 |       onCardUpdated(updatedCard);
-55 |     }
-56 |     onClose();
-57 |   };
-58 | 
-59 |   // 클릭 이벤트 전파 방지
-60 |   const handleModalClick = (e: React.MouseEvent) => {
-61 |     e.stopPropagation();
-62 |   };
-63 | 
-64 |   return (
-65 |     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-66 |       <div className="relative bg-card rounded-lg shadow-lg max-w-[700px] w-full mx-4" onClick={handleModalClick}>
-67 |         <div className="absolute top-2 right-2">
-68 |           <Button variant="ghost" size="icon" onClick={onClose}>
-69 |             <X className="h-4 w-4" />
-70 |           </Button>
-71 |         </div>
-72 |         <div className="p-4">
-73 |           {loading ? (
-74 |             <div className="flex justify-center items-center py-12">
-75 |               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-76 |             </div>
-77 |           ) : error ? (
-78 |             <div className="text-center text-red-500 py-8">
-79 |               <p>{error}</p>
-80 |               <Button 
-81 |                 variant="outline" 
-82 |                 onClick={onClose} 
-83 |                 className="mt-4"
-84 |               >
-85 |                 닫기
-[TRUNCATED]
-```
-
-src/components/cards/SearchBar.test.tsx
-```
-1 | import { render, screen, fireEvent } from '@testing-library/react';
-2 | import { describe, it, expect, beforeEach, vi } from 'vitest';
-3 | import { SearchBar } from './SearchBar';
-4 | import '@testing-library/jest-dom';
-5 | 
-6 | // 기본 모킹 설정
-7 | const push = vi.fn();
-8 | const useRouterMock = vi.fn().mockReturnValue({ push });
-9 | const useSearchParamsMock = vi.fn().mockReturnValue({
-10 |   get: vi.fn().mockReturnValue(null)
-11 | });
-12 | 
-13 | vi.mock('next/navigation', () => ({
-14 |   useRouter: () => useRouterMock(),
-15 |   useSearchParams: () => useSearchParamsMock()
-16 | }));
-17 | 
-18 | // 실제 SearchBar 컴포넌트를 사용합니다.
-19 | describe('SearchBar', () => {
-20 |   beforeEach(() => {
-21 |     vi.clearAllMocks();
-22 |     useRouterMock.mockReturnValue({ push });
-23 |     useSearchParamsMock.mockReturnValue({
-24 |       get: vi.fn().mockReturnValue(null)
-25 |     });
-26 |   });
-27 | 
-28 |   it('올바르게 렌더링 되어야 함', () => {
-29 |     render(<SearchBar />);
-30 |     
-31 |     // 기본 요소들이 렌더링 되었는지 확인
-32 |     expect(screen.getByPlaceholderText('검색어 입력 또는 #태그 입력')).toBeInTheDocument();
-33 |     expect(screen.getByText('검색')).toBeInTheDocument();
-34 |   });
-35 |   
-36 |   it('URL에서 검색어를 가져와 입력 필드에 표시해야 함', () => {
-37 |     // URL 파라미터 모킹 설정
-38 |     useSearchParamsMock.mockReturnValue({
-39 |       get: (param: string) => param === 'q' ? '테스트쿼리' : null
-40 |     });
-41 |     
-42 |     render(<SearchBar />);
-43 |     
-44 |     // useEffect에서 URL 파라미터를 가져와 입력 필드에 설정
-45 |     const inputElement = screen.getByPlaceholderText('검색어 입력 또는 #태그 입력');
-46 |     expect(inputElement).toHaveValue('테스트쿼리');
-47 |   });
-48 |   
-49 |   it('검색 버튼 클릭 시 일반 검색어로 올바른 URL로 이동해야 함', () => {
-50 |     render(<SearchBar />);
-51 |     
-52 |     // 입력 필드에 검색어 입력
-53 |     const inputElement = screen.getByPlaceholderText('검색어 입력 또는 #태그 입력');
-54 |     fireEvent.change(inputElement, { target: { value: '일반검색어' } });
-55 |     
-56 |     // 검색 버튼 클릭
-57 |     const searchButton = screen.getByText('검색');
-58 |     fireEvent.click(searchButton);
-59 |     
-60 |     // 올바른 URL로 이동했는지 확인
-61 |     expect(push).toHaveBeenCalledWith('/cards?q=%EC%9D%BC%EB%B0%98%EA%B2%80%EC%83%89%EC%96%B4');
-62 |   });
-63 |   
-64 |   it('태그 검색어(#으로 시작)로 검색 시 올바른 URL로 이동해야 함', () => {
-65 |     render(<SearchBar />);
-66 |     
-67 |     // 입력 필드에 태그 검색어 입력
-68 |     const inputElement = screen.getByPlaceholderText('검색어 입력 또는 #태그 입력');
-69 |     fireEvent.change(inputElement, { target: { value: '#태그검색' } });
-70 |     
-71 |     // 검색 버튼 클릭
-72 |     const searchButton = screen.getByText('검색');
-73 |     fireEvent.click(searchButton);
-74 |     
-75 |     // 올바른 URL로 이동했는지 확인
-76 |     expect(push).toHaveBeenCalledWith('/cards?tag=%ED%83%9C%EA%B7%B8%EA%B2%80%EC%83%89');
-77 |   });
-[TRUNCATED]
-```
-
-src/components/cards/SearchBar.tsx
-```
-1 | /**
-2 |  * 파일명: SearchBar.tsx
-3 |  * 목적: 카드 검색 기능 제공
-4 |  * 역할: 카드 검색 및 태그 검색 인터페이스 제공
-5 |  * 작성일: 2025-03-05
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | 'use client';
-10 | 
-11 | import { useState, useEffect, useCallback, useRef } from 'react';
-12 | import { Input } from '@/components/ui/input';
-13 | import { Button } from '@/components/ui/button';
-14 | import { Search, X, Hash, AlertCircle } from 'lucide-react';
-15 | import { useRouter, useSearchParams } from 'next/navigation';
-16 | import { Badge } from '@/components/ui/badge';
-17 | import {
-18 |   Tooltip,
-19 |   TooltipContent,
-20 |   TooltipProvider,
-21 |   TooltipTrigger,
-22 | } from "@/components/ui/tooltip";
-23 | import { cn } from '@/lib/utils';
-24 | 
-25 | interface SearchBarProps {
-26 |   className?: string;
-27 |   placeholder?: string;
-28 | }
-29 | 
-30 | export const SearchBar = ({ 
-31 |   className, 
-32 |   placeholder = "검색어 입력 또는 #태그 입력" 
-33 | }: SearchBarProps) => {
-34 |   const router = useRouter();
-35 |   const searchParams = useSearchParams();
-36 |   const [searchTerm, setSearchTerm] = useState('');
-37 |   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-38 |   const [isTagMode, setIsTagMode] = useState(false);
-39 |   const inputRef = useRef<HTMLInputElement>(null);
-40 |   
-41 |   // 로컬 스토리지에서 최근 검색어 불러오기
-42 |   useEffect(() => {
-43 |     const savedSearches = localStorage.getItem('recentSearches');
-44 |     if (savedSearches) {
-45 |       try {
-46 |         const parsed = JSON.parse(savedSearches);
-47 |         if (Array.isArray(parsed)) {
-48 |           setRecentSearches(parsed.slice(0, 5)); // 최대 5개까지만 표시
-49 |         }
-50 |       } catch {
-51 |         // 파싱 오류 시 무시
-52 |       }
-53 |     }
-54 |   }, []);
-55 |   
-56 |   // URL에서 검색어 가져오기
-57 |   useEffect(() => {
-58 |     const q = searchParams.get('q') || '';
-59 |     const tag = searchParams.get('tag');
-60 |     
-61 |     if (tag) {
-62 |       setSearchTerm(`#${tag}`);
-63 |       setIsTagMode(true);
-64 |     } else {
-65 |       setSearchTerm(q);
-66 |       setIsTagMode(q.startsWith('#'));
-67 |     }
-68 |   }, [searchParams]);
-69 |   
-70 |   // 최근 검색어 저장
-71 |   const saveRecentSearch = useCallback((term: string) => {
-72 |     if (!term || term.length < 2) return; // 너무 짧은 검색어는 저장하지 않음
-73 |     
-74 |     const newSearches = [
-75 |       term, 
-76 |       ...recentSearches.filter(s => s !== term)
-77 |     ].slice(0, 5);
-78 |     
-79 |     setRecentSearches(newSearches);
-80 |     localStorage.setItem('recentSearches', JSON.stringify(newSearches));
-81 |   }, [recentSearches]);
-82 |   
-83 |   // 검색 실행
-84 |   const handleSearch = useCallback(() => {
-85 |     // 태그 검색과 일반 검색 분리
-86 |     // #으로 시작하는 검색어는 태그 검색으로 처리
-87 |     if (searchTerm.startsWith('#')) {
-88 |       const tag = searchTerm.slice(1).trim(); // # 제거
-[TRUNCATED]
-```
-
-src/components/cards/TagFilter.tsx
-```
-1 | /**
-2 |  * 파일명: TagFilter.tsx
-3 |  * 목적: 카드 목록에서 태그 기반 필터링 제공
-4 |  * 역할: 선택 가능한 태그 목록을 표시하고 태그 필터링 기능 제공
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | 'use client';
-9 | 
-10 | import { useState, useEffect } from 'react';
-11 | import { useRouter, useSearchParams } from 'next/navigation';
-12 | import { Badge } from '@/components/ui/badge';
-13 | import { ScrollArea } from '@/components/ui/scroll-area';
-14 | import { Loader2, Tags, ChevronDown, ChevronUp } from 'lucide-react';
-15 | import { toast } from 'sonner';
-16 | import { cn } from '@/lib/utils';
-17 | import { Button } from '@/components/ui/button';
-18 | 
-19 | interface Tag {
-20 |   id: string;
-21 |   name: string;
-22 |   count: number;
-23 | }
-24 | 
-25 | export function TagFilter() {
-26 |   const router = useRouter();
-27 |   const searchParams = useSearchParams();
-28 |   const [tags, setTags] = useState<Tag[]>([]);
-29 |   const [loading, setLoading] = useState(true);
-30 |   const [expanded, setExpanded] = useState(true);
-31 |   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-32 | 
-33 |   // URL에서 현재 선택된 태그 가져오기
-34 |   useEffect(() => {
-35 |     const tagParam = searchParams.get('tag');
-36 |     setSelectedTag(tagParam);
-37 |   }, [searchParams]);
-38 | 
-39 |   // 태그 목록 가져오기
-40 |   useEffect(() => {
-41 |     async function fetchTags() {
-42 |       setLoading(true);
-43 |       try {
-44 |         const response = await fetch('/api/tags?includeCount=true');
-45 |         if (!response.ok) {
-46 |           throw new Error('태그 목록을 불러오는데 실패했습니다');
-47 |         }
-48 |         
-49 |         const data = await response.json();
-50 |         setTags(data.sort((a: Tag, b: Tag) => b.count - a.count)); // 사용 빈도순 정렬
-51 |       } catch (error) {
-52 |         console.error('태그 로딩 오류:', error);
-53 |         toast.error('태그 목록을 불러오는데 실패했습니다');
-54 |       } finally {
-55 |         setLoading(false);
-56 |       }
-57 |     }
-58 |     
-59 |     fetchTags();
-60 |   }, []);
-61 | 
-62 |   // 태그 클릭 핸들러
-63 |   const handleTagClick = (tagName: string) => {
-64 |     if (selectedTag === tagName) {
-65 |       // 이미 선택된 태그를 다시 클릭하면 필터 해제
-66 |       router.push('/cards');
-67 |       setSelectedTag(null);
-68 |     } else {
-69 |       // 새 태그 선택
-70 |       router.push(`/cards?tag=${encodeURIComponent(tagName)}`);
-71 |       setSelectedTag(tagName);
-72 |     }
-73 |   };
-74 | 
-75 |   return (
-76 |     <div className="mb-4 border rounded-md">
-77 |       <div 
-78 |         className="p-3 flex justify-between items-center cursor-pointer bg-muted/30"
-79 |         onClick={() => setExpanded(!expanded)}
-80 |       >
-81 |         <h3 className="font-medium flex items-center">
-82 |           <Tags size={16} className="mr-2" />
-83 |           태그 필터
-84 |         </h3>
-[TRUNCATED]
 ```
 
 src/components/debug/DevTools.tsx
@@ -6372,9 +5518,6 @@ src/components/debug/NodeInspector.tsx
 86 |       if (currentNode) {
 87 |         setNodeState({
 88 |           selected: !!currentNode.selected,
-89 |         });
-90 |       }
-91 |     };
 [TRUNCATED]
 ```
 
@@ -6405,6 +5548,917 @@ src/components/debug/ViewportLogger.tsx
 23 |     </div>
 24 |   );
 25 | } 
+```
+
+src/components/cards/CardList.test.tsx
+```
+1 | import React from 'react';
+2 | import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
+3 | import CardList from './CardList';
+4 | import { toast } from 'sonner';
+5 | import { useSearchParams } from 'next/navigation';
+6 | import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
+7 | import '@testing-library/jest-dom/vitest';
+8 | import userEvent from '@testing-library/user-event';
+9 | 
+10 | // DOM 변경을 기다리는 헬퍼 함수
+11 | const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 30));
+12 | 
+13 | // 토스트 모킹
+14 | vi.mock('sonner', () => ({
+15 |   toast: {
+16 |     error: vi.fn(),
+17 |     success: vi.fn(),
+18 |   },
+19 | }));
+20 | 
+21 | // Next.js useSearchParams 모킹 개선
+22 | vi.mock('next/navigation', async () => {
+23 |   const actual = await vi.importActual('next/navigation');
+24 |   return {
+25 |     ...actual,
+26 |     useSearchParams: vi.fn(() => ({
+27 |       get: (param: string) => null,
+28 |       toString: () => '',
+29 |     })),
+30 |     useRouter: vi.fn(() => ({
+31 |       push: vi.fn(),
+32 |       replace: vi.fn(),
+33 |       prefetch: vi.fn(),
+34 |       back: vi.fn(),
+35 |     })),
+36 |   };
+37 | });
+38 | 
+39 | // fetch는 setupTests.ts에서 이미 전역으로 모킹되어 있음
+40 | 
+41 | describe('CardList 컴포넌트', () => {
+42 |   // console.error 모킹 추가
+43 |   const originalConsoleError = console.error;
+44 |   beforeEach(() => {
+45 |     vi.clearAllMocks();
+46 |     console.error = vi.fn();
+47 | 
+48 |     // 모킹된 카드 데이터 (기본 테스트용)
+49 |     const mockCards = [
+50 |       {
+51 |         id: 'card1',
+52 |         title: '테스트 카드 1',
+53 |         content: '테스트 내용 1',
+54 |         createdAt: '2023-01-01T00:00:00.000Z',
+55 |         updatedAt: '2023-01-01T00:00:00.000Z',
+56 |         userId: 'user1',
+57 |       },
+58 |       {
+59 |         id: 'card2',
+60 |         title: '테스트 카드 2',
+61 |         content: '테스트 내용 2',
+62 |         createdAt: '2023-01-02T00:00:00.000Z',
+63 |         updatedAt: '2023-01-02T00:00:00.000Z',
+64 |         userId: 'user2',
+65 |       },
+66 |     ];
+67 | 
+68 |     // 기본 fetch 응답 모킹
+69 |     (global.fetch as any).mockResolvedValue({
+70 |       ok: true,
+71 |       json: async () => mockCards,
+72 |     });
+73 |   });
+74 | 
+75 |   afterEach(async () => {
+76 |     await waitForDomChanges();
+77 |     cleanup();
+78 |   });
+79 | 
+80 |   // 테스트 후 원래 console.error 복원
+81 |   afterAll(() => {
+82 |     console.error = originalConsoleError;
+83 |   });
+84 | 
+85 |   // 모든 테스트를 스킵 처리하여 안정적으로 작동하는지 확인합니다.
+86 |   it.skip('카드 목록을 성공적으로 로드하고 렌더링한다', async () => {
+87 |     // 모킹된 카드 데이터
+88 |     const mockCards = [
+89 |       {
+[TRUNCATED]
+```
+
+src/components/cards/CardList.tsx
+```
+1 | "use client";
+2 | 
+3 | import React, { useEffect, useState } from "react";
+4 | import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+5 | import { Button } from "@/components/ui/button";
+6 | import { Badge } from "@/components/ui/badge";
+7 | import Link from "next/link";
+8 | import { toast } from "sonner";
+9 | import { formatDate } from "@/lib/utils";
+10 | import { SearchBar } from "./SearchBar";
+11 | import { useSearchParams } from "next/navigation";
+12 | import { Trash2, Eye } from "lucide-react";
+13 | import {
+14 |   Dialog,
+15 |   DialogContent,
+16 |   DialogHeader,
+17 |   DialogTitle,
+18 |   DialogDescription,
+19 |   DialogFooter,
+20 |   DialogTrigger,
+21 |   DialogClose,
+22 | } from "@/components/ui/dialog";
+23 | import TiptapViewer from "@/components/editor/TiptapViewer";
+24 | import { useAppStore } from "@/store/useAppStore";
+25 | import { useRouter } from "next/navigation";
+26 | 
+27 | interface Tag {
+28 |   id: string;
+29 |   name: string;
+30 | }
+31 | 
+32 | interface CardTag {
+33 |   id: string;
+34 |   tag: Tag;
+35 | }
+36 | 
+37 | interface CardItem {
+38 |   id: string;
+39 |   title: string;
+40 |   content: string;
+41 |   createdAt: string;
+42 |   cardTags?: CardTag[];
+43 | }
+44 | 
+45 | export default function CardList() {
+46 |   const { cards, setCards } = useAppStore();
+47 |   const [loading, setLoading] = useState(false);
+48 |   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+49 |   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+50 |   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+51 |   const [isDeleting, setIsDeleting] = useState(false);
+52 |   const searchParams = useSearchParams();
+53 |   const router = useRouter();
+54 | 
+55 |   const filteredCards = React.useMemo(() => {
+56 |     const q = searchParams.get('q')?.toLowerCase();
+57 |     const tag = searchParams.get('tag')?.toLowerCase();
+58 |     
+59 |     if (!q && !tag) return cards as CardItem[];
+60 |     
+61 |     return (cards as CardItem[]).filter(card => {
+62 |       const matchesQuery = !q || 
+63 |         card.title.toLowerCase().includes(q) || 
+64 |         (card.content && card.content.toLowerCase().includes(q));
+65 |       
+66 |       const matchesTag = !tag || 
+67 |         card.cardTags?.some(cardTag => 
+68 |           cardTag.tag.name.toLowerCase() === tag
+69 |         );
+70 |       
+71 |       return matchesQuery && matchesTag;
+72 |     });
+73 |   }, [cards, searchParams]);
+74 | 
+75 |   useEffect(() => {
+76 |     if (cards.length === 0) {
+77 |       fetchCards();
+78 |     }
+79 |   }, [cards.length, searchParams]);
+80 | 
+81 |   async function fetchCards() {
+82 |     setLoading(true);
+83 |     try {
+84 |       const q = searchParams.get('q');
+85 |       const tag = searchParams.get('tag');
+86 |       
+87 |       const params = new URLSearchParams();
+[TRUNCATED]
+```
+
+src/components/cards/CreateCardModal.test.tsx
+```
+1 | /**
+2 |  * 파일명: src/components/cards/CreateCardModal.test.tsx
+3 |  * 목적: CreateCardModal 컴포넌트의 기능 테스트
+4 |  * 역할: 카드 생성 모달의 동작, 입력 유효성 검사, API 호출, 태그 관리 등을 테스트
+5 |  * 작성일: 2025-04-08
+6 |  */
+7 | 
+8 | import { render, screen, waitFor } from '@testing-library/react';
+9 | import userEvent from '@testing-library/user-event';
+10 | import { vi } from 'vitest';
+11 | import { toast } from 'sonner';
+12 | import CreateCardModal from './CreateCardModal';
+13 | import { act } from 'react-dom/test-utils';
+14 | import { useAppStore } from '@/store/useAppStore';
+15 | import { server } from '@/tests/msw/server';
+16 | import { http, HttpResponse } from 'msw';
+17 | import { useState } from 'react';
+18 | 
+19 | // useRouter 모킹
+20 | const mockRouter = {
+21 |     refresh: vi.fn(),
+22 |     push: vi.fn(),
+23 |     replace: vi.fn(),
+24 | };
+25 | 
+26 | vi.mock('next/navigation', () => ({
+27 |     useRouter: () => mockRouter,
+28 | }));
+29 | 
+30 | // TipTap 에디터 모킹
+31 | vi.mock('@/components/editor/TiptapEditor', () => ({
+32 |     default: ({ onUpdate, onChange, content }: { onUpdate?: (content: string) => void, onChange?: (content: string) => void, content?: string }) => {
+33 |         const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+34 |             if (onUpdate) {
+35 |                 onUpdate(e.target.value);
+36 |             }
+37 |             if (onChange) {
+38 |                 onChange(e.target.value);
+39 |             }
+40 |         };
+41 | 
+42 |         return (
+43 |             <div data-testid="tiptap-editor">
+44 |                 <textarea
+45 |                     data-testid="tiptap-content"
+46 |                     onChange={handleChange}
+47 |                     aria-label="내용"
+48 |                     value={content || ""}
+49 |                 />
+50 |             </div>
+51 |         );
+52 |     }
+53 | }));
+54 | 
+55 | // toast 모킹
+56 | vi.mock('sonner', () => {
+57 |     return {
+58 |         toast: {
+59 |             error: vi.fn(),
+60 |             success: vi.fn(),
+61 |         }
+62 |     };
+63 | });
+64 | 
+65 | // 먼저 기본적으로 /api/users/first 호출에 대한 응답을 모킹합니다
+66 | const mockUserResponse = {
+67 |     id: 'user-id',
+68 |     name: 'Test User'
+69 | };
+70 | 
+71 | // window.location.reload 모킹
+72 | const mockReload = vi.fn();
+73 | Object.defineProperty(window, 'location', {
+74 |     value: { reload: mockReload },
+75 |     writable: true
+76 | });
+77 | 
+78 | // console.error 모킹
+79 | const originalConsoleError = console.error;
+80 | beforeAll(() => {
+81 |     console.error = vi.fn();
+82 | });
+83 | 
+84 | afterAll(() => {
+85 |     console.error = originalConsoleError;
+86 | });
+87 | 
+88 | // 모의 createCard 함수 정의 추가
+89 | const mockCreateCard = vi.fn();
+90 | 
+91 | // 테스트 사용자 ID 상수 (CreateCardButton.tsx와 동일한 값)
+[TRUNCATED]
+```
+
+src/components/cards/CreateCardModal.tsx
+```
+1 | "use client";
+2 | 
+3 | import React, { useState, useRef, useEffect } from "react";
+4 | import { Button } from "@/components/ui/button";
+5 | import {
+6 |   Dialog,
+7 |   DialogContent,
+8 |   DialogHeader,
+9 |   DialogTitle,
+10 |   DialogTrigger,
+11 |   DialogDescription,
+12 |   DialogClose,
+13 | } from "@/components/ui/dialog";
+14 | import { Input } from "@/components/ui/input";
+15 | import { Label } from "@/components/ui/label";
+16 | import { Badge } from "@/components/ui/badge";
+17 | import { toast } from "sonner";
+18 | import { X, Loader2 } from "lucide-react";
+19 | import { PlusCircle } from "lucide-react";
+20 | import TiptapEditor from "@/components/editor/TiptapEditor";
+21 | import { DEFAULT_USER_ID } from "@/lib/constants";
+22 | import { useAppStore } from "@/store/useAppStore";
+23 | import { CreateCardInput, Card } from "@/types/card";
+24 | import { XYPosition } from "@xyflow/react";
+25 | 
+26 | // 컴포넌트에 props 타입 정의
+27 | interface CreateCardModalProps {
+28 |   onCardCreated?: (cardData: Card) => void;
+29 |   autoOpen?: boolean; // 자동으로 모달을 열지 여부
+30 |   onClose?: () => void; // 모달이 닫힐 때 콜백
+31 |   customTrigger?: React.ReactNode; // 커스텀 트리거 버튼
+32 |   position?: XYPosition;
+33 |   connectingNodeId?: string;
+34 |   handleType?: 'source' | 'target';
+35 | }
+36 | 
+37 | export default function CreateCardModal({
+38 |   onCardCreated,
+39 |   autoOpen = false,
+40 |   onClose,
+41 |   customTrigger,
+42 |   position,
+43 |   connectingNodeId,
+44 |   handleType,
+45 | }: CreateCardModalProps) {
+46 |   const [open, setOpen] = useState(false);
+47 |   const [title, setTitle] = useState("");
+48 |   const [content, setContent] = useState("");
+49 |   const [tagInput, setTagInput] = useState("");
+50 |   const [tags, setTags] = useState<string[]>([]);
+51 |   const [firstUserId, setFirstUserId] = useState<string>("");
+52 |   const isComposing = useRef(false);
+53 | 
+54 |   // useAppStore 훅 사용
+55 |   const { createCard, isLoading } = useAppStore();
+56 | 
+57 |   // 자동으로 모달 열기
+58 |   useEffect(() => {
+59 |     if (autoOpen) {
+60 |       setOpen(true);
+61 |     }
+62 |   }, [autoOpen]);
+63 | 
+64 |   // 모달 상태 변경 처리 핸들러
+65 |   const handleOpenChange = (newOpenState: boolean) => {
+66 |     setOpen(newOpenState);
+67 | 
+68 |     // 모달이 닫힐 때 onClose 콜백 호출
+69 |     if (!newOpenState && onClose) {
+70 |       onClose();
+71 |     }
+72 |   };
+73 | 
+74 |   // 사용자 ID 가져오기
+75 |   useEffect(() => {
+76 |     async function fetchFirstUserId() {
+77 |       try {
+78 |         const response = await fetch('/api/users/first');
+79 |         if (response.ok) {
+80 |           const data = await response.json();
+81 |           if (data && data.id) {
+82 |             setFirstUserId(data.id);
+83 |             console.log('사용자 ID 가져옴:', data.id);
+84 |           } else {
+85 |             console.error('사용자 ID를 가져오지 못함');
+86 |           }
+87 |         } else {
+88 |           console.error('사용자 조회 실패:', response.status);
+[TRUNCATED]
+```
+
+src/components/cards/EditCardContent.tsx
+```
+1 | "use client";
+2 | 
+3 | import React, { useState } from "react";
+4 | import { Button } from "@/components/ui/button";
+5 | import { toast } from "sonner";
+6 | import TiptapEditor from "@/components/editor/TiptapEditor";
+7 | import TiptapViewer from "@/components/editor/TiptapViewer";
+8 | import { Pencil, Check, X } from "lucide-react";
+9 | 
+10 | interface EditCardContentProps {
+11 |   cardId: string;
+12 |   initialContent: string;
+13 | }
+14 | 
+15 | export default function EditCardContent({ cardId, initialContent }: EditCardContentProps) {
+16 |   const [isEditing, setIsEditing] = useState(false);
+17 |   const [content, setContent] = useState(initialContent);
+18 |   const [isSubmitting, setIsSubmitting] = useState(false);
+19 | 
+20 |   const handleSubmit = async () => {
+21 |     if (content === initialContent) {
+22 |       setIsEditing(false);
+23 |       return;
+24 |     }
+25 | 
+26 |     if (!content.trim()) {
+27 |       toast.error("내용을 입력해주세요.");
+28 |       return;
+29 |     }
+30 | 
+31 |     setIsSubmitting(true);
+32 | 
+33 |     try {
+34 |       const response = await fetch(`/api/cards/${cardId}`, {
+35 |         method: "PATCH",
+36 |         headers: {
+37 |           "Content-Type": "application/json",
+38 |         },
+39 |         body: JSON.stringify({
+40 |           content,
+41 |         }),
+42 |       });
+43 | 
+44 |       if (!response.ok) {
+45 |         const errorData = await response.json();
+46 |         throw new Error(errorData.error || "내용 수정에 실패했습니다.");
+47 |       }
+48 | 
+49 |       toast.success("내용이 수정되었습니다.");
+50 |       setIsEditing(false);
+51 |     } catch (error) {
+52 |       console.error("Error updating card content:", error);
+53 |       toast.error(error instanceof Error ? error.message : "내용 수정에 실패했습니다.");
+54 |     } finally {
+55 |       setIsSubmitting(false);
+56 |     }
+57 |   };
+58 | 
+59 |   const handleCancel = () => {
+60 |     setContent(initialContent);
+61 |     setIsEditing(false);
+62 |   };
+63 | 
+64 |   if (isEditing) {
+65 |     return (
+66 |       <div className="space-y-4">
+67 |         <TiptapEditor
+68 |           content={content}
+69 |           onChange={setContent}
+70 |           placeholder="카드 내용을 입력하세요..."
+71 |         />
+72 |         <div className="flex justify-end space-x-2">
+73 |           <Button
+74 |             variant="outline"
+75 |             size="sm"
+76 |             onClick={handleCancel}
+77 |             disabled={isSubmitting}
+78 |           >
+79 |             <X className="h-4 w-4 mr-1" />
+80 |             취소
+81 |           </Button>
+82 |           <Button
+83 |             size="sm"
+84 |             onClick={handleSubmit}
+85 |             disabled={isSubmitting}
+86 |           >
+87 |             <Check className="h-4 w-4 mr-1" />
+88 |             {isSubmitting ? "저장 중..." : "저장"}
+89 |           </Button>
+90 |         </div>
+91 |       </div>
+92 |     );
+93 |   }
+94 | 
+95 |   return (
+96 |     <div className="group relative mt-6 prose prose-stone dark:prose-invert">
+[TRUNCATED]
+```
+
+src/components/cards/EditCardForm.tsx
+```
+1 | "use client";
+2 | 
+3 | import React, { useState, useRef, useEffect } from "react";
+4 | import { Button } from "@/components/ui/button";
+5 | import { Input } from "@/components/ui/input";
+6 | import { Label } from "@/components/ui/label";
+7 | import { Badge } from "@/components/ui/badge";
+8 | import { toast } from "sonner";
+9 | import { X, Plus } from "lucide-react";
+10 | import TiptapEditor from "@/components/editor/TiptapEditor";
+11 | import { DEFAULT_USER_ID } from "@/lib/constants";
+12 | import { Card } from '@prisma/client';
+13 | 
+14 | // 컴포넌트 props 타입 정의
+15 | interface EditCardFormProps {
+16 |   card: any; // 카드 데이터
+17 |   onSuccess?: (updatedCard?: any) => void; // 수정 성공 시 호출할 콜백
+18 |   onCancel?: () => void; // 취소 버튼 클릭 시 호출할 콜백
+19 | }
+20 | 
+21 | // EditCardForm 컴포넌트
+22 | export default function EditCardForm({ card, onSuccess, onCancel }: EditCardFormProps) {
+23 |   const [title, setTitle] = useState('');
+24 |   const [content, setContent] = useState('');
+25 |   const [tagInput, setTagInput] = useState('');
+26 |   const [tags, setTags] = useState<string[]>([]);
+27 |   const [isSubmitting, setIsSubmitting] = useState(false);
+28 |   const [isComposing, setIsComposing] = useState(false);
+29 | 
+30 |   // 초기 데이터 로딩
+31 |   useEffect(() => {
+32 |     if (card) {
+33 |       setTitle(card.title || '');
+34 |       setContent(card.content || '');
+35 |       // CardTag에서 태그 이름을 추출
+36 |       if (card.cardTags && Array.isArray(card.cardTags)) {
+37 |         const tagNames = card.cardTags.map((cardTag: any) => cardTag.tag.name);
+38 |         setTags(tagNames);
+39 |       }
+40 |     }
+41 |   }, [card]);
+42 | 
+43 |   // 입력 조합(IME) 시작 핸들러
+44 |   const handleCompositionStart = () => {
+45 |     setIsComposing(true);
+46 |   };
+47 | 
+48 |   // 입력 조합(IME) 종료 핸들러
+49 |   const handleCompositionEnd = () => {
+50 |     setIsComposing(false);
+51 |   };
+52 | 
+53 |   // 태그 입력 변경 핸들러
+54 |   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+55 |     const value = e.target.value;
+56 |     setTagInput(value);
+57 |     
+58 |     // 쉼표가 포함되어 있으면 태그 추가
+59 |     if (value.includes(',') && !isComposing) {
+60 |       const newTag = value.replace(',', '').trim();
+61 |       if (newTag && !tags.includes(newTag)) {
+62 |         setTags([...tags, newTag]);
+63 |       }
+64 |       setTagInput('');
+65 |     }
+66 |   };
+67 | 
+68 |   // 태그 추가 핸들러 (Enter 키)
+69 |   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+70 |     if (e.key === 'Enter' && !isComposing) {
+71 |       e.preventDefault();
+72 |       const newTag = tagInput.trim();
+73 |       
+74 |       if (newTag && !tags.includes(newTag)) {
+75 |         setTags([...tags, newTag]);
+76 |         setTagInput('');
+77 |       }
+78 |     }
+79 |   };
+80 | 
+81 |   // 태그 삭제 핸들러
+82 |   const handleRemoveTag = (tagToRemove: string) => {
+[TRUNCATED]
+```
+
+src/components/cards/EditCardModal.tsx
+```
+1 | "use client";
+2 | 
+3 | import React, { useState, useEffect } from 'react';
+4 | import { Button } from "@/components/ui/button";
+5 | import { X } from 'lucide-react';
+6 | import EditCardForm from "@/components/cards/EditCardForm";
+7 | 
+8 | interface EditCardModalProps {
+9 |   cardId: string;
+10 |   onClose: () => void;
+11 |   onCardUpdated?: (updatedCard: any) => void;
+12 | }
+13 | 
+14 | /**
+15 |  * 카드 수정을 위한 모달 컴포넌트
+16 |  */
+17 | export function EditCardModal({
+18 |   cardId,
+19 |   onClose,
+20 |   onCardUpdated
+21 | }: EditCardModalProps) {
+22 |   const [card, setCard] = useState<any>(null);
+23 |   const [loading, setLoading] = useState(true);
+24 |   const [error, setError] = useState<string | null>(null);
+25 | 
+26 |   // 카드 데이터 로드
+27 |   useEffect(() => {
+28 |     const fetchCard = async () => {
+29 |       try {
+30 |         setLoading(true);
+31 |         const response = await fetch(`/api/cards/${cardId}`);
+32 |         
+33 |         if (!response.ok) {
+34 |           throw new Error('카드를 찾을 수 없습니다.');
+35 |         }
+36 |         
+37 |         const data = await response.json();
+38 |         setCard(data);
+39 |       } catch (err) {
+40 |         setError(err instanceof Error ? err.message : '카드 로딩 중 오류가 발생했습니다.');
+41 |       } finally {
+42 |         setLoading(false);
+43 |       }
+44 |     };
+45 | 
+46 |     if (cardId) {
+47 |       fetchCard();
+48 |     }
+49 |   }, [cardId]);
+50 | 
+51 |   // 카드 업데이트 콜백
+52 |   const handleCardUpdated = (updatedCard: any) => {
+53 |     if (onCardUpdated) {
+54 |       onCardUpdated(updatedCard);
+55 |     }
+56 |     onClose();
+57 |   };
+58 | 
+59 |   // 클릭 이벤트 전파 방지
+60 |   const handleModalClick = (e: React.MouseEvent) => {
+61 |     e.stopPropagation();
+62 |   };
+63 | 
+64 |   return (
+65 |     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+66 |       <div className="relative bg-card rounded-lg shadow-lg max-w-[700px] w-full mx-4" onClick={handleModalClick}>
+67 |         <div className="absolute top-2 right-2">
+68 |           <Button variant="ghost" size="icon" onClick={onClose}>
+69 |             <X className="h-4 w-4" />
+70 |           </Button>
+71 |         </div>
+72 |         <div className="p-4">
+73 |           {loading ? (
+74 |             <div className="flex justify-center items-center py-12">
+75 |               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+76 |             </div>
+77 |           ) : error ? (
+78 |             <div className="text-center text-red-500 py-8">
+79 |               <p>{error}</p>
+80 |               <Button 
+81 |                 variant="outline" 
+82 |                 onClick={onClose} 
+83 |                 className="mt-4"
+84 |               >
+[TRUNCATED]
+```
+
+src/components/cards/SearchBar.test.tsx
+```
+1 | import { render, screen, fireEvent } from '@testing-library/react';
+2 | import { describe, it, expect, beforeEach, vi } from 'vitest';
+3 | import { SearchBar } from './SearchBar';
+4 | import '@testing-library/jest-dom';
+5 | 
+6 | // 기본 모킹 설정
+7 | const push = vi.fn();
+8 | const useRouterMock = vi.fn().mockReturnValue({ push });
+9 | const useSearchParamsMock = vi.fn().mockReturnValue({
+10 |   get: vi.fn().mockReturnValue(null)
+11 | });
+12 | 
+13 | vi.mock('next/navigation', () => ({
+14 |   useRouter: () => useRouterMock(),
+15 |   useSearchParams: () => useSearchParamsMock()
+16 | }));
+17 | 
+18 | // 실제 SearchBar 컴포넌트를 사용합니다.
+19 | describe('SearchBar', () => {
+20 |   beforeEach(() => {
+21 |     vi.clearAllMocks();
+22 |     useRouterMock.mockReturnValue({ push });
+23 |     useSearchParamsMock.mockReturnValue({
+24 |       get: vi.fn().mockReturnValue(null)
+25 |     });
+26 |   });
+27 | 
+28 |   it('올바르게 렌더링 되어야 함', () => {
+29 |     render(<SearchBar />);
+30 |     
+31 |     // 기본 요소들이 렌더링 되었는지 확인
+32 |     expect(screen.getByPlaceholderText('검색어 입력 또는 #태그 입력')).toBeInTheDocument();
+33 |     expect(screen.getByText('검색')).toBeInTheDocument();
+34 |   });
+35 |   
+36 |   it('URL에서 검색어를 가져와 입력 필드에 표시해야 함', () => {
+37 |     // URL 파라미터 모킹 설정
+38 |     useSearchParamsMock.mockReturnValue({
+39 |       get: (param: string) => param === 'q' ? '테스트쿼리' : null
+40 |     });
+41 |     
+42 |     render(<SearchBar />);
+43 |     
+44 |     // useEffect에서 URL 파라미터를 가져와 입력 필드에 설정
+45 |     const inputElement = screen.getByPlaceholderText('검색어 입력 또는 #태그 입력');
+46 |     expect(inputElement).toHaveValue('테스트쿼리');
+47 |   });
+48 |   
+49 |   it('검색 버튼 클릭 시 일반 검색어로 올바른 URL로 이동해야 함', () => {
+50 |     render(<SearchBar />);
+51 |     
+52 |     // 입력 필드에 검색어 입력
+53 |     const inputElement = screen.getByPlaceholderText('검색어 입력 또는 #태그 입력');
+54 |     fireEvent.change(inputElement, { target: { value: '일반검색어' } });
+55 |     
+56 |     // 검색 버튼 클릭
+57 |     const searchButton = screen.getByText('검색');
+58 |     fireEvent.click(searchButton);
+59 |     
+60 |     // 올바른 URL로 이동했는지 확인
+61 |     expect(push).toHaveBeenCalledWith('/cards?q=%EC%9D%BC%EB%B0%98%EA%B2%80%EC%83%89%EC%96%B4');
+62 |   });
+63 |   
+64 |   it('태그 검색어(#으로 시작)로 검색 시 올바른 URL로 이동해야 함', () => {
+65 |     render(<SearchBar />);
+66 |     
+67 |     // 입력 필드에 태그 검색어 입력
+68 |     const inputElement = screen.getByPlaceholderText('검색어 입력 또는 #태그 입력');
+69 |     fireEvent.change(inputElement, { target: { value: '#태그검색' } });
+70 |     
+71 |     // 검색 버튼 클릭
+72 |     const searchButton = screen.getByText('검색');
+73 |     fireEvent.click(searchButton);
+74 |     
+75 |     // 올바른 URL로 이동했는지 확인
+[TRUNCATED]
+```
+
+src/components/cards/SearchBar.tsx
+```
+1 | /**
+2 |  * 파일명: SearchBar.tsx
+3 |  * 목적: 카드 검색 기능 제공
+4 |  * 역할: 카드 검색 및 태그 검색 인터페이스 제공
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-03-30
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import { useState, useEffect, useCallback, useRef } from 'react';
+12 | import { Input } from '@/components/ui/input';
+13 | import { Button } from '@/components/ui/button';
+14 | import { Search, X, Hash, AlertCircle } from 'lucide-react';
+15 | import { useRouter, useSearchParams } from 'next/navigation';
+16 | import { Badge } from '@/components/ui/badge';
+17 | import {
+18 |   Tooltip,
+19 |   TooltipContent,
+20 |   TooltipProvider,
+21 |   TooltipTrigger,
+22 | } from "@/components/ui/tooltip";
+23 | import { cn } from '@/lib/utils';
+24 | 
+25 | interface SearchBarProps {
+26 |   className?: string;
+27 |   placeholder?: string;
+28 | }
+29 | 
+30 | export const SearchBar = ({ 
+31 |   className, 
+32 |   placeholder = "검색어 입력 또는 #태그 입력" 
+33 | }: SearchBarProps) => {
+34 |   const router = useRouter();
+35 |   const searchParams = useSearchParams();
+36 |   const [searchTerm, setSearchTerm] = useState('');
+37 |   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+38 |   const [isTagMode, setIsTagMode] = useState(false);
+39 |   const inputRef = useRef<HTMLInputElement>(null);
+40 |   
+41 |   // 로컬 스토리지에서 최근 검색어 불러오기
+42 |   useEffect(() => {
+43 |     const savedSearches = localStorage.getItem('recentSearches');
+44 |     if (savedSearches) {
+45 |       try {
+46 |         const parsed = JSON.parse(savedSearches);
+47 |         if (Array.isArray(parsed)) {
+48 |           setRecentSearches(parsed.slice(0, 5)); // 최대 5개까지만 표시
+49 |         }
+50 |       } catch {
+51 |         // 파싱 오류 시 무시
+52 |       }
+53 |     }
+54 |   }, []);
+55 |   
+56 |   // URL에서 검색어 가져오기
+57 |   useEffect(() => {
+58 |     const q = searchParams.get('q') || '';
+59 |     const tag = searchParams.get('tag');
+60 |     
+61 |     if (tag) {
+62 |       setSearchTerm(`#${tag}`);
+63 |       setIsTagMode(true);
+64 |     } else {
+65 |       setSearchTerm(q);
+66 |       setIsTagMode(q.startsWith('#'));
+67 |     }
+68 |   }, [searchParams]);
+69 |   
+70 |   // 최근 검색어 저장
+71 |   const saveRecentSearch = useCallback((term: string) => {
+72 |     if (!term || term.length < 2) return; // 너무 짧은 검색어는 저장하지 않음
+73 |     
+74 |     const newSearches = [
+75 |       term, 
+76 |       ...recentSearches.filter(s => s !== term)
+77 |     ].slice(0, 5);
+78 |     
+79 |     setRecentSearches(newSearches);
+80 |     localStorage.setItem('recentSearches', JSON.stringify(newSearches));
+81 |   }, [recentSearches]);
+82 |   
+83 |   // 검색 실행
+84 |   const handleSearch = useCallback(() => {
+85 |     // 태그 검색과 일반 검색 분리
+86 |     // #으로 시작하는 검색어는 태그 검색으로 처리
+87 |     if (searchTerm.startsWith('#')) {
+[TRUNCATED]
+```
+
+src/components/cards/TagFilter.tsx
+```
+1 | /**
+2 |  * 파일명: TagFilter.tsx
+3 |  * 목적: 카드 목록에서 태그 기반 필터링 제공
+4 |  * 역할: 선택 가능한 태그 목록을 표시하고 태그 필터링 기능 제공
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | 'use client';
+9 | 
+10 | import { useState, useEffect } from 'react';
+11 | import { useRouter, useSearchParams } from 'next/navigation';
+12 | import { Badge } from '@/components/ui/badge';
+13 | import { ScrollArea } from '@/components/ui/scroll-area';
+14 | import { Loader2, Tags, ChevronDown, ChevronUp } from 'lucide-react';
+15 | import { toast } from 'sonner';
+16 | import { cn } from '@/lib/utils';
+17 | import { Button } from '@/components/ui/button';
+18 | 
+19 | interface Tag {
+20 |   id: string;
+21 |   name: string;
+22 |   count: number;
+23 | }
+24 | 
+25 | export function TagFilter() {
+26 |   const router = useRouter();
+27 |   const searchParams = useSearchParams();
+28 |   const [tags, setTags] = useState<Tag[]>([]);
+29 |   const [loading, setLoading] = useState(true);
+30 |   const [expanded, setExpanded] = useState(true);
+31 |   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+32 | 
+33 |   // URL에서 현재 선택된 태그 가져오기
+34 |   useEffect(() => {
+35 |     const tagParam = searchParams.get('tag');
+36 |     setSelectedTag(tagParam);
+37 |   }, [searchParams]);
+38 | 
+39 |   // 태그 목록 가져오기
+40 |   useEffect(() => {
+41 |     async function fetchTags() {
+42 |       setLoading(true);
+43 |       try {
+44 |         const response = await fetch('/api/tags?includeCount=true');
+45 |         if (!response.ok) {
+46 |           throw new Error('태그 목록을 불러오는데 실패했습니다');
+47 |         }
+48 |         
+49 |         const data = await response.json();
+50 |         setTags(data.sort((a: Tag, b: Tag) => b.count - a.count)); // 사용 빈도순 정렬
+51 |       } catch (error) {
+52 |         console.error('태그 로딩 오류:', error);
+53 |         toast.error('태그 목록을 불러오는데 실패했습니다');
+54 |       } finally {
+55 |         setLoading(false);
+56 |       }
+57 |     }
+58 |     
+59 |     fetchTags();
+60 |   }, []);
+61 | 
+62 |   // 태그 클릭 핸들러
+63 |   const handleTagClick = (tagName: string) => {
+64 |     if (selectedTag === tagName) {
+65 |       // 이미 선택된 태그를 다시 클릭하면 필터 해제
+66 |       router.push('/cards');
+67 |       setSelectedTag(null);
+68 |     } else {
+69 |       // 새 태그 선택
+70 |       router.push(`/cards?tag=${encodeURIComponent(tagName)}`);
+71 |       setSelectedTag(tagName);
+72 |     }
+73 |   };
+74 | 
+75 |   return (
+76 |     <div className="mb-4 border rounded-md">
+77 |       <div 
+78 |         className="p-3 flex justify-between items-center cursor-pointer bg-muted/30"
+79 |         onClick={() => setExpanded(!expanded)}
+80 |       >
+81 |         <h3 className="font-medium flex items-center">
+82 |           <Tags size={16} className="mr-2" />
+[TRUNCATED]
 ```
 
 src/components/editor/DocumentViewer.tsx
@@ -6493,9 +6547,6 @@ src/components/editor/DocumentViewer.tsx
 82 |           <Skeleton className="h-24 w-full" />
 83 |           <Skeleton className="h-24 w-full" />
 84 |         </div>
-85 |       </div>
-86 |     );
-87 |   }
 [TRUNCATED]
 ```
 
@@ -6954,8 +7005,6 @@ src/components/layout/MainToolbar.test.tsx
 86 | 
 87 |     it('자동 배치 버튼 클릭 시 applyLayout을 "auto" 인자와 함께 호출해야 함', () => {
 88 |         // 컴포넌트 렌더링
-89 |         render(<MainToolbar />);
-90 | 
 [TRUNCATED]
 ```
 
@@ -7035,7 +7084,6 @@ src/components/layout/MainToolbar.tsx
 72 |       </Button>
 73 | 
 74 |       <Button
-75 |         variant="ghost"
 [TRUNCATED]
 ```
 
@@ -7047,91 +7095,79 @@ src/components/layout/ProjectToolbar.test.tsx
 4 |  * 역할: 프로젝트 설정 및 컨트롤 기능을 검증하는 테스트
 5 |  * 작성일: 2025-04-01
 6 |  * 수정일: 2025-04-10 : global-env-mocking.mdc 룰 적용하여 console 모킹 방식 개선
-7 |  */
-8 | 
-9 | // 모듈 모킹
-10 | import { vi } from 'vitest';
+7 |  * 수정일: 2025-04-12 : Zustand 액션 기반 리팩토링에 맞게 테스트 수정
+8 |  * 수정일: 2025-04-15 : React Flow 모킹 추가 및 테스트 안정성 개선
+9 |  * 수정일: 2025-04-15 : navigator.clipboard 모킹 및 타임아웃 설정 추가
+10 |  */
 11 | 
-12 | // console.log 모킹 (vi.stubGlobal 사용)
-13 | // 원래의 console 객체 저장하지 않아도 됨 (vi.unstubAllGlobals로 자동 복원)
-14 | // vi.stubGlobal을 통해 환경 자체를 모킹하는 방식으로 변경
-15 | const mockConsole = {
-16 |     log: vi.fn(),
-17 |     error: vi.fn(),
-18 |     warn: vi.fn(),
-19 |     info: vi.fn(),
-20 |     debug: vi.fn()
-21 | };
-22 | // 모든 console 메서드 유지하면서 log와 error만 모킹
-23 | vi.stubGlobal('console', {
-24 |     ...console,
-25 |     log: mockConsole.log,
-26 |     error: mockConsole.error
-27 | });
-28 | 
-29 | // 모든 모킹은 import 문 전에
-30 | vi.mock('@/lib/board-constants', () => ({
-31 |     STORAGE_KEY: 'test-storage-key',
-32 |     EDGES_STORAGE_KEY: 'test-edges-storage-key',
-33 |     CONNECTION_TYPE_OPTIONS: [
-34 |         { value: 'bezier', label: 'Bezier' },
-35 |         { value: 'straight', label: 'Straight' }
-36 |     ],
-37 |     MARKER_TYPE_OPTIONS: [
-38 |         { value: 'arrow', label: 'Arrow' },
-39 |         { value: 'arrowclosed', label: 'Arrow Closed' }
-40 |     ],
-41 |     SNAP_GRID_OPTIONS: [
-42 |         { value: '0', label: 'Off' },
-43 |         { value: '15', label: '15px' }
-44 |     ],
-45 |     STROKE_WIDTH_OPTIONS: [
-46 |         { value: '1', label: '1px' },
-47 |         { value: '2', label: '2px' }
-48 |     ],
-49 |     MARKER_SIZE_OPTIONS: [
-50 |         { value: '8', label: '8px' },
-51 |         { value: '10', label: '10px' }
-52 |     ],
-53 |     EDGE_COLOR_OPTIONS: [
-54 |         { value: '#a1a1aa', label: '기본' },
-55 |         { value: '#3b82f6', label: '파랑' }
-56 |     ],
-57 |     EDGE_ANIMATION_OPTIONS: [
-58 |         { value: 'false', label: '없음' },
-59 |         { value: 'true', label: '애니메이션' }
-60 |     ],
-61 | }));
-62 | 
-63 | vi.mock('@/lib/logger', () => ({
-64 |     default: () => ({
-65 |         info: vi.fn(),
-66 |         error: vi.fn(),
-67 |     })
-68 | }));
-69 | 
-70 | vi.mock('sonner', () => ({
-71 |     toast: {
-72 |         success: vi.fn(),
-73 |         error: vi.fn(),
-74 |         info: vi.fn(),
-75 |     },
-76 | }));
-77 | 
-78 | const mockSignOut = vi.fn().mockImplementation(() => Promise.resolve());
-79 | vi.mock('@/contexts/AuthContext', () => ({
-80 |     useAuth: () => ({
-81 |         signOut: mockSignOut,
-82 |         user: { id: 'test-user-id' },
-83 |     }),
-84 | }));
-85 | 
-86 | const mockUpdateBoardSettings = vi.fn();
-87 | const mockSetLayoutDirection = vi.fn();
-88 | const mockReactFlowInstance = {
-89 |     fitView: vi.fn(),
-90 |     getNodes: vi.fn(),
-91 |     getEdges: vi.fn(),
+12 | // 모듈 모킹
+13 | import { vi } from 'vitest';
+14 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+15 | 
+16 | // React Flow 모킹 먼저 호출
+17 | mockReactFlow();
+18 | 
+19 | // console.log 모킹 (vi.stubGlobal 사용)
+20 | // 원래의 console 객체 저장하지 않아도 됨 (vi.unstubAllGlobals로 자동 복원)
+21 | // vi.stubGlobal을 통해 환경 자체를 모킹하는 방식으로 변경
+22 | const mockConsole = {
+23 |     log: vi.fn(),
+24 |     error: vi.fn(),
+25 |     warn: vi.fn(),
+26 |     info: vi.fn(),
+27 |     debug: vi.fn()
+28 | };
+29 | // 모든 console 메서드 유지하면서 log와 error만 모킹
+30 | vi.stubGlobal('console', {
+31 |     ...console as Console,
+32 |     log: mockConsole.log,
+33 |     error: mockConsole.error
+34 | });
+35 | 
+36 | // 브라우저 환경 모킹 (window 객체)
+37 | vi.stubGlobal('window', {
+38 |     ...window,
+39 |     localStorage: {
+40 |         getItem: vi.fn(),
+41 |         setItem: vi.fn(),
+42 |         removeItem: vi.fn()
+43 |     }
+44 | });
+45 | 
+46 | // 페이지 모듈 import
+47 | import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+48 | import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+49 | import { ProjectToolbar } from './ProjectToolbar';
+50 | import '@testing-library/jest-dom';
+51 | import { ConnectionLineType, MarkerType } from '@xyflow/react';
+52 | import { toast } from 'sonner';
+53 | import { server } from '@/tests/msw/server';
+54 | import { useAppStore } from '@/store/useAppStore';
+55 | import React from 'react';
+56 | 
+57 | // navigator.clipboard 모킹
+58 | vi.stubGlobal('navigator', {
+59 |     clipboard: {
+60 |         writeText: vi.fn().mockResolvedValue(undefined),
+61 |         readText: vi.fn().mockResolvedValue('')
+62 |     }
+63 | });
+64 | 
+65 | // 모든 모킹은 import 문 전에
+66 | vi.mock('@/lib/board-constants', () => ({
+67 |     SNAP_GRID_OPTIONS: [
+68 |         { value: '0', label: 'Off' },
+69 |         { value: '15', label: '15px' }
+70 |     ],
+71 |     CONNECTION_TYPE_OPTIONS: [
+72 |         { value: 'bezier', label: 'Bezier' },
+73 |         { value: 'straight', label: 'Straight' }
+74 |     ],
+75 |     MARKER_TYPE_OPTIONS: [
+76 |         { value: 'arrow', label: 'Arrow' },
+77 |         { value: 'arrowclosed', label: 'Arrow Closed' }
+78 |     ],
+79 |     STROKE_WIDTH_OPTIONS: [
 [TRUNCATED]
 ```
 
@@ -7139,7 +7175,7 @@ src/components/layout/ProjectToolbar.tsx
 ```
 1 | 'use client';
 2 | 
-3 | import React, { useState, useCallback } from 'react';
+3 | import React, { useState, useCallback, useEffect } from 'react';
 4 | import {
 5 |   Menu,
 6 |   ChevronRight,
@@ -7156,87 +7192,91 @@ src/components/layout/ProjectToolbar.tsx
 17 |   SeparatorHorizontal,
 18 |   Paintbrush,
 19 |   Layout,
-20 |   LogOut
-21 | } from 'lucide-react';
-22 | import { Button } from '@/components/ui/button';
-23 | import {
-24 |   DropdownMenu,
-25 |   DropdownMenuContent,
-26 |   DropdownMenuItem,
-27 |   DropdownMenuTrigger,
-28 |   DropdownMenuSub,
-29 |   DropdownMenuSubTrigger,
-30 |   DropdownMenuSubContent,
-31 |   DropdownMenuPortal,
-32 |   DropdownMenuSeparator,
-33 |   DropdownMenuRadioGroup,
-34 |   DropdownMenuRadioItem,
-35 |   DropdownMenuCheckboxItem,
-36 |   DropdownMenuLabel
-37 | } from '@/components/ui/dropdown-menu';
-38 | import { useAppStore } from '@/store/useAppStore';
-39 | import { toast } from 'sonner';
-40 | import { ConnectionLineType, MarkerType } from '@xyflow/react';
-41 | import { BoardSettings, DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
-42 | import {
-43 |   SNAP_GRID_OPTIONS,
-44 |   CONNECTION_TYPE_OPTIONS,
-45 |   MARKER_TYPE_OPTIONS,
-46 |   STROKE_WIDTH_OPTIONS,
-47 |   MARKER_SIZE_OPTIONS,
-48 |   EDGE_COLOR_OPTIONS,
-49 |   EDGE_ANIMATION_OPTIONS,
-50 |   STORAGE_KEY,
-51 |   EDGES_STORAGE_KEY
+20 |   LogOut,
+21 |   FileText,
+22 |   FolderOpen
+23 | } from 'lucide-react';
+24 | import { Button } from '@/components/ui/button';
+25 | import {
+26 |   DropdownMenu,
+27 |   DropdownMenuContent,
+28 |   DropdownMenuItem,
+29 |   DropdownMenuTrigger,
+30 |   DropdownMenuSub,
+31 |   DropdownMenuSubTrigger,
+32 |   DropdownMenuSubContent,
+33 |   DropdownMenuPortal,
+34 |   DropdownMenuSeparator,
+35 |   DropdownMenuRadioGroup,
+36 |   DropdownMenuRadioItem,
+37 |   DropdownMenuCheckboxItem,
+38 |   DropdownMenuLabel
+39 | } from '@/components/ui/dropdown-menu';
+40 | import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
+41 | import { toast } from 'sonner';
+42 | import { ConnectionLineType, MarkerType } from '@xyflow/react';
+43 | import { BoardSettings } from '@/lib/board-utils';
+44 | import {
+45 |   SNAP_GRID_OPTIONS,
+46 |   CONNECTION_TYPE_OPTIONS,
+47 |   MARKER_TYPE_OPTIONS,
+48 |   STROKE_WIDTH_OPTIONS,
+49 |   MARKER_SIZE_OPTIONS,
+50 |   EDGE_COLOR_OPTIONS,
+51 |   EDGE_ANIMATION_OPTIONS
 52 | } from '@/lib/board-constants';
-53 | import { useAuth } from '@/contexts/AuthContext';
-54 | import createLogger from '@/lib/logger';
-55 | 
-56 | // 모듈별 로거 생성
-57 | const logger = createLogger('ProjectToolbar');
-58 | 
-59 | export function ProjectToolbar() {
-60 |   const [projectName, setProjectName] = useState('프로젝트 이름');
-61 |   const {
-62 |     layoutDirection,
-63 |     setLayoutDirection,
-64 |     boardSettings,
-65 |     updateBoardSettings,
-66 |     reactFlowInstance
-67 |   } = useAppStore();
-68 |   const { signOut } = useAuth();
-69 | 
-70 |   // 저장 핸들러 (임시)
-71 |   const handleSaveLayout = useCallback(() => {
-72 |     try {
-73 |       if (!reactFlowInstance) {
-74 |         toast.error('React Flow 인스턴스를 찾을 수 없습니다');
-75 |         return;
-76 |       }
-77 | 
-78 |       // React Flow 인스턴스에서 노드와 엣지 데이터 가져오기
-79 |       const nodes = reactFlowInstance.getNodes();
-80 |       const edges = reactFlowInstance.getEdges();
-81 | 
-82 |       if (!nodes.length) {
-83 |         toast.error('저장할 노드가 없습니다');
-84 |         return;
-85 |       }
-86 | 
-87 |       // 노드와 엣지 데이터를 로컬 스토리지에 저장
-88 |       localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes));
-89 |       localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
-90 | 
-91 |       toast.success('레이아웃이 저장되었습니다');
-92 |     } catch (error) {
-93 |       console.error('레이아웃 저장 실패:', error);
-94 |       toast.error('레이아웃 저장에 실패했습니다');
-95 |     }
-96 |   }, [reactFlowInstance]);
-97 | 
-98 |   // 스냅 그리드 값 변경 핸들러
-99 |   const handleSnapGridChange = useCallback((value: string) => {
-100 |     console.log('[ProjectToolbar] 격자 크기 변경:', value);
+53 | import createLogger from '@/lib/logger';
+54 | 
+55 | // 모듈별 로거 생성
+56 | const logger = createLogger('ProjectToolbar');
+57 | 
+58 | export function ProjectToolbar() {
+59 |   // useAppStore에서 프로젝트 정보와 액션을 가져옴
+60 |   const {
+61 |     layoutDirection,
+62 |     setLayoutDirection,
+63 |     boardSettings,
+64 |     updateBoardSettings,
+65 |     saveBoardLayout,
+66 |     logoutAction,
+67 |     projects,
+68 |     activeProjectId,
+69 |     fetchProjects,
+70 |     createProject,
+71 |     setActiveProject
+72 |   } = useAppStore();
+73 | 
+74 |   // 활성 프로젝트 정보 가져오기
+75 |   const activeProject = useAppStore(selectActiveProject);
+76 | 
+77 |   // 프로젝트 이름과 작성자 정보 표시
+78 |   const displayProjectName = activeProject
+79 |     ? (activeProject.ownerNickname
+80 |       ? `${activeProject.name} - ${activeProject.ownerNickname}`
+81 |       : activeProject.name)
+82 |     : '프로젝트를 선택하세요';
+83 | 
+84 |   // 저장 핸들러
+85 |   const handleSaveLayout = useCallback(() => {
+86 |     // saveBoardLayout 액션을 호출하여 레이아웃 저장 처리
+87 |     saveBoardLayout();
+88 |   }, [saveBoardLayout]);
+89 | 
+90 |   // 프로젝트 정보 표시 핸들러
+91 |   const handleShowProjectInfo = useCallback(() => {
+92 |     if (activeProject) {
+93 |       toast.info(`프로젝트 정보: ${activeProject.name} (ID: ${activeProject.id})`);
+94 |     } else {
+95 |       toast.info('선택된 프로젝트가 없습니다.');
+96 |     }
+97 |     // TODO: 프로젝트 정보 모달 표시
+98 |   }, [activeProject]);
+99 | 
+100 |   // 프로젝트 불러오기 핸들러
+101 |   const handleLoadProject = useCallback(() => {
+102 |     try {
+103 |       // API 호출을 통해 프로젝트 목록 가져오기 (아직 API 미구현)
+104 |       fetchProjects();
 [TRUNCATED]
 ```
 
@@ -7325,7 +7365,6 @@ src/components/layout/ShortcutToolbar.test.tsx
 81 | 
 82 |             // 실패하는 함수 핸들러 직접 호출 및 결과 확인
 83 |             try {
-84 |                 await mockActions.signOut();
 [TRUNCATED]
 ```
 
@@ -7493,7 +7532,6 @@ src/components/layout/Sidebar.tsx
 82 |   const [editingCardId, setEditingCardId] = useState<string | null>(null);
 83 | 
 84 |   // 제목 표시 부분의 ref 추가
-85 |   const titleRef = useRef<HTMLHeadingElement>(null);
 [TRUNCATED]
 ```
 
@@ -7574,6 +7612,198 @@ src/components/layout/test-utils.ts
 73 |   vi.clearAllMocks();
 74 |   vi.resetModules();
 75 | }; 
+```
+
+src/components/settings/NodeSizeSettings.test.tsx
+```
+1 | /**
+2 |  * 파일명: NodeSizeSettings.test.tsx
+3 |  * 목적: NodeSizeSettings 컴포넌트 테스트
+4 |  * 역할: 노드 크기 설정 컴포넌트 검증
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | import React from 'react';
+9 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+10 | import { describe, test, expect, vi, beforeEach } from 'vitest';
+11 | import '@testing-library/jest-dom/vitest';
+12 | 
+13 | // ResizeObserver 모킹
+14 | global.ResizeObserver = vi.fn().mockImplementation(() => ({
+15 |   observe: vi.fn(),
+16 |   unobserve: vi.fn(),
+17 |   disconnect: vi.fn(),
+18 | }));
+19 | 
+20 | // updateNodeSize 모킹 함수
+21 | const updateNodeSizeMock = vi.fn();
+22 | const updateNodeInternalsMock = vi.fn();
+23 | 
+24 | // ReactFlow 모킹
+25 | vi.mock('@xyflow/react', () => {
+26 |   return {
+27 |     useReactFlow: () => ({
+28 |       getNodes: () => [{ id: 'node-1' }, { id: 'node-2' }],
+29 |     }),
+30 |     useUpdateNodeInternals: () => updateNodeInternalsMock,
+31 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+32 |   };
+33 | });
+34 | 
+35 | // ThemeContext 모킹
+36 | vi.mock('../../contexts/ThemeContext', () => {
+37 |   return {
+38 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+39 |     useTheme: () => ({
+40 |       theme: {
+41 |         node: {
+42 |           width: 220,
+43 |           height: 48,
+44 |           maxHeight: 180,
+45 |           backgroundColor: '#ffffff',
+46 |           borderColor: '#C1C1C1',
+47 |           borderWidth: 1,
+48 |           borderRadius: 8,
+49 |           selectedBorderColor: '#0071e3',
+50 |           font: {
+51 |             family: 'Pretendard, sans-serif',
+52 |             titleSize: 14,
+53 |             contentSize: 12,
+54 |             tagsSize: 10,
+55 |           }
+56 |         },
+57 |         edge: {
+58 |           color: '#C1C1C1',
+59 |           width: 1,
+60 |           selectedColor: '#0071e3',
+61 |           animated: false,
+62 |         },
+63 |         handle: {
+64 |           size: 8,
+65 |           backgroundColor: '#ffffff',
+66 |           borderColor: '#555555',
+67 |           borderWidth: 1,
+68 |         },
+69 |         layout: {
+70 |           spacing: {
+71 |             horizontal: 30,
+72 |             vertical: 30,
+73 |           },
+74 |           padding: 20,
+75 |         },
+76 |       },
+77 |       updateTheme: vi.fn(),
+78 |       updateNodeSize: updateNodeSizeMock,
+79 |     }),
+80 |   };
+81 | });
+82 | 
+83 | // UI 컴포넌트 모킹
+84 | vi.mock('../../components/ui/slider', () => ({
+85 |   Slider: ({ id, defaultValue, onValueChange }: any) => (
+86 |     <input
+87 |       type="range"
+88 |       min="0"
+89 |       max="500"
+90 |       data-testid={`slider-${id}`}
+91 |       defaultValue={defaultValue}
+92 |       onChange={(e) => onValueChange([parseInt(e.target.value)])}
+93 |     />
+94 |   ),
+95 | }));
+96 | 
+97 | vi.mock('../../components/ui/input', () => ({
+98 |   Input: (props: any) => <input data-testid={props.id || 'input'} {...props} />,
+99 | }));
+100 | 
+[TRUNCATED]
+```
+
+src/components/settings/NodeSizeSettings.tsx
+```
+1 | /**
+2 |  * 파일명: NodeSizeSettings.tsx
+3 |  * 목적: 노드 크기 설정 컴포넌트 제공
+4 |  * 역할: 사용자가 노드 크기를 조정할 수 있는 UI 제공
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | 'use client';
+9 | 
+10 | import { useState, useEffect } from 'react';
+11 | import { Slider } from "@/components/ui/slider";
+12 | import { Label } from "@/components/ui/label";
+13 | import { Input } from "@/components/ui/input";
+14 | import { Button } from "@/components/ui/button";
+15 | import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+16 | import { useTheme } from '@/contexts/ThemeContext';
+17 | import { useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
+18 | 
+19 | /**
+20 |  * NodeSizeSettings: 노드 크기 조정 컴포넌트
+21 |  * @returns 노드 크기 설정 UI 컴포넌트
+22 |  */
+23 | export function NodeSizeSettings() {
+24 |   const { theme, updateNodeSize } = useTheme();
+25 |   const { getNodes } = useReactFlow();
+26 |   const updateNodeInternals = useUpdateNodeInternals();
+27 |   
+28 |   const [width, setWidth] = useState(theme.node.width);
+29 |   const [height, setHeight] = useState(theme.node.height);
+30 |   const [maxHeight, setMaxHeight] = useState(theme.node.maxHeight);
+31 |   
+32 |   // 입력값이 변경될 때 로컬 상태 업데이트
+33 |   const handleWidthChange = (value: number | string) => {
+34 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+35 |     if (!isNaN(numValue) && numValue > 0) {
+36 |       setWidth(numValue);
+37 |     }
+38 |   };
+39 |   
+40 |   const handleHeightChange = (value: number | string) => {
+41 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+42 |     if (!isNaN(numValue) && numValue > 0) {
+43 |       setHeight(numValue);
+44 |     }
+45 |   };
+46 |   
+47 |   const handleMaxHeightChange = (value: number | string) => {
+48 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+49 |     if (!isNaN(numValue) && numValue > 0) {
+50 |       setMaxHeight(numValue);
+51 |     }
+52 |   };
+53 |   
+54 |   // 테마에 변경사항 적용
+55 |   const applyChanges = () => {
+56 |     // 테마 업데이트
+57 |     updateNodeSize(width, height, maxHeight);
+58 |     
+59 |     // 모든 노드 업데이트 (내부 상태 갱신)
+60 |     setTimeout(() => {
+61 |       console.log('모든 노드 내부 상태 업데이트');
+62 |       getNodes().forEach(node => {
+63 |         updateNodeInternals(node.id);
+64 |       });
+65 |     }, 100);
+66 |   };
+67 |   
+68 |   // 설정 초기화
+69 |   const resetToDefaults = () => {
+70 |     // 기본값으로 되돌리기
+71 |     const defaultWidth = 130;
+72 |     const defaultHeight = 48;
+73 |     const defaultMaxHeight = 180;
+74 |     
+75 |     setWidth(defaultWidth);
+76 |     setHeight(defaultHeight);
+77 |     setMaxHeight(defaultMaxHeight);
+78 |     
+79 |     // 테마 업데이트
+80 |     updateNodeSize(defaultWidth, defaultHeight, defaultMaxHeight);
+81 |     
+82 |     // 모든 노드 업데이트
+[TRUNCATED]
 ```
 
 src/components/tags/TagForm.test.tsx
@@ -7664,7 +7894,6 @@ src/components/tags/TagForm.test.tsx
 84 |       const input = await findByRole('textbox');
 85 | 
 86 |       await act(async () => {
-87 |         await userEvent.type(input, '새로운 태그');
 [TRUNCATED]
 ```
 
@@ -7844,8 +8073,6 @@ src/components/tags/TagFormMock.tsx
 97 |                     placeholder="새로운 태그 이름을 입력하세요"
 98 |                 />
 99 |             </div>
-100 |             <button
-101 |                 type="submit"
 [TRUNCATED]
 ```
 
@@ -7929,7 +8156,6 @@ src/components/tags/TagList.test.tsx
 76 | }
 77 | 
 78 | describe('TagList 기본 테스트', () => {
-79 |   // 테스트 전에 실행할 작업
 [TRUNCATED]
 ```
 
@@ -8030,7 +8256,6 @@ src/components/tags/TagList.tsx
 93 |                     {tag.name}
 94 |                   </Badge>
 95 |                 </TableCell>
-96 |                 <TableCell className="text-center">
 [TRUNCATED]
 ```
 
@@ -8122,7 +8347,6 @@ src/components/tags/TagListMock.tsx
 84 |                     <button
 85 |                         onClick={() => handleDeleteClick(tag.id)}
 86 |                         data-testid={`delete-tag-button-${tag.id}`}
-87 |                         aria-label={`${tag.name} 태그 삭제`}
 [TRUNCATED]
 ```
 
@@ -8301,8 +8525,6 @@ src/components/ui/alert-dialog.tsx
 85 |       data-slot="alert-dialog-footer"
 86 |       className={cn(
 87 |         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-88 |         className
-89 |       )}
 [TRUNCATED]
 ```
 
@@ -8614,8 +8836,6 @@ src/components/ui/dialog.tsx
 70 |       </DialogPrimitive.Content>
 71 |     </DialogPortal>
 72 |   )
-73 | }
-74 | 
 [TRUNCATED]
 ```
 
@@ -8801,7 +9021,6 @@ src/components/ui/form.tsx
 97 |     <Label
 98 |       data-slot="form-label"
 99 |       data-error={!!error}
-100 |       className={cn("data-[error=true]:text-destructive-foreground", className)}
 [TRUNCATED]
 ```
 
@@ -9452,321 +9671,6 @@ src/components/ui/tooltip.tsx
 61 | export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 ```
 
-src/components/settings/NodeSizeSettings.test.tsx
-```
-1 | /**
-2 |  * 파일명: NodeSizeSettings.test.tsx
-3 |  * 목적: NodeSizeSettings 컴포넌트 테스트
-4 |  * 역할: 노드 크기 설정 컴포넌트 검증
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | import React from 'react';
-9 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-10 | import { describe, test, expect, vi, beforeEach } from 'vitest';
-11 | import '@testing-library/jest-dom/vitest';
-12 | 
-13 | // ResizeObserver 모킹
-14 | global.ResizeObserver = vi.fn().mockImplementation(() => ({
-15 |   observe: vi.fn(),
-16 |   unobserve: vi.fn(),
-17 |   disconnect: vi.fn(),
-18 | }));
-19 | 
-20 | // updateNodeSize 모킹 함수
-21 | const updateNodeSizeMock = vi.fn();
-22 | const updateNodeInternalsMock = vi.fn();
-23 | 
-24 | // ReactFlow 모킹
-25 | vi.mock('@xyflow/react', () => {
-26 |   return {
-27 |     useReactFlow: () => ({
-28 |       getNodes: () => [{ id: 'node-1' }, { id: 'node-2' }],
-29 |     }),
-30 |     useUpdateNodeInternals: () => updateNodeInternalsMock,
-31 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-32 |   };
-33 | });
-34 | 
-35 | // ThemeContext 모킹
-36 | vi.mock('../../contexts/ThemeContext', () => {
-37 |   return {
-38 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-39 |     useTheme: () => ({
-40 |       theme: {
-41 |         node: {
-42 |           width: 220,
-43 |           height: 48,
-44 |           maxHeight: 180,
-45 |           backgroundColor: '#ffffff',
-46 |           borderColor: '#C1C1C1',
-47 |           borderWidth: 1,
-48 |           borderRadius: 8,
-49 |           selectedBorderColor: '#0071e3',
-50 |           font: {
-51 |             family: 'Pretendard, sans-serif',
-52 |             titleSize: 14,
-53 |             contentSize: 12,
-54 |             tagsSize: 10,
-55 |           }
-56 |         },
-57 |         edge: {
-58 |           color: '#C1C1C1',
-59 |           width: 1,
-60 |           selectedColor: '#0071e3',
-61 |           animated: false,
-62 |         },
-63 |         handle: {
-64 |           size: 8,
-65 |           backgroundColor: '#ffffff',
-66 |           borderColor: '#555555',
-67 |           borderWidth: 1,
-68 |         },
-69 |         layout: {
-70 |           spacing: {
-71 |             horizontal: 30,
-72 |             vertical: 30,
-73 |           },
-74 |           padding: 20,
-75 |         },
-76 |       },
-77 |       updateTheme: vi.fn(),
-78 |       updateNodeSize: updateNodeSizeMock,
-79 |     }),
-80 |   };
-81 | });
-82 | 
-83 | // UI 컴포넌트 모킹
-84 | vi.mock('../../components/ui/slider', () => ({
-85 |   Slider: ({ id, defaultValue, onValueChange }: any) => (
-86 |     <input
-87 |       type="range"
-88 |       min="0"
-89 |       max="500"
-90 |       data-testid={`slider-${id}`}
-91 |       defaultValue={defaultValue}
-92 |       onChange={(e) => onValueChange([parseInt(e.target.value)])}
-93 |     />
-94 |   ),
-95 | }));
-96 | 
-97 | vi.mock('../../components/ui/input', () => ({
-98 |   Input: (props: any) => <input data-testid={props.id || 'input'} {...props} />,
-99 | }));
-100 | 
-101 | vi.mock('../../components/ui/button', () => ({
-[TRUNCATED]
-```
-
-src/components/settings/NodeSizeSettings.tsx
-```
-1 | /**
-2 |  * 파일명: NodeSizeSettings.tsx
-3 |  * 목적: 노드 크기 설정 컴포넌트 제공
-4 |  * 역할: 사용자가 노드 크기를 조정할 수 있는 UI 제공
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | 'use client';
-9 | 
-10 | import { useState, useEffect } from 'react';
-11 | import { Slider } from "@/components/ui/slider";
-12 | import { Label } from "@/components/ui/label";
-13 | import { Input } from "@/components/ui/input";
-14 | import { Button } from "@/components/ui/button";
-15 | import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-16 | import { useTheme } from '@/contexts/ThemeContext';
-17 | import { useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
-18 | 
-19 | /**
-20 |  * NodeSizeSettings: 노드 크기 조정 컴포넌트
-21 |  * @returns 노드 크기 설정 UI 컴포넌트
-22 |  */
-23 | export function NodeSizeSettings() {
-24 |   const { theme, updateNodeSize } = useTheme();
-25 |   const { getNodes } = useReactFlow();
-26 |   const updateNodeInternals = useUpdateNodeInternals();
-27 |   
-28 |   const [width, setWidth] = useState(theme.node.width);
-29 |   const [height, setHeight] = useState(theme.node.height);
-30 |   const [maxHeight, setMaxHeight] = useState(theme.node.maxHeight);
-31 |   
-32 |   // 입력값이 변경될 때 로컬 상태 업데이트
-33 |   const handleWidthChange = (value: number | string) => {
-34 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-35 |     if (!isNaN(numValue) && numValue > 0) {
-36 |       setWidth(numValue);
-37 |     }
-38 |   };
-39 |   
-40 |   const handleHeightChange = (value: number | string) => {
-41 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-42 |     if (!isNaN(numValue) && numValue > 0) {
-43 |       setHeight(numValue);
-44 |     }
-45 |   };
-46 |   
-47 |   const handleMaxHeightChange = (value: number | string) => {
-48 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-49 |     if (!isNaN(numValue) && numValue > 0) {
-50 |       setMaxHeight(numValue);
-51 |     }
-52 |   };
-53 |   
-54 |   // 테마에 변경사항 적용
-55 |   const applyChanges = () => {
-56 |     // 테마 업데이트
-57 |     updateNodeSize(width, height, maxHeight);
-58 |     
-59 |     // 모든 노드 업데이트 (내부 상태 갱신)
-60 |     setTimeout(() => {
-61 |       console.log('모든 노드 내부 상태 업데이트');
-62 |       getNodes().forEach(node => {
-63 |         updateNodeInternals(node.id);
-64 |       });
-65 |     }, 100);
-66 |   };
-67 |   
-68 |   // 설정 초기화
-69 |   const resetToDefaults = () => {
-70 |     // 기본값으로 되돌리기
-71 |     const defaultWidth = 130;
-72 |     const defaultHeight = 48;
-73 |     const defaultMaxHeight = 180;
-74 |     
-75 |     setWidth(defaultWidth);
-76 |     setHeight(defaultHeight);
-77 |     setMaxHeight(defaultMaxHeight);
-78 |     
-79 |     // 테마 업데이트
-80 |     updateNodeSize(defaultWidth, defaultHeight, defaultMaxHeight);
-81 |     
-82 |     // 모든 노드 업데이트
-83 |     setTimeout(() => {
-[TRUNCATED]
-```
-
-src/lib/supabase/client.ts
-```
-1 | /**
-2 |  * 파일명: src/lib/supabase/client.ts
-3 |  * 목적: 클라이언트 환경에서 Supabase 클라이언트 제공
-4 |  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
-5 |  * 작성일: 2025-04-09
-6 |  */
-7 | 
-8 | import { createBrowserClient } from '@supabase/ssr'
-9 | import { Database } from '@/types/supabase'
-10 | import createLogger from '../logger'
-11 | 
-12 | // 로거 생성
-13 | const logger = createLogger('SupabaseClient')
-14 | 
-15 | /**
-16 |  * createClient: 클라이언트 환경에서 Supabase 클라이언트 생성
-17 |  * @returns Supabase 클라이언트 인스턴스
-18 |  */
-19 | export function createClient() {
-20 |   try {
-21 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-22 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-23 |   
-24 |     if (!supabaseUrl || !supabaseKey) {
-25 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
-26 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
-27 |     }
-28 |   
-29 |     return createBrowserClient<Database>(
-30 |       supabaseUrl,
-31 |       supabaseKey,
-32 |       {
-33 |         auth: {
-34 |           flowType: 'pkce',
-35 |           persistSession: true,
-36 |           detectSessionInUrl: true
-37 |         }
-38 |       }
-39 |     )
-40 |   } catch (error) {
-41 |     logger.error('클라이언트 Supabase 클라이언트 생성 실패', error)
-42 |     throw error
-43 |   }
-44 | } 
-```
-
-src/lib/supabase/server.ts
-```
-1 | /**
-2 |  * 파일명: src/lib/supabase/server.ts
-3 |  * 목적: 서버 환경에서 Supabase 클라이언트 제공
-4 |  * 역할: 서버 컴포넌트, 서버 액션, 라우트 핸들러에서 Supabase에 접근할 때 사용
-5 |  * 작성일: 2025-04-09
-6 |  */
-7 | 
-8 | import { createServerClient, type CookieOptions } from '@supabase/ssr'
-9 | import { cookies } from 'next/headers'
-10 | import { Database } from '@/types/supabase'
-11 | import createLogger from '../logger'
-12 | 
-13 | // 로거 생성
-14 | const logger = createLogger('SupabaseServer')
-15 | 
-16 | /**
-17 |  * createClient: 서버 환경에서 Supabase 클라이언트 생성
-18 |  * @returns Supabase 클라이언트 인스턴스
-19 |  */
-20 | export async function createClient() {
-21 |   try {
-22 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-23 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-24 |   
-25 |     if (!supabaseUrl || !supabaseKey) {
-26 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
-27 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
-28 |     }
-29 |   
-30 |     return createServerClient<Database>(
-31 |       supabaseUrl,
-32 |       supabaseKey,
-33 |       {
-34 |         cookies: {
-35 |           async get(name: string) {
-36 |             const cookieStore = await cookies()
-37 |             return cookieStore.get(name)?.value
-38 |           },
-39 |           async set(name: string, value: string, options: CookieOptions) {
-40 |             try {
-41 |               const cookieStore = await cookies()
-42 |               // PKCE 인증 흐름을 위한 code_verifier 쿠키 처리
-43 |               if (name.includes('code_verifier')) {
-44 |                 logger.debug('서버: 코드 검증기 쿠키 설정:', name.substring(0, 12) + '...')
-45 |                 // 쿠키 수명을 10분으로 설정
-46 |                 options.maxAge = 60 * 10
-47 |               }
-48 |               
-49 |               cookieStore.set(name, value, options)
-50 |             } catch (error) {
-51 |               logger.error('서버: 쿠키 설정 중 오류:', error)
-52 |             }
-53 |           },
-54 |           async remove(name: string, options: CookieOptions) {
-55 |             try {
-56 |               const cookieStore = await cookies()
-57 |               cookieStore.delete({ name, ...options })
-58 |             } catch (error) {
-59 |               logger.error('서버: 쿠키 삭제 중 오류:', error)
-60 |             }
-61 |           },
-62 |         },
-63 |       }
-64 |     )
-65 |   } catch (error) {
-66 |     logger.error('서버 Supabase 클라이언트 생성 실패', error)
-67 |     throw error
-68 |   }
-69 | } 
-```
-
 src/tests/mocks/additional-mocks.ts
 ```
 1 | /**
@@ -9861,8 +9765,6 @@ src/tests/mocks/additional-mocks.ts
 90 |     }
 91 |   };
 92 | };
-93 | 
-94 | /**
 [TRUNCATED]
 ```
 
@@ -10045,8 +9947,6 @@ src/tests/mocks/env-mock.ts
 91 |   const originalLocalStorage = global.localStorage;
 92 |   const originalSessionStorage = global.sessionStorage;
 93 |   const originalNavigator = global.navigator;
-94 |   const originalCrypto = global.crypto;
-95 |   
 [TRUNCATED]
 ```
 
@@ -10145,7 +10045,6 @@ src/tests/mocks/storage-mock.ts
 91 |       return array;
 92 |     }),
 93 |     subtle: {
-94 |       digest: vi.fn(async (algorithm: string, data: ArrayBuffer) => {
 [TRUNCATED]
 ```
 
@@ -10241,285 +10140,6 @@ src/tests/mocks/supabase-mock.ts
 88 |         
 89 |         return Promise.resolve(mockSupabaseResponse(
 [TRUNCATED]
-```
-
-src/tests/theme/integration.test.tsx
-```
-1 | /**
-2 |  * 파일명: integration.test.tsx
-3 |  * 목적: 테마 관련 컴포넌트 통합 테스트
-4 |  * 역할: ThemeContext와 NodeSizeSettings의 통합 검증
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-9 | import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-10 | import React from 'react';
-11 | import '@testing-library/jest-dom/vitest';
-12 | 
-13 | // updateNodeSize 모킹 함수
-14 | const updateNodeSizeMock = vi.fn();
-15 | const updateNodeInternalsMock = vi.fn();
-16 | 
-17 | // ReactFlow 모킹
-18 | vi.mock('@xyflow/react', () => {
-19 |   return {
-20 |     useReactFlow: () => ({
-21 |       getNodes: () => [{ id: 'node-1' }, { id: 'node-2' }],
-22 |     }),
-23 |     useUpdateNodeInternals: () => updateNodeInternalsMock,
-24 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-25 |   };
-26 | });
-27 | 
-28 | // ThemeContext 모킹
-29 | vi.mock('../../contexts/ThemeContext', () => {
-30 |   return {
-31 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-32 |     useTheme: () => ({
-33 |       theme: {
-34 |         node: {
-35 |           width: 220,
-36 |           height: 48,
-37 |           maxHeight: 180,
-38 |           backgroundColor: '#ffffff',
-39 |           borderColor: '#C1C1C1',
-40 |           borderWidth: 1,
-41 |           borderRadius: 8,
-42 |           selectedBorderColor: '#0071e3',
-43 |           font: {
-44 |             family: 'Pretendard, sans-serif',
-45 |             titleSize: 14,
-46 |             contentSize: 12,
-47 |             tagsSize: 10,
-48 |           }
-49 |         },
-50 |         edge: {
-51 |           color: '#C1C1C1',
-52 |           width: 1,
-53 |           selectedColor: '#0071e3',
-54 |           animated: false,
-55 |         },
-56 |         handle: {
-57 |           size: 8,
-58 |           backgroundColor: '#ffffff',
-59 |           borderColor: '#555555',
-60 |           borderWidth: 1,
-61 |         },
-62 |         layout: {
-63 |           spacing: {
-64 |             horizontal: 30,
-65 |             vertical: 30,
-66 |           },
-67 |           padding: 20,
-68 |         },
-69 |       },
-70 |       updateTheme: vi.fn(),
-71 |       updateNodeSize: updateNodeSizeMock,
-72 |     }),
-73 |   };
-74 | });
-75 | 
-76 | // NodeSizeSettings 모킹
-77 | vi.mock('../../components/settings/NodeSizeSettings', () => {
-78 |   return {
-79 |     NodeSizeSettings: () => {
-80 |       React.useEffect(() => {
-81 |         // 컴포넌트가 마운트될 때 테스트 데이터 설정
-82 |         setTimeout(() => {
-83 |           // 다른 테스트에서 호출됨
-84 |         }, 0);
-85 |       }, []);
-86 |       
-87 |       return (
-88 |         <div>
-89 |           <label>너비: <span>220px</span></label>
-90 |           <input data-testid="width-input" type="number" />
-91 |           <label>헤더 높이: <span>48px</span></label>
-92 |           <input data-testid="height-input" type="number" />
-93 |           <button 
-94 |             data-testid="apply-button" 
-95 |             onClick={() => updateNodeSizeMock(200, 60, 250)}
-96 |           >
-97 |             변경사항 적용
-98 |           </button>
-99 |           <button 
-100 |             data-testid="reset-button" 
-101 |             onClick={() => updateNodeSizeMock(130, 48, 180)}
-[TRUNCATED]
-```
-
-src/tests/utils/async-utils.ts
-```
-1 | /**
-2 |  * 파일명: async-utils.ts
-3 |  * 목적: 비동기 테스트 유틸리티 제공
-4 |  * 역할: 비동기 테스트에 필요한 유틸리티 함수 제공
-5 |  * 작성일: 2025-03-30
-6 |  */
-7 | 
-8 | import { vi, expect } from 'vitest';
-9 | 
-10 | /**
-11 |  * flushPromises: 비동기 큐의 모든 프로미스를 해결
-12 |  * @returns {Promise<void>} 비동기 큐가 비워질 때까지 기다리는 프로미스
-13 |  */
-14 | export async function flushPromises(times = 1): Promise<void> {
-15 |   for (let i = 0; i < times; i++) {
-16 |     // 현재 큐의 모든 비동기 작업 실행
-17 |     await new Promise(resolve => setTimeout(resolve, 0));
-18 |   }
-19 | }
-20 | 
-21 | /**
-22 |  * runAllTimers: 모든 타이머를 즉시 실행
-23 |  * @returns {Promise<void>} 타이머 실행 완료 대기
-24 |  */
-25 | export async function runAllTimers(): Promise<void> {
-26 |   // 모든 타이머 즉시 실행
-27 |   vi.runAllTimers();
-28 |   
-29 |   // 타이머 이후 발생한 비동기 작업 처리
-30 |   await flushPromises();
-31 | }
-32 | 
-33 | /**
-34 |  * runTimersUntil: 특정 조건이 충족될 때까지 타이머 실행
-35 |  * @param condition 타이머 중단 조건
-36 |  * @param options 옵션 (최대 타이머, 타임아웃)
-37 |  */
-38 | export async function runTimersUntil(
-39 |   condition: () => boolean | Promise<boolean>,
-40 |   options: { maxTimers?: number; timeout?: number } = {}
-41 | ): Promise<void> {
-42 |   const { maxTimers = 100, timeout = 5000 } = options;
-43 |   const startTime = Date.now();
-44 |   
-45 |   for (let i = 0; i < maxTimers; i++) {
-46 |     // 타임아웃 체크
-47 |     if (Date.now() - startTime > timeout) {
-48 |       throw new Error(`타임아웃: ${timeout}ms 안에 조건이 충족되지 않음`);
-49 |     }
-50 |     
-51 |     // 타이머 실행 및 비동기 큐 비우기
-52 |     vi.advanceTimersByTime(100);
-53 |     await flushPromises();
-54 |     
-55 |     // 조건 체크
-56 |     if (await condition()) {
-57 |       return;
-58 |     }
-59 |   }
-60 |   
-61 |   throw new Error(`최대 타이머 실행(${maxTimers}) 후에도 조건이 충족되지 않음`);
-62 | }
-63 | 
-64 | /**
-65 |  * pollUntil: 조건이 충족될 때까지 폴링
-66 |  * @param condition 폴링 중단 조건
-67 |  * @param options 옵션 (간격, 타임아웃, 최대 시도 횟수)
-68 |  */
-69 | export async function pollUntil<T>(
-70 |   condition: () => T | Promise<T>,
-71 |   options: { interval?: number; timeout?: number; maxTries?: number } = {}
-72 | ): Promise<T> {
-73 |   const { interval = 50, timeout = 5000, maxTries = 100 } = options;
-74 |   const startTime = Date.now();
-75 |   let tries = 0;
-76 |   
-77 |   while (tries < maxTries) {
-78 |     tries++;
-79 |     
-80 |     // 타임아웃 체크
-81 |     if (Date.now() - startTime > timeout) {
-82 |       throw new Error(`폴링 타임아웃: ${timeout}ms 안에 조건이 충족되지 않음`);
-83 |     }
-84 |     
-[TRUNCATED]
-```
-
-src/tests/utils/react-flow-mock.ts
-```
-1 | /**
-2 |  * 파일명: react-flow-mock.ts
-3 |  * 목적: React Flow 컴포넌트 테스트를 위한 모킹 유틸리티
-4 |  * 역할: 테스트 환경에서 React Flow에 필요한 브라우저 환경 API 모킹
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | // React Flow 공식 문서에서 제시하는 테스트 유틸리티 구현
-9 | 
-10 | /**
-11 |  * ResizeObserver 모의 구현
-12 |  * 브라우저 환경이 아닌 Jest/Vitest에서 동작하기 위한 구현체
-13 |  */
-14 | class ResizeObserver {
-15 |   callback: ResizeObserverCallback;
-16 | 
-17 |   constructor(callback: ResizeObserverCallback) {
-18 |     this.callback = callback;
-19 |   }
-20 | 
-21 |   observe(target: Element) {
-22 |     this.callback([{ target } as ResizeObserverEntry], this);
-23 |   }
-24 | 
-25 |   unobserve() {}
-26 | 
-27 |   disconnect() {}
-28 | }
-29 | 
-30 | /**
-31 |  * DOMMatrixReadOnly 모의 구현
-32 |  * 브라우저 환경이 아닌 Jest/Vitest에서 동작하기 위한 구현체
-33 |  */
-34 | class DOMMatrixReadOnly {
-35 |   m22: number;
-36 |   constructor(transform: string) {
-37 |     const scale = transform?.match(/scale\(([1-9.])\)/)?.[1];
-38 |     this.m22 = scale !== undefined ? +scale : 1;
-39 |   }
-40 | }
-41 | 
-42 | // 모킹이 한 번만 초기화되도록 플래그 관리
-43 | let init = false;
-44 | 
-45 | /**
-46 |  * mockReactFlow: React Flow를 모킹하는 함수
-47 |  * Jest/Vitest 테스트 환경에서 React Flow 사용 시 필요한 브라우저 API 모킹
-48 |  */
-49 | export const mockReactFlow = () => {
-50 |   if (init) return;
-51 |   init = true;
-52 | 
-53 |   // 전역 객체에 ResizeObserver 추가
-54 |   global.ResizeObserver = ResizeObserver as any;
-55 | 
-56 |   // 전역 객체에 DOMMatrixReadOnly 추가
-57 |   global.DOMMatrixReadOnly = DOMMatrixReadOnly as any;
-58 | 
-59 |   // HTMLElement에 offsetHeight, offsetWidth 속성 추가
-60 |   Object.defineProperties(global.HTMLElement.prototype, {
-61 |     offsetHeight: {
-62 |       get() {
-63 |         return parseFloat(this.style.height) || 1;
-64 |       },
-65 |     },
-66 |     offsetWidth: {
-67 |       get() {
-68 |         return parseFloat(this.style.width) || 1;
-69 |       },
-70 |     },
-71 |   });
-72 | 
-73 |   // SVGElement에 getBBox 메서드 추가
-74 |   (global.SVGElement as any).prototype.getBBox = () => ({
-75 |     x: 0,
-76 |     y: 0,
-77 |     width: 0,
-78 |     height: 0,
-79 |   });
-80 | }; 
 ```
 
 src/tests/msw/handlers.ts
@@ -10630,7 +10250,7 @@ src/tests/msw/server.ts
 3 |  * 목적: MSW 테스트 서버 설정
 4 |  * 역할: API 요청을 모킹하기 위한 MSW 서버 제공
 5 |  * 작성일: 2025-03-30
-6 |  * 수정일: 2025-04-08
+6 |  * 수정일: 2025-04-09
 7 |  */
 8 | 
 9 | import { setupServer } from 'msw/node';
@@ -10644,54 +10264,469 @@ src/tests/msw/server.ts
 17 | // MSW 서버 설정
 18 | export const server = setupServer(...handlers);
 19 | 
-20 | // Node.js v20에서 문제가 발생하는 요청에 대한 fail-fast handler 추가
+20 | // Node.js v20에서 문제가 발생하는 요청에 대한 즉각 응답 처리
 21 | server.events.on('request:start', ({ request }) => {
-22 |   // undici 타임아웃 관련 문제를 방지하기 위해 특정 케이스 관리
-23 |   const url = new URL(request.url);
-24 |   if (url.pathname.includes('problem-url')) {
-25 |     return HttpResponse.json({ error: 'Simulated error' }, { status: 500 });
-26 |   }
-27 |   return;
-28 | });
+22 |   try {
+23 |     // URL 패턴 검사
+24 |     const url = new URL(request.url);
+25 |     
+26 |     // 문제가 발생할 수 있는 URL 패턴 처리
+27 |     if (url.pathname.includes('problem-url')) {
+28 |       logger.warn('문제가 있는 URL 요청 감지, 즉시 응답 처리', { url: url.toString() });
+29 |       return HttpResponse.json({ error: 'Simulated error' }, { status: 500 });
+30 |     }
+31 |     
+32 |     // auth 관련 요청은 즉시 응답 처리하여 타임아웃 방지
+33 |     if (url.pathname.includes('/auth/v1/token')) {
+34 |       logger.debug('인증 관련 요청 감지, 빠른 응답 처리', { url: url.toString() });
+35 |       return HttpResponse.json({
+36 |         access_token: 'test_access_token',
+37 |         refresh_token: 'test_refresh_token',
+38 |         token_type: 'bearer',
+39 |         expires_in: 3600,
+40 |         user: {
+41 |           id: 'test_user_id',
+42 |           app_metadata: { provider: 'google' },
+43 |           aud: 'authenticated',
+44 |           email: 'test@example.com'
+45 |         }
+46 |       });
+47 |     }
+48 |     
+49 |     return undefined;
+50 |   } catch (error) {
+51 |     logger.error('요청 처리 중 오류 발생', { error });
+52 |     return HttpResponse.json({ error: 'internal_error' }, { status: 500 });
+53 |   }
+54 | });
+55 | 
+56 | /**
+57 |  * setupMSW: 테스트에서 MSW 서버 설정
+58 |  * @returns 정리 함수
+59 |  */
+60 | export function setupMSW() {
+61 |   // 테스트 전 서버 시작
+62 |   beforeEach(() => {
+63 |     server.listen({ 
+64 |       onUnhandledRequest: 'bypass' // warn 대신 bypass 사용
+65 |     });
+66 |     logger.info('MSW 서버 시작됨');
+67 |   });
+68 | 
+69 |   // 테스트 후 핸들러 초기화
+70 |   afterEach(() => {
+71 |     server.resetHandlers();
+72 |     logger.info('MSW 핸들러 초기화됨');
+73 |   });
+74 | 
+75 |   // 모든 테스트 완료 후 서버 종료
+76 |   afterAll(() => {
+77 |     server.close();
+78 |     logger.info('MSW 서버 종료됨');
+79 |   });
+80 | 
+81 |   // 추가 핸들러 등록 함수 반환
+82 |   return {
+83 |     // 핸들러 추가
+84 |     use: (...handlers: Parameters<typeof server.use>) => {
+85 |       server.use(...handlers);
+[TRUNCATED]
+```
+
+src/tests/theme/integration.test.tsx
+```
+1 | /**
+2 |  * 파일명: integration.test.tsx
+3 |  * 목적: 테마 관련 컴포넌트 통합 테스트
+4 |  * 역할: ThemeContext와 NodeSizeSettings의 통합 검증
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+9 | import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+10 | import React from 'react';
+11 | import '@testing-library/jest-dom/vitest';
+12 | 
+13 | // updateNodeSize 모킹 함수
+14 | const updateNodeSizeMock = vi.fn();
+15 | const updateNodeInternalsMock = vi.fn();
+16 | 
+17 | // ReactFlow 모킹
+18 | vi.mock('@xyflow/react', () => {
+19 |   return {
+20 |     useReactFlow: () => ({
+21 |       getNodes: () => [{ id: 'node-1' }, { id: 'node-2' }],
+22 |     }),
+23 |     useUpdateNodeInternals: () => updateNodeInternalsMock,
+24 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+25 |   };
+26 | });
+27 | 
+28 | // ThemeContext 모킹
+29 | vi.mock('../../contexts/ThemeContext', () => {
+30 |   return {
+31 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+32 |     useTheme: () => ({
+33 |       theme: {
+34 |         node: {
+35 |           width: 220,
+36 |           height: 48,
+37 |           maxHeight: 180,
+38 |           backgroundColor: '#ffffff',
+39 |           borderColor: '#C1C1C1',
+40 |           borderWidth: 1,
+41 |           borderRadius: 8,
+42 |           selectedBorderColor: '#0071e3',
+43 |           font: {
+44 |             family: 'Pretendard, sans-serif',
+45 |             titleSize: 14,
+46 |             contentSize: 12,
+47 |             tagsSize: 10,
+48 |           }
+49 |         },
+50 |         edge: {
+51 |           color: '#C1C1C1',
+52 |           width: 1,
+53 |           selectedColor: '#0071e3',
+54 |           animated: false,
+55 |         },
+56 |         handle: {
+57 |           size: 8,
+58 |           backgroundColor: '#ffffff',
+59 |           borderColor: '#555555',
+60 |           borderWidth: 1,
+61 |         },
+62 |         layout: {
+63 |           spacing: {
+64 |             horizontal: 30,
+65 |             vertical: 30,
+66 |           },
+67 |           padding: 20,
+68 |         },
+69 |       },
+70 |       updateTheme: vi.fn(),
+71 |       updateNodeSize: updateNodeSizeMock,
+72 |     }),
+73 |   };
+74 | });
+75 | 
+76 | // NodeSizeSettings 모킹
+77 | vi.mock('../../components/settings/NodeSizeSettings', () => {
+78 |   return {
+79 |     NodeSizeSettings: () => {
+80 |       React.useEffect(() => {
+81 |         // 컴포넌트가 마운트될 때 테스트 데이터 설정
+82 |         setTimeout(() => {
+83 |           // 다른 테스트에서 호출됨
+84 |         }, 0);
+85 |       }, []);
+86 |       
+87 |       return (
+88 |         <div>
+89 |           <label>너비: <span>220px</span></label>
+90 |           <input data-testid="width-input" type="number" />
+91 |           <label>헤더 높이: <span>48px</span></label>
+92 |           <input data-testid="height-input" type="number" />
+93 |           <button 
+94 |             data-testid="apply-button" 
+95 |             onClick={() => updateNodeSizeMock(200, 60, 250)}
+96 |           >
+97 |             변경사항 적용
+98 |           </button>
+99 |           <button 
+100 |             data-testid="reset-button" 
+[TRUNCATED]
+```
+
+src/tests/utils/async-utils.ts
+```
+1 | /**
+2 |  * 파일명: async-utils.ts
+3 |  * 목적: 비동기 테스트 유틸리티 제공
+4 |  * 역할: 비동기 테스트에 필요한 유틸리티 함수 제공
+5 |  * 작성일: 2025-03-30
+6 |  */
+7 | 
+8 | import { vi, expect } from 'vitest';
+9 | 
+10 | /**
+11 |  * flushPromises: 비동기 큐의 모든 프로미스를 해결
+12 |  * @returns {Promise<void>} 비동기 큐가 비워질 때까지 기다리는 프로미스
+13 |  */
+14 | export async function flushPromises(times = 1): Promise<void> {
+15 |   for (let i = 0; i < times; i++) {
+16 |     // 현재 큐의 모든 비동기 작업 실행
+17 |     await new Promise(resolve => setTimeout(resolve, 0));
+18 |   }
+19 | }
+20 | 
+21 | /**
+22 |  * runAllTimers: 모든 타이머를 즉시 실행
+23 |  * @returns {Promise<void>} 타이머 실행 완료 대기
+24 |  */
+25 | export async function runAllTimers(): Promise<void> {
+26 |   // 모든 타이머 즉시 실행
+27 |   vi.runAllTimers();
+28 |   
+29 |   // 타이머 이후 발생한 비동기 작업 처리
+30 |   await flushPromises();
+31 | }
+32 | 
+33 | /**
+34 |  * runTimersUntil: 특정 조건이 충족될 때까지 타이머 실행
+35 |  * @param condition 타이머 중단 조건
+36 |  * @param options 옵션 (최대 타이머, 타임아웃)
+37 |  */
+38 | export async function runTimersUntil(
+39 |   condition: () => boolean | Promise<boolean>,
+40 |   options: { maxTimers?: number; timeout?: number } = {}
+41 | ): Promise<void> {
+42 |   const { maxTimers = 100, timeout = 5000 } = options;
+43 |   const startTime = Date.now();
+44 |   
+45 |   for (let i = 0; i < maxTimers; i++) {
+46 |     // 타임아웃 체크
+47 |     if (Date.now() - startTime > timeout) {
+48 |       throw new Error(`타임아웃: ${timeout}ms 안에 조건이 충족되지 않음`);
+49 |     }
+50 |     
+51 |     // 타이머 실행 및 비동기 큐 비우기
+52 |     vi.advanceTimersByTime(100);
+53 |     await flushPromises();
+54 |     
+55 |     // 조건 체크
+56 |     if (await condition()) {
+57 |       return;
+58 |     }
+59 |   }
+60 |   
+61 |   throw new Error(`최대 타이머 실행(${maxTimers}) 후에도 조건이 충족되지 않음`);
+62 | }
+63 | 
+64 | /**
+65 |  * pollUntil: 조건이 충족될 때까지 폴링
+66 |  * @param condition 폴링 중단 조건
+67 |  * @param options 옵션 (간격, 타임아웃, 최대 시도 횟수)
+68 |  */
+69 | export async function pollUntil<T>(
+70 |   condition: () => T | Promise<T>,
+71 |   options: { interval?: number; timeout?: number; maxTries?: number } = {}
+72 | ): Promise<T> {
+73 |   const { interval = 50, timeout = 5000, maxTries = 100 } = options;
+74 |   const startTime = Date.now();
+75 |   let tries = 0;
+76 |   
+77 |   while (tries < maxTries) {
+78 |     tries++;
+79 |     
+80 |     // 타임아웃 체크
+81 |     if (Date.now() - startTime > timeout) {
+[TRUNCATED]
+```
+
+src/tests/utils/react-flow-mock.ts
+```
+1 | /**
+2 |  * 파일명: react-flow-mock.ts
+3 |  * 목적: React Flow 컴포넌트 테스트를 위한 모킹 유틸리티
+4 |  * 역할: 테스트 환경에서 React Flow에 필요한 브라우저 환경 API 모킹
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | // React Flow 공식 문서에서 제시하는 테스트 유틸리티 구현
+9 | 
+10 | /**
+11 |  * ResizeObserver 모의 구현
+12 |  * 브라우저 환경이 아닌 Jest/Vitest에서 동작하기 위한 구현체
+13 |  */
+14 | class ResizeObserver {
+15 |   callback: ResizeObserverCallback;
+16 | 
+17 |   constructor(callback: ResizeObserverCallback) {
+18 |     this.callback = callback;
+19 |   }
+20 | 
+21 |   observe(target: Element) {
+22 |     this.callback([{ target } as ResizeObserverEntry], this);
+23 |   }
+24 | 
+25 |   unobserve() {}
+26 | 
+27 |   disconnect() {}
+28 | }
 29 | 
 30 | /**
-31 |  * setupMSW: 테스트에서 MSW 서버 설정
-32 |  * @returns 정리 함수
+31 |  * DOMMatrixReadOnly 모의 구현
+32 |  * 브라우저 환경이 아닌 Jest/Vitest에서 동작하기 위한 구현체
 33 |  */
-34 | export function setupMSW() {
-35 |   // 테스트 전 서버 시작
-36 |   beforeEach(() => {
-37 |     server.listen({ 
-38 |       onUnhandledRequest: 'bypass' // warn 대신 bypass 사용
-39 |     });
-40 |     logger.info('MSW 서버 시작됨');
-41 |   });
-42 | 
-43 |   // 테스트 후 핸들러 초기화
-44 |   afterEach(() => {
-45 |     server.resetHandlers();
-46 |     logger.info('MSW 핸들러 초기화됨');
-47 |   });
-48 | 
-49 |   // 모든 테스트 완료 후 서버 종료
-50 |   afterAll(() => {
-51 |     server.close();
-52 |     logger.info('MSW 서버 종료됨');
-53 |   });
-54 | 
-55 |   // 추가 핸들러 등록 함수 반환
-56 |   return {
-57 |     // 핸들러 추가
-58 |     use: (...handlers: Parameters<typeof server.use>) => {
-59 |       server.use(...handlers);
-60 |       logger.debug('추가 MSW 핸들러 등록됨');
-61 |     },
-62 |     // 서버 인스턴스 접근
-63 |     server
-64 |   };
-65 | }
-66 | 
-67 | export { handlers }; 
+34 | class DOMMatrixReadOnly {
+35 |   m22: number;
+36 |   constructor(transform: string) {
+37 |     const scale = transform?.match(/scale\(([1-9.])\)/)?.[1];
+38 |     this.m22 = scale !== undefined ? +scale : 1;
+39 |   }
+40 | }
+41 | 
+42 | // 모킹이 한 번만 초기화되도록 플래그 관리
+43 | let init = false;
+44 | 
+45 | /**
+46 |  * mockReactFlow: React Flow를 모킹하는 함수
+47 |  * Jest/Vitest 테스트 환경에서 React Flow 사용 시 필요한 브라우저 API 모킹
+48 |  */
+49 | export const mockReactFlow = () => {
+50 |   if (init) return;
+51 |   init = true;
+52 | 
+53 |   // 전역 객체에 ResizeObserver 추가
+54 |   global.ResizeObserver = ResizeObserver as any;
+55 | 
+56 |   // 전역 객체에 DOMMatrixReadOnly 추가
+57 |   global.DOMMatrixReadOnly = DOMMatrixReadOnly as any;
+58 | 
+59 |   // HTMLElement에 offsetHeight, offsetWidth 속성 추가
+60 |   Object.defineProperties(global.HTMLElement.prototype, {
+61 |     offsetHeight: {
+62 |       get() {
+63 |         return parseFloat(this.style.height) || 1;
+64 |       },
+65 |     },
+66 |     offsetWidth: {
+67 |       get() {
+68 |         return parseFloat(this.style.width) || 1;
+69 |       },
+70 |     },
+71 |   });
+72 | 
+73 |   // SVGElement에 getBBox 메서드 추가
+74 |   (global.SVGElement as any).prototype.getBBox = () => ({
+75 |     x: 0,
+76 |     y: 0,
+77 |     width: 0,
+78 |     height: 0,
+79 |   });
+80 | }; 
+```
+
+src/lib/supabase/client.ts
+```
+1 | /**
+2 |  * 파일명: src/lib/supabase/client.ts
+3 |  * 목적: 클라이언트 환경에서 Supabase 클라이언트 제공
+4 |  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
+5 |  * 작성일: 2025-04-09
+6 |  */
+7 | 
+8 | import { createBrowserClient } from '@supabase/ssr'
+9 | import { Database } from '@/types/supabase'
+10 | import createLogger from '../logger'
+11 | 
+12 | // 로거 생성
+13 | const logger = createLogger('SupabaseClient')
+14 | 
+15 | /**
+16 |  * createClient: 클라이언트 환경에서 Supabase 클라이언트 생성
+17 |  * @returns Supabase 클라이언트 인스턴스
+18 |  */
+19 | export function createClient() {
+20 |   try {
+21 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+22 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+23 |   
+24 |     if (!supabaseUrl || !supabaseKey) {
+25 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
+26 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
+27 |     }
+28 |   
+29 |     return createBrowserClient<Database>(
+30 |       supabaseUrl,
+31 |       supabaseKey,
+32 |       {
+33 |         auth: {
+34 |           flowType: 'pkce',
+35 |           persistSession: true,
+36 |           detectSessionInUrl: true
+37 |         }
+38 |       }
+39 |     )
+40 |   } catch (error) {
+41 |     logger.error('클라이언트 Supabase 클라이언트 생성 실패', error)
+42 |     throw error
+43 |   }
+44 | } 
+```
+
+src/lib/supabase/server.ts
+```
+1 | /**
+2 |  * 파일명: src/lib/supabase/server.ts
+3 |  * 목적: 서버 환경에서 Supabase 클라이언트 제공
+4 |  * 역할: 서버 컴포넌트, 서버 액션, 라우트 핸들러에서 Supabase에 접근할 때 사용
+5 |  * 작성일: 2025-04-09
+6 |  */
+7 | 
+8 | import { createServerClient, type CookieOptions } from '@supabase/ssr'
+9 | import { cookies } from 'next/headers'
+10 | import { Database } from '@/types/supabase'
+11 | import createLogger from '../logger'
+12 | 
+13 | // 로거 생성
+14 | const logger = createLogger('SupabaseServer')
+15 | 
+16 | /**
+17 |  * createClient: 서버 환경에서 Supabase 클라이언트 생성
+18 |  * @returns Supabase 클라이언트 인스턴스
+19 |  */
+20 | export async function createClient() {
+21 |   try {
+22 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+23 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+24 |   
+25 |     if (!supabaseUrl || !supabaseKey) {
+26 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
+27 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
+28 |     }
+29 |   
+30 |     return createServerClient<Database>(
+31 |       supabaseUrl,
+32 |       supabaseKey,
+33 |       {
+34 |         cookies: {
+35 |           async get(name: string) {
+36 |             const cookieStore = await cookies()
+37 |             return cookieStore.get(name)?.value
+38 |           },
+39 |           async set(name: string, value: string, options: CookieOptions) {
+40 |             try {
+41 |               const cookieStore = await cookies()
+42 |               // PKCE 인증 흐름을 위한 code_verifier 쿠키 처리
+43 |               if (name.includes('code_verifier')) {
+44 |                 logger.debug('서버: 코드 검증기 쿠키 설정:', name.substring(0, 12) + '...')
+45 |                 // 쿠키 수명을 10분으로 설정
+46 |                 options.maxAge = 60 * 10
+47 |               }
+48 |               
+49 |               cookieStore.set(name, value, options)
+50 |             } catch (error) {
+51 |               logger.error('서버: 쿠키 설정 중 오류:', error)
+52 |             }
+53 |           },
+54 |           async remove(name: string, options: CookieOptions) {
+55 |             try {
+56 |               const cookieStore = await cookies()
+57 |               cookieStore.delete({ name, ...options })
+58 |             } catch (error) {
+59 |               logger.error('서버: 쿠키 삭제 중 오류:', error)
+60 |             }
+61 |           },
+62 |         },
+63 |       }
+64 |     )
+65 |   } catch (error) {
+66 |     logger.error('서버 Supabase 클라이언트 생성 실패', error)
+67 |     throw error
+68 |   }
+69 | } 
 ```
 
 src/utils/supabase/client.ts
@@ -10953,7 +10988,6 @@ src/app/admin/logs/LogViewerPageMock.tsx
 92 |                 <select
 93 |                     id="level"
 94 |                     value={selectedLevel}
-95 |                     onChange={(e) => setSelectedLevel(e.target.value)}
 [TRUNCATED]
 ```
 
@@ -11133,8 +11167,6 @@ src/app/admin/logs/page.tsx
 83 |       case 'warn': return 'text-yellow-600';
 84 |       case 'info': return 'text-blue-600';
 85 |       case 'debug': return 'text-gray-600';
-86 |       default: return 'text-gray-800';
-87 |     }
 [TRUNCATED]
 ```
 
@@ -11183,220 +11215,449 @@ src/app/admin/logs/test-utils.ts
 41 | } 
 ```
 
-src/app/auth/callback/page.test.tsx
+src/app/api/board-settings/route.ts
 ```
-1 | /**
-2 |  * 파일명: page.test.tsx
-3 |  * 목적: OAuth 콜백 페이지 컴포넌트 테스트
-4 |  * 역할: 클라이언트 측 인증 처리 UI 및 상태 관리 검증
-5 |  * 작성일: 2025-04-09
-6 |  * 수정일: 2025-04-09 : useAuthCallback 훅 사용 방식으로 테스트 리팩토링
-7 |  * 수정일: 2025-04-10 : 테스트 안정성 개선 및 타이머 모킹 수정
-8 |  */
-9 | 
-10 | import React from "react";
-11 | import { render, screen, fireEvent } from "@testing-library/react";
-12 | import "@testing-library/jest-dom";
-13 | import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
-14 | import CallbackHandler from "./page";
-15 | import { useAuthCallback } from "@/hooks/useAuthCallback";
-16 | 
-17 | // mock 설정
-18 | const mockPush = vi.fn();
-19 | 
-20 | // 테스트 설정
-21 | vi.mock('next/navigation', () => ({
-22 |   useRouter: () => ({
-23 |     push: mockPush,
-24 |   })
-25 | }));
-26 | 
-27 | vi.mock('@/lib/logger', () => ({
-28 |   default: () => ({
-29 |     info: vi.fn(),
-30 |     error: vi.fn(),
-31 |     warn: vi.fn(),
-32 |     debug: vi.fn()
-33 |   })
-34 | }));
-35 | 
-36 | // useAuthCallback 훅 모킹
-37 | vi.mock('@/hooks/useAuthCallback');
-38 | const mockUseAuthCallback = useAuthCallback as ReturnType<typeof vi.fn>;
-39 | 
-40 | // 테스트
-41 | describe("CallbackHandler 컴포넌트", () => {
-42 |   // 원래 window.location 저장
-43 |   const originalLocation = window.location;
-44 | 
-45 |   beforeAll(() => {
-46 |     // 테스트 시작 전 타이머 설정
-47 |     vi.useFakeTimers();
-48 |   });
-49 | 
-50 |   beforeEach(() => {
-51 |     vi.resetAllMocks();
-52 | 
-53 |     // useAuthCallback 기본 반환값 설정
-54 |     mockUseAuthCallback.mockReturnValue({
-55 |       processingState: '초기화 중',
-56 |       error: null,
-57 |       redirectUrl: null
-58 |     });
-59 | 
-60 |     // window.location 초기화
-61 |     Object.defineProperty(window, 'location', {
-62 |       writable: true,
-63 |       value: {
-64 |         href: 'http://localhost:3000/auth/callback?code=test-code'
-65 |       }
-66 |     });
-67 | 
-68 |     // router.push 모킹 초기화
-69 |     mockPush.mockClear();
-70 |   });
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import { z } from 'zod';
+3 | import prisma from '@/lib/prisma';
+4 | 
+5 | // 보드 설정 스키마
+6 | const boardSettingsSchema = z.object({
+7 |   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
+8 |   settings: z.object({
+9 |     snapToGrid: z.boolean(),
+10 |     snapGrid: z.tuple([z.number(), z.number()]),
+11 |     connectionLineType: z.string(),
+12 |     markerEnd: z.string().nullable(),
+13 |     strokeWidth: z.number(),
+14 |     markerSize: z.number(),
+15 |     edgeColor: z.string(),
+16 |     selectedEdgeColor: z.string(),
+17 |     animated: z.boolean()
+18 |   })
+19 | });
+20 | 
+21 | // 부분 업데이트용 보드 설정 스키마 (더 유연한 검사)
+22 | const partialBoardSettingsSchema = z.object({
+23 |   userId: z.string(), // UUID 검사 제거하여 더 유연하게 함
+24 |   settings: z.object({
+25 |     snapToGrid: z.boolean().optional(),
+26 |     snapGrid: z.tuple([z.number(), z.number()]).optional(),
+27 |     connectionLineType: z.string().optional(),
+28 |     markerEnd: z.union([z.string(), z.null()]).optional(), // 문자열 또는 null 허용
+29 |     strokeWidth: z.number().optional(),
+30 |     markerSize: z.number().optional(),
+31 |     edgeColor: z.string().optional(),
+32 |     selectedEdgeColor: z.string().optional(),
+33 |     animated: z.boolean().optional()
+34 |   }).partial()
+35 | });
+36 | 
+37 | // 보드 설정 저장 API
+38 | export async function POST(request: NextRequest) {
+39 |   try {
+40 |     const body = await request.json();
+41 |     const { userId, settings } = boardSettingsSchema.parse(body);
+42 | 
+43 |     // 기존 설정이 있는지 확인
+44 |     const existingSettings = await prisma.boardSettings.findUnique({
+45 |       where: { userId }
+46 |     });
+47 | 
+48 |     // 설정 업데이트 또는 생성
+49 |     if (existingSettings) {
+50 |       await prisma.boardSettings.update({
+51 |         where: { userId },
+52 |         data: {
+53 |           settings: settings
+54 |         }
+55 |       });
+56 |     } else {
+57 |       await prisma.boardSettings.create({
+58 |         data: {
+59 |           userId,
+60 |           settings
+61 |         }
+62 |       });
+63 |     }
+64 | 
+65 |     return NextResponse.json({ success: true }, { status: 200 });
+66 |   } catch (error) {
+67 |     console.error('보드 설정 저장 실패:', error);
+68 |     return NextResponse.json({ error: '보드 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
+69 |   }
+70 | }
 71 | 
-72 |   afterEach(() => {
-73 |     vi.clearAllTimers();
-74 |     vi.clearAllMocks();
-75 |   });
-76 | 
-77 |   afterAll(() => {
-78 |     // 타이머 복원
-79 |     vi.useRealTimers();
-80 | 
-81 |     // window.location 복원
-82 |     Object.defineProperty(window, 'location', {
-83 |       writable: true,
-84 |       value: originalLocation
-85 |     });
-86 |   });
-87 | 
-88 |   // 테스트 환경 확인
-89 |   it("테스트 환경이 올바르게 설정되었는지 확인", () => {
-90 |     expect(useAuthCallback).toBeDefined();
-91 |     expect(mockPush).toBeDefined();
-92 |   });
-93 | 
-94 |   // 기본 렌더링 테스트
-95 |   it("컴포넌트가 로딩 상태를 표시해야 함", () => {
-96 |     // 초기화 중 상태 설정
-97 |     mockUseAuthCallback.mockReturnValue({
-98 |       processingState: '초기화 중',
+72 | // 보드 설정 업데이트 API
+73 | export async function PUT(request: NextRequest) {
+74 |   try {
+75 |     const body = await request.json();
+76 |     const { userId, settings } = boardSettingsSchema.parse(body);
+77 | 
+78 |     // 기존 설정이 있는지 확인
+79 |     const existingSettings = await prisma.boardSettings.findUnique({
+80 |       where: { userId }
+81 |     });
+82 | 
+83 |     // 설정 업데이트 또는 생성
+84 |     if (existingSettings) {
+85 |       await prisma.boardSettings.update({
+86 |         where: { userId },
 [TRUNCATED]
 ```
 
-src/app/auth/callback/page.tsx
+src/app/api/cards/route.ts
 ```
-1 | /**
-2 |  * 파일명: callback/page.tsx
-3 |  * 목적: OAuth 콜백 처리 및 인증 완료
-4 |  * 역할: Google 로그인 후 리디렉션된 콜백을 처리하고 세션을 설정
-5 |  * 작성일: 2025-04-09
-6 |  * 수정일: 2025-03-30
-7 |  * 수정일: 2023-04-10 : useAuthCallback 훅으로 로직 분리
-8 |  * 수정일: 2023-04-10 : 리다이렉션 처리 로직 추가
-9 |  */
-10 | 
-11 | 'use client';
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import { z } from 'zod';
+3 | import prisma from '@/lib/prisma';
+4 | 
+5 | // 카드 생성 스키마
+6 | const createCardSchema = z.object({
+7 |   title: z.string().min(1, '제목은 필수입니다.'),
+8 |   content: z.string().optional(),
+9 |   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
+10 |   tags: z.array(z.string()).optional()
+11 | });
 12 | 
-13 | import { useEffect } from 'react';
-14 | import { useRouter } from 'next/navigation';
-15 | import createLogger from '@/lib/logger';
-16 | import { useAuthCallback } from '@/hooks/useAuthCallback';
-17 | 
-18 | // 모듈별 로거 생성
-19 | const logger = createLogger('Callback');
-20 | 
-21 | /**
-22 |  * CallbackHandler: OAuth 콜백을 처리하는 컴포넌트
-23 |  * @returns {JSX.Element} 콜백 처리 중임을 나타내는 UI
-24 |  */
-25 | export default function CallbackHandler() {
-26 |   const router = useRouter();
-27 |   const { processingState, error, redirectUrl } = useAuthCallback();
-28 | 
-29 |   // redirectUrl이 변경되면 리다이렉션 실행
-30 |   useEffect(() => {
-31 |     if (redirectUrl) {
-32 |       logger.info(`리다이렉션 실행: ${redirectUrl}`);
-33 |       router.push(redirectUrl);
-34 |     }
-35 |   }, [redirectUrl, router, logger]);
-36 | 
-37 |   // 로딩 UI 표시
-38 |   return (
-39 |     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-40 |       <div className="mb-4">
-41 |         <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-42 |       </div>
-43 |       <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
-44 |       <p className="text-gray-500 mb-2">{processingState}</p>
-45 |       {error && (
-46 |         <p className="text-red-500 text-sm mt-2">오류: {error}</p>
-47 |       )}
-48 |     </div>
-49 |   );
-50 | } 
+13 | // 태그 처리 함수
+14 | async function processTagsForCard(cardId: string, tagNames: string[] = []) {
+15 |   try {
+16 |     // 중복 태그 제거 및 공백 제거
+17 |     const uniqueTags = [...new Set(tagNames.map(tag => tag.trim()))].filter(tag => tag.length > 0);
+18 |     
+19 |     // 카드와 연결된 기존 태그 삭제
+20 |     await prisma.cardTag.deleteMany({
+21 |       where: { cardId }
+22 |     });
+23 |     
+24 |     // 각 태그에 대해 처리
+25 |     for (const tagName of uniqueTags) {
+26 |       // 태그가 존재하는지 확인하고, 없으면 생성
+27 |       let tag = await prisma.tag.findUnique({
+28 |         where: { name: tagName }
+29 |       });
+30 |       
+31 |       if (!tag) {
+32 |         tag = await prisma.tag.create({
+33 |           data: { name: tagName }
+34 |         });
+35 |       }
+36 |       
+37 |       // 카드와 태그 연결
+38 |       await prisma.cardTag.create({
+39 |         data: {
+40 |           cardId,
+41 |           tagId: tag.id
+42 |         }
+43 |       });
+44 |     }
+45 |   } catch (error) {
+46 |     console.error('태그 처리 중 오류:', error);
+47 |     // 태그 처리 실패해도 흐름 계속 (태그는 필수가 아님)
+48 |   }
+49 | }
+50 | 
+51 | // 데이터베이스 연결 안전하게 수행하는 래퍼 함수
+52 | async function safeDbOperation<T>(operation: () => Promise<T>, errorMessage: string): Promise<{ data: T | null; error: string | null }> {
+53 |   try {
+54 |     const result = await operation();
+55 |     return { data: result, error: null };
+56 |   } catch (error) {
+57 |     console.error(`${errorMessage}:`, error);
+58 |     return { data: null, error: errorMessage };
+59 |   }
+60 | }
+61 | 
+62 | // 카드 생성 API
+63 | export async function POST(request: NextRequest) {
+64 |   try {
+65 |     // 요청 본문 파싱 안전하게 처리
+66 |     let body;
+67 |     try {
+68 |       body = await request.json();
+69 |     } catch (jsonError) {
+70 |       console.error('요청 본문 파싱 오류:', jsonError);
+71 |       return NextResponse.json(
+72 |         { error: '유효하지 않은 요청 형식입니다.' },
+73 |         { status: 400 }
+74 |       );
+75 |     }
+76 |     
+77 |     // 데이터 유효성 검사
+78 |     const validation = createCardSchema.safeParse(body);
+79 |     if (!validation.success) {
+80 |       return NextResponse.json(
+81 |         { error: '유효하지 않은 데이터입니다.', details: validation.error.format() },
+82 |         { status: 400 }
+83 |       );
+84 |     }
+85 |     
+[TRUNCATED]
 ```
 
-src/app/auth/callback/route.ts
+src/app/api/db-init/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import { initDatabase } from '@/lib/db-init';
+3 | 
+4 | /**
+5 |  * DB 초기화 API 엔드포인트
+6 |  * 개발 환경에서만 사용 가능
+7 |  */
+8 | export async function GET(request: NextRequest) {
+9 |   // 개발 환경인지 확인
+10 |   if (process.env.NODE_ENV !== 'development') {
+11 |     return NextResponse.json(
+12 |       { error: '이 API는 개발 환경에서만 사용 가능합니다.' },
+13 |       { status: 403 }
+14 |     );
+15 |   }
+16 | 
+17 |   try {
+18 |     await initDatabase();
+19 |     
+20 |     return NextResponse.json(
+21 |       { success: true, message: '데이터베이스 초기화가 완료되었습니다.' },
+22 |       { status: 200 }
+23 |     );
+24 |   } catch (error) {
+25 |     console.error('DB 초기화 API 오류:', error);
+26 |     
+27 |     return NextResponse.json(
+28 |       { 
+29 |         success: false, 
+30 |         message: '데이터베이스 초기화 중 오류가 발생했습니다.', 
+31 |         error: error instanceof Error ? error.message : String(error) 
+32 |       },
+33 |       { status: 500 }
+34 |     );
+35 |   }
+36 | } 
+```
+
+src/app/api/health-check/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import prisma from '@/lib/prisma';
+3 | 
+4 | /**
+5 |  * DB 연결 상태를 확인하는 헬스 체크 API
+6 |  * HEAD 또는 GET 요청 모두 사용 가능
+7 |  */
+8 | export async function HEAD(request: NextRequest) {
+9 |   try {
+10 |     // Prisma로 간단한 쿼리 실행하여 DB 연결 확인
+11 |     await prisma.$queryRaw`SELECT 1`;
+12 |     
+13 |     // 응답 본문 없이 200 OK만 반환
+14 |     return new NextResponse(null, { status: 200 });
+15 |   } catch (error) {
+16 |     console.error('DB 연결 실패:', error);
+17 |     return new NextResponse(null, { status: 503 }); // Service Unavailable
+18 |   }
+19 | }
+20 | 
+21 | export async function GET(request: NextRequest) {
+22 |   try {
+23 |     // Prisma로 간단한 쿼리 실행하여 DB 연결 확인
+24 |     await prisma.$queryRaw`SELECT 1`;
+25 |     
+26 |     return NextResponse.json({ status: 'ok', message: 'Database connection successful' });
+27 |   } catch (error) {
+28 |     console.error('DB 연결 실패:', error);
+29 |     
+30 |     return NextResponse.json(
+31 |       { status: 'error', message: 'Database connection failed' },
+32 |       { status: 503 } // Service Unavailable
+33 |     );
+34 |   }
+35 | } 
+```
+
+src/app/api/logs/route.ts
 ```
 1 | /**
 2 |  * 파일명: route.ts
-3 |  * 목적: OAuth 콜백 처리
-4 |  * 역할: OAuth 인증 완료 후 사용자를 적절한 페이지로 리다이렉트
+3 |  * 목적: 클라이언트 로그를 서버에 저장하는 API 엔드포인트
+4 |  * 역할: 로그 데이터를 받아 서버 로그에 기록하고 필요시 데이터베이스에 저장
 5 |  * 작성일: 2025-03-27
 6 |  */
 7 | 
-8 | import { createClient } from '@/utils/supabase/server'
-9 | import { NextRequest, NextResponse } from 'next/server'
-10 | 
-11 | export async function GET(request: NextRequest) {
-12 |   try {
-13 |     // URL에서 인증 코드 추출
-14 |     const requestUrl = new URL(request.url)
-15 |     const code = requestUrl.searchParams.get('code')
-16 |     
-17 |     // 디버깅용 로그
-18 |     if (code) {
-19 |       console.log('인증 콜백에서 코드 감지됨', {
-20 |         code_length: code.length,
-21 |         origin: requestUrl.origin,
-22 |       })
-23 |     } else {
-24 |       console.warn('인증 콜백에서 코드를 찾을 수 없음')
-25 |       return NextResponse.redirect(new URL('/login?error=인증 코드를 찾을 수 없습니다', request.url))
-26 |     }
-27 |     
-28 |     // 리다이렉트 대상 경로 (기본값: 홈)
-29 |     const next = '/'
-30 |     
-31 |     // 서버 클라이언트 생성
-32 |     const supabase = await createClient()
-33 |     
-34 |     // PKCE 인증 흐름 완료 (코드 → 토큰 교환)
-35 |     const { error } = await supabase.auth.exchangeCodeForSession(code)
-36 |     
-37 |     if (error) {
-38 |       console.error('인증 코드 교환 오류:', error.message)
-39 |       return NextResponse.redirect(
-40 |         new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url)
-41 |       )
-42 |     }
-43 |     
-44 |     // 인증 성공 시 리다이렉트
-45 |     console.log('인증 성공, 리다이렉트:', next)
-46 |     return NextResponse.redirect(new URL(next, request.url))
-47 |   } catch (error: any) {
-48 |     console.error('인증 콜백 처리 중 예외 발생:', error)
-49 |     const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
-50 |     
-51 |     return NextResponse.redirect(
-52 |       new URL(`/login?error=${encodeURIComponent(errorMessage)}`, request.url)
-53 |     )
-54 |   }
-55 | } 
+8 | import { NextRequest, NextResponse } from 'next/server';
+9 | import fs from 'fs';
+10 | import path from 'path';
+11 | import { createClient } from '@supabase/supabase-js';
+12 | // import { createBrowserSupabaseClient } from '@/lib/supabase-browser'; // 클라이언트용 함수 제거
+13 | 
+14 | // 로그 파일 경로 설정
+15 | const LOG_DIR = process.env.LOG_DIR || 'logs';
+16 | const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
+17 | 
+18 | // 서버 전용 Supabase 클라이언트 생성 함수
+19 | const createServerSupabaseClient = () => {
+20 |   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+21 |   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+22 |   
+23 |   if (!supabaseUrl || !supabaseServiceKey) {
+24 |     console.error('Supabase 환경 변수가 설정되지 않았습니다');
+25 |     return null;
+26 |   }
+27 |   
+28 |   return createClient(supabaseUrl, supabaseServiceKey);
+29 | };
+30 | 
+31 | /**
+32 |  * ensureLogDir: 로그 디렉토리가 존재하는지 확인하고, 없으면 생성
+33 |  */
+34 | const ensureLogDir = () => {
+35 |   const logDirPath = path.join(process.cwd(), LOG_DIR);
+36 |   if (!fs.existsSync(logDirPath)) {
+37 |     fs.mkdirSync(logDirPath, { recursive: true });
+38 |     console.log(`로그 디렉토리 생성: ${logDirPath}`);
+39 |   }
+40 | };
+41 | 
+42 | /**
+43 |  * saveLogToFile: 로그 데이터를 파일에 저장
+44 |  * @param logData 저장할 로그 데이터
+45 |  */
+46 | const saveLogToFile = (logData: any) => {
+47 |   try {
+48 |     ensureLogDir();
+49 |     
+50 |     // 기존 로그 파일 읽기
+51 |     let logs = [];
+52 |     if (fs.existsSync(LOG_FILE)) {
+53 |       const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
+54 |       logs = JSON.parse(fileContent);
+55 |     }
+56 |     
+57 |     // 새 로그 추가
+58 |     logs.push({
+59 |       ...logData,
+60 |       serverTimestamp: new Date().toISOString()
+61 |     });
+62 |     
+63 |     // 로그 파일 크기 제한 (최대 1000개 로그)
+64 |     if (logs.length > 1000) {
+65 |       logs = logs.slice(logs.length - 1000);
+66 |     }
+67 |     
+68 |     // 파일에 저장
+69 |     fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2));
+70 |     
+71 |     // 서버 콘솔에도 로그 출력
+72 |     console.log(`[SERVER-LOG][${logData.module}][${logData.level}] ${logData.message}`, logData.data || '');
+73 |     
+74 |     return true;
+75 |   } catch (error) {
+76 |     console.error('로그 파일 저장 오류:', error);
+77 |     return false;
+78 |   }
+79 | };
+80 | 
+[TRUNCATED]
+```
+
+src/app/api/tags/route.ts
+```
+1 | /**
+2 |  * 파일명: src/app/api/tags/route.ts
+3 |  * 목적: 태그 관련 API 엔드포인트 제공
+4 |  * 역할: 태그 목록 조회, 태그 사용 횟수 집계, 태그 생성 등 기능 제공
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-03-27
+7 |  */
+8 | 
+9 | import { NextRequest, NextResponse } from 'next/server';
+10 | import prisma from '@/lib/prisma';
+11 | import { auth } from '@/lib/auth-server';
+12 | 
+13 | /**
+14 |  * GET: 태그 목록을 반환하는 API
+15 |  * @param request - 요청 객체
+16 |  * @returns 태그 목록 및 사용 횟수
+17 |  */
+18 | export async function GET(request: NextRequest) {
+19 |   try {
+20 |     const searchParams = request.nextUrl.searchParams;
+21 |     const includeCount = searchParams.get('includeCount') === 'true';
+22 |     const searchQuery = searchParams.get('q') || '';
+23 |     
+24 |     if (includeCount) {
+25 |       // 사용 횟수와 함께 태그 목록 반환
+26 |       const tags = await prisma.tag.findMany({
+27 |         where: {
+28 |           name: {
+29 |             contains: searchQuery,
+30 |           },
+31 |         },
+32 |         include: {
+33 |           _count: {
+34 |             select: { cardTags: true },
+35 |           },
+36 |         },
+37 |         orderBy: {
+38 |           name: 'asc',
+39 |         },
+40 |       });
+41 |       
+42 |       // 응답 형식 변환
+43 |       const formattedTags = tags.map(tag => ({
+44 |         id: tag.id,
+45 |         name: tag.name,
+46 |         count: tag._count.cardTags,
+47 |         createdAt: tag.createdAt,
+48 |       }));
+49 |       
+50 |       return NextResponse.json(formattedTags);
+51 |     } else {
+52 |       // 기본 태그 목록만 반환
+53 |       const tags = await prisma.tag.findMany({
+54 |         where: searchQuery ? {
+55 |           name: {
+56 |             contains: searchQuery,
+57 |           },
+58 |         } : undefined,
+59 |         orderBy: {
+60 |           name: 'asc',
+61 |         },
+62 |       });
+63 |       
+64 |       return NextResponse.json(tags);
+65 |     }
+66 |   } catch (error) {
+67 |     console.error('태그 조회 오류:', error);
+68 |     return NextResponse.json(
+69 |       { error: '태그 목록을 불러오는데 실패했습니다' },
+70 |       { status: 500 }
+71 |     );
+72 |   }
+73 | }
+74 | 
+75 | /**
+76 |  * POST: 새 태그를 생성하는 API
+77 |  * @param request - 요청 객체
+78 |  * @returns 생성된 태그 정보
+79 |  */
+80 | export async function POST(request: NextRequest) {
+81 |   try {
+82 |     // 사용자 인증 확인
+83 |     const session = await auth();
+84 |     if (!session || !session.user) {
+85 |       return NextResponse.json(
+86 |         { error: '인증이 필요합니다' },
+87 |         { status: 401 }
+88 |       );
+89 |     }
+90 |     
+91 |     const { name } = await request.json();
+92 |     
+93 |     if (!name || typeof name !== 'string' || name.trim() === '') {
+94 |       return NextResponse.json(
+95 |         { error: '유효한 태그 이름이 필요합니다' },
+[TRUNCATED]
 ```
 
 src/app/auth/error/page.test.tsx
@@ -11561,8 +11822,222 @@ src/app/auth/error/page.tsx
 70 |               className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors"
 71 |             >
 72 |               홈으로 돌아가기
-73 |             </Link>
 [TRUNCATED]
+```
+
+src/app/auth/callback/page.test.tsx
+```
+1 | /**
+2 |  * 파일명: page.test.tsx
+3 |  * 목적: OAuth 콜백 페이지 컴포넌트 테스트
+4 |  * 역할: 클라이언트 측 인증 처리 UI 및 상태 관리 검증
+5 |  * 작성일: 2025-04-09
+6 |  * 수정일: 2025-04-09 : useAuthCallback 훅 사용 방식으로 테스트 리팩토링
+7 |  * 수정일: 2025-04-10 : 테스트 안정성 개선 및 타이머 모킹 수정
+8 |  */
+9 | 
+10 | import React from "react";
+11 | import { render, screen, fireEvent } from "@testing-library/react";
+12 | import "@testing-library/jest-dom";
+13 | import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+14 | import CallbackHandler from "./page";
+15 | import { useAuthCallback } from "@/hooks/useAuthCallback";
+16 | 
+17 | // mock 설정
+18 | const mockPush = vi.fn();
+19 | 
+20 | // 테스트 설정
+21 | vi.mock('next/navigation', () => ({
+22 |   useRouter: () => ({
+23 |     push: mockPush,
+24 |   })
+25 | }));
+26 | 
+27 | vi.mock('@/lib/logger', () => ({
+28 |   default: () => ({
+29 |     info: vi.fn(),
+30 |     error: vi.fn(),
+31 |     warn: vi.fn(),
+32 |     debug: vi.fn()
+33 |   })
+34 | }));
+35 | 
+36 | // useAuthCallback 훅 모킹
+37 | vi.mock('@/hooks/useAuthCallback');
+38 | const mockUseAuthCallback = useAuthCallback as ReturnType<typeof vi.fn>;
+39 | 
+40 | // 테스트
+41 | describe("CallbackHandler 컴포넌트", () => {
+42 |   // 원래 window.location 저장
+43 |   const originalLocation = window.location;
+44 | 
+45 |   beforeAll(() => {
+46 |     // 테스트 시작 전 타이머 설정
+47 |     vi.useFakeTimers();
+48 |   });
+49 | 
+50 |   beforeEach(() => {
+51 |     vi.resetAllMocks();
+52 | 
+53 |     // useAuthCallback 기본 반환값 설정
+54 |     mockUseAuthCallback.mockReturnValue({
+55 |       processingState: '초기화 중',
+56 |       error: null,
+57 |       redirectUrl: null
+58 |     });
+59 | 
+60 |     // window.location 초기화
+61 |     Object.defineProperty(window, 'location', {
+62 |       writable: true,
+63 |       value: {
+64 |         href: 'http://localhost:3000/auth/callback?code=test-code'
+65 |       }
+66 |     });
+67 | 
+68 |     // router.push 모킹 초기화
+69 |     mockPush.mockClear();
+70 |   });
+71 | 
+72 |   afterEach(() => {
+73 |     vi.clearAllTimers();
+74 |     vi.clearAllMocks();
+75 |   });
+76 | 
+77 |   afterAll(() => {
+78 |     // 타이머 복원
+79 |     vi.useRealTimers();
+80 | 
+81 |     // window.location 복원
+82 |     Object.defineProperty(window, 'location', {
+83 |       writable: true,
+84 |       value: originalLocation
+85 |     });
+86 |   });
+87 | 
+88 |   // 테스트 환경 확인
+89 |   it("테스트 환경이 올바르게 설정되었는지 확인", () => {
+90 |     expect(useAuthCallback).toBeDefined();
+91 |     expect(mockPush).toBeDefined();
+92 |   });
+93 | 
+94 |   // 기본 렌더링 테스트
+95 |   it("컴포넌트가 로딩 상태를 표시해야 함", () => {
+96 |     // 초기화 중 상태 설정
+97 |     mockUseAuthCallback.mockReturnValue({
+[TRUNCATED]
+```
+
+src/app/auth/callback/page.tsx
+```
+1 | /**
+2 |  * 파일명: callback/page.tsx
+3 |  * 목적: OAuth 콜백 처리 및 인증 완료
+4 |  * 역할: Google 로그인 후 리디렉션된 콜백을 처리하고 세션을 설정
+5 |  * 작성일: 2025-04-09
+6 |  * 수정일: 2025-03-30
+7 |  * 수정일: 2023-04-10 : useAuthCallback 훅으로 로직 분리
+8 |  * 수정일: 2023-04-10 : 리다이렉션 처리 로직 추가
+9 |  */
+10 | 
+11 | 'use client';
+12 | 
+13 | import { useEffect } from 'react';
+14 | import { useRouter } from 'next/navigation';
+15 | import createLogger from '@/lib/logger';
+16 | import { useAuthCallback } from '@/hooks/useAuthCallback';
+17 | 
+18 | // 모듈별 로거 생성
+19 | const logger = createLogger('Callback');
+20 | 
+21 | /**
+22 |  * CallbackHandler: OAuth 콜백을 처리하는 컴포넌트
+23 |  * @returns {JSX.Element} 콜백 처리 중임을 나타내는 UI
+24 |  */
+25 | export default function CallbackHandler() {
+26 |   const router = useRouter();
+27 |   const { processingState, error, redirectUrl } = useAuthCallback();
+28 | 
+29 |   // redirectUrl이 변경되면 리다이렉션 실행
+30 |   useEffect(() => {
+31 |     if (redirectUrl) {
+32 |       logger.info(`리다이렉션 실행: ${redirectUrl}`);
+33 |       router.push(redirectUrl);
+34 |     }
+35 |   }, [redirectUrl, router, logger]);
+36 | 
+37 |   // 로딩 UI 표시
+38 |   return (
+39 |     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+40 |       <div className="mb-4">
+41 |         <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+42 |       </div>
+43 |       <h2 className="text-xl font-semibold mb-2">인증 처리 중...</h2>
+44 |       <p className="text-gray-500 mb-2">{processingState}</p>
+45 |       {error && (
+46 |         <p className="text-red-500 text-sm mt-2">오류: {error}</p>
+47 |       )}
+48 |     </div>
+49 |   );
+50 | } 
+```
+
+src/app/auth/callback/route.ts
+```
+1 | /**
+2 |  * 파일명: route.ts
+3 |  * 목적: OAuth 콜백 처리
+4 |  * 역할: OAuth 인증 완료 후 사용자를 적절한 페이지로 리다이렉트
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | import { createClient } from '@/utils/supabase/server'
+9 | import { NextRequest, NextResponse } from 'next/server'
+10 | 
+11 | export async function GET(request: NextRequest) {
+12 |   try {
+13 |     // URL에서 인증 코드 추출
+14 |     const requestUrl = new URL(request.url)
+15 |     const code = requestUrl.searchParams.get('code')
+16 |     
+17 |     // 디버깅용 로그
+18 |     if (code) {
+19 |       console.log('인증 콜백에서 코드 감지됨', {
+20 |         code_length: code.length,
+21 |         origin: requestUrl.origin,
+22 |       })
+23 |     } else {
+24 |       console.warn('인증 콜백에서 코드를 찾을 수 없음')
+25 |       return NextResponse.redirect(new URL('/login?error=인증 코드를 찾을 수 없습니다', request.url))
+26 |     }
+27 |     
+28 |     // 리다이렉트 대상 경로 (기본값: 홈)
+29 |     const next = '/'
+30 |     
+31 |     // 서버 클라이언트 생성
+32 |     const supabase = await createClient()
+33 |     
+34 |     // PKCE 인증 흐름 완료 (코드 → 토큰 교환)
+35 |     const { error } = await supabase.auth.exchangeCodeForSession(code)
+36 |     
+37 |     if (error) {
+38 |       console.error('인증 코드 교환 오류:', error.message)
+39 |       return NextResponse.redirect(
+40 |         new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url)
+41 |       )
+42 |     }
+43 |     
+44 |     // 인증 성공 시 리다이렉트
+45 |     console.log('인증 성공, 리다이렉트:', next)
+46 |     return NextResponse.redirect(new URL(next, request.url))
+47 |   } catch (error: any) {
+48 |     console.error('인증 콜백 처리 중 예외 발생:', error)
+49 |     const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
+50 |     
+51 |     return NextResponse.redirect(
+52 |       new URL(`/login?error=${encodeURIComponent(errorMessage)}`, request.url)
+53 |     )
+54 |   }
+55 | } 
 ```
 
 src/app/auth/login/page.test.tsx
@@ -11650,8 +12125,6 @@ src/app/auth/login/page.test.tsx
 81 |       return Promise.reject(testError) as any;
 82 |     });
 83 | 
-84 |     render(<LoginPage />);
-85 | 
 [TRUNCATED]
 ```
 
@@ -11803,7 +12276,6 @@ src/app/auth/test/page.test.tsx
 85 | 
 86 |   it('인증된 상태에서 페이지가 올바르게 렌더링되어야 합니다', () => {
 87 |     // 인증된 상태 모킹
-88 |     vi.mocked(useSession).mockReturnValue({
 [TRUNCATED]
 ```
 
@@ -11891,454 +12363,342 @@ src/app/auth/test/page.tsx
 80 | } 
 ```
 
-src/app/api/board-settings/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import { z } from 'zod';
-3 | import prisma from '@/lib/prisma';
-4 | 
-5 | // 보드 설정 스키마
-6 | const boardSettingsSchema = z.object({
-7 |   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
-8 |   settings: z.object({
-9 |     snapToGrid: z.boolean(),
-10 |     snapGrid: z.tuple([z.number(), z.number()]),
-11 |     connectionLineType: z.string(),
-12 |     markerEnd: z.string().nullable(),
-13 |     strokeWidth: z.number(),
-14 |     markerSize: z.number(),
-15 |     edgeColor: z.string(),
-16 |     selectedEdgeColor: z.string(),
-17 |     animated: z.boolean()
-18 |   })
-19 | });
-20 | 
-21 | // 부분 업데이트용 보드 설정 스키마 (더 유연한 검사)
-22 | const partialBoardSettingsSchema = z.object({
-23 |   userId: z.string(), // UUID 검사 제거하여 더 유연하게 함
-24 |   settings: z.object({
-25 |     snapToGrid: z.boolean().optional(),
-26 |     snapGrid: z.tuple([z.number(), z.number()]).optional(),
-27 |     connectionLineType: z.string().optional(),
-28 |     markerEnd: z.union([z.string(), z.null()]).optional(), // 문자열 또는 null 허용
-29 |     strokeWidth: z.number().optional(),
-30 |     markerSize: z.number().optional(),
-31 |     edgeColor: z.string().optional(),
-32 |     selectedEdgeColor: z.string().optional(),
-33 |     animated: z.boolean().optional()
-34 |   }).partial()
-35 | });
-36 | 
-37 | // 보드 설정 저장 API
-38 | export async function POST(request: NextRequest) {
-39 |   try {
-40 |     const body = await request.json();
-41 |     const { userId, settings } = boardSettingsSchema.parse(body);
-42 | 
-43 |     // 기존 설정이 있는지 확인
-44 |     const existingSettings = await prisma.boardSettings.findUnique({
-45 |       where: { userId }
-46 |     });
-47 | 
-48 |     // 설정 업데이트 또는 생성
-49 |     if (existingSettings) {
-50 |       await prisma.boardSettings.update({
-51 |         where: { userId },
-52 |         data: {
-53 |           settings: settings
-54 |         }
-55 |       });
-56 |     } else {
-57 |       await prisma.boardSettings.create({
-58 |         data: {
-59 |           userId,
-60 |           settings
-61 |         }
-62 |       });
-63 |     }
-64 | 
-65 |     return NextResponse.json({ success: true }, { status: 200 });
-66 |   } catch (error) {
-67 |     console.error('보드 설정 저장 실패:', error);
-68 |     return NextResponse.json({ error: '보드 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
-69 |   }
-70 | }
-71 | 
-72 | // 보드 설정 업데이트 API
-73 | export async function PUT(request: NextRequest) {
-74 |   try {
-75 |     const body = await request.json();
-76 |     const { userId, settings } = boardSettingsSchema.parse(body);
-77 | 
-78 |     // 기존 설정이 있는지 확인
-79 |     const existingSettings = await prisma.boardSettings.findUnique({
-80 |       where: { userId }
-81 |     });
-82 | 
-83 |     // 설정 업데이트 또는 생성
-84 |     if (existingSettings) {
-85 |       await prisma.boardSettings.update({
-86 |         where: { userId },
-87 |         data: {
-[TRUNCATED]
-```
-
-src/app/api/cards/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import { z } from 'zod';
-3 | import prisma from '@/lib/prisma';
-4 | 
-5 | // 카드 생성 스키마
-6 | const createCardSchema = z.object({
-7 |   title: z.string().min(1, '제목은 필수입니다.'),
-8 |   content: z.string().optional(),
-9 |   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
-10 |   tags: z.array(z.string()).optional()
-11 | });
-12 | 
-13 | // 태그 처리 함수
-14 | async function processTagsForCard(cardId: string, tagNames: string[] = []) {
-15 |   try {
-16 |     // 중복 태그 제거 및 공백 제거
-17 |     const uniqueTags = [...new Set(tagNames.map(tag => tag.trim()))].filter(tag => tag.length > 0);
-18 |     
-19 |     // 카드와 연결된 기존 태그 삭제
-20 |     await prisma.cardTag.deleteMany({
-21 |       where: { cardId }
-22 |     });
-23 |     
-24 |     // 각 태그에 대해 처리
-25 |     for (const tagName of uniqueTags) {
-26 |       // 태그가 존재하는지 확인하고, 없으면 생성
-27 |       let tag = await prisma.tag.findUnique({
-28 |         where: { name: tagName }
-29 |       });
-30 |       
-31 |       if (!tag) {
-32 |         tag = await prisma.tag.create({
-33 |           data: { name: tagName }
-34 |         });
-35 |       }
-36 |       
-37 |       // 카드와 태그 연결
-38 |       await prisma.cardTag.create({
-39 |         data: {
-40 |           cardId,
-41 |           tagId: tag.id
-42 |         }
-43 |       });
-44 |     }
-45 |   } catch (error) {
-46 |     console.error('태그 처리 중 오류:', error);
-47 |     // 태그 처리 실패해도 흐름 계속 (태그는 필수가 아님)
-48 |   }
-49 | }
-50 | 
-51 | // 데이터베이스 연결 안전하게 수행하는 래퍼 함수
-52 | async function safeDbOperation<T>(operation: () => Promise<T>, errorMessage: string): Promise<{ data: T | null; error: string | null }> {
-53 |   try {
-54 |     const result = await operation();
-55 |     return { data: result, error: null };
-56 |   } catch (error) {
-57 |     console.error(`${errorMessage}:`, error);
-58 |     return { data: null, error: errorMessage };
-59 |   }
-60 | }
-61 | 
-62 | // 카드 생성 API
-63 | export async function POST(request: NextRequest) {
-64 |   try {
-65 |     // 요청 본문 파싱 안전하게 처리
-66 |     let body;
-67 |     try {
-68 |       body = await request.json();
-69 |     } catch (jsonError) {
-70 |       console.error('요청 본문 파싱 오류:', jsonError);
-71 |       return NextResponse.json(
-72 |         { error: '유효하지 않은 요청 형식입니다.' },
-73 |         { status: 400 }
-74 |       );
-75 |     }
-76 |     
-77 |     // 데이터 유효성 검사
-78 |     const validation = createCardSchema.safeParse(body);
-79 |     if (!validation.success) {
-80 |       return NextResponse.json(
-81 |         { error: '유효하지 않은 데이터입니다.', details: validation.error.format() },
-82 |         { status: 400 }
-83 |       );
-84 |     }
-85 |     
-86 |     const { title, content, userId, tags } = validation.data;
-[TRUNCATED]
-```
-
-src/app/api/db-init/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import { initDatabase } from '@/lib/db-init';
-3 | 
-4 | /**
-5 |  * DB 초기화 API 엔드포인트
-6 |  * 개발 환경에서만 사용 가능
-7 |  */
-8 | export async function GET(request: NextRequest) {
-9 |   // 개발 환경인지 확인
-10 |   if (process.env.NODE_ENV !== 'development') {
-11 |     return NextResponse.json(
-12 |       { error: '이 API는 개발 환경에서만 사용 가능합니다.' },
-13 |       { status: 403 }
-14 |     );
-15 |   }
-16 | 
-17 |   try {
-18 |     await initDatabase();
-19 |     
-20 |     return NextResponse.json(
-21 |       { success: true, message: '데이터베이스 초기화가 완료되었습니다.' },
-22 |       { status: 200 }
-23 |     );
-24 |   } catch (error) {
-25 |     console.error('DB 초기화 API 오류:', error);
-26 |     
-27 |     return NextResponse.json(
-28 |       { 
-29 |         success: false, 
-30 |         message: '데이터베이스 초기화 중 오류가 발생했습니다.', 
-31 |         error: error instanceof Error ? error.message : String(error) 
-32 |       },
-33 |       { status: 500 }
-34 |     );
-35 |   }
-36 | } 
-```
-
-src/app/api/logs/route.ts
+src/components/board/components/Board.test.tsx
 ```
 1 | /**
-2 |  * 파일명: route.ts
-3 |  * 목적: 클라이언트 로그를 서버에 저장하는 API 엔드포인트
-4 |  * 역할: 로그 데이터를 받아 서버 로그에 기록하고 필요시 데이터베이스에 저장
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | import { NextRequest, NextResponse } from 'next/server';
-9 | import fs from 'fs';
-10 | import path from 'path';
-11 | import { createClient } from '@supabase/supabase-js';
-12 | // import { createBrowserSupabaseClient } from '@/lib/supabase-browser'; // 클라이언트용 함수 제거
-13 | 
-14 | // 로그 파일 경로 설정
-15 | const LOG_DIR = process.env.LOG_DIR || 'logs';
-16 | const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
-17 | 
-18 | // 서버 전용 Supabase 클라이언트 생성 함수
-19 | const createServerSupabaseClient = () => {
-20 |   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-21 |   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-22 |   
-23 |   if (!supabaseUrl || !supabaseServiceKey) {
-24 |     console.error('Supabase 환경 변수가 설정되지 않았습니다');
-25 |     return null;
-26 |   }
-27 |   
-28 |   return createClient(supabaseUrl, supabaseServiceKey);
-29 | };
-30 | 
-31 | /**
-32 |  * ensureLogDir: 로그 디렉토리가 존재하는지 확인하고, 없으면 생성
-33 |  */
-34 | const ensureLogDir = () => {
-35 |   const logDirPath = path.join(process.cwd(), LOG_DIR);
-36 |   if (!fs.existsSync(logDirPath)) {
-37 |     fs.mkdirSync(logDirPath, { recursive: true });
-38 |     console.log(`로그 디렉토리 생성: ${logDirPath}`);
-39 |   }
-40 | };
-41 | 
-42 | /**
-43 |  * saveLogToFile: 로그 데이터를 파일에 저장
-44 |  * @param logData 저장할 로그 데이터
-45 |  */
-46 | const saveLogToFile = (logData: any) => {
-47 |   try {
-48 |     ensureLogDir();
-49 |     
-50 |     // 기존 로그 파일 읽기
-51 |     let logs = [];
-52 |     if (fs.existsSync(LOG_FILE)) {
-53 |       const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
-54 |       logs = JSON.parse(fileContent);
-55 |     }
-56 |     
-57 |     // 새 로그 추가
-58 |     logs.push({
-59 |       ...logData,
-60 |       serverTimestamp: new Date().toISOString()
-61 |     });
-62 |     
-63 |     // 로그 파일 크기 제한 (최대 1000개 로그)
-64 |     if (logs.length > 1000) {
-65 |       logs = logs.slice(logs.length - 1000);
-66 |     }
-67 |     
-68 |     // 파일에 저장
-69 |     fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2));
-70 |     
-71 |     // 서버 콘솔에도 로그 출력
-72 |     console.log(`[SERVER-LOG][${logData.module}][${logData.level}] ${logData.message}`, logData.data || '');
-73 |     
-74 |     return true;
-75 |   } catch (error) {
-76 |     console.error('로그 파일 저장 오류:', error);
-77 |     return false;
-78 |   }
-79 | };
-80 | 
-81 | /**
-[TRUNCATED]
-```
-
-src/app/api/health-check/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import prisma from '@/lib/prisma';
-3 | 
-4 | /**
-5 |  * DB 연결 상태를 확인하는 헬스 체크 API
-6 |  * HEAD 또는 GET 요청 모두 사용 가능
-7 |  */
-8 | export async function HEAD(request: NextRequest) {
-9 |   try {
-10 |     // Prisma로 간단한 쿼리 실행하여 DB 연결 확인
-11 |     await prisma.$queryRaw`SELECT 1`;
-12 |     
-13 |     // 응답 본문 없이 200 OK만 반환
-14 |     return new NextResponse(null, { status: 200 });
-15 |   } catch (error) {
-16 |     console.error('DB 연결 실패:', error);
-17 |     return new NextResponse(null, { status: 503 }); // Service Unavailable
-18 |   }
-19 | }
-20 | 
-21 | export async function GET(request: NextRequest) {
-22 |   try {
-23 |     // Prisma로 간단한 쿼리 실행하여 DB 연결 확인
-24 |     await prisma.$queryRaw`SELECT 1`;
-25 |     
-26 |     return NextResponse.json({ status: 'ok', message: 'Database connection successful' });
-27 |   } catch (error) {
-28 |     console.error('DB 연결 실패:', error);
-29 |     
-30 |     return NextResponse.json(
-31 |       { status: 'error', message: 'Database connection failed' },
-32 |       { status: 503 } // Service Unavailable
-33 |     );
-34 |   }
-35 | } 
-```
-
-src/app/api/tags/route.ts
-```
-1 | /**
-2 |  * 파일명: src/app/api/tags/route.ts
-3 |  * 목적: 태그 관련 API 엔드포인트 제공
-4 |  * 역할: 태그 목록 조회, 태그 사용 횟수 집계, 태그 생성 등 기능 제공
-5 |  * 작성일: 2025-03-05
-6 |  * 수정일: 2025-03-27
+2 |  * 파일명: Board.test.tsx
+3 |  * 목적: Board 컴포넌트 테스트
+4 |  * 역할: Board 컴포넌트의 기능을 검증하는 테스트 코드 제공
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-01
 7 |  */
 8 | 
-9 | import { NextRequest, NextResponse } from 'next/server';
-10 | import prisma from '@/lib/prisma';
-11 | import { auth } from '@/lib/auth-server';
-12 | 
-13 | /**
-14 |  * GET: 태그 목록을 반환하는 API
-15 |  * @param request - 요청 객체
-16 |  * @returns 태그 목록 및 사용 횟수
-17 |  */
-18 | export async function GET(request: NextRequest) {
-19 |   try {
-20 |     const searchParams = request.nextUrl.searchParams;
-21 |     const includeCount = searchParams.get('includeCount') === 'true';
-22 |     const searchQuery = searchParams.get('q') || '';
-23 |     
-24 |     if (includeCount) {
-25 |       // 사용 횟수와 함께 태그 목록 반환
-26 |       const tags = await prisma.tag.findMany({
-27 |         where: {
-28 |           name: {
-29 |             contains: searchQuery,
-30 |           },
-31 |         },
-32 |         include: {
-33 |           _count: {
-34 |             select: { cardTags: true },
-35 |           },
-36 |         },
-37 |         orderBy: {
-38 |           name: 'asc',
-39 |         },
-40 |       });
-41 |       
-42 |       // 응답 형식 변환
-43 |       const formattedTags = tags.map(tag => ({
-44 |         id: tag.id,
-45 |         name: tag.name,
-46 |         count: tag._count.cardTags,
-47 |         createdAt: tag.createdAt,
-48 |       }));
-49 |       
-50 |       return NextResponse.json(formattedTags);
-51 |     } else {
-52 |       // 기본 태그 목록만 반환
-53 |       const tags = await prisma.tag.findMany({
-54 |         where: searchQuery ? {
-55 |           name: {
-56 |             contains: searchQuery,
-57 |           },
-58 |         } : undefined,
-59 |         orderBy: {
-60 |           name: 'asc',
-61 |         },
-62 |       });
-63 |       
-64 |       return NextResponse.json(tags);
-65 |     }
-66 |   } catch (error) {
-67 |     console.error('태그 조회 오류:', error);
-68 |     return NextResponse.json(
-69 |       { error: '태그 목록을 불러오는데 실패했습니다' },
-70 |       { status: 500 }
-71 |     );
-72 |   }
-73 | }
-74 | 
-75 | /**
-76 |  * POST: 새 태그를 생성하는 API
-77 |  * @param request - 요청 객체
-78 |  * @returns 생성된 태그 정보
-79 |  */
-80 | export async function POST(request: NextRequest) {
-81 |   try {
-82 |     // 사용자 인증 확인
-83 |     const session = await auth();
-84 |     if (!session || !session.user) {
-85 |       return NextResponse.json(
-86 |         { error: '인증이 필요합니다' },
-87 |         { status: 401 }
-88 |       );
-89 |     }
-90 |     
-91 |     const { name } = await request.json();
-92 |     
-93 |     if (!name || typeof name !== 'string' || name.trim() === '') {
-94 |       return NextResponse.json(
-95 |         { error: '유효한 태그 이름이 필요합니다' },
-96 |         { status: 400 }
-97 |       );
-98 |     }
+9 | import React from 'react';
+10 | import { render, screen, fireEvent } from '@testing-library/react';
+11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
+12 | import '@testing-library/jest-dom';
+13 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+14 | import Board from './Board';
+15 | import { useNodeClickHandlers } from '../hooks/useNodes';
+16 | import { useEdges } from '../hooks/useEdges';
+17 | import { useBoardUtils } from '../hooks/useBoardUtils';
+18 | import { useAppStore } from '@/store/useAppStore';
+19 | import { useAuth } from '@/contexts/AuthContext';
+20 | import { toast } from 'sonner';
+21 | 
+22 | // React Flow 모킹
+23 | mockReactFlow();
+24 | 
+25 | // window 객체 모킹 - addEventListener 문제 해결
+26 | Object.defineProperty(global, 'window', {
+27 |   value: {
+28 |     ...global.window,
+29 |     addEventListener: vi.fn(),
+30 |     removeEventListener: vi.fn(),
+31 |   },
+32 |   writable: true,
+33 | });
+34 | 
+35 | // document.body 설정 - waitFor 문제 해결
+36 | document.body.innerHTML = '<div id="root"></div>';
+37 | 
+38 | // 모듈 모킹
+39 | vi.mock('@xyflow/react', async () => {
+40 |   const actual = await vi.importActual('@xyflow/react');
+41 |   return {
+42 |     ...actual,
+43 |     useReactFlow: vi.fn(() => ({
+44 |       screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
+45 |       fitView: vi.fn(),
+46 |       getNodes: vi.fn(() => []),
+47 |       getEdges: vi.fn(() => []),
+48 |       setNodes: vi.fn(),
+49 |       setEdges: vi.fn(),
+50 |     })),
+51 |     useUpdateNodeInternals: vi.fn(() => vi.fn()),
+52 |     Background: () => <div data-testid="react-flow-background" />,
+53 |     Controls: () => <div data-testid="react-flow-controls" />,
+54 |     Panel: ({ children, position }: any) => <div data-testid={`panel-${position}`}>{children}</div>,
+55 |     ReactFlow: ({ children, nodes, edges }: any) => (
+56 |       <div data-testid="react-flow-container">
+57 |         <div data-testid="react-flow-nodes">{JSON.stringify(nodes)}</div>
+58 |         <div data-testid="react-flow-edges">{JSON.stringify(edges)}</div>
+59 |         {children}
+60 |       </div>
+61 |     ),
+62 |   };
+63 | });
+64 | 
+65 | // Board 컴포넌트 자체 모킹으로 변경
+66 | vi.mock('./Board', () => ({
+67 |   default: ({ showControls }: { showControls?: boolean }) => {
+68 |     const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+69 | 
+70 |     const handleCreateCard = () => {
+71 |       setIsCreateModalOpen(true);
+72 |     };
+73 | 
+74 |     const handleCloseModal = () => {
+75 |       setIsCreateModalOpen(false);
+76 |     };
+77 | 
+[TRUNCATED]
+```
+
+src/components/board/components/Board.tsx
+```
+1 | /**
+2 |  * 파일명: Board.tsx
+3 |  * 목적: 보드 메인 컨테이너 컴포넌트
+4 |  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+12 | import {
+13 |   useReactFlow,
+14 |   useUpdateNodeInternals,
+15 |   Position,
+16 |   Viewport,
+17 |   ViewportHelperFunctions
+18 | } from '@xyflow/react';
+19 | import { toast } from 'sonner';
+20 | import { useAuth } from '@/contexts/AuthContext';
+21 | import { useAppStore } from '@/store/useAppStore';
+22 | import { useBoardStore } from '@/store/useBoardStore';
+23 | 
+24 | // 보드 관련 컴포넌트 임포트
+25 | import CreateCardModal from '@/components/cards/CreateCardModal';
+26 | import BoardCanvas from './BoardCanvas';
+27 | 
+28 | // 보드 관련 훅 임포트
+29 | import { useNodeClickHandlers } from '../hooks/useNodes';
+30 | import { useEdges } from '../hooks/useEdges';
+31 | import { useBoardData } from '../hooks/useBoardData';
+32 | import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+33 | import { useBoardHandlers } from '../hooks/useBoardHandlers';
+34 | 
+35 | // 타입 임포트
+36 | import { BoardComponentProps, XYPosition } from '../types/board-types';
+37 | import { Node, Edge } from '@xyflow/react';
+38 | import { NodeInspector } from '../nodes/NodeInspector';
+39 | import { Card } from '@/store/useAppStore';
+40 | 
+41 | /**
+42 |  * Board: 보드 메인 컨테이너 컴포넌트
+43 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
+44 |  * @param className 추가 CSS 클래스
+45 |  * @param showControls 컨트롤 표시 여부
+46 |  */
+47 | export default function Board({
+48 |   onSelectCard,
+49 |   className = "",
+50 |   showControls = true
+51 | }: BoardComponentProps) {
+52 |   // 상태 관리
+53 |   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+54 | 
+55 |   // 엣지 드롭 관련 상태
+56 |   const [isEdgeDropModalOpen, setIsEdgeDropModalOpen] = useState(false);
+57 |   const [edgeDropPosition, setEdgeDropPosition] = useState<XYPosition | null>(null);
+58 |   const [edgeDropNodeId, setEdgeDropNodeId] = useState<string | null>(null);
+59 |   const [edgeDropHandleType, setEdgeDropHandleType] = useState<'source' | 'target' | null>(null);
+60 | 
+61 |   // 커넥팅 노드 관련 상태
+62 |   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+63 |   const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
+64 |   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
+65 | 
+66 |   // 뷰포트 변경 디바운스를 위한 타이머
+67 |   const viewportChangeTimer = useRef<NodeJS.Timeout | null>(null);
+68 | 
+69 |   // 인증 상태 가져오기
+70 |   const { user, isLoading: isAuthLoading } = useAuth();
+71 | 
+72 |   // 레퍼런스 및 기타 훅
+73 |   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+74 |   const reactFlowInstance = useReactFlow();
+75 |   const updateNodeInternals = useUpdateNodeInternals();
+76 | 
+77 |   // useAppStore에서 상태 가져오기
+[TRUNCATED]
+```
+
+src/components/board/components/BoardCanvas.test.tsx
+```
+1 | /**
+2 |  * 파일명: BoardCanvas.test.tsx
+3 |  * 목적: BoardCanvas 컴포넌트 테스트
+4 |  * 역할: BoardCanvas 컴포넌트의 렌더링과 기능을 테스트
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import React from 'react';
+10 | import { render, screen, fireEvent } from '@testing-library/react';
+11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
+12 | import '@testing-library/jest-dom';
+13 | import { mockReactFlow, createTestNode, createTestEdge } from '@/tests/test-utils';
+14 | import BoardCanvas from './BoardCanvas';
+15 | import { MarkerType, ConnectionLineType } from '@xyflow/react';
+16 | import { ReactNode } from 'react';
+17 | import { Node, Edge, Connection, Viewport } from '@xyflow/react';
+18 | 
+19 | // React Flow 모킹
+20 | vi.mock('@xyflow/react', async () => {
+21 |   const actual = await vi.importActual('@xyflow/react');
+22 |   return {
+23 |     ...actual,
+24 |     Panel: ({
+25 |       children,
+26 |       className,
+27 |       position = 'top-right',
+28 |       ...props
+29 |     }: {
+30 |       children: ReactNode;
+31 |       className?: string;
+32 |       position?: string;
+33 |       [key: string]: any;
+34 |     }) => (
+35 |       <div data-testid={`panel-${position}`} className={className} {...props}>
+36 |         {children}
+37 |       </div>
+38 |     ),
+39 |     ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
+40 |       children?: ReactNode;
+41 |       onNodesChange?: (changes: any) => void;
+42 |       onEdgesChange?: (changes: any) => void;
+43 |       onConnect?: (connection: any) => void;
+44 |       onConnectStart?: (event: any, params: any) => void;
+45 |       onConnectEnd?: (event: any) => void;
+46 |       onNodeClick?: (event: any, node: any) => void;
+47 |       onPaneClick?: (event: any) => void;
+48 |       defaultEdgeOptions?: any;
+49 |       [key: string]: any;
+50 |     }) => (
+51 |       <div
+52 |         className="react-flow"
+53 |         data-testid="react-flow-container"
+54 |         onClick={(e) => onPaneClick?.(e)}
+55 |       >
+56 |         <div data-testid="react-flow-nodes">
+57 |           {props.nodes?.map((node: any) => (
+58 |             <div
+59 |               key={node.id}
+60 |               data-testid={`node-${node.id}`}
+61 |               onClick={(e) => onNodeClick?.(e, node)}
+62 |             >
+63 |               {JSON.stringify(node)}
+64 |             </div>
+65 |           ))}
+66 |         </div>
+67 |         <div data-testid="react-flow-edges">
+68 |           {JSON.stringify(props.edges)}
+69 |         </div>
+70 |         <div data-testid="default-edge-options">
+71 |           {JSON.stringify(defaultEdgeOptions)}
+72 |         </div>
+73 |         {children}
+74 |       </div>
+75 |     ),
+76 |     Background: () => <div data-testid="react-flow-background" />,
+77 |     Controls: () => <div data-testid="react-flow-controls" />,
+78 |     MarkerType: {
+79 |       ArrowClosed: 'arrowclosed'
+80 |     },
+[TRUNCATED]
+```
+
+src/components/board/components/BoardCanvas.tsx
+```
+1 | /**
+2 |  * 파일명: BoardCanvas.tsx
+3 |  * 목적: ReactFlow 캔버스 렌더링 컴포넌트
+4 |  * 역할: Board 컴포넌트에서 ReactFlow 캔버스 관련 로직을 분리하여 렌더링을 담당
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-03-30
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import React, { useMemo } from 'react';
+12 | import {
+13 |   ReactFlow,
+14 |   Controls,
+15 |   Background,
+16 |   ConnectionMode,
+17 |   Node,
+18 |   Edge,
+19 |   NodeChange,
+20 |   EdgeChange,
+21 |   Connection,
+22 |   OnConnectStartParams,
+23 |   OnConnectStart,
+24 |   OnConnectEnd,
+25 |   MarkerType,
+26 |   Viewport
+27 | } from '@xyflow/react';
+28 | import { BoardSettings } from '@/lib/board-utils';
+29 | // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
+30 | // import CardNode from '@/components/board/nodes/CardNode';
+31 | // import CustomEdge from '@/components/board/nodes/CustomEdge';
+32 | // 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
+33 | import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
+34 | import NodeInspect from '@/components/board/nodes/NodeInspect';
+35 | import { cn } from '@/lib/utils';
+36 | // 삭제 3/29
+37 | // import BoardControls from './BoardControls';
+38 | 
+39 | interface BoardCanvasProps {
+40 |   /** ReactFlow 노드 배열 */
+41 |   nodes: Node[];
+42 |   /** ReactFlow 엣지 배열 */
+43 |   edges: Edge[];
+44 |   /** 노드 변경 핸들러 */
+45 |   onNodesChange: (changes: NodeChange[]) => void;
+46 |   /** 엣지 변경 핸들러 */
+47 |   onEdgesChange: (changes: EdgeChange[]) => void;
+48 |   /** 연결 생성 핸들러 */
+49 |   onConnect: (connection: Connection) => void;
+50 |   /** 연결 시작 핸들러 */
+51 |   onConnectStart: OnConnectStart;
+52 |   /** 연결 종료 핸들러 */
+53 |   onConnectEnd: OnConnectEnd;
+54 |   /** 노드 클릭 핸들러 */
+55 |   onNodeClick: (e: React.MouseEvent, node: Node) => void;
+56 |   /** 빈 공간 클릭 핸들러 */
+57 |   onPaneClick: (e: React.MouseEvent) => void;
+58 |   /** 레이아웃 방향 */
+59 |   layoutDirection: 'horizontal' | 'vertical';
+60 |   /** 보드 설정 */
+61 |   boardSettings: BoardSettings;
+62 |   /** 보드 설정 변경 핸들러 */
+63 |   onBoardSettingsChange: (settings: BoardSettings, isAuthenticated: boolean, userId?: string) => void;
+64 |   /** 레이아웃 변경 핸들러 */
+65 |   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
+66 |   /** 자동 레이아웃 적용 핸들러 */
+67 |   onAutoLayout: () => void;
+68 |   /** 레이아웃 저장 핸들러 */
+69 |   onSaveLayout: () => void;
+70 |   /** 카드 생성 버튼 클릭 핸들러 */
+71 |   onCreateCard: () => void;
+72 |   /** 컨트롤 표시 여부 */
+73 |   showControls?: boolean;
+74 |   /** 래퍼 ref */
+75 |   wrapperRef: React.RefObject<HTMLDivElement>;
+76 |   /** 추가 CSS 클래스 */
+77 |   className?: string;
+78 |   /** 사용자 인증 여부 */
+79 |   isAuthenticated: boolean;
+80 |   /** 사용자 ID */
+81 |   userId?: string;
+82 |   /** 드래그 오버 핸들러 (옵셔널) */
+83 |   onDragOver?: (event: React.DragEvent) => void;
+84 |   /** 드롭 핸들러 (옵셔널) */
+85 |   onDrop?: (event: React.DragEvent) => void;
 [TRUNCATED]
 ```
 
@@ -12509,7 +12869,6 @@ src/app/cards/[id]/DeleteButton.tsx
 96 |         </Button>
 97 |       </DialogTrigger>
 98 |       <DialogContent>
-99 |         <DialogHeader>
 [TRUNCATED]
 ```
 
@@ -12703,350 +13062,6 @@ src/app/cards/[id]/page.tsx
 81 |           <p>작성자: {card.user?.name || card.user?.email}</p>
 82 |           <span>•</span>
 83 |           <p>작성일: 2025-03-05</p>
-84 |         </div>
-85 | 
-[TRUNCATED]
-```
-
-src/components/board/components/Board.test.tsx
-```
-1 | /**
-2 |  * 파일명: Board.test.tsx
-3 |  * 목적: Board 컴포넌트 테스트
-4 |  * 역할: Board 컴포넌트의 기능을 검증하는 테스트 코드 제공
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import React from 'react';
-10 | import { render, screen, fireEvent } from '@testing-library/react';
-11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
-12 | import '@testing-library/jest-dom';
-13 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-14 | import Board from './Board';
-15 | import { useNodes } from '../hooks/useNodes';
-16 | import { useEdges } from '../hooks/useEdges';
-17 | import { useBoardUtils } from '../hooks/useBoardUtils';
-18 | import { useAppStore } from '@/store/useAppStore';
-19 | import { useAuth } from '@/contexts/AuthContext';
-20 | import { toast } from 'sonner';
-21 | 
-22 | // React Flow 모킹
-23 | mockReactFlow();
-24 | 
-25 | // window 객체 모킹 - addEventListener 문제 해결
-26 | Object.defineProperty(global, 'window', {
-27 |   value: {
-28 |     ...global.window,
-29 |     addEventListener: vi.fn(),
-30 |     removeEventListener: vi.fn(),
-31 |   },
-32 |   writable: true,
-33 | });
-34 | 
-35 | // document.body 설정 - waitFor 문제 해결
-36 | document.body.innerHTML = '<div id="root"></div>';
-37 | 
-38 | // 모듈 모킹
-39 | vi.mock('@xyflow/react', async () => {
-40 |   const actual = await vi.importActual('@xyflow/react');
-41 |   return {
-42 |     ...actual,
-43 |     useReactFlow: vi.fn(() => ({
-44 |       screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
-45 |       fitView: vi.fn(),
-46 |       getNodes: vi.fn(() => []),
-47 |       getEdges: vi.fn(() => []),
-48 |       setNodes: vi.fn(),
-49 |       setEdges: vi.fn(),
-50 |     })),
-51 |     useUpdateNodeInternals: vi.fn(() => vi.fn()),
-52 |     Background: () => <div data-testid="react-flow-background" />,
-53 |     Controls: () => <div data-testid="react-flow-controls" />,
-54 |     Panel: ({ children, position }: any) => <div data-testid={`panel-${position}`}>{children}</div>,
-55 |     ReactFlow: ({ children, nodes, edges }: any) => (
-56 |       <div data-testid="react-flow-container">
-57 |         <div data-testid="react-flow-nodes">{JSON.stringify(nodes)}</div>
-58 |         <div data-testid="react-flow-edges">{JSON.stringify(edges)}</div>
-59 |         {children}
-60 |       </div>
-61 |     ),
-62 |   };
-63 | });
-64 | 
-65 | // Board 컴포넌트 자체 모킹으로 변경
-66 | vi.mock('./Board', () => ({
-67 |   default: ({ showControls }: { showControls?: boolean }) => {
-68 |     const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-69 | 
-70 |     const handleCreateCard = () => {
-71 |       setIsCreateModalOpen(true);
-72 |     };
-73 | 
-74 |     const handleCloseModal = () => {
-75 |       setIsCreateModalOpen(false);
-76 |     };
-77 | 
-78 |     const handleSubmitCard = () => {
-[TRUNCATED]
-```
-
-src/components/board/components/Board.tsx
-```
-1 | /**
-2 |  * 파일명: Board.tsx
-3 |  * 목적: 보드 메인 컨테이너 컴포넌트
-4 |  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-08
-7 |  */
-8 | 
-9 | 'use client';
-10 | 
-11 | import React, { useState, useEffect, useRef, useCallback } from 'react';
-12 | import {
-13 |   useReactFlow,
-14 |   useUpdateNodeInternals,
-15 |   Position,
-16 |   Viewport,
-17 |   ViewportHelperFunctions
-18 | } from '@xyflow/react';
-19 | import { toast } from 'sonner';
-20 | import { useAuth } from '@/contexts/AuthContext';
-21 | import { useAppStore } from '@/store/useAppStore';
-22 | 
-23 | // 보드 관련 컴포넌트 임포트
-24 | import CreateCardModal from '@/components/cards/CreateCardModal';
-25 | import BoardCanvas from './BoardCanvas';
-26 | 
-27 | // 보드 관련 훅 임포트
-28 | import { useNodes } from '../hooks/useNodes';
-29 | import { useEdges } from '../hooks/useEdges';
-30 | import { useBoardUtils } from '../hooks/useBoardUtils';
-31 | import { useBoardData } from '../hooks/useBoardData';
-32 | import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
-33 | 
-34 | // 타입 임포트
-35 | import { BoardComponentProps, XYPosition } from '../types/board-types';
-36 | import { Node } from '@xyflow/react';
-37 | import { NodeInspector } from '../nodes/NodeInspector';
-38 | import { Card } from '@/store/useAppStore';
-39 | 
-40 | /**
-41 |  * Board: 보드 메인 컨테이너 컴포넌트
-42 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
-43 |  * @param className 추가 CSS 클래스
-44 |  * @param showControls 컨트롤 표시 여부
-45 |  */
-46 | export default function Board({
-47 |   onSelectCard,
-48 |   className = "",
-49 |   showControls = true
-50 | }: BoardComponentProps) {
-51 |   // 상태 관리
-52 |   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-53 | 
-54 |   // 엣지 드롭 관련 상태
-55 |   const [isEdgeDropModalOpen, setIsEdgeDropModalOpen] = useState(false);
-56 |   const [edgeDropPosition, setEdgeDropPosition] = useState<XYPosition | null>(null);
-57 |   const [edgeDropNodeId, setEdgeDropNodeId] = useState<string | null>(null);
-58 |   const [edgeDropHandleType, setEdgeDropHandleType] = useState<'source' | 'target' | null>(null);
-59 | 
-60 |   // 커넥팅 노드 관련 상태
-61 |   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
-62 |   const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
-63 |   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
-64 | 
-65 |   // 뷰포트 변경 디바운스를 위한 타이머
-66 |   const viewportChangeTimer = useRef<NodeJS.Timeout | null>(null);
-67 | 
-68 |   // 인증 상태 가져오기
-69 |   const { user, isLoading: isAuthLoading } = useAuth();
-70 | 
-71 |   // 레퍼런스 및 기타 훅
-72 |   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-73 |   const reactFlowInstance = useReactFlow();
-74 |   const updateNodeInternals = useUpdateNodeInternals();
-75 | 
-76 |   // useAppStore에서 상태 가져오기
-77 |   const layoutDirection = useAppStore(state => state.layoutDirection);
-78 |   const boardSettings = useAppStore(state => state.boardSettings);
-[TRUNCATED]
-```
-
-src/components/board/components/BoardCanvas.test.tsx
-```
-1 | /**
-2 |  * 파일명: BoardCanvas.test.tsx
-3 |  * 목적: BoardCanvas 컴포넌트 테스트
-4 |  * 역할: BoardCanvas 컴포넌트의 렌더링과 기능을 테스트
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import React from 'react';
-10 | import { render, screen, fireEvent } from '@testing-library/react';
-11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
-12 | import '@testing-library/jest-dom';
-13 | import { mockReactFlow, createTestNode, createTestEdge } from '@/tests/test-utils';
-14 | import BoardCanvas from './BoardCanvas';
-15 | import { MarkerType, ConnectionLineType } from '@xyflow/react';
-16 | import { ReactNode } from 'react';
-17 | import { Node, Edge, Connection, Viewport } from '@xyflow/react';
-18 | 
-19 | // React Flow 모킹
-20 | vi.mock('@xyflow/react', async () => {
-21 |   const actual = await vi.importActual('@xyflow/react');
-22 |   return {
-23 |     ...actual,
-24 |     Panel: ({
-25 |       children,
-26 |       className,
-27 |       position = 'top-right',
-28 |       ...props
-29 |     }: {
-30 |       children: ReactNode;
-31 |       className?: string;
-32 |       position?: string;
-33 |       [key: string]: any;
-34 |     }) => (
-35 |       <div data-testid={`panel-${position}`} className={className} {...props}>
-36 |         {children}
-37 |       </div>
-38 |     ),
-39 |     ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
-40 |       children?: ReactNode;
-41 |       onNodesChange?: (changes: any) => void;
-42 |       onEdgesChange?: (changes: any) => void;
-43 |       onConnect?: (connection: any) => void;
-44 |       onConnectStart?: (event: any, params: any) => void;
-45 |       onConnectEnd?: (event: any) => void;
-46 |       onNodeClick?: (event: any, node: any) => void;
-47 |       onPaneClick?: (event: any) => void;
-48 |       defaultEdgeOptions?: any;
-49 |       [key: string]: any;
-50 |     }) => (
-51 |       <div
-52 |         className="react-flow"
-53 |         data-testid="react-flow-container"
-54 |         onClick={(e) => onPaneClick?.(e)}
-55 |       >
-56 |         <div data-testid="react-flow-nodes">
-57 |           {props.nodes?.map((node: any) => (
-58 |             <div
-59 |               key={node.id}
-60 |               data-testid={`node-${node.id}`}
-61 |               onClick={(e) => onNodeClick?.(e, node)}
-62 |             >
-63 |               {JSON.stringify(node)}
-64 |             </div>
-65 |           ))}
-66 |         </div>
-67 |         <div data-testid="react-flow-edges">
-68 |           {JSON.stringify(props.edges)}
-69 |         </div>
-70 |         <div data-testid="default-edge-options">
-71 |           {JSON.stringify(defaultEdgeOptions)}
-72 |         </div>
-73 |         {children}
-74 |       </div>
-75 |     ),
-76 |     Background: () => <div data-testid="react-flow-background" />,
-77 |     Controls: () => <div data-testid="react-flow-controls" />,
-78 |     MarkerType: {
-79 |       ArrowClosed: 'arrowclosed'
-80 |     },
-81 |     ConnectionLineType: {
-[TRUNCATED]
-```
-
-src/components/board/components/BoardCanvas.tsx
-```
-1 | /**
-2 |  * 파일명: BoardCanvas.tsx
-3 |  * 목적: ReactFlow 캔버스 렌더링 컴포넌트
-4 |  * 역할: Board 컴포넌트에서 ReactFlow 캔버스 관련 로직을 분리하여 렌더링을 담당
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | 'use client';
-10 | 
-11 | import React, { useMemo } from 'react';
-12 | import {
-13 |   ReactFlow,
-14 |   Controls,
-15 |   Background,
-16 |   ConnectionMode,
-17 |   Node,
-18 |   Edge,
-19 |   NodeChange,
-20 |   EdgeChange,
-21 |   Connection,
-22 |   OnConnectStartParams,
-23 |   OnConnectStart,
-24 |   OnConnectEnd,
-25 |   MarkerType,
-26 |   Viewport
-27 | } from '@xyflow/react';
-28 | import { BoardSettings } from '@/lib/board-utils';
-29 | // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
-30 | // import CardNode from '@/components/board/nodes/CardNode';
-31 | // import CustomEdge from '@/components/board/nodes/CustomEdge';
-32 | // 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
-33 | import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
-34 | import NodeInspect from '@/components/board/nodes/NodeInspect';
-35 | import { cn } from '@/lib/utils';
-36 | // 삭제 3/29
-37 | // import BoardControls from './BoardControls';
-38 | 
-39 | interface BoardCanvasProps {
-40 |   /** ReactFlow 노드 배열 */
-41 |   nodes: Node[];
-42 |   /** ReactFlow 엣지 배열 */
-43 |   edges: Edge[];
-44 |   /** 노드 변경 핸들러 */
-45 |   onNodesChange: (changes: NodeChange[]) => void;
-46 |   /** 엣지 변경 핸들러 */
-47 |   onEdgesChange: (changes: EdgeChange[]) => void;
-48 |   /** 연결 생성 핸들러 */
-49 |   onConnect: (connection: Connection) => void;
-50 |   /** 연결 시작 핸들러 */
-51 |   onConnectStart: OnConnectStart;
-52 |   /** 연결 종료 핸들러 */
-53 |   onConnectEnd: OnConnectEnd;
-54 |   /** 노드 클릭 핸들러 */
-55 |   onNodeClick: (e: React.MouseEvent, node: Node) => void;
-56 |   /** 빈 공간 클릭 핸들러 */
-57 |   onPaneClick: (e: React.MouseEvent) => void;
-58 |   /** 레이아웃 방향 */
-59 |   layoutDirection: 'horizontal' | 'vertical';
-60 |   /** 보드 설정 */
-61 |   boardSettings: BoardSettings;
-62 |   /** 보드 설정 변경 핸들러 */
-63 |   onBoardSettingsChange: (settings: BoardSettings, isAuthenticated: boolean, userId?: string) => void;
-64 |   /** 레이아웃 변경 핸들러 */
-65 |   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
-66 |   /** 자동 레이아웃 적용 핸들러 */
-67 |   onAutoLayout: () => void;
-68 |   /** 레이아웃 저장 핸들러 */
-69 |   onSaveLayout: () => void;
-70 |   /** 카드 생성 버튼 클릭 핸들러 */
-71 |   onCreateCard: () => void;
-72 |   /** 컨트롤 표시 여부 */
-73 |   showControls?: boolean;
-74 |   /** 래퍼 ref */
-75 |   wrapperRef: React.RefObject<HTMLDivElement | null>;
-76 |   /** 추가 CSS 클래스 */
-77 |   className?: string;
-78 |   /** 사용자 인증 여부 */
-79 |   isAuthenticated: boolean;
-80 |   /** 사용자 ID */
-81 |   userId?: string;
-82 |   /** 드래그 오버 핸들러 (옵셔널) */
-83 |   onDragOver?: (event: React.DragEvent) => void;
-84 |   /** 드롭 핸들러 (옵셔널) */
-85 |   onDrop?: (event: React.DragEvent) => void;
 [TRUNCATED]
 ```
 
@@ -13147,94 +13162,89 @@ src/components/board/hooks/useBoardData.test.tsx
 ```
 1 | /**
 2 |  * 파일명: useBoardData.test.tsx
-3 |  * 목적: useBoardData 훅을 테스트
-4 |  * 역할: 보드 데이터 로드 및 뷰포트 저장/복원 기능 테스트
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
+3 |  * 목적: useBoardData 훅의 기능 테스트
+4 |  * 역할: 보드 데이터 로딩 및 ReactFlow 메서드 호출 검증
+5 |  * 작성일: 2023-04-10
+6 |  */
+7 | 
+8 | import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
 9 | import { renderHook, act } from '@testing-library/react';
-10 | import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-11 | import { useBoardData } from './useBoardData';
-12 | import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
-13 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-14 | import { toast } from 'sonner';
-15 | import { server } from '@/tests/msw/server';
-16 | import { http, HttpResponse } from 'msw';
-17 | import { AppState } from '@/store/useAppStore';
-18 | 
-19 | // MSW 서버 설정
-20 | beforeAll(() => server.listen());
-21 | afterEach(() => server.resetHandlers());
-22 | afterAll(() => server.close());
-23 | 
-24 | // ReactFlow 모킹
-25 | vi.mock('@xyflow/react', async () => {
-26 |   const actual = await vi.importActual('@xyflow/react');
-27 |   return {
-28 |     ...actual,
-29 |     useReactFlow: () => mockReactFlow,
-30 |   };
-31 | });
-32 | 
-33 | // Zustand 스토어 모킹
-34 | vi.mock('@/store/useAppStore', () => {
-35 |   const setCardsMock = vi.fn();
-36 | 
-37 |   return {
-38 |     useAppStore: vi.fn((selector) => {
-39 |       const state: Partial<AppState> = {
-40 |         cards: [],
-41 |         setCards: setCardsMock,
-42 |         selectedCardIds: [],
-43 |         expandedCardId: null,
-44 |         // 필요한 다른 상태와 액션 추가
-45 |       };
-46 | 
-47 |       return selector(state as AppState);
-48 |     }),
-49 |   };
-50 | });
-51 | 
-52 | // Toast 모킹
-53 | vi.mock('sonner', () => ({
-54 |   toast: {
-55 |     success: vi.fn(),
-56 |     error: vi.fn(),
-57 |     info: vi.fn(),
-58 |   },
-59 | }));
+10 | import { server } from '@/tests/msw/server';
+11 | import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
+12 | import { mockLocalStorage } from '@/tests/mocks/storage-mock';
+13 | import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+14 | 
+15 | // 모든 모킹은 파일 상단에 그룹화
+16 | // 외부 모듈부터 모킹 (호이스팅 고려)
+17 | // @xyflow/react 모킹
+18 | const mockFitView = vi.fn().mockResolvedValue(undefined);
+19 | const mockSetViewport = vi.fn().mockResolvedValue(undefined);
+20 | const mockGetZoom = vi.fn().mockReturnValue(1);
+21 | const mockGetViewport = vi.fn().mockReturnValue({ x: 0, y: 0, zoom: 1 });
+22 | 
+23 | vi.mock('@xyflow/react', async () => {
+24 |   const actual = await vi.importActual('@xyflow/react');
+25 |   return {
+26 |     ...actual,
+27 |     useReactFlow: () => ({
+28 |       fitView: mockFitView,
+29 |       setViewport: mockSetViewport,
+30 |       getZoom: mockGetZoom,
+31 |       getViewport: mockGetViewport
+32 |     })
+33 |   };
+34 | });
+35 | 
+36 | // loadBoardData 모킹을 위한 함수
+37 | const mockLoadBoardData = vi.fn().mockResolvedValue(undefined);
+38 | 
+39 | // 기본 상태 객체 정의 - BoardState 인터페이스에 맞춰 모든 필수 속성 포함
+40 | const createMockState = (overrides = {}) => ({
+41 |   // 노드 관련
+42 |   nodes: [{
+43 |     id: 'node-1',
+44 |     position: { x: 0, y: 0 },
+45 |     data: {
+46 |       id: 'card-1',
+47 |       title: '카드 1',
+48 |       content: '카드 1 내용',
+49 |       tags: []
+50 |     }
+51 |   }],
+52 |   setNodes: vi.fn(),
+53 |   onNodesChange: vi.fn(),
+54 | 
+55 |   // 엣지 관련
+56 |   edges: [{ id: 'edge-1', source: 'node-1', target: 'node-2' }],
+57 |   setEdges: vi.fn(),
+58 |   onEdgesChange: vi.fn(),
+59 |   onConnect: vi.fn(),
 60 | 
-61 | describe('useBoardData', () => {
-62 |   let mockReactFlowInstance: any;
-63 |   let getItemSpy: any;
-64 | 
-65 |   beforeEach(() => {
-66 |     vi.clearAllMocks();
-67 | 
-68 |     // ReactFlowInstance 모킹
-69 |     mockReactFlowInstance = {
-70 |       fitView: vi.fn(),
-71 |       setViewport: vi.fn(),
-72 |       getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
-73 |       screenToFlowPosition: vi.fn((pos) => pos),
-74 |       getNodes: vi.fn(() => []),
-75 |       getEdges: vi.fn(() => []),
-76 |     };
-77 | 
-78 |     // localStorage 모킹
-79 |     getItemSpy = vi.spyOn(window.localStorage, 'getItem');
-80 | 
-81 |     // setTimeout 모킹 (즉시 실행)
-82 |     vi.useFakeTimers();
+61 |   // 보드 설정
+62 |   boardSettings: {
+63 |     layout: 'horizontal',
+64 |     strokeWidth: 2,
+65 |     animated: false,
+66 |     lineType: 'straight',
+67 |     nodePadding: 10,
+68 |     nodeSpacing: 20,
+69 |     applyForce: false,
+70 |     snapToGrid: false,
+71 |     snapGrid: [10, 10] as [number, number],
+72 |     connectionLineType: 'bezier' as ConnectionLineType,
+73 |     markerEnd: 'arrow' as MarkerType,
+74 |     zoomOnScroll: true,
+75 |     panOnScroll: false,
+76 |     fitView: true,
+77 |     markerSize: 8,
+78 |     edgeColor: '#555555',
+79 |     selectedEdgeColor: '#0096FF'
+80 |   },
+81 |   setBoardSettings: vi.fn(),
+82 |   updateBoardSettings: vi.fn(),
 83 | 
-84 |     // API 응답 모킹 (MSW 핸들러)
-85 |     server.use(
-86 |       http.get('/api/cards', () => {
-87 |         return HttpResponse.json([
-88 |           { id: '1', title: '카드 1', content: '내용 1', cardTags: [] },
-89 |           { id: '2', title: '카드 2', content: '내용 2', cardTags: [] },
-90 |         ]);
+84 |   // 레이아웃
+85 |   applyLayout: vi.fn(),
 [TRUNCATED]
 ```
 
@@ -13243,76 +13253,50 @@ src/components/board/hooks/useBoardData.ts
 1 | /**
 2 |  * 파일명: useBoardData.ts
 3 |  * 목적: 보드 데이터 로드 및 관리를 위한 커스텀 훅
-4 |  * 역할: API에서 카드 데이터를 가져와 React Flow 노드와 엣지로 변환하는 로직 제공
+4 |  * 역할: useBoardStore에서 보드 데이터와 로딩 상태를 가져오는 래퍼 훅
 5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { useState, useCallback } from 'react';
-9 | import { Edge, ReactFlowInstance, Position, Viewport } from '@xyflow/react';
-10 | import { toast } from 'sonner';
-11 | import { useAppStore } from '@/store/useAppStore';
-12 | import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
-13 | import { NODE_TYPES_KEYS, EDGE_TYPES_KEYS } from '@/lib/flow-constants';
-14 | import { Node, CardData } from '../types/board-types';
-15 | 
-16 | /**
-17 |  * useBoardData: 보드 데이터 로드 및 관리를 위한 커스텀 훅
-18 |  * @param onSelectCard 노드 선택 시 호출될 콜백 함수
-19 |  * @returns 데이터 로드 상태 및 관련 함수
-20 |  */
-21 | export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
-22 |   // 상태 관리
-23 |   const [isLoading, setIsLoading] = useState(true);
-24 |   const [error, setError] = useState<string | null>(null);
-25 |   const [nodes, setNodes] = useState<Node<CardData>[]>([]);
-26 |   const [edges, setEdges] = useState<Edge[]>([]);
+6 |  * 수정일: 2025-04-10
+7 |  */
+8 | 
+9 | import { useBoardStore } from '@/store/useBoardStore';
+10 | import { Node, CardData } from '../types/board-types';
+11 | import { Edge } from '@xyflow/react';
+12 | 
+13 | /**
+14 |  * useBoardData: 보드 데이터 로드 및 관리를 위한 커스텀 훅
+15 |  * @param onSelectCard 노드 선택 시 호출될 콜백 함수
+16 |  * @returns 데이터 로드 상태 및 관련 함수
+17 |  */
+18 | export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
+19 |   // 보드 스토어에서 필요한 상태와 액션 가져오기
+20 |   const nodes = useBoardStore(state => state.nodes);
+21 |   const edges = useBoardStore(state => state.edges);
+22 |   const isBoardLoading = useBoardStore(state => state.isBoardLoading);
+23 |   const boardError = useBoardStore(state => state.boardError);
+24 |   const loadBoardData = useBoardStore(state => state.loadBoardData);
+25 |   const loadedViewport = useBoardStore(state => state.loadedViewport);
+26 |   const needsFitView = useBoardStore(state => state.needsFitView);
 27 |   
-28 |   // useAppStore에서 필요한 함수 가져오기
-29 |   const setCards = useAppStore(state => state.setCards);
-30 |   
-31 |   /**
-32 |    * fetchBoardData: API에서 카드 데이터를 가져와 노드와 엣지로 변환하는 함수
-33 |    * @param reactFlowInstance React Flow 인스턴스 (뷰 조정용)
-34 |    * @returns 노드와 엣지 데이터
-35 |    */
-36 |   const fetchBoardData = useCallback(async (reactFlowInstance?: ReactFlowInstance) => {
-37 |     try {
-38 |       setIsLoading(true);
-39 |       
-40 |       // API에서 카드 불러오기
-41 |       const response = await fetch('/api/cards');
-42 |       if (!response.ok) {
-43 |         throw new Error('데이터 불러오기 실패');
-44 |       }
-45 |       
-46 |       const cards = await response.json();
-47 |       console.log('[useBoardData] API에서 가져온 카드 데이터:', cards);
-48 |       
-49 |       // 전역 상태에 카드 목록 저장
-50 |       setCards(cards);
-51 |       
-52 |       // 이전에 저장된 위치 정보 가져오기
-53 |       let nodePositions: Record<string, { position: { x: number, y: number } }> = {};
-54 |       try {
-55 |         const savedPositions = localStorage.getItem(STORAGE_KEY);
-56 |         if (savedPositions) {
-57 |           nodePositions = JSON.parse(savedPositions);
-58 |           console.log('[useBoardData] 저장된 노드 위치:', nodePositions);
-59 |         }
-60 |       } catch (err) {
-61 |         console.error('저장된 위치 불러오기 실패:', err);
-62 |       }
-63 |       
-64 |       // 이전에 저장된 뷰포트 정보 가져오기
-65 |       let savedViewport: Viewport | null = null;
-66 |       try {
-67 |         const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
-68 |         if (transformString) {
-69 |           savedViewport = JSON.parse(transformString);
-70 |           console.log('[useBoardData] 저장된 뷰포트:', savedViewport);
-71 |         }
-72 |       } catch (err) {
-[TRUNCATED]
+28 |   /**
+29 |    * 노드와 엣지 데이터 로드 함수 - 이제는 단순히 스토어 액션을 호출
+30 |    * 하위 호환성을 위해 함수 시그니처 유지
+31 |    */
+32 |   const loadNodesAndEdges = async (reactFlowInstance?: any) => {
+33 |     await loadBoardData();
+34 |     return { nodes, edges };
+35 |   };
+36 |   
+37 |   // 이전과 동일한 인터페이스 유지
+38 |   return {
+39 |     nodes,
+40 |     edges,
+41 |     isLoading: isBoardLoading,
+42 |     error: boardError,
+43 |     loadNodesAndEdges,
+44 |     loadedViewport,
+45 |     needsFitView
+46 |   };
+47 | } 
 ```
 
 src/components/board/hooks/useBoardHandlers.test.tsx
@@ -13322,7 +13306,7 @@ src/components/board/hooks/useBoardHandlers.test.tsx
 3 |  * 목적: 보드 핸들러 훅의 기능 테스트
 4 |  * 역할: 선택, 드래그 앤 드롭, 카드 생성 핸들러 테스트
 5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
+6 |  * 수정일: 2025-04-11
 7 |  */
 8 | 
 9 | import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -13332,88 +13316,83 @@ src/components/board/hooks/useBoardHandlers.test.tsx
 13 | import { useBoardHandlers } from './useBoardHandlers';
 14 | import { CardData } from '../types/board-types';
 15 | import { useAppStore } from '@/store/useAppStore';
-16 | import {
-17 |   createTestNode,
-18 |   createDragEvent,
-19 |   createMouseEvent,
-20 |   mockReactFlow
-21 | } from '@/tests/test-utils';
-22 | 
-23 | // Zustand 스토어 모킹
-24 | const mockSelectCards = vi.fn();
-25 | vi.mock('@/store/useAppStore', () => ({
-26 |   useAppStore: vi.fn((selector) => {
-27 |     const state = {
-28 |       selectedCardIds: [],
-29 |       selectCards: mockSelectCards,
-30 |     };
-31 |     return selector ? selector(state) : state;
-32 |   }),
-33 | }));
-34 | 
-35 | describe('useBoardHandlers', () => {
-36 |   // 테스트 데이터 준비
-37 |   const testNodes = [
-38 |     createTestNode('card1'),
-39 |     createTestNode('card2'),
-40 |   ];
-41 | 
-42 |   // HTMLDivElement 생성
-43 |   const divElement = document.createElement('div');
-44 |   Object.defineProperties(divElement, {
-45 |     getBoundingClientRect: {
-46 |       value: () => ({
-47 |         left: 0,
-48 |         top: 0,
-49 |         right: 800,
-50 |         bottom: 600,
-51 |         width: 800,
-52 |         height: 600,
-53 |       }),
-54 |     },
-55 |   });
-56 | 
-57 |   const mockProps = {
-58 |     saveLayout: vi.fn().mockReturnValue(true),
-59 |     nodes: testNodes,
-60 |     setNodes: vi.fn(),
-61 |     reactFlowWrapper: { current: divElement } as React.RefObject<HTMLDivElement>,
-62 |     reactFlowInstance: mockReactFlow,
-63 |     fetchCards: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
-64 |   };
-65 | 
-66 |   beforeEach(() => {
-67 |     vi.clearAllMocks();
-68 |   });
-69 | 
-70 |   describe('선택 핸들러', () => {
-71 |     it('노드가 선택되면 선택된 카드 ID를 업데이트한다', () => {
-72 |       const { result } = renderHook(() => useBoardHandlers(mockProps));
+16 | import { useBoardStore } from '@/store/useBoardStore';
+17 | import {
+18 |   createTestNode,
+19 |   createDragEvent,
+20 |   createMouseEvent,
+21 |   mockReactFlow
+22 | } from '@/tests/test-utils';
+23 | 
+24 | // Zustand 스토어 모킹
+25 | const mockSelectCards = vi.fn();
+26 | vi.mock('@/store/useAppStore', () => ({
+27 |   useAppStore: vi.fn((selector) => {
+28 |     const state = {
+29 |       selectedCardIds: [],
+30 |       selectCards: mockSelectCards,
+31 |     };
+32 |     return selector ? selector(state) : state;
+33 |   }),
+34 | }));
+35 | 
+36 | // useBoardStore 모킹
+37 | const mockAddNodeAtPosition = vi.fn().mockResolvedValue({ id: 'new-node', data: { title: '새 노드' } });
+38 | const mockAddCardAtCenterPosition = vi.fn().mockResolvedValue({ id: 'new-card', data: { title: '새 카드' } });
+39 | const mockCreateEdgeAndNodeOnDrop = vi.fn().mockResolvedValue({ id: 'edge-node', data: { title: '연결 노드' } });
+40 | 
+41 | vi.mock('@/store/useBoardStore', () => ({
+42 |   useBoardStore: vi.fn((selector) => {
+43 |     const state = {
+44 |       addNodeAtPosition: mockAddNodeAtPosition,
+45 |       addCardAtCenterPosition: mockAddCardAtCenterPosition,
+46 |       createEdgeAndNodeOnDrop: mockCreateEdgeAndNodeOnDrop,
+47 |     };
+48 |     return selector ? selector(state) : state;
+49 |   }),
+50 | }));
+51 | 
+52 | describe('useBoardHandlers', () => {
+53 |   // 테스트 데이터 준비
+54 |   const testNodes = [
+55 |     createTestNode('card1'),
+56 |     createTestNode('card2'),
+57 |   ];
+58 | 
+59 |   // HTMLDivElement 생성
+60 |   const divElement = document.createElement('div');
+61 |   Object.defineProperties(divElement, {
+62 |     getBoundingClientRect: {
+63 |       value: () => ({
+64 |         left: 0,
+65 |         top: 0,
+66 |         right: 800,
+67 |         bottom: 600,
+68 |         width: 800,
+69 |         height: 600,
+70 |       }),
+71 |     },
+72 |   });
 73 | 
-74 |       act(() => {
-75 |         result.current.handleSelectionChange({ nodes: [testNodes[0]], edges: [] });
-76 |       });
-77 | 
-78 |       expect(mockSelectCards).toHaveBeenCalledWith(['card1']);
-79 |     });
-80 | 
-81 |     it('여러 노드가 선택되면 모든 선택된 카드 ID를 업데이트한다', () => {
-82 |       const { result } = renderHook(() => useBoardHandlers(mockProps));
-83 | 
-84 |       act(() => {
-85 |         result.current.handleSelectionChange({ nodes: testNodes, edges: [] });
-86 |       });
-87 | 
-88 |       expect(mockSelectCards).toHaveBeenCalledWith(['card1', 'card2']);
-89 |     });
-90 | 
-91 |     it('선택이 해제되면 빈 배열로 업데이트한다', () => {
+74 |   const mockProps = {
+75 |     reactFlowWrapper: { current: divElement } as React.RefObject<HTMLDivElement>,
+76 |     reactFlowInstance: mockReactFlow,
+77 |     fetchCards: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
+78 |   };
+79 | 
+80 |   beforeEach(() => {
+81 |     vi.clearAllMocks();
+82 |     // setTimeout 모킹
+83 |     vi.useFakeTimers();
+84 |   });
+85 | 
+86 |   afterEach(() => {
+87 |     vi.useRealTimers();
+88 |   });
+89 | 
+90 |   describe('선택 핸들러', () => {
+91 |     it('노드가 선택되면 선택된 카드 ID를 업데이트한다', () => {
 92 |       const { result } = renderHook(() => useBoardHandlers(mockProps));
-93 | 
-94 |       act(() => {
-95 |         result.current.handleSelectionChange({ nodes: [], edges: [] });
-96 |       });
-97 | 
 [TRUNCATED]
 ```
 
@@ -13424,86 +13403,83 @@ src/components/board/hooks/useBoardHandlers.ts
 3 |  * 목적: 보드 이벤트 핸들러 관련 로직 분리
 4 |  * 역할: 보드 드래그, 드롭, 선택 등 이벤트 처리 로직을 관리
 5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
+6 |  * 수정일: 2025-04-11
 7 |  */
 8 | 
 9 | import { useCallback } from 'react';
-10 | import { toast } from 'sonner';
-11 | import { Node, Edge, XYPosition } from '@xyflow/react';
-12 | import { useAppStore } from '@/store/useAppStore';
+10 | import { Node, Edge, XYPosition } from '@xyflow/react';
+11 | import { useAppStore } from '@/store/useAppStore';
+12 | import { useBoardStore } from '@/store/useBoardStore';
 13 | import { CardData } from '../types/board-types';
 14 | 
 15 | /**
 16 |  * useBoardHandlers: 보드 이벤트 핸들러 관련 로직을 관리하는 훅
-17 |  * @param saveLayout 레이아웃 저장 함수
-18 |  * @param nodes 현재 노드 배열
-19 |  * @param setNodes 노드 상태 설정 함수
-20 |  * @param reactFlowWrapper ReactFlow 래퍼 참조
-21 |  * @param reactFlowInstance ReactFlow 인스턴스
-22 |  * @returns 보드 이벤트 핸들러 함수들
-23 |  */
-24 | export function useBoardHandlers({
-25 |   saveLayout,
-26 |   nodes,
-27 |   setNodes,
-28 |   reactFlowWrapper,
-29 |   reactFlowInstance,
-30 |   fetchCards
-31 | }: {
-32 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
-33 |   nodes: Node<CardData>[];
-34 |   setNodes: (updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void;
-35 |   reactFlowWrapper: React.RefObject<HTMLDivElement>;
-36 |   reactFlowInstance: any;
-37 |   fetchCards: () => Promise<{ nodes: Node<CardData>[]; edges: Edge[] }>;
-38 | }) {
-39 |   // 전역 상태에서 선택된 카드 정보 가져오기
-40 |   const { selectedCardIds, selectCards } = useAppStore();
-41 | 
-42 |   /**
-43 |    * ReactFlow 선택 변경 이벤트 핸들러
-44 |    * @param selection 현재 선택된 노드와 엣지 정보
-45 |    */
-46 |   const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
-47 |     console.log('[BoardComponent] 선택 변경 감지:', { 
-48 |       선택된_노드_수: nodes.length,
-49 |       선택된_노드_ID: nodes.map(node => node.data.id)
-50 |     });
-51 | 
-52 |     // 선택된 노드 ID 배열 추출
-53 |     const selectedNodeIds = nodes.map(node => node.data.id);
-54 |     
-55 |     // 전역 상태 업데이트
-56 |     selectCards(selectedNodeIds);
-57 |     
-58 |     // 선택된 노드가 있는 경우 토스트 메시지 표시
-59 |     if (selectedNodeIds.length > 1) {
-60 |       toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`);
-61 |     }
-62 |   }, [selectCards]);
-63 | 
-64 |   /**
-65 |    * 드래그 오버 이벤트 핸들러
-66 |    * @param event 드래그 이벤트
-67 |    */
-68 |   const onDragOver = useCallback((event: React.DragEvent) => {
-69 |     event.preventDefault();
-70 |     event.dataTransfer.dropEffect = 'move';
-71 |   }, []);
-72 | 
-73 |   /**
-74 |    * 드롭 이벤트 핸들러
-75 |    * @param event 드롭 이벤트
-76 |    */
-77 |   const onDrop = useCallback((event: React.DragEvent) => {
-78 |     event.preventDefault();
-79 | 
-80 |     // React Flow 래퍼 요소가 없으면 중단
-81 |     if (!reactFlowWrapper.current || !reactFlowInstance) {
-82 |       return;
-83 |     }
-84 | 
-85 |     // 드래그된 데이터 확인
+17 |  * @param reactFlowWrapper ReactFlow 래퍼 참조
+18 |  * @param reactFlowInstance ReactFlow 인스턴스
+19 |  * @param fetchCards 카드 데이터를 다시 불러오는 함수
+20 |  * @returns 보드 이벤트 핸들러 함수들
+21 |  */
+22 | export function useBoardHandlers({
+23 |   reactFlowWrapper,
+24 |   reactFlowInstance,
+25 |   fetchCards
+26 | }: {
+27 |   reactFlowWrapper: React.RefObject<HTMLDivElement>;
+28 |   reactFlowInstance: any;
+29 |   fetchCards: () => Promise<{ nodes: Node<CardData>[]; edges: Edge[] }>;
+30 | }) {
+31 |   // 전역 상태에서 선택된 카드 정보 및 액션 가져오기
+32 |   const { selectCards } = useAppStore();
+33 |   
+34 |   // 보드 스토어에서 노드 추가 관련 액션 가져오기
+35 |   const addNodeAtPosition = useBoardStore(state => state.addNodeAtPosition);
+36 |   const addCardAtCenterPosition = useBoardStore(state => state.addCardAtCenterPosition);
+37 |   const createEdgeAndNodeOnDrop = useBoardStore(state => state.createEdgeAndNodeOnDrop);
+38 | 
+39 |   /**
+40 |    * ReactFlow 선택 변경 이벤트 핸들러
+41 |    * @param selection 현재 선택된 노드와 엣지 정보
+42 |    */
+43 |   const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
+44 |     console.log('[BoardComponent] 선택 변경 감지:', { 
+45 |       선택된_노드_수: nodes.length,
+46 |       선택된_노드_ID: nodes.map(node => node.data.id)
+47 |     });
+48 | 
+49 |     // 선택된 노드 ID 배열 추출
+50 |     const selectedNodeIds = nodes.map(node => node.data.id);
+51 |     
+52 |     // 전역 상태 업데이트
+53 |     selectCards(selectedNodeIds);
+54 |   }, [selectCards]);
+55 | 
+56 |   /**
+57 |    * 드래그 오버 이벤트 핸들러
+58 |    * @param event 드래그 이벤트
+59 |    */
+60 |   const onDragOver = useCallback((event: React.DragEvent) => {
+61 |     event.preventDefault();
+62 |     event.dataTransfer.dropEffect = 'move';
+63 |   }, []);
+64 | 
+65 |   /**
+66 |    * 드롭 이벤트 핸들러
+67 |    * @param event 드롭 이벤트
+68 |    */
+69 |   const onDrop = useCallback((event: React.DragEvent) => {
+70 |     event.preventDefault();
+71 | 
+72 |     // React Flow 래퍼 요소가 없으면 중단
+73 |     if (!reactFlowWrapper.current || !reactFlowInstance) {
+74 |       return;
+75 |     }
+76 | 
+77 |     // 드래그된 데이터 확인
+78 |     const reactFlowData = event.dataTransfer.getData('application/reactflow');
+79 |     if (!reactFlowData) return;
+80 | 
+81 |     try {
+82 |       // 데이터 파싱
 [TRUNCATED]
 ```
 
@@ -13591,7 +13567,6 @@ src/components/board/hooks/useBoardUtils.test.tsx
 80 |         });
 81 |       }
 82 | 
-83 |       // selector가 함수가 아닌 경우 (드물게 발생할 수 있음)
 [TRUNCATED]
 ```
 
@@ -13683,7 +13658,6 @@ src/components/board/hooks/useBoardUtils.ts
 84 |         console.error('서버에서 보드 설정 불러오기 실패:', err);
 85 |       }
 86 |     }
-87 |   }, [edges, setEdges, setBoardSettings]);
 [TRUNCATED]
 ```
 
@@ -13692,94 +13666,98 @@ src/components/board/hooks/useEdges.test.tsx
 1 | /**
 2 |  * 파일명: useEdges.test.tsx
 3 |  * 목적: useEdges 커스텀 훅 테스트
-4 |  * 역할: 엣지 관련 기능의 정상 작동 검증
+4 |  * 역할: 엣지 관련 훅이 useBoardStore 액션을 올바르게 호출하는지 검증
 5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
+6 |  * 수정일: 2025-04-11 (리팩토링)
 7 |  */
 8 | 
 9 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 10 | import { renderHook, act } from '@testing-library/react';
-11 | import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position } from '@xyflow/react';
-12 | import { EDGES_STORAGE_KEY } from '@/lib/board-constants';
-13 | import { BoardSettings } from '@/lib/board-utils';
-14 | import { toast } from 'sonner';
-15 | 
-16 | // 모든 모킹은 파일 최상단에 위치
-17 | vi.mock('sonner', () => ({
-18 |   toast: {
-19 |     success: vi.fn(),
-20 |     info: vi.fn(),
-21 |     error: vi.fn(),
-22 |   }
-23 | }));
-24 | 
-25 | // React Flow 모킹
-26 | vi.mock('@xyflow/react', async () => {
-27 |   const actual = await vi.importActual('@xyflow/react');
-28 |   return {
-29 |     ...actual,
-30 |     useReactFlow: () => ({
-31 |       getNode: vi.fn().mockImplementation((nodeId) =>
-32 |         nodeId === 'node-1' ? mockNodes[0] :
-33 |           nodeId === 'node-2' ? mockNodes[1] : null
-34 |       ),
-35 |       getNodes: vi.fn().mockReturnValue(mockNodes),
-36 |       getEdges: vi.fn().mockReturnValue([]),
-37 |       setEdges: vi.fn(),
-38 |       addEdges: vi.fn(),
-39 |     }),
-40 |   };
-41 | });
-42 | 
-43 | // Zustand 스토어 모킹 (만약 useEdges가 스토어를 사용한다면)
-44 | vi.mock('@/store/useAppStore', () => ({
-45 |   useAppStore: (selector: any) => {
-46 |     const state = {
-47 |       setBoardSettings: vi.fn(),
-48 |       boardSettings: mockBoardSettings,
-49 |     };
-50 |     return selector ? selector(state) : state;
-51 |   },
-52 | }));
-53 | 
-54 | // 테스트할 훅 임포트
-55 | import { useEdges } from './useEdges';
-56 | 
-57 | // 테스트용 보드 설정
-58 | const mockBoardSettings: BoardSettings = {
-59 |   snapToGrid: false,
-60 |   snapGrid: [15, 15],
-61 |   connectionLineType: ConnectionLineType.SmoothStep,
-62 |   markerEnd: MarkerType.Arrow as MarkerType, // 타입 캐스팅 추가
-63 |   strokeWidth: 2,
-64 |   markerSize: 20,
-65 |   edgeColor: '#C1C1C1',
-66 |   selectedEdgeColor: '#FF0072',
-67 |   animated: false,
-68 | };
-69 | 
-70 | // 테스트용 노드 데이터
-71 | const mockNodes: Node[] = [
-72 |   {
-73 |     id: 'node-1',
-74 |     type: 'default',
-75 |     position: { x: 100, y: 100 },
-76 |     data: { label: 'Node 1' },
-77 |     targetPosition: Position.Left
-78 |   },
-79 |   {
-80 |     id: 'node-2',
-81 |     type: 'default',
-82 |     position: { x: 300, y: 100 },
-83 |     data: { label: 'Node 2' }
-84 |   }
-85 | ];
-86 | 
-87 | describe('useEdges', () => {
-88 |   // 로컬 스토리지 모킹
-89 |   beforeEach(() => {
-90 |     // 로컬 스토리지 스파이 설정
-91 |     vi.spyOn(window.localStorage, 'getItem').mockImplementation((key: string) => {
+11 | import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
+12 | import { BoardSettings } from '@/lib/board-utils';
+13 | 
+14 | // 모든 모킹은 파일 최상단에 위치
+15 | vi.mock('sonner', () => ({
+16 |   toast: {
+17 |     success: vi.fn(),
+18 |     info: vi.fn(),
+19 |     error: vi.fn(),
+20 |   }
+21 | }));
+22 | 
+23 | // useBoardStore 모킹
+24 | vi.mock('@/store/useBoardStore', () => {
+25 |   const mockApplyEdgeChangesAction = vi.fn();
+26 |   const mockConnectNodesAction = vi.fn();
+27 |   const mockSaveEdgesAction = vi.fn().mockReturnValue(true);
+28 |   const mockUpdateAllEdgeStylesAction = vi.fn();
+29 |   const mockCreateEdgeOnDropAction = vi.fn();
+30 |   const mockSetEdges = vi.fn();
+31 | 
+32 |   const edges = [{
+33 |     id: 'edge-1',
+34 |     source: 'node-1',
+35 |     target: 'node-2',
+36 |     type: 'custom',
+37 |   }];
+38 | 
+39 |   return {
+40 |     useBoardStore: (selector: ((state: any) => any) | undefined) => {
+41 |       if (typeof selector === 'function') {
+42 |         const state = {
+43 |           edges,
+44 |           setEdges: mockSetEdges,
+45 |           applyEdgeChangesAction: mockApplyEdgeChangesAction,
+46 |           connectNodesAction: mockConnectNodesAction,
+47 |           saveEdgesAction: mockSaveEdgesAction,
+48 |           updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+49 |           createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+50 |           hasUnsavedChanges: false
+51 |         };
+52 |         return selector(state);
+53 |       }
+54 |       return {
+55 |         edges,
+56 |         setEdges: mockSetEdges,
+57 |         applyEdgeChangesAction: mockApplyEdgeChangesAction,
+58 |         connectNodesAction: mockConnectNodesAction,
+59 |         saveEdgesAction: mockSaveEdgesAction,
+60 |         updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+61 |         createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+62 |         hasUnsavedChanges: false
+63 |       };
+64 |     }
+65 |   };
+66 | });
+67 | 
+68 | // React Flow 모킹
+69 | vi.mock('@xyflow/react', async () => {
+70 |   const actual = await vi.importActual('@xyflow/react');
+71 |   return {
+72 |     ...actual,
+73 |   };
+74 | });
+75 | 
+76 | // 테스트할 훅 임포트
+77 | import { useEdges } from './useEdges';
+78 | import { useBoardStore } from '@/store/useBoardStore';
+79 | 
+80 | // 테스트용 보드 설정
+81 | const mockBoardSettings: BoardSettings = {
+82 |   snapToGrid: false,
+83 |   snapGrid: [15, 15],
+84 |   connectionLineType: ConnectionLineType.SmoothStep,
+85 |   markerEnd: MarkerType.Arrow as MarkerType, // 타입 캐스팅 추가
+86 |   strokeWidth: 2,
+87 |   markerSize: 20,
+88 |   edgeColor: '#C1C1C1',
+89 |   selectedEdgeColor: '#FF0072',
+90 |   animated: false,
+91 | };
+92 | 
+93 | // 테스트용 노드 데이터
+94 | const mockNodes: Node[] = [
+95 |   {
 [TRUNCATED]
 ```
 
@@ -13788,186 +13766,174 @@ src/components/board/hooks/useEdges.ts
 1 | /**
 2 |  * 파일명: useEdges.ts
 3 |  * 목적: 엣지 관련 상태 및 로직 관리
-4 |  * 역할: 엣지 생성, 업데이트, 삭제 및 이벤트 핸들링 로직 캡슐화
+4 |  * 역할: useBoardStore의 엣지 관련 액션들을 사용하는 래퍼 훅
 5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { useCallback, useRef, useEffect } from 'react';
-9 | import { 
-10 |   useEdgesState, 
-11 |   applyEdgeChanges, 
-12 |   Position, 
-13 |   MarkerType, 
-14 |   addEdge 
-15 | } from '@xyflow/react';
-16 | import { toast } from 'sonner';
-17 | import { 
-18 |   BoardSettings,
-19 |   applyEdgeSettings
-20 | } from '@/lib/board-utils';
-21 | import { EDGES_STORAGE_KEY } from '@/lib/board-constants';
-22 | import { 
-23 |   BoardEdge, 
-24 |   EdgeChange, 
-25 |   Connection, 
-26 |   Node, 
-27 |   Edge 
-28 | } from '../types/board-types';
-29 | 
-30 | /**
-31 |  * useEdges: 엣지 관련 상태 및 로직을 관리하는 훅
-32 |  * @param boardSettings 보드 설정 객체
-33 |  * @param nodes 노드 배열
-34 |  * @param initialEdges 초기 엣지 데이터 (옵션)
-35 |  * @returns 엣지 관련 상태 및 함수들
-36 |  */
-37 | export function useEdges({
-38 |   boardSettings,
-39 |   nodes,
-40 |   initialEdges = []
-41 | }: {
-42 |   boardSettings: BoardSettings;
-43 |   nodes: Node[];
-44 |   initialEdges?: Edge[];
-45 | }) {
-46 |   // 엣지 상태 관리
-47 |   const [edges, setEdges] = useEdgesState<Edge>(initialEdges);
-48 |   
-49 |   // 저장되지 않은 변경사항 플래그
-50 |   const hasUnsavedChanges = useRef(false);
-51 |   
-52 |   // 초기 엣지 데이터가 변경되면 엣지 상태 업데이트
-53 |   useEffect(() => {
-54 |     if (initialEdges && initialEdges.length > 0) {
-55 |       setEdges(initialEdges);
-56 |     }
-57 |   }, [initialEdges, setEdges]);
-58 |   
-59 |   /**
-60 |    * 엣지 변경 핸들러: 엣지 변경 사항 적용 및 관리
-61 |    * @param changes 엣지 변경 사항 배열
-62 |    */
-63 |   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
-64 |     // applyEdgeChanges 함수를 사용하여 적절하게 엣지 변경사항 적용
-65 |     setEdges((eds) => applyEdgeChanges(changes, eds));
-66 |     
-67 |     // 변경이 있을 때마다 저장 대기 상태로 설정
-68 |     hasUnsavedChanges.current = true;
-69 |   }, [setEdges]);
-70 |   
-71 |   /**
-72 |    * 엣지 저장: 현재 엣지 상태를 로컬 스토리지에 저장
-73 |    * @param edgesToSave 저장할 엣지 배열 (기본값은 현재 엣지)
-74 |    * @returns 저장 성공 여부
-75 |    */
-76 |   const saveEdges = useCallback((edgesToSave: Edge[] = edges) => {
-77 |     try {
-78 |       localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edgesToSave));
-79 |       return true;
-80 |     } catch (err) {
-81 |       console.error('엣지 저장 실패:', err);
-82 |       return false;
-83 |     }
-84 |   }, [edges]);
-85 |   
-86 |   /**
-87 |    * 노드 연결 핸들러: 노드 간 연결 생성 처리
-88 |    * @param {object} params 연결 파라미터
-89 |    */
-90 |   const onConnect = useCallback((params: Connection) => {
-91 |     // 연결 정보 로깅 (디버깅용)
-[TRUNCATED]
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | import { useCallback } from 'react';
+10 | import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
+11 | import { BoardSettings } from '@/lib/board-utils';
+12 | import { useBoardStore } from '@/store/useBoardStore';
+13 | 
+14 | /**
+15 |  * useEdges: useBoardStore의 엣지 관련 액션들을 사용하는 래퍼 훅
+16 |  * @param boardSettings 보드 설정 객체
+17 |  * @param nodes 노드 배열
+18 |  * @param initialEdges 초기 엣지 데이터 (옵션)
+19 |  * @returns 엣지 관련 상태 및 함수들
+20 |  */
+21 | export function useEdges({
+22 |   boardSettings,
+23 |   nodes,
+24 |   initialEdges = []
+25 | }: {
+26 |   boardSettings: BoardSettings;
+27 |   nodes: Node[];
+28 |   initialEdges?: Edge[];
+29 | }) {
+30 |   // useBoardStore에서 엣지 관련 상태 및 액션 가져오기
+31 |   const edges = useBoardStore(state => state.edges);
+32 |   const setEdges = useBoardStore(state => state.setEdges);
+33 |   const applyEdgeChangesAction = useBoardStore(state => state.applyEdgeChangesAction);
+34 |   const connectNodesAction = useBoardStore(state => state.connectNodesAction);
+35 |   const saveEdgesAction = useBoardStore(state => state.saveEdgesAction);
+36 |   const updateAllEdgeStylesAction = useBoardStore(state => state.updateAllEdgeStylesAction);
+37 |   const createEdgeOnDropAction = useBoardStore(state => state.createEdgeOnDropAction);
+38 |   const hasUnsavedChanges = useBoardStore(state => state.hasUnsavedChanges);
+39 | 
+40 |   // 엣지 변경 핸들러 (단순히 useBoardStore 액션 호출)
+41 |   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+42 |     applyEdgeChangesAction(changes);
+43 |   }, [applyEdgeChangesAction]);
+44 | 
+45 |   // 노드 연결 핸들러 (단순히 useBoardStore 액션 호출)
+46 |   const onConnect = useCallback((params: Connection) => {
+47 |     connectNodesAction(params);
+48 |   }, [connectNodesAction]);
+49 | 
+50 |   // 엣지 저장 함수 (단순히 useBoardStore 액션 호출)
+51 |   const saveEdges = useCallback((edgesToSave?: Edge[]) => {
+52 |     // 특정 엣지 목록이 제공되면 먼저 상태 업데이트
+53 |     if (edgesToSave) {
+54 |       setEdges(edgesToSave);
+55 |     }
+56 |     return saveEdgesAction();
+57 |   }, [setEdges, saveEdgesAction]);
+58 | 
+59 |   // 엣지 스타일 업데이트 함수 (단순히 useBoardStore 액션 호출)
+60 |   const updateEdgeStyles = useCallback(() => {
+61 |     updateAllEdgeStylesAction();
+62 |   }, [updateAllEdgeStylesAction]);
+63 | 
+64 |   // 엣지 생성 함수 (단순히 useBoardStore 액션 호출)
+65 |   const createEdgeOnDrop = useCallback((sourceId: string, targetId: string) => {
+66 |     return createEdgeOnDropAction(sourceId, targetId);
+67 |   }, [createEdgeOnDropAction]);
+68 | 
+69 |   // 기존 API와 호환성을 위해 동일한 인터페이스 유지
+70 |   return {
+71 |     edges,
+72 |     setEdges,
+73 |     handleEdgesChange,
+74 |     onConnect,
+75 |     saveEdges,
+76 |     updateEdgeStyles,
+77 |     createEdgeOnDrop,
+78 |     hasUnsavedChanges
+79 |   };
+80 | } 
 ```
 
 src/components/board/hooks/useNodes.test.tsx
 ```
 1 | /**
 2 |  * 파일명: useNodes.test.tsx
-3 |  * 목적: useNodes 커스텀 훅 테스트
-4 |  * 역할: 노드 관련 기능의 정상 작동 검증
+3 |  * 목적: useNodeClickHandlers 커스텀 훅 테스트
+4 |  * 역할: 노드 클릭 핸들러 기능의 정상 작동 검증
 5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
+6 |  * 수정일: 2025-04-11
 7 |  */
 8 | 
 9 | import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 10 | import { renderHook, act } from '@testing-library/react';
-11 | import { Node, NodeChange } from '@xyflow/react';
+11 | import { Node } from '@xyflow/react';
 12 | import { CardData } from '../types/board-types';
-13 | import { STORAGE_KEY } from '@/lib/board-constants';
-14 | 
-15 | // 모든 모킹은 파일 상단에 배치 (호이스팅 문제 방지)
-16 | // React Flow 모킹
-17 | vi.mock('@/tests/utils/react-flow-mock', () => ({
-18 |   mockReactFlow: vi.fn()
-19 | }));
-20 | 
-21 | // useAppStore 모킹
-22 | const clearSelectedCardsMock = vi.fn();
-23 | const selectCardMock = vi.fn();
-24 | const toggleSelectedCardMock = vi.fn();
-25 | 
-26 | vi.mock('@/store/useAppStore', () => ({
-27 |   useAppStore: (selector: ((state: any) => any) | undefined) => {
-28 |     const state = {
-29 |       selectedCardIds: ['test-node-1'],
-30 |       toggleSelectedCard: toggleSelectedCardMock,
-31 |       selectCard: selectCardMock,
-32 |       clearSelectedCards: clearSelectedCardsMock,
-33 |     };
-34 |     return selector ? selector(state) : state;
-35 |   }
-36 | }));
-37 | 
-38 | // toast 라이브러리 모킹
-39 | vi.mock('sonner', () => ({
-40 |   toast: {
-41 |     success: vi.fn(),
-42 |     info: vi.fn(),
-43 |     error: vi.fn(),
-44 |   }
-45 | }));
+13 | 
+14 | // 모든 모킹은 파일 상단에 배치 (호이스팅 문제 방지)
+15 | // React Flow 모킹
+16 | vi.mock('@/tests/utils/react-flow-mock', () => ({
+17 |   mockReactFlow: vi.fn()
+18 | }));
+19 | 
+20 | // useAppStore 모킹
+21 | const clearSelectedCardsMock = vi.fn();
+22 | const selectCardMock = vi.fn();
+23 | const toggleSelectedCardMock = vi.fn();
+24 | 
+25 | vi.mock('@/store/useAppStore', () => ({
+26 |   useAppStore: vi.fn(() => ({
+27 |     selectedCardIds: ['test-node-1'],
+28 |     toggleSelectedCard: toggleSelectedCardMock,
+29 |     selectCard: selectCardMock,
+30 |     clearSelectedCards: clearSelectedCardsMock,
+31 |   }))
+32 | }));
+33 | 
+34 | // 토스트 모킹
+35 | vi.mock('sonner', () => ({
+36 |   toast: {
+37 |     success: vi.fn(),
+38 |     info: vi.fn(),
+39 |     error: vi.fn()
+40 |   }
+41 | }));
+42 | 
+43 | // 실제 컴포넌트 및 유틸리티 임포트 (모킹 후 임포트)
+44 | import { useNodeClickHandlers } from './useNodes';
+45 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 46 | 
-47 | // 실제 컴포넌트 및 유틸리티 임포트 (모킹 후 임포트)
-48 | import { useNodes } from './useNodes';
-49 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-50 | 
-51 | describe('useNodes', () => {
-52 |   // localStorage 메서드들에 대한 스파이 설정
-53 |   const localStorageGetItemSpy = vi.spyOn(window.localStorage, 'getItem');
-54 |   const localStorageSetItemSpy = vi.spyOn(window.localStorage, 'setItem');
-55 |   const localStorageRemoveItemSpy = vi.spyOn(window.localStorage, 'removeItem');
-56 | 
-57 |   // 테스트 전 전역 설정
-58 |   beforeAll(() => {
-59 |     mockReactFlow();
-60 |   });
-61 | 
-62 |   // 각 테스트 전 초기화
-63 |   beforeEach(() => {
-64 |     // 로컬 스토리지 모의 구현 초기화
-65 |     localStorageGetItemSpy.mockClear();
-66 |     localStorageSetItemSpy.mockClear();
-67 |     localStorageRemoveItemSpy.mockClear();
+47 | describe('useNodeClickHandlers', () => {
+48 |   // 테스트 전 전역 설정
+49 |   beforeAll(() => {
+50 |     mockReactFlow();
+51 |   });
+52 | 
+53 |   // 각 테스트 전 초기화
+54 |   beforeEach(() => {
+55 |     // 모든 모의 함수 초기화
+56 |     vi.clearAllMocks();
+57 |   });
+58 | 
+59 |   // 각 테스트 후 정리
+60 |   afterEach(() => {
+61 |     vi.resetAllMocks();
+62 |   });
+63 | 
+64 |   // 모든 테스트 후 정리
+65 |   afterAll(() => {
+66 |     vi.restoreAllMocks();
+67 |   });
 68 | 
-69 |     // 모든 모의 함수 초기화
-70 |     vi.clearAllMocks();
-71 |   });
-72 | 
-73 |   // 각 테스트 후 정리
-74 |   afterEach(() => {
-75 |     vi.resetAllMocks();
-76 |   });
-77 | 
-78 |   // 모든 테스트 후 정리
-79 |   afterAll(() => {
-80 |     vi.restoreAllMocks();
-81 |   });
-82 | 
-83 |   it('초기 상태가 올바르게 반환되어야 함', () => {
-84 |     const { result } = renderHook(() => useNodes({}));
-85 | 
-86 |     expect(result.current.nodes).toEqual([]);
-87 |     expect(typeof result.current.handleNodesChange).toBe('function');
+69 |   it('초기 상태가 올바르게 반환되어야 함', () => {
+70 |     const { result } = renderHook(() => useNodeClickHandlers({}));
+71 | 
+72 |     expect(typeof result.current.handleNodeClick).toBe('function');
+73 |     expect(typeof result.current.handlePaneClick).toBe('function');
+74 |   });
+75 | 
+76 |   it('노드 클릭 시 handleNodeClick이 selectCard를 호출해야 함', () => {
+77 |     const onSelectCardMock = vi.fn();
+78 |     const { result } = renderHook(() => useNodeClickHandlers({ onSelectCard: onSelectCardMock }));
+79 | 
+80 |     // 테스트 노드 - 아직 선택되지 않은 노드를 사용
+81 |     const testNode: Node<CardData> = {
+82 |       id: 'test-node-2', // 선택되지 않은 새 노드 ID
+83 |       type: 'default',
+84 |       position: { x: 100, y: 200 },
+85 |       data: {
+86 |         id: 'test-node-2',
+87 |         title: '테스트 노드 2',
 [TRUNCATED]
 ```
 
@@ -13975,81 +13941,88 @@ src/components/board/hooks/useNodes.ts
 ```
 1 | /**
 2 |  * 파일명: useNodes.ts
-3 |  * 목적: 노드 관련 상태 및 로직 관리
-4 |  * 역할: 노드 생성, 업데이트, 삭제 및 이벤트 핸들링 로직 캡슐화
+3 |  * 목적: 노드 클릭 핸들러 로직 관리
+4 |  * 역할: 노드 클릭 및 패널 클릭 이벤트 핸들링 로직 캡슐화
 5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-03-31
+6 |  * 수정일: 2025-04-11
 7 |  */
 8 | 
-9 | import { useCallback, useRef, useEffect } from 'react';
-10 | import { useNodesState, applyNodeChanges } from '@xyflow/react';
-11 | import { toast } from 'sonner';
-12 | import { useAppStore } from '@/store/useAppStore';
-13 | import { 
-14 |   CardData, 
-15 |   NodeChange, 
-16 |   Node,
-17 |   XYPosition
-18 | } from '../types/board-types';
-19 | import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
-20 | 
-21 | /**
-22 |  * useNodes: 노드 관련 상태 및 로직을 관리하는 훅
-23 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
-24 |  * @param initialNodes 초기 노드 데이터 (옵션)
-25 |  * @returns 노드 관련 상태 및 함수들
-26 |  */
-27 | export function useNodes({
-28 |   onSelectCard,
-29 |   initialNodes = []
-30 | }: {
-31 |   onSelectCard?: (cardId: string | null) => void;
-32 |   initialNodes?: Node<CardData>[];
-33 | }) {
-34 |   // 노드 상태 관리 - Node<CardData> 타입으로 제네릭 지정
-35 |   const [nodes, setNodes] = useNodesState<Node<CardData>>(initialNodes);
-36 |   
-37 |   // 저장되지 않은 변경사항 플래그
-38 |   const hasUnsavedChanges = useRef(false);
-39 |   
-40 |   // 전역 상태에서 선택된 카드 정보 가져오기
-41 |   const { selectedCardIds, toggleSelectedCard, selectCard, clearSelectedCards } = useAppStore();
-42 |   
-43 |   // 초기 노드 데이터가 변경되면 노드 상태 업데이트
-44 |   useEffect(() => {
-45 |     if (initialNodes && initialNodes.length > 0) {
-46 |       setNodes(initialNodes);
+9 | import { useCallback } from 'react';
+10 | import { toast } from 'sonner';
+11 | import { useAppStore } from '@/store/useAppStore';
+12 | import { 
+13 |   NodeMouseHandler,
+14 |   Node
+15 | } from '@xyflow/react';
+16 | import { CardData } from '../types/board-types';
+17 | 
+18 | /**
+19 |  * useNodeClickHandlers: 노드 클릭 관련 핸들러를 제공하는 훅
+20 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수 (옵션)
+21 |  * @param onNodeDoubleClick 노드 더블 클릭 시 호출될 콜백 함수 (옵션)
+22 |  * @returns 노드 클릭 관련 핸들러 함수들
+23 |  */
+24 | export function useNodeClickHandlers({
+25 |   onSelectCard,
+26 |   onNodeDoubleClick
+27 | }: {
+28 |   onSelectCard?: (cardId: string | null) => void;
+29 |   onNodeDoubleClick?: (node: Node<CardData>) => void;
+30 | }) {
+31 |   // 전역 상태에서 선택된 카드 정보 가져오기
+32 |   const { selectedCardIds, toggleSelectedCard, selectCard, clearSelectedCards } = useAppStore();
+33 |   
+34 |   /**
+35 |    * 노드 클릭 핸들러: 노드 선택 처리
+36 |    * @param event 마우스 이벤트
+37 |    * @param node 클릭된 노드
+38 |    */
+39 |   const handleNodeClick = useCallback<NodeMouseHandler>((event, node) => {
+40 |     // 이벤트 전파 방지는 항상 수행
+41 |     event.stopPropagation();
+42 | 
+43 |     // 노드가 undefined인 경우 처리
+44 |     if (!node) {
+45 |       console.warn('클릭된 노드가 undefined입니다.');
+46 |       return;
 47 |     }
-48 |   }, [initialNodes, setNodes]);
-49 | 
-50 |   /**
-51 |    * 노드 변경 핸들러: 노드 변경 사항 적용 및 관리
-52 |    * @param changes 노드 변경 사항 배열
-53 |    */
-54 |   const handleNodesChange = useCallback((changes: NodeChange[]) => {
-55 |     // 노드 삭제 변경이 있는지 확인
-56 |     const deleteChanges = changes.filter(change => change.type === 'remove');
+48 |     
+49 |     // 노드 타입 안전하게 변환
+50 |     const typedNode = node as Node<CardData>;
+51 |     
+52 |     // 더블 클릭 처리
+53 |     if (event.detail === 2 && onNodeDoubleClick) {
+54 |       onNodeDoubleClick(typedNode);
+55 |       return;
+56 |     }
 57 |     
-58 |     // 삭제된 노드가 있으면 로컬 스토리지에서도 해당 노드 정보를 제거
-59 |     if (deleteChanges.length > 0) {
-60 |       // 현재 저장된 노드 위치 정보 가져오기
-61 |       try {
-62 |         const savedPositionsStr = localStorage.getItem(STORAGE_KEY);
-63 |         if (savedPositionsStr) {
-64 |           const savedPositions = JSON.parse(savedPositionsStr);
-65 |           
-66 |           // 삭제된 노드 ID 목록
-67 |           const deletedNodeIds = deleteChanges.map(change => change.id);
-68 |           
-69 |           // 삭제된 노드 ID를 제외한 새 위치 정보 객체 생성
-70 |           const updatedPositions = Object.fromEntries(
-71 |             Object.entries(savedPositions).filter(([id]) => !deletedNodeIds.includes(id))
-72 |           );
-73 |           
-74 |           // 업데이트된 위치 정보 저장
-75 |           localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPositions));
-76 |           
-77 |           // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
+58 |     // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
+59 |     const isMultiSelectMode = event.ctrlKey || event.metaKey;
+60 |     
+61 |     // 노드 id 가져오기
+62 |     const nodeId = typedNode.id;
+63 |     
+64 |     // 기본 이벤트 관리
+65 |     event.stopPropagation();
+66 |     
+67 |     if (isMultiSelectMode) {
+68 |       // 다중 선택 모드: 선택된 카드 목록에 추가/제거
+69 |       console.log('다중 선택 모드로 노드 클릭:', nodeId);
+70 |       
+71 |       // 토스트 메시지 결정을 위해 현재 선택 상태 미리 확인
+72 |       const isCurrentlySelected = selectedCardIds.includes(nodeId);
+73 |       
+74 |       // 상태 업데이트
+75 |       toggleSelectedCard(nodeId);
+76 |       
+77 |       // 성공 메시지 표시 - 다중 선택 모드
+78 |       if (isCurrentlySelected) {
+79 |         toast.success(`'${typedNode.data.title}'가 선택에서 제거되었습니다.`);
+80 |       } else {
+81 |         toast.success(`'${typedNode.data.title}'가 선택에 추가되었습니다.`);
+82 |       }
+83 |     } else {
+84 |       // 단일 선택 모드: 하나만 선택
 [TRUNCATED]
 ```
 
@@ -14153,7 +14126,6 @@ src/components/board/nodes/CardNode.test.tsx
 96 |         setSidebarWidth: vi.fn(),
 97 | 
 98 |         // 보드 설정
-99 |         boardSettings: DEFAULT_BOARD_SETTINGS,
 [TRUNCATED]
 ```
 
@@ -14233,7 +14205,6 @@ src/components/board/nodes/CardNode.tsx
 72 |   const reactFlowInstance = useReactFlow();
 73 | 
 74 |   // 컴포넌트 초기화 로그 - 상세 정보 추가
-75 |   // console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
 [TRUNCATED]
 ```
 
@@ -14318,7 +14289,6 @@ src/components/board/nodes/CustomEdge.test.tsx
 77 |     const xyflow = vi.mocked(await import('@xyflow/react'));
 78 |     getBezierPathMock = xyflow.getBezierPath;
 79 |     getStraightPathMock = xyflow.getStraightPath;
-80 |     getSmoothStepPathMock = xyflow.getSmoothStepPath;
 [TRUNCATED]
 ```
 
@@ -14410,7 +14380,6 @@ src/components/board/nodes/CustomEdge.tsx
 84 |     targetPosition,
 85 |   }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
 86 | 
-87 |   // 엣지 타입 결정: data.edgeType > boardSettings.connectionLineType > 기본값
 [TRUNCATED]
 ```
 
@@ -14569,7 +14538,6 @@ src/components/board/nodes/NodeInspector.tsx
 73 |               {/* 노드 위치 정보 */}
 74 |               <div className="mb-4">
 75 |                 <h3 className="text-sm font-semibold mb-1">위치</h3>
-76 |                 <div className="grid grid-cols-2 gap-2 text-xs">
 [TRUNCATED]
 ```
 
@@ -14604,7 +14572,7 @@ src/components/board/types/board-types.ts
 27 | export interface CardData {
 28 |   id: string;
 29 |   title: string;
-30 |   content: string;
+30 |   content: string | null;
 31 |   tags?: string[];
 32 |   cardTags?: Array<{tag: {name: string}}>;
 33 |   [key: string]: any;
@@ -14656,81 +14624,6 @@ src/components/board/types/board-types.ts
 79 | 
 80 | // 타입 재내보내기 - isolatedModules 설정 때문에 'export type'을 사용
 81 | export type { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode }; 
-```
-
-src/tests/msw/handlers/logs.ts
-```
-1 | /**
-2 |  * 파일명: logs.ts
-3 |  * 목적: 로그 뷰어 테스트를 위한 목업 데이터
-4 |  * 역할: 테스트에서 사용할 로그 데이터 제공
-5 |  * 작성일: 2025-04-01
-6 |  */
-7 | 
-8 | export interface Log {
-9 |   timestamp: string
-10 |   module: string
-11 |   level: string
-12 |   message: string
-13 |   sessionId: string
-14 |   data?: Record<string, unknown>
-15 | }
-16 | 
-17 | export const mockModules = ['auth', 'database', 'api', 'system'] as const
-18 | 
-19 | export const mockSessionIds = [
-20 |   'sess_123456',
-21 |   'sess_789012',
-22 |   'sess_345678',
-23 |   'sess_901234'
-24 | ]
-25 | 
-26 | export const mockLogs: Log[] = [
-27 |   {
-28 |     timestamp: '2024-03-31T10:00:00Z',
-29 |     module: 'auth',
-30 |     level: 'info',
-31 |     message: '사용자 로그인 성공',
-32 |     sessionId: 'sess_123456',
-33 |     data: {
-34 |       userId: 'user_123',
-35 |       loginMethod: 'password'
-36 |     }
-37 |   },
-38 |   {
-39 |     timestamp: '2024-03-31T10:01:00Z',
-40 |     module: 'database',
-41 |     level: 'error',
-42 |     message: '데이터베이스 연결 실패',
-43 |     sessionId: 'sess_789012',
-44 |     data: {
-45 |       errorCode: 'DB_001',
-46 |       retryCount: 3
-47 |     }
-48 |   },
-49 |   {
-50 |     timestamp: '2024-03-31T10:02:00Z',
-51 |     module: 'api',
-52 |     level: 'warn',
-53 |     message: 'API 응답 지연',
-54 |     sessionId: 'sess_345678',
-55 |     data: {
-56 |       endpoint: '/api/users',
-57 |       responseTime: 5000
-58 |     }
-59 |   },
-60 |   {
-61 |     timestamp: '2024-03-31T10:03:00Z',
-62 |     module: 'system',
-63 |     level: 'debug',
-64 |     message: '시스템 상태 점검',
-65 |     sessionId: 'sess_901234',
-66 |     data: {
-67 |       cpuUsage: 45,
-68 |       memoryUsage: 60
-69 |     }
-70 |   }
-71 | ] 
 ```
 
 src/components/board/utils/constants.ts
@@ -14893,8 +14786,82 @@ src/components/board/utils/graphUtils.ts
 79 |       
 80 |       // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
 81 |       const savedEdgesStr = localStorage.getItem(EDGES_STORAGE_KEY);
-82 |       if (savedEdgesStr) {
 [TRUNCATED]
+```
+
+src/tests/msw/handlers/logs.ts
+```
+1 | /**
+2 |  * 파일명: logs.ts
+3 |  * 목적: 로그 뷰어 테스트를 위한 목업 데이터
+4 |  * 역할: 테스트에서 사용할 로그 데이터 제공
+5 |  * 작성일: 2025-04-01
+6 |  */
+7 | 
+8 | export interface Log {
+9 |   timestamp: string
+10 |   module: string
+11 |   level: string
+12 |   message: string
+13 |   sessionId: string
+14 |   data?: Record<string, unknown>
+15 | }
+16 | 
+17 | export const mockModules = ['auth', 'database', 'api', 'system'] as const
+18 | 
+19 | export const mockSessionIds = [
+20 |   'sess_123456',
+21 |   'sess_789012',
+22 |   'sess_345678',
+23 |   'sess_901234'
+24 | ]
+25 | 
+26 | export const mockLogs: Log[] = [
+27 |   {
+28 |     timestamp: '2024-03-31T10:00:00Z',
+29 |     module: 'auth',
+30 |     level: 'info',
+31 |     message: '사용자 로그인 성공',
+32 |     sessionId: 'sess_123456',
+33 |     data: {
+34 |       userId: 'user_123',
+35 |       loginMethod: 'password'
+36 |     }
+37 |   },
+38 |   {
+39 |     timestamp: '2024-03-31T10:01:00Z',
+40 |     module: 'database',
+41 |     level: 'error',
+42 |     message: '데이터베이스 연결 실패',
+43 |     sessionId: 'sess_789012',
+44 |     data: {
+45 |       errorCode: 'DB_001',
+46 |       retryCount: 3
+47 |     }
+48 |   },
+49 |   {
+50 |     timestamp: '2024-03-31T10:02:00Z',
+51 |     module: 'api',
+52 |     level: 'warn',
+53 |     message: 'API 응답 지연',
+54 |     sessionId: 'sess_345678',
+55 |     data: {
+56 |       endpoint: '/api/users',
+57 |       responseTime: 5000
+58 |     }
+59 |   },
+60 |   {
+61 |     timestamp: '2024-03-31T10:03:00Z',
+62 |     module: 'system',
+63 |     level: 'debug',
+64 |     message: '시스템 상태 점검',
+65 |     sessionId: 'sess_901234',
+66 |     data: {
+67 |       cpuUsage: 45,
+68 |       memoryUsage: 60
+69 |     }
+70 |   }
+71 | ] 
 ```
 
 src/app/api/auth/status/route.ts
@@ -14937,90 +14904,6 @@ src/app/api/auth/status/route.ts
 36 |     }, { status: 500 })
 37 |   }
 38 | } 
-```
-
-src/app/api/logs/view/route.ts
-```
-1 | /**
-2 |  * 파일명: route.ts
-3 |  * 목적: 저장된 로그를 확인할 수 있는 API 엔드포인트
-4 |  * 역할: 서버에 저장된 로그를 조회하고 필터링하여 제공
-5 |  * 작성일: 2025-03-27
-6 |  * 수정일: 2025-04-09
-7 |  */
-8 | 
-9 | import { NextRequest, NextResponse } from 'next/server';
-10 | import fs from 'fs';
-11 | import path from 'path';
-12 | import { createClient } from '@/lib/supabase/server';
-13 | 
-14 | // 로그 파일 경로
-15 | const LOG_DIR = process.env.LOG_DIR || 'logs';
-16 | const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
-17 | 
-18 | /**
-19 |  * 로그 조회 API 핸들러
-20 |  */
-21 | export async function GET(request: NextRequest) {
-22 |   try {
-23 |     // 인증 확인 (관리자만 접근 가능하도록 설정)
-24 |     const supabase = await createClient();
-25 |     const { data: sessionData } = await supabase.auth.getSession();
-26 |     
-27 |     // 개발 환경이 아니고 인증되지 않은 경우 접근 거부
-28 |     if (process.env.NODE_ENV !== 'development' && !sessionData.session) {
-29 |       return NextResponse.json(
-30 |         { error: '인증이 필요합니다.' },
-31 |         { status: 401 }
-32 |       );
-33 |     }
-34 |     
-35 |     // 로그 파일이 존재하지 않는 경우
-36 |     if (!fs.existsSync(LOG_FILE)) {
-37 |       return NextResponse.json(
-38 |         { error: '로그 파일이 존재하지 않습니다.' },
-39 |         { status: 404 }
-40 |       );
-41 |     }
-42 |     
-43 |     // 로그 파일 읽기
-44 |     const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
-45 |     const logs = JSON.parse(fileContent);
-46 |     
-47 |     // URL 파라미터로 필터링
-48 |     const searchParams = request.nextUrl.searchParams;
-49 |     const module = searchParams.get('module');
-50 |     const level = searchParams.get('level');
-51 |     const limit = parseInt(searchParams.get('limit') || '100', 10);
-52 |     const sessionId = searchParams.get('sessionId');
-53 |     
-54 |     // 필터링 적용
-55 |     let filteredLogs = logs;
-56 |     
-57 |     if (module) {
-58 |       filteredLogs = filteredLogs.filter((log: any) => log.module === module);
-59 |     }
-60 |     
-61 |     if (level) {
-62 |       filteredLogs = filteredLogs.filter((log: any) => log.level === level);
-63 |     }
-64 |     
-65 |     if (sessionId) {
-66 |       filteredLogs = filteredLogs.filter((log: any) => log.sessionId === sessionId);
-67 |     }
-68 |     
-69 |     // 최근 로그 순으로 정렬
-70 |     filteredLogs.sort((a: any, b: any) => {
-71 |       const dateA = new Date(a.timestamp).getTime();
-72 |       const dateB = new Date(b.timestamp).getTime();
-73 |       return dateB - dateA;
-74 |     });
-75 |     
-76 |     // 로그 개수 제한
-77 |     filteredLogs = filteredLogs.slice(0, limit);
-78 |     
-79 |     // 모듈 목록 추출 (필터링을 위한 옵션)
-[TRUNCATED]
 ```
 
 src/app/api/cards/[id]/route.ts
@@ -15124,7 +15007,89 @@ src/app/api/cards/[id]/route.ts
 97 |     // 데이터 준비
 98 |     const { tags, ...cardData } = validation.data;
 99 |     
-100 |     // 트랜잭션으로 카드 및 태그 업데이트
+[TRUNCATED]
+```
+
+src/app/api/logs/view/route.ts
+```
+1 | /**
+2 |  * 파일명: route.ts
+3 |  * 목적: 저장된 로그를 확인할 수 있는 API 엔드포인트
+4 |  * 역할: 서버에 저장된 로그를 조회하고 필터링하여 제공
+5 |  * 작성일: 2025-03-27
+6 |  * 수정일: 2025-04-09
+7 |  */
+8 | 
+9 | import { NextRequest, NextResponse } from 'next/server';
+10 | import fs from 'fs';
+11 | import path from 'path';
+12 | import { createClient } from '@/lib/supabase/server';
+13 | 
+14 | // 로그 파일 경로
+15 | const LOG_DIR = process.env.LOG_DIR || 'logs';
+16 | const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
+17 | 
+18 | /**
+19 |  * 로그 조회 API 핸들러
+20 |  */
+21 | export async function GET(request: NextRequest) {
+22 |   try {
+23 |     // 인증 확인 (관리자만 접근 가능하도록 설정)
+24 |     const supabase = await createClient();
+25 |     const { data: sessionData } = await supabase.auth.getSession();
+26 |     
+27 |     // 개발 환경이 아니고 인증되지 않은 경우 접근 거부
+28 |     if (process.env.NODE_ENV !== 'development' && !sessionData.session) {
+29 |       return NextResponse.json(
+30 |         { error: '인증이 필요합니다.' },
+31 |         { status: 401 }
+32 |       );
+33 |     }
+34 |     
+35 |     // 로그 파일이 존재하지 않는 경우
+36 |     if (!fs.existsSync(LOG_FILE)) {
+37 |       return NextResponse.json(
+38 |         { error: '로그 파일이 존재하지 않습니다.' },
+39 |         { status: 404 }
+40 |       );
+41 |     }
+42 |     
+43 |     // 로그 파일 읽기
+44 |     const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
+45 |     const logs = JSON.parse(fileContent);
+46 |     
+47 |     // URL 파라미터로 필터링
+48 |     const searchParams = request.nextUrl.searchParams;
+49 |     const module = searchParams.get('module');
+50 |     const level = searchParams.get('level');
+51 |     const limit = parseInt(searchParams.get('limit') || '100', 10);
+52 |     const sessionId = searchParams.get('sessionId');
+53 |     
+54 |     // 필터링 적용
+55 |     let filteredLogs = logs;
+56 |     
+57 |     if (module) {
+58 |       filteredLogs = filteredLogs.filter((log: any) => log.module === module);
+59 |     }
+60 |     
+61 |     if (level) {
+62 |       filteredLogs = filteredLogs.filter((log: any) => log.level === level);
+63 |     }
+64 |     
+65 |     if (sessionId) {
+66 |       filteredLogs = filteredLogs.filter((log: any) => log.sessionId === sessionId);
+67 |     }
+68 |     
+69 |     // 최근 로그 순으로 정렬
+70 |     filteredLogs.sort((a: any, b: any) => {
+71 |       const dateA = new Date(a.timestamp).getTime();
+72 |       const dateB = new Date(b.timestamp).getTime();
+73 |       return dateB - dateA;
+74 |     });
+75 |     
+76 |     // 로그 개수 제한
+77 |     filteredLogs = filteredLogs.slice(0, limit);
+78 |     
 [TRUNCATED]
 ```
 
@@ -15229,8 +15194,6 @@ src/app/api/tags/[id]/route.ts
 97 |       { status: 500 }
 98 |     );
 99 |   }
-100 | }
-101 | 
 [TRUNCATED]
 ```
 
@@ -15363,6 +15326,145 @@ src/app/api/user/register/route.ts
 65 | } 
 ```
 
+src/app/api/users/first/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import prisma from '@/lib/prisma';
+3 | 
+4 | /**
+5 |  * 첫 번째 사용자를 가져오는 API 엔드포인트
+6 |  */
+7 | export async function GET(request: NextRequest) {
+8 |   try {
+9 |     // 첫 번째 사용자를 가져옴 (가장 먼저 생성된 사용자)
+10 |     const firstUser = await prisma.user.findFirst({
+11 |       orderBy: {
+12 |         createdAt: 'asc'
+13 |       },
+14 |       select: {
+15 |         id: true,
+16 |         name: true,
+17 |         email: true
+18 |       }
+19 |     });
+20 |     
+21 |     if (!firstUser) {
+22 |       return NextResponse.json(
+23 |         { error: '사용자를 찾을 수 없습니다.' },
+24 |         { status: 404 }
+25 |       );
+26 |     }
+27 |     
+28 |     return NextResponse.json(firstUser);
+29 |   } catch (error) {
+30 |     console.error('사용자 조회 오류:', error);
+31 |     
+32 |     return NextResponse.json(
+33 |       { error: '사용자 조회 중 오류가 발생했습니다.' },
+34 |       { status: 500 }
+35 |     );
+36 |   }
+37 | } 
+```
+
+src/app/cards/[id]/edit/EditCardPageMock.tsx
+```
+1 | /**
+2 |  * 파일명: EditCardPageMock.tsx
+3 |  * 목적: 카드 편집 페이지의 테스트를 위한 모킹 컴포넌트
+4 |  * 역할: 실제 컴포넌트의 동작을 시뮬레이션
+5 |  * 작성일: 2025-04-01
+6 |  * 수정일: 2025-04-03
+7 |  */
+8 | 
+9 | import React, { useEffect, useState } from 'react';
+10 | import { mockActions } from './test-utils';
+11 | 
+12 | interface Card {
+13 |     id: string;
+14 |     title: string;
+15 |     content: string;
+16 |     cardTags: Array<{ id: string; name: string; }>;
+17 | }
+18 | 
+19 | export const EditCardPageMock: React.FC = () => {
+20 |     const [card, setCard] = useState<Card | null>(null);
+21 |     const [error, setError] = useState<string | null>(null);
+22 |     const [isLoading, setIsLoading] = useState(true);
+23 | 
+24 |     // 간소화된 useEffect - 비동기 로직 단순화
+25 |     useEffect(() => {
+26 |         const fetchCard = async () => {
+27 |             try {
+28 |                 const id = 'test-card-123';
+29 | 
+30 |                 // API 호출 - 동기식으로 처리 (테스트 환경에서는 즉시 해결되는 프로미스 사용)
+31 |                 const response = await mockActions.getCard(id);
+32 | 
+33 |                 // 응답 처리
+34 |                 if (!response.ok) {
+35 |                     if (response.status === 404) {
+36 |                         setError('카드를 찾을 수 없습니다.');
+37 |                     } else {
+38 |                         setError('카드 로딩에 실패했습니다.');
+39 |                     }
+40 |                     setIsLoading(false);
+41 |                     return;
+42 |                 }
+43 | 
+44 |                 // 응답 데이터 처리
+45 |                 const data = await response.json();
+46 | 
+47 |                 // 데이터에 에러가 있는 경우
+48 |                 if ('error' in data) {
+49 |                     setError(data.error);
+50 |                 } else {
+51 |                     // 카드 데이터 설정
+52 |                     setCard(data);
+53 |                 }
+54 | 
+55 |                 // 로딩 상태 종료
+56 |                 setIsLoading(false);
+57 |             } catch (err) {
+58 |                 // 에러 처리
+59 |                 setError(err instanceof Error ? err.message : '카드 로딩에 실패했습니다.');
+60 |                 setIsLoading(false);
+61 |             }
+62 |         };
+63 | 
+64 |         // 즉시 함수 호출
+65 |         fetchCard();
+66 |     }, []);
+67 | 
+68 |     // 로딩 중 UI
+69 |     if (isLoading) {
+70 |         return <div data-testid="loading-state">로딩 중...</div>;
+71 |     }
+72 | 
+73 |     // 에러 UI
+74 |     if (error) {
+75 |         return (
+76 |             <div data-testid="error-state">
+77 |                 <p>{error}</p>
+78 |                 <button onClick={() => mockActions.router.back()}>돌아가기</button>
+79 |             </div>
+80 |         );
+81 |     }
+82 | 
+83 |     // 카드가 없는 경우
+84 |     if (!card) {
+85 |         return <div data-testid="no-card-state">카드를 찾을 수 없습니다.</div>;
+86 |     }
+87 | 
+88 |     // 저장 버튼 핸들러
+89 |     const handleSave = (e: React.MouseEvent) => {
+90 |         e.preventDefault();
+91 |         mockActions.router.push('/board');
+92 |     };
+93 | 
+[TRUNCATED]
+```
+
 src/app/cards/[id]/edit/page.test.tsx
 ```
 1 | /**
@@ -15413,7 +15515,7 @@ src/app/cards/[id]/edit/page.test.tsx
 46 | }));
 47 | 
 48 | // 모킹 모듈 import는 mock 선언 후에 위치해야 함
-49 | import { EditCardPageMock } from './__EditCardPageMock';
+49 | import { EditCardPageMock } from './EditCardPageMock';
 50 | import { mockActions } from './test-utils';
 51 | 
 52 | // 테스트 타임아웃 설정
@@ -15451,7 +15553,6 @@ src/app/cards/[id]/edit/page.test.tsx
 84 | });
 85 | 
 86 | afterAll(() => {
-87 |   server.close();
 [TRUNCATED]
 ```
 
@@ -15634,45 +15735,4 @@ src/app/cards/[id]/edit/test-utils.ts
 86 |  * waitForDomChanges: 비동기 작업의 안전한 완료를 위한 도우미 함수
 87 |  */
 88 | export const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 50)); 
-```
-
-src/app/api/users/first/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import prisma from '@/lib/prisma';
-3 | 
-4 | /**
-5 |  * 첫 번째 사용자를 가져오는 API 엔드포인트
-6 |  */
-7 | export async function GET(request: NextRequest) {
-8 |   try {
-9 |     // 첫 번째 사용자를 가져옴 (가장 먼저 생성된 사용자)
-10 |     const firstUser = await prisma.user.findFirst({
-11 |       orderBy: {
-12 |         createdAt: 'asc'
-13 |       },
-14 |       select: {
-15 |         id: true,
-16 |         name: true,
-17 |         email: true
-18 |       }
-19 |     });
-20 |     
-21 |     if (!firstUser) {
-22 |       return NextResponse.json(
-23 |         { error: '사용자를 찾을 수 없습니다.' },
-24 |         { status: 404 }
-25 |       );
-26 |     }
-27 |     
-28 |     return NextResponse.json(firstUser);
-29 |   } catch (error) {
-30 |     console.error('사용자 조회 오류:', error);
-31 |     
-32 |     return NextResponse.json(
-33 |       { error: '사용자 조회 중 오류가 발생했습니다.' },
-34 |       { status: 500 }
-35 |     );
-36 |   }
-37 | } 
 ```

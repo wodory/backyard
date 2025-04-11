@@ -227,6 +227,7 @@ export function Sidebar({ className }: SidebarProps) {
         throw new Error('카드 목록을 불러오는데 실패했습니다.');
       }
       const data = await response.json();
+      console.log('[fetchCards] data : ', data);
       useAppStore.getState().setCards(data);
     } catch (error) {
       console.error('Error fetching cards:', error);
