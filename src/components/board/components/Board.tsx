@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/useAppStore';
+import { useBoardStore } from '@/store/useBoardStore';
 
 // 보드 관련 컴포넌트 임포트
 import CreateCardModal from '@/components/cards/CreateCardModal';
@@ -27,7 +28,6 @@ import BoardCanvas from './BoardCanvas';
 // 보드 관련 훅 임포트
 import { useNodes } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
-import { useBoardUtils } from '../hooks/useBoardUtils';
 import { useBoardData } from '../hooks/useBoardData';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 
@@ -84,10 +84,31 @@ export default function Board({
   // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
   const storeCards = useAppStore(state => state.cards);
 
-  // 보드 데이터 훅 사용
+  // useBoardStore에서 보드 데이터 관련 상태와 액션 가져오기
   const {
-    nodes: initialNodes,
-    edges: initialEdges,
+    nodes: boardStoreNodes,
+    edges: boardStoreEdges,
+    isBoardLoading,
+    boardError,
+    loadBoardData,
+    loadedViewport,
+    needsFitView,
+    viewportToRestore,
+    hasUnsavedChanges,
+    saveViewport,
+    restoreViewport,
+    saveAllLayoutData,
+    applyLayout: applyBoardLayout,
+    applyGridLayout,
+    loadAndApplyBoardSettings,
+    updateAndSaveBoardSettings,
+    saveBoardState
+  } = useBoardStore();
+
+  // 보드 데이터 훅 사용 (하위 호환성을 위해 유지)
+  const {
+    nodes: _nodes,
+    edges: _edges,
     isLoading,
     error,
     loadNodesAndEdges
@@ -104,7 +125,7 @@ export default function Board({
     hasUnsavedChanges: hasUnsavedNodesChanges
   } = useNodes({
     onSelectCard,
-    initialNodes: initialNodes
+    initialNodes: boardStoreNodes // useBoardStore에서 가져온 노드 사용
   });
 
   const {
@@ -119,33 +140,18 @@ export default function Board({
   } = useEdges({
     boardSettings,
     nodes,
-    initialEdges: initialEdges
-  });
-
-  const {
-    loadBoardSettingsFromServerIfAuthenticated,
-    saveAllLayoutData,
-    handleBoardSettingsChange,
-    handleLayoutChange,
-    updateViewportCenter,
-    handleAutoLayout,
-    saveTransform,
-    hasUnsavedChanges: hasBoardUtilsUnsavedChanges
-  } = useBoardUtils({
-    reactFlowWrapper,
-    updateNodeInternals,
-    saveLayout,
-    saveEdges,
-    nodes,
-    edges,
-    setNodes,
-    setEdges
+    initialEdges: boardStoreEdges // useBoardStore에서 가져온 엣지 사용
   });
 
   // BoardSettings 변경 핸들러 래퍼
   const handleBoardSettingsChangeWrapper = useCallback((newSettings: any) => {
-    handleBoardSettingsChange(newSettings, !!user, user?.id);
-  }, [handleBoardSettingsChange, user]);
+    updateAndSaveBoardSettings(newSettings, user?.id);
+  }, [updateAndSaveBoardSettings, user?.id]);
+
+  // 레이아웃 변경 핸들러
+  const handleLayoutChange = useCallback((direction: 'horizontal' | 'vertical') => {
+    applyBoardLayout(direction);
+  }, [applyBoardLayout]);
 
   // 드래그 오버 이벤트 핸들러 추가
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -233,24 +239,45 @@ export default function Board({
 
   // 초기 데이터 로드
   useEffect(() => {
-    const initializeBoardData = async () => {
-      try {
-        // 노드와 엣지 데이터 로드
-        await loadNodesAndEdges(reactFlowInstance);
-      } catch (err) {
-        console.error('초기 데이터 로드 실패:', err);
-      }
-    };
+    loadBoardData(); // useBoardStore의 액션 직접 호출
+  }, [loadBoardData]);
 
-    initializeBoardData();
-  }, [loadNodesAndEdges, reactFlowInstance]);
+  // 뷰포트 복원 Effect
+  useEffect(() => {
+    if (!reactFlowInstance) return;
+
+    if (loadedViewport) {
+      // 저장된 뷰포트가 있으면 복원
+      reactFlowInstance.setViewport(loadedViewport, { duration: 0 });
+      console.log('[Board] 저장된 뷰포트 복원:', loadedViewport);
+
+      // 복원 후 상태 초기화
+      useBoardStore.setState({ loadedViewport: null });
+    } else if (needsFitView) {
+      // fitView 실행 필요
+      reactFlowInstance.fitView({ duration: 200, padding: 0.2 });
+      console.log('[Board] 뷰에 맞게 화면 조정');
+
+      // 실행 후 상태 초기화
+      useBoardStore.setState({ needsFitView: false });
+    }
+  }, [reactFlowInstance, loadedViewport, needsFitView]);
+
+  // viewportToRestore가 변경되면 뷰포트 복원
+  useEffect(() => {
+    if (reactFlowInstance && viewportToRestore) {
+      reactFlowInstance.setViewport(viewportToRestore);
+      useBoardStore.setState({ viewportToRestore: null });
+      console.log('[Board] 저장된 뷰포트 위치로 이동:', viewportToRestore);
+    }
+  }, [reactFlowInstance, viewportToRestore]);
 
   // 인증 상태 변경 시 보드 설정 로드
   useEffect(() => {
-    if (!isAuthLoading) {
-      loadBoardSettingsFromServerIfAuthenticated(!!user, user?.id);
+    if (!isAuthLoading && user?.id) {
+      loadAndApplyBoardSettings(user.id);
     }
-  }, [isAuthLoading, loadBoardSettingsFromServerIfAuthenticated, user]);
+  }, [isAuthLoading, loadAndApplyBoardSettings, user]);
 
   // 보드 설정 변경 시 엣지 스타일 업데이트
   useEffect(() => {
@@ -264,8 +291,8 @@ export default function Board({
     if (storeCards.length === 0 || nodes.length === 0 || isLoading) return;
 
     // 노드 데이터 업데이트 (카드 ID가 일치하는 노드들만)
-    setNodes(currentNodes =>
-      currentNodes.map(node => {
+    setNodes(currentNodes => {
+      return currentNodes.map(node => {
         // 대응되는 카드 데이터 찾기
         const cardData = storeCards.find(card => card.id === node.id);
 
@@ -276,7 +303,8 @@ export default function Board({
             data: {
               ...node.data,
               title: cardData.title,
-              content: cardData.content,
+              // null이 될 수 있는 content를 빈 문자열로 변환하여 타입 오류 방지
+              content: cardData.content ?? '',
               // 태그 처리 (카드에 cardTags가 있는 경우와 없는 경우 모두 처리)
               tags: cardData.cardTags
                 ? cardData.cardTags.map((cardTag: any) => cardTag.tag.name)
@@ -286,8 +314,8 @@ export default function Board({
         }
 
         return node;
-      })
-    );
+      });
+    });
   }, [storeCards, setNodes, isLoading, nodes.length]);
 
   // 로드 후 node internals 업데이트 (핸들 위치 등)
@@ -302,14 +330,14 @@ export default function Board({
   // 페이지 이탈 시 저장되지 않은 변경사항 경고
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedNodesChanges.current || hasUnsavedEdgesChanges.current || hasBoardUtilsUnsavedChanges.current) {
+      if (hasUnsavedChanges || hasUnsavedNodesChanges || hasUnsavedEdgesChanges) {
         saveAllLayoutData();
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [saveAllLayoutData, hasUnsavedNodesChanges, hasUnsavedEdgesChanges, hasBoardUtilsUnsavedChanges]);
+  }, [saveAllLayoutData, hasUnsavedChanges, hasUnsavedNodesChanges, hasUnsavedEdgesChanges]);
 
   // 엣지 드롭 카드 생성 완료 핸들러
   const handleEdgeDropCardCreated = useCallback((cardData: Card) => {
@@ -353,33 +381,23 @@ export default function Board({
   // 자동 저장 기능
   useEffect(() => {
     const autoSaveInterval = setInterval(() => {
-      if (hasUnsavedNodesChanges.current || hasUnsavedEdgesChanges.current) {
+      if (hasUnsavedChanges || hasUnsavedNodesChanges || hasUnsavedEdgesChanges) {
         saveAllLayoutData();
         toast.success('변경사항이 자동 저장되었습니다.');
       }
     }, 30000); // 30초마다 자동 저장
 
     return () => clearInterval(autoSaveInterval);
-  }, [saveAllLayoutData, hasUnsavedNodesChanges, hasUnsavedEdgesChanges]);
-
-  // 레이아웃 적용
-  const applyLayout = useCallback(() => {
-    handleLayoutChange(layoutDirection as 'horizontal' | 'vertical');
-  }, [handleLayoutChange, layoutDirection]);
-
-  // 그리드 레이아웃 적용
-  const applyGridLayout = useCallback(() => {
-    handleAutoLayout();
-  }, [handleAutoLayout]);
+  }, [saveAllLayoutData, hasUnsavedChanges, hasUnsavedNodesChanges, hasUnsavedEdgesChanges]);
 
   // 수동 저장 핸들러
   const handleSaveLayout = useCallback(() => {
-    if (saveAllLayoutData()) {
+    if (saveBoardState()) {
       toast.success('보드 레이아웃이 저장되었습니다.');
     } else {
       toast.error('보드 레이아웃 저장에 실패했습니다.');
     }
-  }, [saveAllLayoutData]);
+  }, [saveBoardState]);
 
   /**
    * 뷰포트 변경 핸들러 (확대/축소, 이동)
@@ -393,10 +411,10 @@ export default function Board({
 
     viewportChangeTimer.current = setTimeout(() => {
       // 변경된 뷰포트 저장
-      saveTransform();
+      saveViewport();
       viewportChangeTimer.current = null;
     }, 500); // 500ms 디바운스
-  }, [saveTransform]);
+  }, [saveViewport]);
 
   if (error) {
     return (
@@ -430,8 +448,8 @@ export default function Board({
         layoutDirection={layoutDirection as 'horizontal' | 'vertical'}
         boardSettings={boardSettings}
         onBoardSettingsChange={handleBoardSettingsChangeWrapper}
-        onLayoutChange={handleLayoutChange as any}
-        onAutoLayout={handleAutoLayout}
+        onLayoutChange={handleLayoutChange}
+        onAutoLayout={applyGridLayout}
         onSaveLayout={handleSaveLayout}
         onCreateCard={() => setIsCreateModalOpen(true)}
         showControls={showControls}

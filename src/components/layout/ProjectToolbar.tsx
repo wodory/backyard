@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Menu,
   ChevronRight,
@@ -17,7 +17,9 @@ import {
   SeparatorHorizontal,
   Paintbrush,
   Layout,
-  LogOut
+  LogOut,
+  FileText,
+  FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,10 +37,10 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
-import { BoardSettings, DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
+import { BoardSettings } from '@/lib/board-utils';
 import {
   SNAP_GRID_OPTIONS,
   CONNECTION_TYPE_OPTIONS,
@@ -46,73 +48,94 @@ import {
   STROKE_WIDTH_OPTIONS,
   MARKER_SIZE_OPTIONS,
   EDGE_COLOR_OPTIONS,
-  EDGE_ANIMATION_OPTIONS,
-  STORAGE_KEY,
-  EDGES_STORAGE_KEY
+  EDGE_ANIMATION_OPTIONS
 } from '@/lib/board-constants';
-import { useAuth } from '@/contexts/AuthContext';
 import createLogger from '@/lib/logger';
 
 // 모듈별 로거 생성
 const logger = createLogger('ProjectToolbar');
 
 export function ProjectToolbar() {
-  const [projectName, setProjectName] = useState('프로젝트 이름');
+  // useAppStore에서 프로젝트 정보와 액션을 가져옴
   const {
     layoutDirection,
     setLayoutDirection,
     boardSettings,
     updateBoardSettings,
-    reactFlowInstance
+    saveBoardLayout,
+    logoutAction,
+    projects,
+    activeProjectId,
+    fetchProjects,
+    createProject,
+    setActiveProject
   } = useAppStore();
-  const { signOut } = useAuth();
 
-  // 저장 핸들러 (임시)
+  // 활성 프로젝트 정보 가져오기
+  const activeProject = useAppStore(selectActiveProject);
+
+  // 프로젝트 이름과 작성자 정보 표시
+  const displayProjectName = activeProject
+    ? (activeProject.ownerNickname
+      ? `${activeProject.name} - ${activeProject.ownerNickname}`
+      : activeProject.name)
+    : '프로젝트를 선택하세요';
+
+  // 저장 핸들러
   const handleSaveLayout = useCallback(() => {
-    try {
-      if (!reactFlowInstance) {
-        toast.error('React Flow 인스턴스를 찾을 수 없습니다');
-        return;
-      }
+    // saveBoardLayout 액션을 호출하여 레이아웃 저장 처리
+    saveBoardLayout();
+  }, [saveBoardLayout]);
 
-      // React Flow 인스턴스에서 노드와 엣지 데이터 가져오기
-      const nodes = reactFlowInstance.getNodes();
-      const edges = reactFlowInstance.getEdges();
-
-      if (!nodes.length) {
-        toast.error('저장할 노드가 없습니다');
-        return;
-      }
-
-      // 노드와 엣지 데이터를 로컬 스토리지에 저장
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nodes));
-      localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
-
-      toast.success('레이아웃이 저장되었습니다');
-    } catch (error) {
-      console.error('레이아웃 저장 실패:', error);
-      toast.error('레이아웃 저장에 실패했습니다');
+  // 프로젝트 정보 표시 핸들러
+  const handleShowProjectInfo = useCallback(() => {
+    if (activeProject) {
+      toast.info(`프로젝트 정보: ${activeProject.name} (ID: ${activeProject.id})`);
+    } else {
+      toast.info('선택된 프로젝트가 없습니다.');
     }
-  }, [reactFlowInstance]);
+    // TODO: 프로젝트 정보 모달 표시
+  }, [activeProject]);
+
+  // 프로젝트 불러오기 핸들러
+  const handleLoadProject = useCallback(() => {
+    try {
+      // API 호출을 통해 프로젝트 목록 가져오기 (아직 API 미구현)
+      fetchProjects();
+    } catch (error) {
+      toast.error('프로젝트 목록 로드 중 오류가 발생했습니다.');
+    }
+  }, [fetchProjects]);
+
+  // 새 프로젝트 생성 핸들러
+  const handleCreateProject = useCallback(() => {
+    // 실제 구현에서는 모달을 통해 프로젝트 정보 입력
+    const projectName = prompt('새 프로젝트 이름을 입력하세요', '새 프로젝트');
+
+    if (!projectName) return; // 사용자가 취소하거나 빈 이름 입력 시
+
+    // 임시로 하드코딩된 정보로 프로젝트 생성
+    createProject({
+      name: projectName,
+      ownerNickname: '현재 사용자', // 실제 구현에서는 로그인한 사용자 정보 사용
+      userId: 'temp-user-id', // 실제 구현에서는a 로그인한 사용자 ID 사용
+    });
+  }, [createProject]);
 
   // 스냅 그리드 값 변경 핸들러
   const handleSnapGridChange = useCallback((value: string) => {
-    console.log('[ProjectToolbar] 격자 크기 변경:', value);
     const gridSize = parseInt(value, 10);
     updateBoardSettings({
       snapGrid: [gridSize, gridSize] as [number, number],
       snapToGrid: gridSize > 0, // 그리드 크기가 0보다 크면 스냅 활성화
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 연결선 타입 변경 핸들러
   const handleConnectionTypeChange = useCallback((value: string) => {
-    console.log('[ProjectToolbar] 연결선 스타일 변경:', value);
     updateBoardSettings({
       connectionLineType: value as ConnectionLineType,
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 마커 타입 변경 핸들러
@@ -120,7 +143,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       markerEnd: value === 'null' ? null : value as MarkerType,
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 스냅 그리드 토글 핸들러
@@ -128,7 +150,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       snapToGrid: !boardSettings.snapToGrid,
     });
-    toast.success('설정이 변경되었습니다.');
   }, [boardSettings.snapToGrid, updateBoardSettings]);
 
   // 연결선 두께 변경 핸들러
@@ -136,7 +157,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       strokeWidth: parseInt(value, 10),
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 마커 크기 변경 핸들러
@@ -144,7 +164,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       markerSize: parseInt(value, 10),
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 연결선 색상 변경 핸들러
@@ -152,7 +171,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       edgeColor: value,
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 선택된 연결선 색상 변경 핸들러
@@ -160,7 +178,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       selectedEdgeColor: value,
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 연결선 애니메이션 변경 핸들러
@@ -168,7 +185,6 @@ export function ProjectToolbar() {
     updateBoardSettings({
       animated: value === 'true',
     });
-    toast.success('설정이 변경되었습니다.');
   }, [updateBoardSettings]);
 
   // 내보내기 핸들러
@@ -177,30 +193,27 @@ export function ProjectToolbar() {
   }, []);
 
   // 로그아웃 핸들러
-  const handleLogout = async () => {
-    try {
-      logger.info('로그아웃 시작');
+  const handleLogout = useCallback(() => {
+    logger.info('로그아웃 시작');
+    // logoutAction 액션을 호출하여 로그아웃 처리
+    logoutAction();
+  }, [logoutAction]);
 
-      // 로그아웃 처리는 AuthContext의 signOut 함수가 알아서 처리함
-      await signOut();
-      toast.success('로그아웃되었습니다.');
+  // 컴포넌트 마운트 시 기본 프로젝트 생성 (API가 없는 경우)
+  useEffect(() => {
+    logger.info('프로젝트 정보 로딩');
+    // 프로젝트가 없고 API 호출이 불가능한 경우 로컬 상태에 기본 프로젝트 생성
+    if (projects.length === 0) {
+      const defaultProject: Partial<Project> = {
+        name: '기본 프로젝트',
+        ownerNickname: '사용자',
+        userId: 'default-user',
+      };
 
-      // 로그아웃 후 로그인 페이지로 직접 이동
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('로그아웃 중 오류 발생:', error);
-      logger.error('로그아웃 실패', error);
-      toast.error('로그아웃 중 문제가 발생했습니다.');
-
-      // 오류가 발생해도 로그인 페이지로 리디렉션 (UI 동기화를 위해)
-      try {
-        window.location.href = '/login';
-      } catch (redirectError) {
-        console.error('리디렉션 중 오류:', redirectError);
-        logger.error('리디렉션 실패', redirectError);
-      }
+      // 이 부분은 API가 구현되면 실제 API 호출로 대체될 것임
+      createProject(defaultProject);
     }
-  };
+  }, [projects.length, createProject]);
 
   return (
     <div className="fixed top-3 left-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-lg shadow-md border p-1 px-3 z-10">
@@ -213,6 +226,19 @@ export function ProjectToolbar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" sideOffset={12} align="start" alignOffset={-12}>
           <DropdownMenuLabel>프로젝트</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleShowProjectInfo}>
+            <FileText className="mr-1.5 h-4 w-4" />
+            프로젝트 정보...
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLoadProject}>
+            <FolderOpen className="mr-1.5 h-4 w-4" />
+            프로젝트 불러오기
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCreateProject}>
+            <FileText className="mr-1.5 h-4 w-4" />
+            새 프로젝트 만들기
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSaveLayout}>
             <Save className="mr-1.5 h-4 w-4" />
@@ -408,8 +434,6 @@ export function ProjectToolbar() {
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          {/* <DropdownMenuItem>옵션</DropdownMenuItem> */}
-
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-1.5 h-4 w-4" />
             로그아웃
@@ -417,7 +441,7 @@ export function ProjectToolbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <h1 className="text-l font-semibold pr-2">{projectName}</h1>
+      <h1 className="text-l font-semibold pr-2">{displayProjectName}</h1>
     </div>
   );
 } 

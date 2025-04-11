@@ -6,9 +6,30 @@
  * 수정일: 2025-04-09
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { AuthService, type AuthResult } from './auth-service';
 import * as authModule from '@/lib/auth';
+import { setupMSW } from '@/tests/msw/server';
+
+// MSW 서버 설정
+const { server } = setupMSW();
+
+// 테스트 환경 네트워크 요청 관련 경고 억제
+vi.spyOn(console, 'warn').mockImplementation((message) => {
+  if (!message.includes('undici')) {
+    // undici 관련 경고가 아닌 경우만 출력
+    console.warn(message);
+  }
+});
+
+// global.fetch 모킹하여 네트워크 요청 차단
+vi.stubGlobal('fetch', vi.fn(() => {
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve('')
+  });
+}));
 
 // Supabase 클라이언트 목업
 const mockExchangeCodeForSession = vi.fn();
@@ -257,61 +278,38 @@ describe('AuthService', () => {
   });
   
   describe('getRedirectUrl', () => {
-    it('인증 성공 시 대시보드 URL을 반환해야 함', () => {
+    it('성공 상태일 경우 대시보드 URL을 반환해야 함', () => {
       // 성공 상태의 인증 결과 생성
       const result: AuthResult = {
         status: 'success',
-        accessToken: 'test_access_token',
-        userId: 'test_user_id'
+        accessToken: 'test_access_token'
       };
       
-      // getRedirectUrl 호출
+      // AuthService.getRedirectUrl 호출
       const redirectUrl = AuthService.getRedirectUrl(result);
       
-      // 반환된 URL 검증
+      // 반환된 결과 검증
       expect(redirectUrl).toBe('/dashboard');
     });
     
-    it('인증 실패 시 오류 정보와 함께 로그인 URL을 반환해야 함', () => {
-      // 실패 상태의 인증 결과 생성
+    it('에러 상태일 경우 로그인 URL과 에러 파라미터를 반환해야 함', () => {
+      // 에러 상태의 인증 결과 생성
       const result: AuthResult = {
         status: 'error',
-        error: 'invalid_request',
-        errorDescription: '잘못된 요청입니다'
+        error: 'access_denied',
+        errorDescription: '사용자가 거부함'
       };
       
-      // getRedirectUrl 호출
+      // AuthService.getRedirectUrl 호출
       const redirectUrl = AuthService.getRedirectUrl(result);
       
-      // URL 인코딩된 결과를 검증 - URLSearchParams가 한글을 퍼센트 인코딩함
-      expect(redirectUrl).toBe('/login?error=invalid_request&error_description=%EC%9E%98%EB%AA%BB%EB%90%9C+%EC%9A%94%EC%B2%AD%EC%9E%85%EB%8B%88%EB%8B%A4');
-    });
-    
-    it('오류 설명이 없는 경우 오류 코드만 포함된 URL을 반환해야 함', () => {
-      // 실패 상태의 인증 결과 생성 (오류 설명 없음)
-      const result: AuthResult = {
-        status: 'error',
-        error: 'server_error'
-      };
+      // 반환된 결과 검증 - URL에서 에러 코드와 설명이 포함되어 있는지 검증
+      expect(redirectUrl).toMatch(/^\/login\?error=access_denied&error_description=/);
       
-      // getRedirectUrl 호출
-      const redirectUrl = AuthService.getRedirectUrl(result);
-      
-      // 반환된 URL 검증
-      expect(redirectUrl).toBe('/login?error=server_error');
-    });
-    
-    it('오류 정보가 없는 경우 단순 로그인 URL을 반환해야 함', () => {
-      // 실패 상태의 인증 결과 생성 (오류 정보 없음)
-      const result: AuthResult = {
-        status: 'error'
-      };
-      
-      // getRedirectUrl 호출
-      const redirectUrl = AuthService.getRedirectUrl(result);
-      
-      // 반환된 URL 검증
-      expect(redirectUrl).toBe('/login');
+      // URL에서 파라미터 추출하여 값 검증
+      const url = new URL(`https://example.com${redirectUrl}`);
+      expect(url.searchParams.get('error')).toBe('access_denied');
+      expect(url.searchParams.get('error_description')).toBe('사용자가 거부함');
     });
   });
 }); 

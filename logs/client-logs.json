@@ -1269,5 +1269,306 @@
     "message": "code_verifier를 찾을 수 없음",
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-10T06:08:26.208Z"
+  },
+  {
+    "timestamp": "2025-04-10T22:56:58.409Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-10T22:57:00.384Z"
+  },
+  {
+    "timestamp": "2025-04-10T23:06:25.285Z",
+    "level": "error",
+    "module": "AuthService",
+    "message": "에러 파라미터 발견",
+    "data": {
+      "error": "access_denied",
+      "description": "사용자가 거부함"
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-10T23:06:25.391Z"
+  },
+  {
+    "timestamp": "2025-04-10T23:06:25.335Z",
+    "level": "warn",
+    "module": "AuthService",
+    "message": "실패한 인증 결과는 저장하지 않음",
+    "data": {
+      "status": "error"
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-10T23:06:25.406Z"
+  },
+  {
+    "timestamp": "2025-04-10T23:06:25.322Z",
+    "level": "error",
+    "module": "AuthService",
+    "message": "인증 코드가 없음",
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-10T23:06:25.408Z"
+  },
+  {
+    "timestamp": "2025-04-10T23:06:25.329Z",
+    "level": "error",
+    "module": "AuthService",
+    "message": "세션 교환 실패",
+    "data": {
+      "error": "인증 오류",
+      "status": 401
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-10T23:06:25.410Z"
+  },
+  {
+    "timestamp": "2025-04-11T00:04:30.381Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T00:04:31.535Z"
+  },
+  {
+    "timestamp": "2025-04-11T00:11:22.330Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T00:11:23.295Z"
+  },
+  {
+    "timestamp": "2025-04-11T00:15:43.540Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T00:15:44.542Z"
+  },
+  {
+    "timestamp": "2025-04-11T00:15:59.666Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T00:15:59.751Z"
+  },
+  {
+    "timestamp": "2025-04-11T00:58:08.507Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T00:58:09.830Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.628Z",
+    "level": "error",
+    "module": "AuthService",
+    "message": "에러 파라미터 발견",
+    "data": {
+      "error": "access_denied",
+      "description": "사용자가 거부함"
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:03.484Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.631Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.164Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.645Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.166Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.647Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.168Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.648Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.169Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.649Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.169Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.649Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.170Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.650Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.171Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.651Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.171Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.652Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.172Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.653Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.173Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.654Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.174Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.655Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.175Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.656Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.176Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.656Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.181Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.657Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.182Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.658Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.183Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.658Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.184Z"
+  },
+  {
+    "timestamp": "2025-04-11T01:09:20.659Z",
+    "level": "error",
+    "module": "MSWServer",
+    "message": "요청 처리 중 오류 발생",
+    "data": {
+      "error": {}
+    },
+    "sessionId": "test-session-id",
+    "serverTimestamp": "2025-04-11T01:15:04.922Z"
   }
 ]

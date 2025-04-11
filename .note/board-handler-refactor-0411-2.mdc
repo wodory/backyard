@@ -1,0 +1,196 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+알겠습니다. `src/components/board/hooks/useBoardHandlers.ts` 훅을 'zustand-action-msw.mdc' 원칙에 따라 리팩토링하는 계획을 Cursor Agent가 이해하기 쉽게 작성해 드릴게요.
+
+**목표:** `useBoardHandlers` 훅 내부에 포함된 비즈니스 로직(특히 `onDrop` 핸들러의 카드 생성 로직)과 상태 업데이트 로직을 관련 Zustand 스토어 액션으로 이전하여 관심사를 분리하고, 훅의 역할을 순수 이벤트 핸들러 바인딩 및 위임으로 단순화합니다.
+
+---
+
+**리팩토링 계획: `useBoardHandlers.ts`**
+
+**현재 상태 분석:**
+
+*   `useBoardHandlers` 훅은 보드의 주요 인터랙션(선택 변경, 드래그 앤 드롭)에 대한 핸들러 함수들을 정의하고 반환합니다.
+*   `handleSelectionChange`: 노드 선택 변경 시 `useAppStore`의 `selectCards` 액션을 호출하여 전역 선택 상태를 업데이트하고, `toast` 알림을 표시합니다. (이 부분은 비교적 원칙에 부합)
+*   `onDragOver`: 드래그 앤 드롭을 위한 기본 핸들러입니다. (상태 변경 없음, 유지 가능)
+*   `onDrop`: 외부에서 드롭된 요소(예: 사이드바의 카드)를 처리합니다.
+    *   드롭된 데이터 파싱
+    *   `reactFlowInstance.screenToFlowPosition`을 사용하여 드롭 위치 계산
+    *   **새로운 노드(카드) 데이터 생성 로직 포함 가능성 (현재 코드 조각에는 없지만 일반적인 패턴)**
+    *   `setNodes` 함수를 직접 호출하여 새 노드 추가 (상태 직접 변경)
+    *   `toast` 알림 직접 호출
+    *   `saveLayout` 함수 직접 호출 (Side Effect)
+
+**리팩토링 원칙 위반 사항:**
+
+*   `onDrop` 핸들러 내부에 새로운 노드 생성 로직(비즈니스 로직)이 포함될 수 있습니다.
+*   `onDrop` 핸들러에서 `setNodes`를 직접 호출하여 상태를 변경합니다.
+*   `onDrop` 핸들러에서 `saveLayout` 함수를 직접 호출하여 Side Effect(로컬 스토리지 저장)를 발생시킵니다.
+*   `onDrop`, `handleSelectionChange` 등 여러 핸들러에서 `toast` 알림을 직접 호출합니다.
+
+**리팩토링 목표:**
+
+1.  `onDrop` 핸들러 내부의 새 노드 생성 로직과 상태 업데이트 로직을 `useBoardStore`의 `addNodeAtPosition` (또는 유사한 이름의) 액션으로 이전합니다.
+2.  `useBoardHandlers` 훅은 이벤트 발생 시 해당 액션을 호출하는 역할만 수행하도록 단순화합니다.
+3.  `toast` 알림 호출은 해당 로직을 처리하는 액션 내부로 이동합니다.
+4.  `saveLayout` 호출은 노드 추가 액션 성공 시 후속 처리로 이동하거나, 상태 변경을 감지하는 다른 메커니즘(예: `useEffect` 내 디바운스 저장)으로 대체합니다.
+
+**세부 리팩토링 태스크 (Cursor Agent 용):**
+
+1.  **`src/store/useBoardStore.ts` 파일 수정:**
+    *   **액션 정의 및 구현:** `addNodeAtPosition` (또는 `createNodeFromDrop`) 비동기 액션을 `BoardState` 인터페이스에 추가하고 구현합니다.
+        ```typescript
+        interface BoardState {
+          // ... 기존 상태 ...
+          nodes: Node<CardData>[];
+          // ...
+          addNodeAtPosition: (type: string, position: XYPosition, data?: any) => Promise<Node<CardData> | null>; // 새 액션 추가 (반환 타입은 필요에 따라 조정)
+        }
+
+        // 스토어 구현 내부 (...) => ({ ... })
+        addNodeAtPosition: async (type, position, droppedData = {}) => {
+          const { set, getState } = get();
+          // 참고: 로딩 상태가 필요하면 추가 (isAddingNode 등)
+          // set({ isAddingNode: true });
+
+          try {
+            // 1. 새 노드 ID 생성 (예: uuid 사용 권장)
+            const newNodeId = `dndnode_${+new Date()}`; // 임시 ID 생성 방식
+
+            // 2. 새 노드 객체 생성
+            const newNode: Node<CardData> = {
+              id: newNodeId,
+              type: NODE_TYPES_KEYS.card, // 기본 타입 또는 드롭된 데이터 기반 타입
+              position,
+              data: {
+                id: newNodeId, // 실제 카드 ID는 API 응답 후 업데이트 필요할 수 있음
+                title: droppedData.title || '새 카드', // 드롭된 데이터 사용 또는 기본값
+                content: droppedData.content || '',
+                tags: droppedData.tags || [],
+                // ... 필요시 droppedData에서 다른 정보 추출 ...
+              },
+            };
+
+            // 3. (옵션) 서버에 새 카드 생성 요청 (만약 드롭 시 바로 저장해야 한다면)
+            // const createCardInput = { title: newNode.data.title, content: newNode.data.content, userId: '...' };
+            // const createdCard = await callApiToCreateCard(createCardInput);
+            // if (createdCard) {
+            //   newNode.data.id = createdCard.id; // 실제 ID로 업데이트
+            // } else {
+            //   throw new Error('서버에 카드 생성 실패');
+            // }
+
+            // 4. 현재 노드 상태에 새 노드 추가
+            set((state) => ({
+              nodes: [...state.nodes, newNode],
+              hasUnsavedChanges: true // 변경사항 발생 표시
+            }));
+
+            // 5. 성공 토스트 알림
+            toast.success(`"${newNode.data.title}" 카드가 추가되었습니다.`);
+
+            // 6. (옵션) 레이아웃 저장 액션 호출 또는 상태 설정
+            // getState().saveBoardState(); // 즉시 저장 또는
+            // set({ needsLayoutSave: true }); // 나중에 저장할 플래그 설정
+
+            // set({ isAddingNode: false });
+            return newNode; // 생성된 노드 반환
+
+          } catch (error: any) {
+            console.error('[addNodeAtPosition Action] 노드 추가 실패:', error);
+            toast.error(`노드 추가 실패: ${error.message}`);
+            // set({ isAddingNode: false, boardError: error.message });
+            return null;
+          }
+        },
+        ```
+
+2.  **`src/components/board/hooks/useBoardHandlers.ts` 파일 리팩토링:**
+    *   `useAppStore`에서 `selectCards`만 가져오도록 수정합니다 (다른 액션은 스토어 내에서 처리).
+    *   `useBoardStore`에서 `addNodeAtPosition` 액션을 가져옵니다.
+    *   `onDrop` 핸들러 내부 로직을 대폭 수정합니다.
+        *   드롭된 데이터 파싱 및 위치 계산 로직은 유지합니다.
+        *   파싱된 데이터(`cardNodePayload`)와 계산된 위치(`position`)를 사용하여 `addNodeAtPosition` 액션을 호출합니다.
+        *   `setNodes` 직접 호출, `toast` 호출, `saveLayout` 호출 부분을 **제거**합니다.
+        ```typescript
+        // ... imports ...
+        import { useBoardStore } from '@/store/useBoardStore'; // 경로 수정 필요
+
+        export function useBoardHandlers({ /* ... 기존 props ... */ }: { /* ... */ }) {
+          const { selectCards } = useAppStore(); // selectCards만 필요할 수 있음
+          const addNodeAtPosition = useBoardStore(state => state.addNodeAtPosition); // 새 액션 가져오기
+          // ... 기존 로직 ...
+
+          const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
+            // ... (기존 로직 유지 또는 toast 호출 제거 고려) ...
+             const selectedNodeIds = nodes.map(node => node.data.id);
+             selectCards(selectedNodeIds);
+             if (selectedNodeIds.length > 1) {
+               // toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`); // 액션으로 이동 고려
+             }
+          }, [selectCards]);
+
+          const onDragOver = useCallback((event: React.DragEvent) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+          }, []);
+
+          const onDrop = useCallback((event: React.DragEvent) => {
+            event.preventDefault();
+
+            if (!reactFlowWrapper.current || !reactFlowInstance) {
+              return;
+            }
+
+            const type = event.dataTransfer.getData('application/reactflow');
+            // 드롭된 데이터 추가 파싱 (필요시)
+            const cardNodePayloadString = event.dataTransfer.getData('application/json');
+            let droppedData = {};
+            if (cardNodePayloadString) {
+              try {
+                droppedData = JSON.parse(cardNodePayloadString);
+              } catch (e) {
+                console.error("드롭 데이터 파싱 오류:", e);
+              }
+            }
+
+
+            if (typeof type === 'undefined' || !type) {
+              return;
+            }
+
+            const wrapperBounds = reactFlowWrapper.current.getBoundingClientRect();
+            const position = reactFlowInstance.screenToFlowPosition({
+              x: event.clientX - wrapperBounds.left,
+              y: event.clientY - wrapperBounds.top,
+            });
+
+            // Zustand 액션 호출로 변경
+            addNodeAtPosition(type, position, droppedData);
+
+            // setNodes, toast, saveLayout 직접 호출 제거
+
+          }, [reactFlowInstance, reactFlowWrapper, addNodeAtPosition]); // 종속성 배열 업데이트
+
+          return {
+            handleSelectionChange,
+            onDragOver,
+            onDrop,
+          };
+        }
+        ```
+
+3.  **`src/components/board/components/Board.tsx` (또는 관련 컴포넌트) 파일 수정:**
+    *   `useBoardHandlers` 훅에 전달하는 props에서 `setNodes`, `saveLayout` 등 제거된 의존성을 정리합니다.
+    *   `useBoardStore`에서 필요한 상태와 액션을 사용하도록 합니다.
+
+4.  **테스트 코드 업데이트 (`useBoardHandlers.test.ts`):**
+    *   `onDrop` 테스트에서 `setNodes`, `toast`, `saveLayout` 호출 검증 대신, `useBoardStore`의 `addNodeAtPosition` 액션이 올바른 인자(type, position, data)로 호출되는지 검증하도록 수정합니다.
+    *   `handleSelectionChange` 테스트는 `useAppStore.selectCards` 호출 검증은 유지하되, `toast` 호출 검증은 제거하거나 액션 테스트로 이동합니다.
+
+---
+
+이 계획을 통해 `useBoardHandlers` 훅은 순수하게 이벤트 핸들링과 액션 위임 역할만 담당하게 되어 더 깔끔하고 테스트하기 쉬워집니다. 실제 상태 변경 및 비즈니스 로직은 `useBoardStore` 액션으로 중앙화됩니다.

@@ -1,0 +1,128 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+#[nodejs-v20-undici-unref] Node.js v20 unref 오류 대응 전략
+
+## 문제 설명
+Node.js v20 환경에서 테스트 실행 시 다음과 같은 TypeError가 발생할 수 있습니다:
+```
+TypeError: Cannot read properties of undefined (reading 'unref')
+```
+
+이는 주로 undici 라이브러리(Node.js의 기본 HTTP 클라이언트) 관련 타임아웃 처리에서 발생하며, MSW(Mock Service Worker)를 사용한 API 모킹 테스트에서 자주 나타납니다.
+
+## 해결 전략
+
+### 1. MSW 서버 설정 최적화
+```typescript
+// src/tests/msw/server.ts
+import { setupServer } from 'msw/node';
+import { handlers } from './handlers';
+import { HttpResponse } from 'msw';
+
+export const server = setupServer(...handlers);
+
+// 문제가 발생할 수 있는 요청에 대한 즉각 응답 처리
+server.events.on('request:start', ({ request }) => {
+  try {
+    const url = new URL(request.url);
+    
+    // 문제 URL 패턴 처리
+    if (url.pathname.includes('problem-path')) {
+      return HttpResponse.json({ error: 'Simulated error' }, { status: 500 });
+    }
+    
+    // 인증 관련 요청 즉시 처리
+    if (url.pathname.includes('/auth/v1/')) {
+      return HttpResponse.json({
+        access_token: 'test_token',
+        // 필요한 응답 데이터
+      });
+    }
+    
+    return undefined;
+  } catch (error) {
+    return HttpResponse.json({ error: 'internal_error' }, { status: 500 });
+  }
+});
+
+export function setupMSW() {
+  beforeEach(() => server.listen({ onUnhandledRequest: 'bypass' }));
+  afterEach(() => server.resetHandlers());
+  afterAll(() => server.close());
+  
+  return { server, use: (...handlers) => server.use(...handlers) };
+}
+```
+
+### 2. 네트워크 요청 차단을 위한 fetch 모킹
+```typescript
+import { vi } from 'vitest';
+
+// 테스트 설정 파일이나 테스트 파일 상단에 추가
+vi.stubGlobal('fetch', vi.fn(() => {
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve('')
+  });
+}));
+```
+
+### 3. undici 관련 경고 필터링
+```typescript
+import { vi } from 'vitest';
+
+// undici 관련 경고 메시지 필터링
+vi.spyOn(console, 'warn').mockImplementation((message) => {
+  if (!message.includes('undici')) {
+    console.warn(message);
+  }
+});
+```
+
+### 4. 테스트 코드 작성 시 고려사항
+1. **타임아웃 발생 가능성 줄이기**: 테스트에서 불필요한 대기 시간이 발생하지 않도록 합니다.
+2. **실제 네트워크 요청 없애기**: 모든 외부 API 호출은 모킹하여 처리합니다.
+3. **테스트 격리**: 각 테스트가 독립적으로 실행되도록 `beforeEach`/`afterEach`에서 적절한 초기화 작업을 수행합니다.
+
+### 5. 문제 감지 시 즉각 대응
+1. 오류 메시지에 `unref`가 포함된 경우 즉시 이 규칙을 적용합니다.
+2. 오류가 발생한 테스트 파일에서 네트워크 요청을 발생시키는 코드를 찾아 모킹합니다.
+3. 모킹이 어려운 경우 MSW 서버 설정을 확인하고 최적화합니다.
+
+## 적용 예시
+
+```typescript
+// 테스트 파일 예시
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+import { setupMSW } from '@/tests/msw/server';
+
+// MSW 서버 설정
+const { server } = setupMSW();
+
+// 네트워크 요청 경고 필터링
+vi.spyOn(console, 'warn').mockImplementation((message) => {
+  if (!message.includes('undici')) {
+    console.warn(message);
+  }
+});
+
+// fetch 모킹
+vi.stubGlobal('fetch', vi.fn(() => {
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve('')
+  });
+}));
+
+describe('테스트 스위트', () => {
+  // 테스트 케이스 작성
+});
+```
+
+이 규칙을 적용하면 Node.js v20 환경에서 발생하는 unref 관련 오류를 효과적으로 예방하고 해결할 수 있습니다.

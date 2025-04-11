@@ -27,7 +27,7 @@ export interface BoardComponentProps {
 export interface CardData {
   id: string;
   title: string;
-  content: string;
+  content: string | null;
   tags?: string[];
   cardTags?: Array<{tag: {name: string}}>;
   [key: string]: any;

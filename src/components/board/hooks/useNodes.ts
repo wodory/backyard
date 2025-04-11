@@ -3,7 +3,7 @@
  * 목적: 노드 관련 상태 및 로직 관리
  * 역할: 노드 생성, 업데이트, 삭제 및 이벤트 핸들링 로직 캡슐화
  * 작성일: 2025-03-28
- * 수정일: 2025-03-31
+ * 수정일: 2025-04-10
  */
 
 import { useCallback, useRef, useEffect } from 'react';
@@ -29,10 +29,13 @@ export function useNodes({
   initialNodes = []
 }: {
   onSelectCard?: (cardId: string | null) => void;
-  initialNodes?: Node<CardData>[];
+  initialNodes?: any[];  // any 타입으로 받지만 내부에서 적절히 변환
 }) {
-  // 노드 상태 관리 - Node<CardData> 타입으로 제네릭 지정
-  const [nodes, setNodes] = useNodesState<Node<CardData>>(initialNodes);
+  // Node<CardData>[] 타입으로 형변환하여 사용
+  const typedInitialNodes = initialNodes as Node<CardData>[];
+  
+  // 노드 상태 관리
+  const [nodes, setNodes] = useNodesState<Node<CardData>>(typedInitialNodes);
   
   // 저장되지 않은 변경사항 플래그
   const hasUnsavedChanges = useRef(false);
@@ -43,7 +46,8 @@ export function useNodes({
   // 초기 노드 데이터가 변경되면 노드 상태 업데이트
   useEffect(() => {
     if (initialNodes && initialNodes.length > 0) {
-      setNodes(initialNodes);
+      // 타입 안전하게 변환
+      setNodes(initialNodes as Node<CardData>[]);
     }
   }, [initialNodes, setNodes]);
 
@@ -195,7 +199,7 @@ export function useNodes({
   const saveLayout = useCallback((nodesToSave = nodes) => {
     try {
       // 노드 ID와 위치만 저장
-      const nodePositions = nodesToSave.reduce((acc: Record<string, { position: XYPosition }>, node: Node<CardData>) => {
+      const nodePositions = nodesToSave.reduce((acc: Record<string, { position: XYPosition }>, node: any) => {
         acc[node.id] = { position: node.position };
         return acc;
       }, {});
@@ -216,6 +220,6 @@ export function useNodes({
     handleNodeClick,
     handlePaneClick,
     saveLayout,
-    hasUnsavedChanges
+    hasUnsavedChanges: hasUnsavedChanges.current
   };
 } 
