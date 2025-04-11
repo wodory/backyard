@@ -7,9 +7,14 @@
  * 환경 파일을 확인하고 필요한 설정을 적용합니다.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+// __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('배포 전 환경 설정 확인 중...');
 
@@ -24,7 +29,7 @@ if (process.env.DATABASE_PROVIDER === 'postgresql') {
   requiredEnvVars.push('DIRECT_URL');
   requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
   requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  
+
   if (process.env.NODE_ENV === 'production') {
     requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
   }
@@ -46,12 +51,12 @@ console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
 // 프로덕션 환경 확인
 if (process.env.NODE_ENV === 'production') {
   console.log('프로덕션 환경 감지: 설정을 확인합니다...');
-  
+
   if (process.env.DATABASE_PROVIDER !== 'postgresql') {
     console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
     process.exit(1);
   }
-  
+
   if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
     console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
     process.exit(1);

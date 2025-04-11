@@ -34,7 +34,7 @@ import { useBoardHandlers } from '../hooks/useBoardHandlers';
 
 // 타입 임포트
 import { BoardComponentProps, XYPosition } from '../types/board-types';
-import { Node } from '@xyflow/react';
+import { Node, Edge } from '@xyflow/react';
 import { NodeInspector } from '../nodes/NodeInspector';
 import { Card } from '@/store/useAppStore';
 
@@ -187,6 +187,11 @@ export default function Board({
     }
   });
 
+  // 데이터 로드 추적을 위한 ref
+  const initialDataLoadedRef = useRef(false);
+  // 이전 userId 값을 추적하는 ref
+  const previousUserIdRef = useRef<string | undefined>(undefined);
+
   // ReactFlow 인스턴스 저장
   useEffect(() => {
     if (reactFlowInstance) {
@@ -194,62 +199,89 @@ export default function Board({
     }
   }, [reactFlowInstance, setReactFlowInstance]);
 
-  // 초기 데이터 로드
+  // 초기 데이터 로드 - 한 번만 실행되도록 의존성 배열 비움
   useEffect(() => {
-    loadBoardData(); // useBoardStore의 액션 직접 호출
-  }, [loadBoardData]);
+    if (!initialDataLoadedRef.current) {
+      loadBoardData();
+      initialDataLoadedRef.current = true;
+    }
+  }, []);
 
-  // 뷰포트 복원 Effect
+  // 뷰포트 복원 Effect - 최적화
   useEffect(() => {
     if (!reactFlowInstance) return;
 
-    if (loadedViewport) {
-      // 저장된 뷰포트가 있으면 복원
-      reactFlowInstance.setViewport(loadedViewport, { duration: 0 });
-      console.log('[Board] 저장된 뷰포트 복원:', loadedViewport);
+    const updateViewport = () => {
+      if (loadedViewport) {
+        // 저장된 뷰포트가 있으면 복원
+        reactFlowInstance.setViewport(loadedViewport, { duration: 0 });
+        console.log('[Board] 저장된 뷰포트 복원:', loadedViewport);
 
-      // 복원 후 상태 초기화
-      useBoardStore.setState({ loadedViewport: null });
-    } else if (needsFitView) {
-      // fitView 실행 필요
-      reactFlowInstance.fitView({ duration: 200, padding: 0.2 });
-      console.log('[Board] 뷰에 맞게 화면 조정');
+        // 복원 후 상태 초기화 - setState 직접 호출 대신 함수형 업데이트 사용
+        // null 체크 후 사용
+        if (typeof saveViewport === 'function') {
+          // 상태 초기화를 위한 빈 작업
+          // loadedViewport를 null로 설정하는 작업은 saveViewport 내부에서 처리됨
+          saveViewport();
+        }
+      } else if (needsFitView) {
+        // fitView 실행 필요
+        reactFlowInstance.fitView({ duration: 200, padding: 0.2 });
+        console.log('[Board] 뷰에 맞게 화면 조정');
+      }
+    };
 
-      // 실행 후 상태 초기화
-      useBoardStore.setState({ needsFitView: false });
-    }
-  }, [reactFlowInstance, loadedViewport, needsFitView]);
+    // 약간의 지연 후 실행하여 ReactFlow가 완전히 초기화된 후 적용되도록 함
+    const timeoutId = setTimeout(updateViewport, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [reactFlowInstance, loadedViewport, needsFitView, saveViewport]);
 
   // viewportToRestore가 변경되면 뷰포트 복원
   useEffect(() => {
     if (reactFlowInstance && viewportToRestore) {
-      reactFlowInstance.setViewport(viewportToRestore);
-      useBoardStore.setState({ viewportToRestore: null });
-      console.log('[Board] 저장된 뷰포트 위치로 이동:', viewportToRestore);
+      // 지연 적용으로 여러 번 호출되는 것을 방지
+      const timeoutId = setTimeout(() => {
+        reactFlowInstance.setViewport(viewportToRestore);
+        console.log('[Board] 저장된 뷰포트 위치로 이동:', viewportToRestore);
+
+        // saveViewport 함수를 호출하여 viewportToRestore를 null로 설정
+        if (typeof saveViewport === 'function') {
+          saveViewport();
+        }
+      }, 50);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [reactFlowInstance, viewportToRestore]);
+  }, [reactFlowInstance, viewportToRestore, saveViewport]);
 
   // 인증 상태 변경 시 보드 설정 로드
   useEffect(() => {
-    if (!isAuthLoading && user?.id) {
+    if (!isAuthLoading && user?.id && previousUserIdRef.current !== user.id) {
+      console.log('[Board] 사용자 ID가 변경되어 보드 설정을 로드합니다:', user.id);
       loadAndApplyBoardSettings(user.id);
+      previousUserIdRef.current = user.id;
     }
   }, [isAuthLoading, loadAndApplyBoardSettings, user]);
 
   // 보드 설정 변경 시 엣지 스타일 업데이트
   useEffect(() => {
-    if (!isLoading && edges.length > 0) {
-      updateEdgeStyles(boardSettings);
+    if (isLoading) return;
+
+    // boardSettings 객체 참조가 변경되었을 때만 엣지 스타일 업데이트
+    if (typeof updateEdgeStyles === 'function') {
+      updateEdgeStyles();
     }
-  }, [boardSettings, isLoading, updateEdgeStyles, edges.length]);
+
+  }, [boardSettings, isLoading, updateEdgeStyles]);
 
   // 전역 상태의 카드가 업데이트되면 노드 데이터 업데이트
   useEffect(() => {
-    if (storeCards.length === 0 || boardStoreNodes.length === 0 || isLoading) return;
+    if (storeCards.length === 0 || isLoading) return;
 
     // 노드 데이터 업데이트 (카드 ID가 일치하는 노드들만)
-    setEdges(currentEdges => {
-      return currentEdges.map(edge => {
+    setEdges((currentEdges: Edge[]) => {
+      return currentEdges.map((edge: Edge) => {
         // 대응되는 카드 데이터 찾기
         const cardData = storeCards.find(card => card.id === edge.id);
 
@@ -273,7 +305,7 @@ export default function Board({
         return edge;
       });
     });
-  }, [storeCards, setEdges, isLoading, boardStoreNodes.length]);
+  }, [storeCards, setEdges, isLoading]);
 
   // 로드 후 node internals 업데이트 (핸들 위치 등)
   useEffect(() => {

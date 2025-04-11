@@ -1,5 +1,5 @@
 // 데이터베이스 연결 테스트 스크립트
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 async function main() {
   console.log('데이터베이스 연결 테스트 시작...');
@@ -22,7 +22,7 @@ async function main() {
     console.log('사용자 조회 시도 중...');
     const users = await prisma.user.findMany({ take: 5 });
     console.log(`사용자 조회 성공: ${users.length}명의 사용자 발견`);
-    
+
     // 연결 종료
     await prisma.$disconnect();
     console.log('데이터베이스 연결 종료');

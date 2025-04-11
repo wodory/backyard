@@ -5,8 +5,13 @@
  * 
  * 이 스크립트는 마스터 템플릿에서 각 환경별 스키마를 생성합니다.
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 경로 설정
 const basePath = path.join(__dirname, '../prisma');

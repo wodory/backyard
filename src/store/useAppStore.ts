@@ -489,31 +489,33 @@ export const useAppStore = create<AppState>()(
       fetchProjects: async () => {
         set({ isLoading: true, error: null });
         try {
-          // API 호출을 통해 프로젝트 목록을 가져옴
-          const response = await fetch('/api/projects');
+          // API 호출 대신 가상 데이터 반환
+          const mockProjects = [
+            {
+              id: 'project-1',
+              name: '기본 프로젝트',
+              userId: 'user-1',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              settings: {}
+            }
+          ];
           
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(errorData.message || `서버 오류: ${response.status}`);
-          }
-          
-          const projects = await response.json();
+          // 짧은 지연 후 가상 데이터 반환 (로딩 상태 시뮬레이션)
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           set({ 
-            projects, 
-            // 프로젝트가 있고 활성 프로젝트가 없으면 첫 번째 프로젝트를 활성화
-            activeProjectId: get().activeProjectId || (projects.length > 0 ? projects[0].id : null),
+            projects: mockProjects, 
+            activeProjectId: mockProjects[0].id,
             isLoading: false 
           });
           
-          // 성공 토스트 메시지는 UI가 번잡해질 수 있어 생략할 수도 있음
-          // toast.success('프로젝트 로드 완료');
+          toast.success('가상 프로젝트 로드 완료');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ 
             isLoading: false, 
             error: new Error(errorMessage),
-            // 에러가 발생해도 기존 프로젝트 데이터는 유지
           });
           toast.error(`프로젝트 로드 실패: ${errorMessage}`);
         }
@@ -536,22 +538,22 @@ export const useAppStore = create<AppState>()(
       createProject: async (projectData) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('/api/projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(projectData)
-          });
+          // API 호출 대신 가상 데이터 생성
+          const newProject: Project = {
+            id: `project-${Date.now()}`,
+            name: projectData.name || '새 프로젝트',
+            userId: 'user-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            settings: projectData.settings || {}
+          };
           
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(errorData.message || `서버 오류: ${response.status}`);
-          }
-          
-          const newProject = await response.json();
+          // 짧은 지연 후 가상 데이터 반환 (로딩 상태 시뮬레이션)
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           set(state => ({ 
             projects: [...state.projects, newProject],
-            activeProjectId: newProject.id, // 새 프로젝트를 생성하면 자동으로 활성화
+            activeProjectId: newProject.id,
             isLoading: false 
           }));
           

@@ -6,18 +6,18 @@
  * 수정일: 2025-03-26
  */
 
-const { execSync } = require('child_process');
-const os = require('os');
+import { execSync } from 'child_process';
+import os from 'os';
 
 const PORT = 3000;
 
 function checkPort() {
   console.log(`\n🔍 포트 ${PORT} 상태 확인 중...`);
-  
+
   try {
     let command;
     let processIdCommand;
-    
+
     // OS별 명령어 설정
     if (os.platform() === 'win32') {
       // Windows
@@ -34,26 +34,26 @@ function checkPort() {
         return parts[1];
       };
     }
-    
+
     // 명령어 실행 및 결과 가져오기
     const result = execSync(command, { encoding: 'utf8' });
-    
+
     if (result && result.trim()) {
       console.log(`⚠️ 포트 ${PORT}가 이미 사용 중입니다.`);
-      
+
       // 결과에서 PID 추출
       const lines = result.split('\n').filter(Boolean);
-      
+
       // 헤더 라인 제외 (macOS/Linux의 lsof 명령어는 헤더가 있음)
       const processLines = os.platform() === 'win32' ? lines : lines.slice(1);
-      
+
       if (processLines.length > 0) {
         // 첫 번째 프로세스의 PID 추출
         const pid = processIdCommand(processLines[0]);
-        
+
         if (pid) {
           console.log(`👉 PID ${pid} 프로세스 종료 중...`);
-          
+
           try {
             // 프로세스 종료
             if (os.platform() === 'win32') {

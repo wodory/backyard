@@ -253,13 +253,18 @@ export const useBoardStore = create<BoardState>()(
        * 로컬 스토리지에서 위치, 엣지, 뷰포트 정보를 불러와 적용
        */
       loadBoardData: async () => {
+        // 이미 로딩 중이면 중복 호출 방지
+        if (get().isBoardLoading) {
+          return;
+        }
+        
         set({ 
           isBoardLoading: true, 
           boardError: null, 
           loadedViewport: null, 
           needsFitView: false 
         });
-
+        console.log('[loadBoardData Action] 보드 데이터 로딩 시작');
         try {
           // 1. API 호출
           const response = await fetch('/api/cards');
@@ -328,7 +333,30 @@ export const useBoardStore = create<BoardState>()(
           });
           
           // 6. 카드 데이터를 전역 상태에 저장 (useAppStore)
-          useAppStore.getState().setCards(cards);
+          // 현재의 카드 데이터와 새로 가져온 카드 데이터를 비교하여 변경사항이 있을 때만 설정
+          const currentCards = useAppStore.getState().cards;
+          const hasCardsChanged = 
+            currentCards.length !== cards.length || 
+            // 모든 카드를 비교하여 변경된 부분이 있는지 확인
+            cards.some((newCard: any) => {
+              const existingCard = currentCards.find(card => card.id === newCard.id);
+              if (!existingCard) return true; // 새 카드가 추가됨
+              
+              // 주요 속성 비교 (제목, 내용, 태그)
+              return (
+                existingCard.title !== newCard.title ||
+                existingCard.content !== newCard.content ||
+                // 태그 비교 로직은 필요에 따라 구현
+                JSON.stringify(existingCard.cardTags) !== JSON.stringify(newCard.cardTags)
+              );
+            });
+
+          if (hasCardsChanged) {
+            console.log('[loadBoardData Action] 카드 데이터가 변경되어 상태를 업데이트합니다');
+            useAppStore.getState().setCards(cards);
+          } else {
+            console.log('[loadBoardData Action] 카드 데이터가 변경되지 않아 상태 업데이트를 건너뜁니다');
+          }
 
           toast.success('보드 데이터를 성공적으로 불러왔습니다.');
 
