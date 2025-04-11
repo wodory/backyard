@@ -46,7 +46,7 @@ vi.mock('./test-utils', () => ({
 }));
 
 // 모킹 모듈 import는 mock 선언 후에 위치해야 함
-import { EditCardPageMock } from './__EditCardPageMock';
+import { EditCardPageMock } from './EditCardPageMock';
 import { mockActions } from './test-utils';
 
 // 테스트 타임아웃 설정
