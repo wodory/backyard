@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
+  "type": "module",
   "scripts": {
+    "coverage:report": "node scripts/coverage-report.js",
+    "coverage:report:sort": "node scripts/coverage-report.js",
+    "coverage:generate": "yarn test run --coverage",
+    "coverage:summary": "yarn coverage:generate && node scripts/coverage-report.js",
     "dev": "yarn env:dev && yarn db:setup:dev && NODE_ENV=development next dev -p 3000",
     "dev:clean": "yarn port:check && yarn env:dev && yarn db:setup:dev && NODE_ENV=development next dev -p 3000",
     "port:check": "node scripts/check-port.js",
@@ -99,10 +104,10 @@
     "@types/node": "^22.13.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/browser": "^3.0.9",
-    "@vitest/coverage-v8": "^3.0.9",
-    "@vitest/ui": "3.0.9",
+    "@vitejs/plugin-react": "4.3.4",
+    "@vitest/browser": "3.1.0",
+    "@vitest/coverage-v8": "3.1.0",
+    "@vitest/ui": "3.1.0",
     "css-loader": "^7.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
@@ -115,8 +120,8 @@
     "style-loader": "^4.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vite": "^6.2.0",
-    "vitest": "^3.0.9",
+    "vite": "5.2.2",
+    "vitest": "3.1.0",
     "vitest-browser-react": "^0.1.1"
   }
 }

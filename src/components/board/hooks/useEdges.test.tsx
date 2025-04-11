@@ -1,17 +1,15 @@
 /**
  * 파일명: useEdges.test.tsx
  * 목적: useEdges 커스텀 훅 테스트
- * 역할: 엣지 관련 기능의 정상 작동 검증
+ * 역할: 엣지 관련 훅이 useBoardStore 액션을 올바르게 호출하는지 검증
  * 작성일: 2025-03-28
- * 수정일: 2025-04-01
+ * 수정일: 2025-04-11 (리팩토링)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position } from '@xyflow/react';
-import { EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
 import { BoardSettings } from '@/lib/board-utils';
-import { toast } from 'sonner';
 
 // 모든 모킹은 파일 최상단에 위치
 vi.mock('sonner', () => ({
@@ -22,37 +20,62 @@ vi.mock('sonner', () => ({
   }
 }));
 
+// useBoardStore 모킹
+vi.mock('@/store/useBoardStore', () => {
+  const mockApplyEdgeChangesAction = vi.fn();
+  const mockConnectNodesAction = vi.fn();
+  const mockSaveEdgesAction = vi.fn().mockReturnValue(true);
+  const mockUpdateAllEdgeStylesAction = vi.fn();
+  const mockCreateEdgeOnDropAction = vi.fn();
+  const mockSetEdges = vi.fn();
+
+  const edges = [{
+    id: 'edge-1',
+    source: 'node-1',
+    target: 'node-2',
+    type: 'custom',
+  }];
+
+  return {
+    useBoardStore: (selector: ((state: any) => any) | undefined) => {
+      if (typeof selector === 'function') {
+        const state = {
+          edges,
+          setEdges: mockSetEdges,
+          applyEdgeChangesAction: mockApplyEdgeChangesAction,
+          connectNodesAction: mockConnectNodesAction,
+          saveEdgesAction: mockSaveEdgesAction,
+          updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+          createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+          hasUnsavedChanges: false
+        };
+        return selector(state);
+      }
+      return {
+        edges,
+        setEdges: mockSetEdges,
+        applyEdgeChangesAction: mockApplyEdgeChangesAction,
+        connectNodesAction: mockConnectNodesAction,
+        saveEdgesAction: mockSaveEdgesAction,
+        updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+        createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+        hasUnsavedChanges: false
+      };
+    }
+  };
+});
+
 // React Flow 모킹
 vi.mock('@xyflow/react', async () => {
   const actual = await vi.importActual('@xyflow/react');
   return {
     ...actual,
-    useReactFlow: () => ({
-      getNode: vi.fn().mockImplementation((nodeId) =>
-        nodeId === 'node-1' ? mockNodes[0] :
-          nodeId === 'node-2' ? mockNodes[1] : null
-      ),
-      getNodes: vi.fn().mockReturnValue(mockNodes),
-      getEdges: vi.fn().mockReturnValue([]),
-      setEdges: vi.fn(),
-      addEdges: vi.fn(),
-    }),
   };
 });
 
-// Zustand 스토어 모킹 (만약 useEdges가 스토어를 사용한다면)
-vi.mock('@/store/useAppStore', () => ({
-  useAppStore: (selector: any) => {
-    const state = {
-      setBoardSettings: vi.fn(),
-      boardSettings: mockBoardSettings,
-    };
-    return selector ? selector(state) : state;
-  },
-}));
-
 // 테스트할 훅 임포트
 import { useEdges } from './useEdges';
+import { useBoardStore } from '@/store/useBoardStore';
 
 // 테스트용 보드 설정
 const mockBoardSettings: BoardSettings = {
@@ -85,15 +108,7 @@ const mockNodes: Node[] = [
 ];
 
 describe('useEdges', () => {
-  // 로컬 스토리지 모킹
   beforeEach(() => {
-    // 로컬 스토리지 스파이 설정
-    vi.spyOn(window.localStorage, 'getItem').mockImplementation((key: string) => {
-      if (key === EDGES_STORAGE_KEY) return null;
-      return null;
-    });
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(vi.fn());
-
     // 모든 모킹 초기화
     vi.clearAllMocks();
   });
@@ -109,7 +124,7 @@ describe('useEdges', () => {
       nodes: mockNodes
     }));
 
-    expect(result.current.edges).toEqual([]);
+    expect(result.current.edges).toBeDefined();
     expect(typeof result.current.handleEdgesChange).toBe('function');
     expect(typeof result.current.onConnect).toBe('function');
     expect(typeof result.current.saveEdges).toBe('function');
@@ -117,115 +132,35 @@ describe('useEdges', () => {
     expect(typeof result.current.createEdgeOnDrop).toBe('function');
   });
 
-  it('handleEdgesChange가 엣지 변경사항을 적용해야 함', () => {
+  it('handleEdgesChange가 applyEdgeChangesAction을 호출해야 함', () => {
     const { result } = renderHook(() => useEdges({
       boardSettings: mockBoardSettings,
       nodes: mockNodes
     }));
 
+    const mockApplyEdgeChangesAction = vi.mocked(useBoardStore(state => state.applyEdgeChangesAction));
+
     // 제거 변경 테스트
-    const removeChange = {
+    const removeChange: EdgeChange = {
       id: 'edge-1',
-      type: 'remove' as const,
+      type: 'remove',
     };
 
     act(() => {
-      // 먼저 엣지 상태에 엣지 추가 (테스트를 위해)
-      result.current.setEdges([{ id: 'edge-1', source: 'node-1', target: 'node-2' }] as Edge[]);
-      // 제거 변경 적용
       result.current.handleEdgesChange([removeChange]);
     });
 
-    // 엣지가 제거되었는지 확인
-    expect(result.current.edges).toEqual([]);
+    // applyEdgeChangesAction이 호출되었는지 확인
+    expect(mockApplyEdgeChangesAction).toHaveBeenCalledWith([removeChange]);
   });
 
-  it('saveEdges가 엣지를 로컬 스토리지에 저장하고 성공 메시지를 표시해야 함', () => {
+  it('onConnect가 connectNodesAction을 호출해야 함', () => {
     const { result } = renderHook(() => useEdges({
       boardSettings: mockBoardSettings,
       nodes: mockNodes
     }));
 
-    // 테스트 엣지 데이터
-    const testEdges: Edge[] = [
-      {
-        id: 'edge-1',
-        source: 'node-1',
-        target: 'node-2',
-        type: 'custom',
-      }
-    ];
-
-    act(() => {
-      // saveEdges 함수 실행 후 성공 메시지 수동 호출
-      const success = result.current.saveEdges(testEdges);
-
-      // 테스트를 위해 toast 직접 호출
-      if (success) {
-        toast.success('엣지가 성공적으로 저장되었습니다.');
-      }
-
-      // 함수가 성공적으로 실행되었는지 확인
-      expect(success).toBe(true);
-    });
-
-    // 로컬 스토리지에 저장되었는지 확인
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      EDGES_STORAGE_KEY,
-      expect.stringContaining('edge-1')
-    );
-
-    // 성공 메시지가 표시되었는지 확인
-    expect(toast.success).toHaveBeenCalled();
-  });
-
-  it('saveEdges가 오류 발생 시 false를 반환하고 오류 메시지를 표시해야 함', () => {
-    // 오류 메시지 직접 호출을 위해 미리 실행
-    toast.error('엣지 저장 실패: Storage error');
-
-    // localStorage에 예외 발생 모킹
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
-      throw new Error('Storage error');
-    });
-
-    const { result } = renderHook(() => useEdges({
-      boardSettings: mockBoardSettings,
-      nodes: mockNodes
-    }));
-
-    // 테스트 엣지 데이터
-    const testEdges: Edge[] = [
-      {
-        id: 'edge-1',
-        source: 'node-1',
-        target: 'node-2',
-        type: 'custom',
-      }
-    ];
-
-    let saveResult = false;  // 기본값 설정
-    act(() => {
-      try {
-        // saveEdges 함수 직접 호출
-        saveResult = result.current.saveEdges(testEdges);
-      } catch (error) {
-        // 테스트를 위해 toast 직접 호출 (catch 블록에서는 호출되지 않을 수 있음)
-        toast.error(`엣지 저장 실패: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    });
-
-    // 함수가 실패했는지 확인
-    expect(saveResult).toBe(false);
-
-    // 오류 메시지가 표시되었는지 확인
-    expect(toast.error).toHaveBeenCalled();
-  });
-
-  it('onConnect가 노드를 연결하고 새 엣지를 생성해야 함', () => {
-    const { result } = renderHook(() => useEdges({
-      boardSettings: mockBoardSettings,
-      nodes: mockNodes
-    }));
+    const mockConnectNodesAction = vi.mocked(useBoardStore(state => state.connectNodesAction));
 
     // 테스트 연결 파라미터
     const connection: Connection = {
@@ -239,93 +174,80 @@ describe('useEdges', () => {
       result.current.onConnect(connection);
     });
 
-    // 새 엣지가 생성되었는지 확인
-    expect(result.current.edges.length).toBe(1);
-    expect(result.current.edges[0].source).toBe('node-1');
-    expect(result.current.edges[0].target).toBe('node-2');
-
-    // 엣지에 올바른 속성이 설정되었는지 확인
-    expect(result.current.edges[0].type).toBe('custom');
-    expect(result.current.edges[0].animated).toBe(mockBoardSettings.animated);
-    expect(result.current.edges[0].style?.stroke).toBe(mockBoardSettings.edgeColor);
+    // connectNodesAction이 호출되었는지 확인
+    expect(mockConnectNodesAction).toHaveBeenCalledWith(connection);
   });
 
-  it('onConnect가 소스와 타겟이 같을 때 연결을 방지해야 함', () => {
+  it('saveEdges가 setEdges와 saveEdgesAction을 호출해야 함', () => {
     const { result } = renderHook(() => useEdges({
       boardSettings: mockBoardSettings,
       nodes: mockNodes
     }));
 
-    // 동일한 노드를 소스와 타겟으로 설정
-    const sameNodeConnection: Partial<Connection> = {
-      source: 'node-1',
-      target: 'node-1',
-    };
+    const mockSetEdges = vi.mocked(useBoardStore(state => state.setEdges));
+    const mockSaveEdgesAction = vi.mocked(useBoardStore(state => state.saveEdgesAction));
+
+    // 명시적으로 true를 반환하도록 설정
+    mockSaveEdgesAction.mockReturnValue(true);
+
+    // 테스트 엣지 데이터
+    const testEdges: Edge[] = [
+      {
+        id: 'edge-1',
+        source: 'node-1',
+        target: 'node-2',
+        type: 'custom',
+      }
+    ];
+
+    // 반환값 변수 선언
+    let success: boolean = false;
 
     act(() => {
-      result.current.onConnect(sameNodeConnection as Connection);
+      success = result.current.saveEdges(testEdges) as boolean;
     });
 
-    // 엣지가 생성되지 않았는지 확인
-    expect(result.current.edges.length).toBe(0);
+    // 반환값 검증을 act 외부로 이동
+    expect(success).toBe(true);
+
+    // setEdges와 saveEdgesAction이 호출되었는지 확인
+    expect(mockSetEdges).toHaveBeenCalledWith(testEdges);
+    expect(mockSaveEdgesAction).toHaveBeenCalled();
   });
 
-  it('createEdgeOnDrop이 새 엣지를 생성하고 반환해야 함', () => {
+  it('updateEdgeStyles가 updateAllEdgeStylesAction을 호출해야 함', () => {
     const { result } = renderHook(() => useEdges({
       boardSettings: mockBoardSettings,
       nodes: mockNodes
     }));
 
-    let createdEdge: Edge | undefined;
+    const mockUpdateAllEdgeStylesAction = vi.mocked(useBoardStore(state => state.updateAllEdgeStylesAction));
 
     act(() => {
-      createdEdge = result.current.createEdgeOnDrop('node-1', 'node-2');
+      result.current.updateEdgeStyles();
     });
 
-    // 엣지가 생성되었는지 확인
-    expect(result.current.edges.length).toBe(1);
-
-    // 생성된 엣지가 반환되었는지 확인
-    expect(createdEdge).toBeDefined();
-    expect(createdEdge?.source).toBe('node-1');
-    expect(createdEdge?.target).toBe('node-2');
-
-    // 엣지가 로컬 스토리지에 저장되었는지 확인
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      EDGES_STORAGE_KEY,
-      expect.any(String)
-    );
+    // updateAllEdgeStylesAction이 호출되었는지 확인
+    expect(mockUpdateAllEdgeStylesAction).toHaveBeenCalled();
   });
 
-  it('updateEdgeStyles가 모든 엣지의 스타일을 업데이트해야 함', () => {
+  it('createEdgeOnDrop이 createEdgeOnDropAction을 호출해야 함', () => {
     const { result } = renderHook(() => useEdges({
       boardSettings: mockBoardSettings,
       nodes: mockNodes
     }));
 
-    // 테스트 엣지 생성
-    act(() => {
-      result.current.setEdges([
-        { id: 'edge-1', source: 'node-1', target: 'node-2', style: { stroke: '#C1C1C1' } },
-        { id: 'edge-2', source: 'node-1', target: 'node-2', style: { stroke: '#C1C1C1' } }
-      ] as Edge[]);
-    });
+    const mockCreateEdgeOnDropAction = vi.mocked(useBoardStore(state => state.createEdgeOnDropAction));
 
-    // 새 설정으로 스타일 업데이트
-    const newSettings: BoardSettings = {
-      ...mockBoardSettings,
-      edgeColor: '#FF0000',
-      animated: true,
-    };
+    // 소스 노드와 타겟 노드 ID
+    const sourceId = 'node-1';
+    const targetId = 'node-2';
 
     act(() => {
-      result.current.updateEdgeStyles(newSettings);
+      result.current.createEdgeOnDrop(sourceId, targetId);
     });
 
-    // 모든 엣지가 새 스타일로 업데이트되었는지 확인
-    expect(result.current.edges[0].style?.stroke).toBe('#FF0000');
-    expect(result.current.edges[0].animated).toBe(true);
-    expect(result.current.edges[1].style?.stroke).toBe('#FF0000');
-    expect(result.current.edges[1].animated).toBe(true);
+    // createEdgeOnDropAction이 호출되었는지 확인
+    expect(mockCreateEdgeOnDropAction).toHaveBeenCalledWith(sourceId, targetId);
   });
 }); 

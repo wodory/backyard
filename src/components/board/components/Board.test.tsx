@@ -12,7 +12,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 import Board from './Board';
-import { useNodes } from '../hooks/useNodes';
+import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
 import { useBoardUtils } from '../hooks/useBoardUtils';
 import { useAppStore } from '@/store/useAppStore';
@@ -112,14 +112,9 @@ vi.mock('./Board', () => ({
 }));
 
 vi.mock('../hooks/useNodes', () => ({
-  useNodes: vi.fn(() => ({
-    nodes: [],
-    setNodes: vi.fn(),
-    handleNodesChange: vi.fn(),
+  useNodeClickHandlers: vi.fn(() => ({
     handleNodeClick: vi.fn(),
     handlePaneClick: vi.fn(),
-    saveLayout: vi.fn(() => true),
-    hasUnsavedChanges: { current: false },
   })),
 }));
 

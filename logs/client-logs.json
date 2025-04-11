@@ -1570,5 +1570,21 @@
     },
     "sessionId": "test-session-id",
     "serverTimestamp": "2025-04-11T01:15:04.922Z"
+  },
+  {
+    "timestamp": "2025-04-11T02:14:51.952Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T02:14:53.070Z"
+  },
+  {
+    "timestamp": "2025-04-11T02:28:00.405Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "81ex6zrwkv9p1c21kbafkq",
+    "serverTimestamp": "2025-04-11T02:28:01.647Z"
   }
 ]

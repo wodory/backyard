@@ -72,7 +72,7 @@ interface BoardCanvasProps {
   /** 컨트롤 표시 여부 */
   showControls?: boolean;
   /** 래퍼 ref */
-  wrapperRef: React.RefObject<HTMLDivElement | null>;
+  wrapperRef: React.RefObject<HTMLDivElement>;
   /** 추가 CSS 클래스 */
   className?: string;
   /** 사용자 인증 여부 */
@@ -123,21 +123,21 @@ export default function BoardCanvas({
   //   nodeInspect: NodeInspect,
   //   default: CardNode
   // }), []);
-  
+
   // const edgeTypes = useMemo(() => ({
   //   custom: CustomEdge,
   //   default: CustomEdge
   // }), []);
 
   // 로그 변경
-  
+
   // console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { nodeTypes, edgeTypes });
-  
+
   // 기본 엣지 옵션 메모이제이션
-  const defaultEdgeOptions = useMemo(() => ({ 
+  const defaultEdgeOptions = useMemo(() => ({
     type: 'custom',
     animated: boardSettings.animated,
-    style: { 
+    style: {
       strokeWidth: boardSettings.strokeWidth,
       stroke: boardSettings.edgeColor
     },
@@ -149,7 +149,7 @@ export default function BoardCanvas({
   }), [boardSettings]);
 
   return (
-    <div 
+    <div
       className={cn("h-full w-full flex flex-col relative", className)}
       ref={wrapperRef}
       onDragOver={onDragOver}
@@ -183,7 +183,7 @@ export default function BoardCanvas({
           <>
             <Background />
             <Controls />
-            
+
             {/* 삭제 3/29 */}
             {/* <BoardControls
               boardSettings={boardSettings}

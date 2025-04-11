@@ -3,7 +3,7 @@
  * 목적: 보드 핸들러 훅의 기능 테스트
  * 역할: 선택, 드래그 앤 드롭, 카드 생성 핸들러 테스트
  * 작성일: 2025-03-28
- * 수정일: 2025-04-01
+ * 수정일: 2025-04-11
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -13,6 +13,7 @@ import { Node, Edge } from '@xyflow/react';
 import { useBoardHandlers } from './useBoardHandlers';
 import { CardData } from '../types/board-types';
 import { useAppStore } from '@/store/useAppStore';
+import { useBoardStore } from '@/store/useBoardStore';
 import {
   createTestNode,
   createDragEvent,
@@ -27,6 +28,22 @@ vi.mock('@/store/useAppStore', () => ({
     const state = {
       selectedCardIds: [],
       selectCards: mockSelectCards,
+    };
+    return selector ? selector(state) : state;
+  }),
+}));
+
+// useBoardStore 모킹
+const mockAddNodeAtPosition = vi.fn().mockResolvedValue({ id: 'new-node', data: { title: '새 노드' } });
+const mockAddCardAtCenterPosition = vi.fn().mockResolvedValue({ id: 'new-card', data: { title: '새 카드' } });
+const mockCreateEdgeAndNodeOnDrop = vi.fn().mockResolvedValue({ id: 'edge-node', data: { title: '연결 노드' } });
+
+vi.mock('@/store/useBoardStore', () => ({
+  useBoardStore: vi.fn((selector) => {
+    const state = {
+      addNodeAtPosition: mockAddNodeAtPosition,
+      addCardAtCenterPosition: mockAddCardAtCenterPosition,
+      createEdgeAndNodeOnDrop: mockCreateEdgeAndNodeOnDrop,
     };
     return selector ? selector(state) : state;
   }),
@@ -55,9 +72,6 @@ describe('useBoardHandlers', () => {
   });
 
   const mockProps = {
-    saveLayout: vi.fn().mockReturnValue(true),
-    nodes: testNodes,
-    setNodes: vi.fn(),
     reactFlowWrapper: { current: divElement } as React.RefObject<HTMLDivElement>,
     reactFlowInstance: mockReactFlow,
     fetchCards: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
@@ -65,6 +79,12 @@ describe('useBoardHandlers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // setTimeout 모킹
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('선택 핸들러', () => {
@@ -112,53 +132,68 @@ describe('useBoardHandlers', () => {
       expect(mockEvent.dataTransfer.dropEffect).toBe('move');
     });
 
-    it('유효하지 않은 JSON 데이터를 드롭하면 무시한다', () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
-      const mockEvent = createDragEvent('invalid json');
-
-      act(() => {
-        result.current.onDrop(mockEvent);
-      });
-
-      expect(mockProps.setNodes).not.toHaveBeenCalled();
-    });
-
-    it('드롭된 카드 데이터로 새 노드를 생성한다', () => {
+    it('유효한 카드 데이터를 드롭하면 addNodeAtPosition 액션을 호출한다', async () => {
       const { result } = renderHook(() => useBoardHandlers(mockProps));
       const cardData = { id: 'new-card', title: '새 카드', content: '내용' };
       const mockEvent = createDragEvent(cardData);
 
-      act(() => {
-        result.current.onDrop(mockEvent);
+      await act(async () => {
+        await result.current.onDrop(mockEvent);
       });
 
-      expect(mockProps.setNodes).toHaveBeenCalled();
+      expect(mockAddNodeAtPosition).toHaveBeenCalledWith('card', expect.any(Object), cardData);
+    });
+
+    it('ReactFlow 래퍼가 없으면 addNodeAtPosition 액션을 호출하지 않는다', async () => {
+      const { result } = renderHook(() => useBoardHandlers({
+        ...mockProps,
+        reactFlowWrapper: { current: null } as any
+      }));
+
+      const cardData = { id: 'new-card' };
+      const mockEvent = createDragEvent(cardData);
+
+      await act(async () => {
+        await result.current.onDrop(mockEvent);
+      });
+
+      expect(mockAddNodeAtPosition).not.toHaveBeenCalled();
     });
   });
 
   describe('카드 생성 핸들러', () => {
-    it('엣지 드롭 시 새 카드를 생성하고 연결한다', () => {
+    it('새 카드를 생성하면 addCardAtCenterPosition 액션을 호출한다', async () => {
       const { result } = renderHook(() => useBoardHandlers(mockProps));
       const cardData = { id: 'new-card', title: '새 카드', content: '내용' };
-      const position = { x: 200, y: 200 };
 
-      act(() => {
-        result.current.handleEdgeDropCardCreated(cardData, position, 'node1', 'target');
+      await act(async () => {
+        await result.current.handleCardCreated(cardData);
       });
 
-      expect(mockProps.setNodes).toHaveBeenCalled();
+      expect(mockAddCardAtCenterPosition).toHaveBeenCalledWith(cardData);
     });
 
-    it('타겟 핸들 타입이 사용되면 올바르게 연결한다', () => {
+    it('엣지 드롭 시 createEdgeAndNodeOnDrop 액션을 호출한다', async () => {
       const { result } = renderHook(() => useBoardHandlers(mockProps));
       const cardData = { id: 'new-card', title: '새 카드', content: '내용' };
       const position = { x: 200, y: 200 };
+      const connectingNodeId = 'node1';
+      const handleType = 'target' as const;
 
-      act(() => {
-        result.current.handleEdgeDropCardCreated(cardData, position, 'node1', 'target');
+      await act(async () => {
+        await result.current.handleEdgeDropCardCreated(cardData, position, connectingNodeId, handleType);
+
+        // setTimeout을 빠르게 진행시킴
+        vi.advanceTimersByTime(500);
       });
 
-      expect(mockProps.setNodes).toHaveBeenCalled();
+      expect(mockCreateEdgeAndNodeOnDrop).toHaveBeenCalledWith(
+        cardData,
+        position,
+        connectingNodeId,
+        handleType
+      );
+      expect(mockProps.fetchCards).toHaveBeenCalled();
     });
   });
 }); 

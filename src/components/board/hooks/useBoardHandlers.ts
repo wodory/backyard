@@ -3,41 +3,38 @@
  * 목적: 보드 이벤트 핸들러 관련 로직 분리
  * 역할: 보드 드래그, 드롭, 선택 등 이벤트 처리 로직을 관리
  * 작성일: 2025-03-28
- * 수정일: 2025-04-01
+ * 수정일: 2025-04-11
  */
 
 import { useCallback } from 'react';
-import { toast } from 'sonner';
 import { Node, Edge, XYPosition } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
+import { useBoardStore } from '@/store/useBoardStore';
 import { CardData } from '../types/board-types';
 
 /**
  * useBoardHandlers: 보드 이벤트 핸들러 관련 로직을 관리하는 훅
- * @param saveLayout 레이아웃 저장 함수
- * @param nodes 현재 노드 배열
- * @param setNodes 노드 상태 설정 함수
  * @param reactFlowWrapper ReactFlow 래퍼 참조
  * @param reactFlowInstance ReactFlow 인스턴스
+ * @param fetchCards 카드 데이터를 다시 불러오는 함수
  * @returns 보드 이벤트 핸들러 함수들
  */
 export function useBoardHandlers({
-  saveLayout,
-  nodes,
-  setNodes,
   reactFlowWrapper,
   reactFlowInstance,
   fetchCards
 }: {
-  saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
-  nodes: Node<CardData>[];
-  setNodes: (updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void;
   reactFlowWrapper: React.RefObject<HTMLDivElement>;
   reactFlowInstance: any;
   fetchCards: () => Promise<{ nodes: Node<CardData>[]; edges: Edge[] }>;
 }) {
-  // 전역 상태에서 선택된 카드 정보 가져오기
-  const { selectedCardIds, selectCards } = useAppStore();
+  // 전역 상태에서 선택된 카드 정보 및 액션 가져오기
+  const { selectCards } = useAppStore();
+  
+  // 보드 스토어에서 노드 추가 관련 액션 가져오기
+  const addNodeAtPosition = useBoardStore(state => state.addNodeAtPosition);
+  const addCardAtCenterPosition = useBoardStore(state => state.addCardAtCenterPosition);
+  const createEdgeAndNodeOnDrop = useBoardStore(state => state.createEdgeAndNodeOnDrop);
 
   /**
    * ReactFlow 선택 변경 이벤트 핸들러
@@ -54,11 +51,6 @@ export function useBoardHandlers({
     
     // 전역 상태 업데이트
     selectCards(selectedNodeIds);
-    
-    // 선택된 노드가 있는 경우 토스트 메시지 표시
-    if (selectedNodeIds.length > 1) {
-      toast.info(`${selectedNodeIds.length}개 카드가 선택되었습니다.`);
-    }
   }, [selectCards]);
 
   /**
@@ -97,71 +89,21 @@ export function useBoardHandlers({
         y: event.clientY - reactFlowBounds.top,
       });
 
-      // 노드 중복 확인
-      const existingNode = nodes.find(n => n.id === cardData.id);
-      if (existingNode) {
-        // 이미 캔버스에 해당 카드가 있으면 위치만 업데이트
-        const updatedNodes = nodes.map(n => {
-          if (n.id === cardData.id) {
-            return {
-              ...n,
-              position
-            };
-          }
-          return n;
-        });
-        setNodes(updatedNodes);
-        saveLayout(updatedNodes); // 레이아웃 저장
-        toast.info('카드 위치가 업데이트되었습니다.');
-      } else {
-        // 새로운 노드 생성
-        const newNode = {
-          id: cardData.id,
-          type: 'card',
-          position,
-          data: cardData.data,
-        };
-
-        // 노드 추가
-        setNodes(nodes => [...nodes, newNode]);
-        saveLayout([...nodes, newNode]); // 레이아웃 저장
-        toast.success('카드가 캔버스에 추가되었습니다.');
-      }
+      // Zustand 스토어 액션 호출
+      addNodeAtPosition('card', position, cardData);
     } catch (error) {
       console.error('드롭된 데이터 처리 중 오류 발생:', error);
-      toast.error('카드를 캔버스에 추가하는 중 오류가 발생했습니다.');
     }
-  }, [reactFlowInstance, nodes, setNodes, saveLayout]);
+  }, [reactFlowInstance, reactFlowWrapper, addNodeAtPosition]);
 
   /**
    * 카드 생성 완료 핸들러
    * @param cardData 생성된 카드 데이터
    */
   const handleCardCreated = useCallback((cardData: any) => {
-    // 뷰포트 중앙 또는 기본 위치에 새 카드 추가
-    const centerPosition = reactFlowWrapper.current && reactFlowInstance ? {
-      x: reactFlowWrapper.current.offsetWidth / 2 - 75, // 카드 너비의 절반 만큼 조정
-      y: reactFlowWrapper.current.offsetHeight / 2 - 50  // 카드 높이의 절반 만큼 조정
-    } : { x: 100, y: 100 };
-      
-    const newCard = {
-      id: cardData.id,
-      type: 'card',
-      data: {
-        ...cardData,
-        title: cardData.title || '새 카드',
-        content: cardData.content || ''
-      },
-      position: centerPosition
-    };
-      
-    setNodes((nds) => [...nds, newCard]);
-    
-    // 노드 위치 저장
-    saveLayout([...nodes, newCard]);
-    
-    toast.success('새 카드가 생성되었습니다.');
-  }, [nodes, saveLayout, setNodes, reactFlowWrapper, reactFlowInstance]);
+    // Zustand 스토어 액션 호출
+    addCardAtCenterPosition(cardData);
+  }, [addCardAtCenterPosition]);
 
   /**
    * 엣지 드롭 시 카드 생성 핸들러
@@ -176,31 +118,15 @@ export function useBoardHandlers({
     connectingNodeId: string, 
     handleType: 'source' | 'target'
   ) => {
-    // 새 카드 노드 생성
-    const newNode = {
-      id: cardData.id,
-      type: 'card',
-      data: {
-        ...cardData,
-        title: cardData.title || '새 카드',
-        content: cardData.content || ''
-      },
-      position
-    };
-    
-    // 노드 추가
-    setNodes((nds) => [...nds, newNode]);
-    
-    // 노드 위치 저장
-    saveLayout([...nodes, newNode]);
-    
-    toast.success('새 카드가 생성되었습니다.');
-    
-    // 카드 목록 업데이트를 위해 데이터 다시 불러오기
-    setTimeout(() => {
-      fetchCards();
-    }, 500);
-  }, [nodes, setNodes, saveLayout, fetchCards]);
+    // Zustand 스토어 액션 호출
+    createEdgeAndNodeOnDrop(cardData, position, connectingNodeId, handleType)
+      .then(() => {
+        // 카드 목록 업데이트를 위해 데이터 다시 불러오기
+        setTimeout(() => {
+          fetchCards();
+        }, 500);
+      });
+  }, [createEdgeAndNodeOnDrop, fetchCards]);
 
   return {
     handleSelectionChange,

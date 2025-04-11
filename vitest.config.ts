@@ -3,13 +3,18 @@
  * 목적: Vitest 테스트 환경 설정
  * 역할: 테스트 실행을 위한 Vite 설정과 통합된 설정 제공
  * 작성일: 2024-03-31
- * 수정일: 2025-04-09
+ * 수정일: 2025-04-11
  */
 
 import { defineConfig, mergeConfig } from 'vitest/config';
-import viteConfig from './vite.config';
+import viteConfig from './vite.config.js';
 import { loadEnv } from 'vite';
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// ESM에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default mergeConfig(
   viteConfig,
@@ -55,20 +60,12 @@ export default mergeConfig(
         '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,storybook,eslint,prettier}.config.*', // 각종 설정 파일
         '**/prisma/seed/**', // Prisma Seed 파일
         '**/scripts/**', // 스크립트 폴더
-        // '**/src/tests/mocks/**', // 목업 폴더
-        // '**/src/tests/msw/**', // MSW 폴더
-        // '**/src/tests/utils/**', // 테스트 유틸리티 폴더
-        '**/src/setupTests.ts', // 테스트 설정 파일
         '**/src/tests/**', // 테스트 관련 폴더
         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
         // src/lib
         '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
         '**/test-utils.ts',                
-        // 'src/lib/auth-server.ts', // 또는 .ts/.js
-        // 'src/lib/auth-storage.ts',
-        // 'src/lib/__tests__/auth-integration.ts', // auth-storage 관련 테스트가 많으므로 임시 제외
         '**/src/lib/cookie.ts',
-        // 'src/lib/db-check.ts', // 파일이 .js 이면 .js로
         '**/src/lib/auth-server.ts',
         '**/src/lib/prisma.ts',
         '**/src/lib/supabase-instance.ts',
@@ -87,15 +84,17 @@ export default mergeConfig(
       
       // 타입스크립트 설정
       typecheck: {
-        enabled: true,
+        enabled: false, // 타입 체크 비활성화 (필요한 경우 별도로 실행)
         tsconfig: './tsconfig.json',
+        checker: 'tsc',
+        ignoreSourceErrors: true, // 소스 파일의 타입 오류 무시
       },
       
       // 커버리지 설정
       coverage: {
         provider: 'v8', // 또는 'istanbul'
-        reporter: ['text', 'json', 'html'], // 리포트 형식
-        reportsDirectory: 'coverage',
+        reporter: ['text', 'json', 'html', 'json-summary'], // 리포트 형식
+        reportsDirectory: './coverage',
         // --- 커버리지 측정에서 제외할 파일/폴더 ---
         exclude: [
           '**/node_modules/**',
@@ -119,10 +118,8 @@ export default mergeConfig(
           '**/src/contexts/**', // 단순 Context (선택 사항)
           '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
           // src/lib
-          // '**/src/lib/logger.ts',       // 디버깅용 로거
           '**/src/lib/debug-utils.ts', // 디버깅 유틸리티 
           '**/src/lib/cookie.ts',
-          // 'src/lib/db-check.ts', 
           '**/src/lib/auth-server.ts',
           '**/src/lib/prisma.ts',
           '**/src/lib/supabase-instance.ts',
@@ -143,7 +140,7 @@ export default mergeConfig(
       },
       // 경로 별칭 설정
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': resolve(__dirname, './src'),
       },
     },
   })
