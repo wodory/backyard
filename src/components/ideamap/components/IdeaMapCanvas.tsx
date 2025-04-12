@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 // 삭제 3/29
 // import BoardControls from './BoardControls';
 
-interface BoardCanvasProps {
+interface IdeaMapCanvasProps {
   /** ReactFlow 노드 배열 */
   nodes: Node[];
   /** ReactFlow 엣지 배열 */
@@ -88,10 +88,10 @@ interface BoardCanvasProps {
 }
 
 /**
- * BoardCanvas: ReactFlow 캔버스 렌더링 컴포넌트
- * ReactFlow와 관련된 UI 렌더링을 담당하며, 실제 로직은 상위 컴포넌트(Board)에서 처리
+ * IdeaMapCanvas: ReactFlow 캔버스 렌더링 컴포넌트
+ * ReactFlow와 관련된 UI 렌더링을 담당하며, 실제 로직은 상위 컴포넌트(IdeaMap)에서 처리
  */
-export default function BoardCanvas({
+export default function IdeaMapCanvas({
   nodes,
   edges,
   onNodesChange,
@@ -116,7 +116,7 @@ export default function BoardCanvas({
   onDragOver,
   onDrop,
   onViewportChange
-}: BoardCanvasProps) {
+}: IdeaMapCanvasProps) {
   // 컴포넌트 내부에 노드 및 엣지 타입 직접 정의 -> 제거 
   // const nodeTypes = useMemo(() => ({
   //   card: CardNode,

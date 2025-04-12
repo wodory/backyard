@@ -13,13 +13,13 @@ import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { CardData } from '../types/ideamap-types';
 
 /**
- * useBoardHandlers: 보드 이벤트 핸들러 관련 로직을 관리하는 훅
+ * useIdeaMapHandlers: 아이디어맵 이벤트 핸들러 관련 로직을 관리하는 훅
  * @param reactFlowWrapper ReactFlow 래퍼 참조
  * @param reactFlowInstance ReactFlow 인스턴스
  * @param fetchCards 카드 데이터를 다시 불러오는 함수
- * @returns 보드 이벤트 핸들러 함수들
+ * @returns 아이디어맵 이벤트 핸들러 함수들
  */
-export function useBoardHandlers({
+export function useIdeaMapHandlers({
   reactFlowWrapper,
   reactFlowInstance,
   fetchCards
@@ -31,7 +31,7 @@ export function useBoardHandlers({
   // 전역 상태에서 선택된 카드 정보 및 액션 가져오기
   const { selectCards } = useAppStore();
   
-  // 보드 스토어에서 노드 추가 관련 액션 가져오기
+  // 아이디어맵 스토어에서 노드 추가 관련 액션 가져오기
   const addNodeAtPosition = useIdeaMapStore(state => state.addNodeAtPosition);
   const addCardAtCenterPosition = useIdeaMapStore(state => state.addCardAtCenterPosition);
   const createEdgeAndNodeOnDrop = useIdeaMapStore(state => state.createEdgeAndNodeOnDrop);
@@ -41,7 +41,7 @@ export function useBoardHandlers({
    * @param selection 현재 선택된 노드와 엣지 정보
    */
   const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
-    console.log('[BoardComponent] 선택 변경 감지:', { 
+    console.log('[IdeaMapComponent] 선택 변경 감지:', { 
       선택된_노드_수: nodes.length,
       선택된_노드_ID: nodes.map(node => node.data.id)
     });

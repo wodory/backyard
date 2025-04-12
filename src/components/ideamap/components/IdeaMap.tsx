@@ -23,32 +23,32 @@ import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 // 보드 관련 컴포넌트 임포트
 import CreateCardModal from '@/components/cards/CreateCardModal';
-import BoardCanvas from './IdeaMapCanvas';
+import IdeaMapCanvas from './IdeaMapCanvas';
 
 // 보드 관련 훅 임포트
 import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
 import { useIdeaMapData } from '../hooks/useIdeaMapData';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
-import { useBoardHandlers } from '../hooks/useIdeaMapHandlers';
+import { useIdeaMapHandlers } from '../hooks/useIdeaMapHandlers';
 
 // 타입 임포트
-import { BoardComponentProps, XYPosition } from '../types/ideamap-types';
+import { IdeaMapComponentProps, XYPosition } from '../types/ideamap-types';
 import { Node, Edge } from '@xyflow/react';
 import { NodeInspector } from '../nodes/NodeInspector';
 import { Card } from '@/store/useAppStore';
 
 /**
- * Board: 보드 메인 컨테이너 컴포넌트
+ * IdeaMap: 아이디어맵 메인 컨테이너 컴포넌트
  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
  * @param className 추가 CSS 클래스
  * @param showControls 컨트롤 표시 여부
  */
-export default function Board({
+export default function IdeaMap({
   onSelectCard,
   className = "",
   showControls = true
-}: BoardComponentProps) {
+}: IdeaMapComponentProps) {
   // 상태 관리
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -76,8 +76,8 @@ export default function Board({
 
   // useAppStore에서 상태 가져오기
   const layoutDirection = useAppStore(state => state.layoutDirection);
-  const boardSettings = useAppStore(state => state.boardSettings);
-  const setBoardSettings = useAppStore(state => state.setBoardSettings);
+  const ideaMapSettings = useAppStore(state => state.boardSettings);
+  const setIdeaMapSettings = useAppStore(state => state.setBoardSettings);
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
   const setCards = useAppStore(state => state.setCards);
   const { selectCards, selectedCardIds } = useAppStore();
@@ -87,8 +87,8 @@ export default function Board({
 
   // useIdeaMapStore에서 보드 데이터 관련 상태와 액션 가져오기
   const {
-    nodes: boardStoreNodes,
-    edges: boardStoreEdges,
+    nodes: ideaMapStoreNodes,
+    edges: ideaMapStoreEdges,
     isIdeaMapLoading,
     ideaMapError,
     loadIdeaMapData,
@@ -99,7 +99,7 @@ export default function Board({
     saveViewport,
     restoreViewport,
     saveAllLayoutData,
-    applyLayout: applyBoardLayout,
+    applyLayout: applyIdeaMapLayout,
     applyGridLayout,
     loadAndApplyIdeaMapSettings,
     updateAndSaveIdeaMapSettings,
@@ -148,29 +148,29 @@ export default function Board({
     createEdgeOnDrop,
     hasUnsavedChanges: hasUnsavedEdgesChanges
   } = useEdges({
-    boardSettings,
-    nodes: boardStoreNodes,
-    initialEdges: boardStoreEdges
+    boardSettings: ideaMapSettings,
+    nodes: ideaMapStoreNodes,
+    initialEdges: ideaMapStoreEdges
   });
 
-  // BoardSettings 변경 핸들러 래퍼
-  const handleBoardSettingsChangeWrapper = useCallback((newSettings: any) => {
+  // IdeaMapSettings 변경 핸들러 래퍼
+  const handleIdeaMapSettingsChangeWrapper = useCallback((newSettings: any) => {
     updateAndSaveIdeaMapSettings(newSettings, user?.id);
   }, [updateAndSaveIdeaMapSettings, user?.id]);
 
   // 레이아웃 변경 핸들러
   const handleLayoutChange = useCallback((direction: 'horizontal' | 'vertical') => {
-    applyBoardLayout(direction);
-  }, [applyBoardLayout]);
+    applyIdeaMapLayout(direction);
+  }, [applyIdeaMapLayout]);
 
-  // useBoardHandlers 훅 사용
+  // useIdeaMapHandlers 훅 사용
   const {
     handleSelectionChange,
     onDragOver,
     onDrop,
     handleCardCreated,
     handleEdgeDropCardCreated: handleEdgeDropCardCreatedFromHook
-  } = useBoardHandlers({
+  } = useIdeaMapHandlers({
     reactFlowWrapper,
     reactFlowInstance,
     fetchCards: loadNodesAndEdges
@@ -215,7 +215,7 @@ export default function Board({
       if (loadedViewport) {
         // 저장된 뷰포트가 있으면 복원
         reactFlowInstance.setViewport(loadedViewport, { duration: 0 });
-        console.log('[Board] 저장된 뷰포트 복원:', loadedViewport);
+        console.log('[IdeaMap] 저장된 뷰포트 복원:', loadedViewport);
 
         // 복원 후 상태 초기화 - setState 직접 호출 대신 함수형 업데이트 사용
         // null 체크 후 사용
@@ -227,7 +227,7 @@ export default function Board({
       } else if (needsFitView) {
         // fitView 실행 필요
         reactFlowInstance.fitView({ duration: 200, padding: 0.2 });
-        console.log('[Board] 뷰에 맞게 화면 조정');
+        console.log('[IdeaMap] 뷰에 맞게 화면 조정');
       }
     };
 
@@ -243,13 +243,13 @@ export default function Board({
       // 지연 적용으로 여러 번 호출되는 것을 방지
       const timeoutId = setTimeout(() => {
         reactFlowInstance.setViewport(viewportToRestore);
-        console.log('[Board] 저장된 뷰포트 위치로 이동:', viewportToRestore);
+        console.log('[IdeaMap] 저장된 뷰포트 위치로 이동:', viewportToRestore);
 
         // saveViewport 함수를 호출하여 viewportToRestore를 null로 설정
         if (typeof saveViewport === 'function') {
           saveViewport();
         }
-      }, 50);
+      }, 100);
 
       return () => clearTimeout(timeoutId);
     }
@@ -258,7 +258,7 @@ export default function Board({
   // 인증 상태 변경 시 보드 설정 로드
   useEffect(() => {
     if (!isAuthLoading && user?.id && previousUserIdRef.current !== user.id) {
-      console.log('[Board] 사용자 ID가 변경되어 보드 설정을 로드합니다:', user.id);
+      console.log('[IdeaMap] 사용자 ID가 변경되어 보드 설정을 로드합니다:', user.id);
       loadAndApplyIdeaMapSettings(user.id);
       previousUserIdRef.current = user.id;
     }
@@ -268,12 +268,12 @@ export default function Board({
   useEffect(() => {
     if (isLoading) return;
 
-    // boardSettings 객체 참조가 변경되었을 때만 엣지 스타일 업데이트
+    // ideaMapSettings 객체 참조가 변경되었을 때만 엣지 스타일 업데이트
     if (typeof updateEdgeStyles === 'function') {
       updateEdgeStyles();
     }
 
-  }, [boardSettings, isLoading, updateEdgeStyles]);
+  }, [ideaMapSettings, isLoading, updateEdgeStyles]);
 
   // 전역 상태의 카드가 업데이트되면 노드 데이터 업데이트
   useEffect(() => {
@@ -309,12 +309,12 @@ export default function Board({
 
   // 로드 후 node internals 업데이트 (핸들 위치 등)
   useEffect(() => {
-    if (!isLoading && boardStoreNodes.length > 0) {
-      boardStoreNodes.forEach(node => {
+    if (!isLoading && ideaMapStoreNodes.length > 0) {
+      ideaMapStoreNodes.forEach(node => {
         updateNodeInternals(node.id);
       });
     }
-  }, [isLoading, boardStoreNodes, updateNodeInternals]);
+  }, [isLoading, ideaMapStoreNodes, updateNodeInternals]);
 
   // 페이지 이탈 시 저장되지 않은 변경사항 경고
   useEffect(() => {
@@ -340,7 +340,7 @@ export default function Board({
       return;
     }
 
-    // useBoardHandlers의 handleEdgeDropCardCreated 호출
+    // useIdeaMapHandlers의 handleEdgeDropCardCreated 호출
     handleEdgeDropCardCreatedFromHook(
       cardData,
       edgeDropPosition,
@@ -380,7 +380,7 @@ export default function Board({
    * 뷰포트 변경 핸들러 (확대/축소, 이동)
    * @param viewport 현재 뷰포트 상태
    */
-  const onViewportChange = useCallback((viewport: Viewport) => {
+  const handleViewportChange = useCallback((viewport: Viewport) => {
     // 디바운싱: 연속적인 뷰포트 변경 중 마지막 이벤트만 처리
     if (viewportChangeTimer.current) {
       clearTimeout(viewportChangeTimer.current);
@@ -412,8 +412,8 @@ export default function Board({
 
   return (
     <>
-      <BoardCanvas
-        nodes={boardStoreNodes}
+      <IdeaMapCanvas
+        nodes={ideaMapStoreNodes}
         edges={edges}
         onNodesChange={applyNodeChangesAction}
         onEdgesChange={handleEdgesChange}
@@ -423,8 +423,8 @@ export default function Board({
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         layoutDirection={layoutDirection as 'horizontal' | 'vertical'}
-        boardSettings={boardSettings}
-        onBoardSettingsChange={handleBoardSettingsChangeWrapper}
+        boardSettings={ideaMapSettings}
+        onBoardSettingsChange={handleIdeaMapSettingsChangeWrapper}
         onLayoutChange={handleLayoutChange}
         onAutoLayout={applyGridLayout}
         onSaveLayout={handleSaveLayout}
@@ -436,11 +436,11 @@ export default function Board({
         userId={user?.id}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        onViewportChange={onViewportChange}
+        onViewportChange={handleViewportChange}
       />
 
       {/* 노드 인스펙터 컴포넌트 */}
-      <NodeInspector nodes={boardStoreNodes} />
+      <NodeInspector nodes={ideaMapStoreNodes} />
 
       {/* 일반 카드 생성 모달 */}
       {isCreateModalOpen && (

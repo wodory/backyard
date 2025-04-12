@@ -22,7 +22,7 @@ import { TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { CardData } from '../types/board-types';
 
 /**
- * useBoardUtils: 보드 유틸리티 함수 관련 로직을 관리하는 훅
+ * useIdeaMapUtils: 아이디어맵 유틸리티 함수 관련 로직을 관리하는 훅
  * @param reactFlowWrapper ReactFlow 래퍼 참조
  * @param updateNodeInternals 노드 내부 업데이트 함수
  * @param saveLayout 레이아웃 저장 함수
@@ -31,9 +31,9 @@ import { CardData } from '../types/board-types';
  * @param edges 현재 엣지 배열
  * @param setNodes 노드 상태 설정 함수
  * @param setEdges 엣지 상태 설정 함수
- * @returns 보드 유틸리티 함수들
+ * @returns 아이디어맵 유틸리티 함수들
  */
-export function useBoardUtils({
+export function useIdeaMapUtils({
   reactFlowWrapper,
   updateNodeInternals,
   saveLayout,
@@ -66,7 +66,7 @@ export function useBoardUtils({
    * @param isAuthenticated 인증 여부
    * @param userId 사용자 ID
    */
-  const loadBoardSettingsFromServerIfAuthenticated = useCallback(async (
+  const loadIdeaMapSettingsFromServerIfAuthenticated = useCallback(async (
     isAuthenticated: boolean, 
     userId?: string
   ) => {
@@ -82,7 +82,7 @@ export function useBoardUtils({
           setEdges(updatedEdges);
         }
       } catch (err) {
-        console.error('서버에서 보드 설정 불러오기 실패:', err);
+        console.error('서버에서 아이디어맵 설정 불러오기 실패:', err);
       }
     }
   }, [edges, setEdges, setBoardSettings]);
@@ -103,7 +103,7 @@ export function useBoardUtils({
       
       // 뷰포트 저장
       localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
-      console.log('[useBoardUtils] 뷰포트 저장 완료:', viewport);
+      console.log('[useIdeaMapUtils] 뷰포트 저장 완료:', viewport);
       
       return true;
     } catch (err) {
@@ -123,7 +123,7 @@ export function useBoardUtils({
     
     if (layoutSaved && edgesSaved && transformSaved) {
       hasUnsavedChanges.current = false;
-      console.log('[useBoardUtils] 모든 레이아웃 데이터 저장 완료');
+      console.log('[useIdeaMapUtils] 모든 레이아웃 데이터 저장 완료');
       return true;
     }
     
@@ -146,41 +146,41 @@ export function useBoardUtils({
   }, [saveAllLayoutData]);
 
   /**
-   * 보드 설정 변경 핸들러
-   * @param newSettings 새 보드 설정
+   * 아이디어맵 설정 변경 핸들러
+   * @param newSettings 새 아이디어맵 설정
    * @param isAuthenticated 인증 여부
    * @param userId 사용자 ID
    */
-  const handleBoardSettingsChange = useCallback((
+  const handleIdeaMapSettingsChange = useCallback((
     newSettings: BoardSettings,
     isAuthenticated: boolean,
     userId?: string
   ) => {
-    console.log('[useBoardUtils] 보드 설정 변경 핸들러 호출됨:', newSettings);
+    console.log('[useIdeaMapUtils] 아이디어맵 설정 변경 핸들러 호출됨:', newSettings);
     
     // 1. 전역 상태 업데이트
     setBoardSettings(newSettings);
-    console.log('[useBoardUtils] 전역 상태 업데이트 완료');
+    console.log('[useIdeaMapUtils] 전역 상태 업데이트 완료');
     
     // 2. 새 설정을 엣지에 적용
     const updatedEdges = applyEdgeSettings(edges, newSettings);
-    console.log('[useBoardUtils] 엣지 설정 적용 완료, 엣지 수:', updatedEdges.length);
+    console.log('[useIdeaMapUtils] 엣지 설정 적용 완료, 엣지 수:', updatedEdges.length);
     setEdges(updatedEdges);
     
     // 3. 인증된 사용자인 경우 서버에도 저장
     if (isAuthenticated && userId) {
-      console.log('[useBoardUtils] 서버에 보드 설정 저장 시도');
+      console.log('[useIdeaMapUtils] 서버에 아이디어맵 설정 저장 시도');
       saveBoardSettingsToServer(userId, newSettings)
         .then(() => {
-          console.log('[useBoardUtils] 서버 저장 성공');
-          toast.success('보드 설정이 저장되었습니다');
+          console.log('[useIdeaMapUtils] 서버 저장 성공');
+          toast.success('아이디어맵 설정이 저장되었습니다');
         })
         .catch(err => {
-          console.error('[useBoardUtils] 서버 저장 실패:', err);
+          console.error('[useIdeaMapUtils] 서버 저장 실패:', err);
           toast.error('서버에 설정 저장 실패');
         });
     } else {
-      console.log('[useBoardUtils] 비인증 사용자, 서버 저장 생략');
+      console.log('[useIdeaMapUtils] 비인증 사용자, 서버 저장 생략');
     }
   }, [edges, setEdges, setBoardSettings]);
 
@@ -249,41 +249,48 @@ export function useBoardUtils({
     setNodes(layoutedNodes as unknown as Node<CardData>[]);
     setEdges(layoutedEdges);
     
-    // 레이아웃 변경 후 저장 상태로 표시
-    hasUnsavedChanges.current = true;
-    
-    // 모든 노드의 내부 구조 업데이트 - 핸들 위치를 반영하기 위해
-    // 즉시 업데이트
-    layoutedNodes.forEach(node => {
-      updateNodeInternals(node.id);
-    });
-    
-    // 약간의 지연 후 다시 업데이트 (레이아웃 변경 완료 후)
+    // 변경 사항 저장
     setTimeout(() => {
-      layoutedNodes.forEach(node => {
-        updateNodeInternals(node.id);
-      });
-    }, 50);
+      saveLayout(layoutedNodes as unknown as Node<CardData>[]);
+      saveEdges(layoutedEdges);
+    }, 10);
     
-    // 애니메이션 완료 후 최종 업데이트
-    setTimeout(() => {
-      layoutedNodes.forEach(node => {
-        updateNodeInternals(node.id);
-      });
-    }, 300);
-    
-    toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃으로 변경되었습니다.`);
-  }, [nodes, edges, setNodes, setEdges, updateNodeInternals]);
+    toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃이 적용되었습니다.`);
+  }, [nodes, edges, setNodes, setEdges, saveLayout, saveEdges]);
+
+  /**
+   * 엣지 설정 적용 헬퍼 함수
+   * @param currentEdges 현재 엣지 배열
+   * @param settings 적용할 설정
+   * @returns 설정이 적용된 엣지 배열
+   */
+  const applyEdgeSettings = useCallback((currentEdges: Edge[], settings: BoardSettings) => {
+    return currentEdges.map(edge => ({
+      ...edge,
+      animated: settings.animated,
+      style: {
+        ...edge.style,
+        strokeWidth: settings.strokeWidth,
+        stroke: edge.selected ? settings.selectedEdgeColor : settings.edgeColor
+      },
+      markerEnd: settings.markerEnd ? {
+        type: settings.markerEnd,
+        width: settings.markerSize,
+        height: settings.markerSize,
+      } : undefined
+    }));
+  }, []);
 
   return {
-    loadBoardSettingsFromServerIfAuthenticated,
+    loadIdeaMapSettingsFromServerIfAuthenticated,
+    saveTransform,
     saveAllLayoutData,
     handleSaveLayout,
-    handleBoardSettingsChange,
-    handleLayoutChange,
+    handleIdeaMapSettingsChange,
     updateViewportCenter,
     handleAutoLayout,
-    saveTransform,
-    hasUnsavedChanges
+    handleLayoutChange,
+    applyEdgeSettings,
+    hasUnsavedChanges: hasUnsavedChanges.current
   };
 } 

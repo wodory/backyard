@@ -13,7 +13,7 @@ import CreateCardModal from '@/components/cards/CreateCardModal';
 export function MainToolbar() {
   const {
     applyLayout,
-    saveBoardLayout,
+    saveBoardLayout: saveIdeaMapLayout,
     layoutDirection
   } = useAppStore();
 
@@ -76,7 +76,7 @@ export function MainToolbar() {
         size="icon"
         title="레이아웃 저장"
         className="rounded-full h-[60px] w-[60px]"
-        onClick={saveBoardLayout}
+        onClick={saveIdeaMapLayout}
       >
         <Save className="h-8 w-8" />
         <span className="sr-only">레이아웃 저장</span>

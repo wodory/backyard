@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,6 +66,9 @@ export function Sidebar({ className }: SidebarProps) {
     reactFlowInstance,
     cards
   } = useAppStore();
+
+  // useIdeaMapStore에서 노드 데이터 가져오기
+  const ideaMapNodes = useIdeaMapStore(state => state.nodes);
 
   // 전역 상태의 cards를 CardItem 타입으로 캐스팅하여 사용
   const cardsWithType = cards as CardItem[];

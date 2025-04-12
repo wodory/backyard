@@ -65,9 +65,9 @@ export function ProjectToolbar() {
   const {
     layoutDirection,
     setLayoutDirection,
-    boardSettings,
-    updateBoardSettings,
-    saveBoardLayout,
+    boardSettings: ideaMapSettings,
+    updateBoardSettings: updateIdeaMapSettings,
+    saveBoardLayout: saveIdeaMapLayout,
     logoutAction,
     projects,
     activeProjectId,
@@ -88,9 +88,9 @@ export function ProjectToolbar() {
 
   // 저장 핸들러
   const handleSaveLayout = useCallback(() => {
-    // saveBoardLayout 액션을 호출하여 레이아웃 저장 처리
-    saveBoardLayout();
-  }, [saveBoardLayout]);
+    // saveIdeaMapLayout 액션을 호출하여 레이아웃 저장 처리
+    saveIdeaMapLayout();
+  }, [saveIdeaMapLayout]);
 
   // 프로젝트 정보 표시 핸들러
   const handleShowProjectInfo = useCallback(() => {
@@ -130,67 +130,67 @@ export function ProjectToolbar() {
   // 스냅 그리드 값 변경 핸들러
   const handleSnapGridChange = useCallback((value: string) => {
     const gridSize = parseInt(value, 10);
-    updateBoardSettings({
+    updateIdeaMapSettings({
       snapGrid: [gridSize, gridSize] as [number, number],
       snapToGrid: gridSize > 0, // 그리드 크기가 0보다 크면 스냅 활성화
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 연결선 타입 변경 핸들러
   const handleConnectionTypeChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       connectionLineType: value as ConnectionLineType,
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 마커 타입 변경 핸들러
   const handleMarkerTypeChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       markerEnd: value === 'null' ? null : value as MarkerType,
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 스냅 그리드 토글 핸들러
   const handleSnapToGridToggle = useCallback(() => {
-    updateBoardSettings({
-      snapToGrid: !boardSettings.snapToGrid,
+    updateIdeaMapSettings({
+      snapToGrid: !ideaMapSettings.snapToGrid,
     });
-  }, [boardSettings.snapToGrid, updateBoardSettings]);
+  }, [ideaMapSettings.snapToGrid, updateIdeaMapSettings]);
 
   // 연결선 두께 변경 핸들러
   const handleStrokeWidthChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       strokeWidth: parseInt(value, 10),
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 마커 크기 변경 핸들러
   const handleMarkerSizeChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       markerSize: parseInt(value, 10),
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 연결선 색상 변경 핸들러
   const handleEdgeColorChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       edgeColor: value,
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 선택된 연결선 색상 변경 핸들러
   const handleSelectedEdgeColorChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       selectedEdgeColor: value,
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 연결선 애니메이션 변경 핸들러
   const handleAnimatedChange = useCallback((value: string) => {
-    updateBoardSettings({
+    updateIdeaMapSettings({
       animated: value === 'true',
     });
-  }, [updateBoardSettings]);
+  }, [updateIdeaMapSettings]);
 
   // 내보내기 핸들러
   const handleExport = useCallback(() => {
@@ -270,14 +270,14 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuCheckboxItem
-                      checked={boardSettings.snapToGrid}
+                      checked={ideaMapSettings.snapToGrid}
                       onCheckedChange={handleSnapToGridToggle}
                     >
                       격자에 맞추기 활성화
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuRadioGroup
-                      value={boardSettings.snapGrid[0].toString()}
+                      value={ideaMapSettings.snapGrid[0].toString()}
                       onValueChange={handleSnapGridChange}
                     >
                       {SNAP_GRID_OPTIONS.map(option => (
@@ -299,7 +299,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.connectionLineType}
+                      value={ideaMapSettings.connectionLineType}
                       onValueChange={handleConnectionTypeChange}
                     >
                       {CONNECTION_TYPE_OPTIONS.map(option => (
@@ -319,7 +319,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.markerEnd === null ? 'null' : boardSettings.markerEnd}
+                      value={ideaMapSettings.markerEnd === null ? 'null' : ideaMapSettings.markerEnd}
                       onValueChange={handleMarkerTypeChange}
                     >
                       {MARKER_TYPE_OPTIONS.map(option => (
@@ -339,7 +339,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.strokeWidth.toString()}
+                      value={ideaMapSettings.strokeWidth.toString()}
                       onValueChange={handleStrokeWidthChange}
                     >
                       {STROKE_WIDTH_OPTIONS.map(option => (
@@ -359,7 +359,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.markerSize.toString()}
+                      value={ideaMapSettings.markerSize.toString()}
                       onValueChange={handleMarkerSizeChange}
                     >
                       {MARKER_SIZE_OPTIONS.map(option => (
@@ -379,7 +379,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.edgeColor}
+                      value={ideaMapSettings.edgeColor}
                       onValueChange={handleEdgeColorChange}
                     >
                       {EDGE_COLOR_OPTIONS.map(option => (
@@ -400,7 +400,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.selectedEdgeColor}
+                      value={ideaMapSettings.selectedEdgeColor}
                       onValueChange={handleSelectedEdgeColorChange}
                     >
                       {EDGE_COLOR_OPTIONS.map(option => (
@@ -424,7 +424,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={boardSettings.animated.toString()}
+                      value={ideaMapSettings.animated.toString()}
                       onValueChange={handleAnimatedChange}
                     >
                       {EDGE_ANIMATION_OPTIONS.map(option => (
