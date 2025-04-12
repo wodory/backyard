@@ -1,24 +1,23 @@
 /**
- * 파일명: board-utils.test.ts
- * 목적: 보드 유틸리티 함수 테스트
- * 역할: 보드 설정 관리 및 엣지 스타일 적용 테스트
- * 작성일: 2025-03-30
- * 수정일: 2025-04-09
+ * 파일명: src/tests/ideamap/ideamap-utils.test.ts
+ * 목적: ideamap-utils.ts 기능 테스트
+ * 역할: 보드 설정 관련 유틸리티 함수를 테스트
+ * 작성일: 2025-04-01
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { 
-  loadBoardSettings, 
-  saveBoardSettings,
-  saveBoardSettingsToServer,
-  loadBoardSettingsFromServer,
-  applyEdgeSettings,
+import {
+  BoardSettings,
   DEFAULT_BOARD_SETTINGS,
-  type BoardSettings,
-  updateBoardSettingsOnServer
-} from '@/lib/board-utils';
+  loadBoardSettings,
+  saveBoardSettings,
+  loadBoardSettingsFromServer,
+  saveBoardSettingsToServer,
+  updateBoardSettingsOnServer,
+  applyEdgeSettings
+} from '@/lib/ideamap-utils';
 import { ConnectionLineType, MarkerType, type EdgeMarker } from '@xyflow/react';
-import { BOARD_SETTINGS_KEY } from '@/lib/board-constants';
+import { BOARD_SETTINGS_KEY } from '@/lib/ideamap-constants';
 
 // Map 기반 스토리지 구현
 const storageMap = new Map<string, string>();
@@ -115,7 +114,7 @@ describe('보드 유틸리티 테스트', () => {
       const result = await saveBoardSettingsToServer(userId, testSettings);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/board-settings',
+        '/api/ideamap-settings',
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -148,7 +147,7 @@ describe('보드 유틸리티 테스트', () => {
       const result = await loadBoardSettingsFromServer(userId);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        `/api/board-settings?userId=${encodeURIComponent(userId)}`
+        `/api/ideamap-settings?userId=${encodeURIComponent(userId)}`
       );
       expect(result).toEqual(testSettings);
       
@@ -205,7 +204,7 @@ describe('보드 유틸리티 테스트', () => {
       const result = await updateBoardSettingsOnServer(userId, partialSettings);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/api/board-settings',
+        '/api/ideamap-settings',
         expect.objectContaining({
           method: 'PATCH',
           headers: {

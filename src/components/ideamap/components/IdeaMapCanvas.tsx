@@ -25,13 +25,13 @@ import {
   MarkerType,
   Viewport
 } from '@xyflow/react';
-import { BoardSettings } from '@/lib/board-utils';
+import { BoardSettings } from '@/lib/ideamap-utils';
 // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
-// import CardNode from '@/components/board/nodes/CardNode';
-// import CustomEdge from '@/components/board/nodes/CustomEdge';
+// import CardNode from '@/components/ideamap/nodes/CardNode';
+// import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
 // 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
-import NodeInspect from '@/components/board/nodes/NodeInspect';
+import NodeInspect from '@/components/ideamap/nodes/NodeInspect';
 import { cn } from '@/lib/utils';
 // 삭제 3/29
 // import BoardControls from './BoardControls';

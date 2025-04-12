@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
 import TiptapViewer from '@/components/editor/TiptapViewer';
-import { loadDefaultBoardUIConfig } from '@/lib/board-ui-config';
+import { loadDefaultBoardUIConfig } from '@/lib/ideamap-ui-config';
 import { CSSProperties } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardContent } from '@/components/ui/card';

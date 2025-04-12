@@ -72,8 +72,7 @@ export default mergeConfig(
         '**/src/lib/supabase-server.ts',
         '**/src/lib/supabase.ts',
         '**/src/lib/debug-utils.ts',
-        '**/src/lib/board-ui-config.ts',
-        '**/src/lib/board-utils.ts',
+        '**/src/lib/ideamap-utils.ts',
         '**/src/lib/layout-utils.ts',
         // root       // 모든 서브 폴더의 test-utils.ts 파일 제외
         './*.config.js', // 루트 경로의 config 파일들
@@ -126,8 +125,7 @@ export default mergeConfig(
           '**/src/lib/supabase-server.ts',
           '**/src/lib/supabase.ts',
           '**/src/lib/debug-utils.ts',
-          '**/src/lib/board-ui-config.ts',
-          '**/src/lib/board-utils.ts',
+          '**/src/lib/ideamap-utils.ts',
           '**/src/lib/layout-utils.ts',
           '**/src/lib/db-check.js',
           '**/src/lib/db-init.ts',

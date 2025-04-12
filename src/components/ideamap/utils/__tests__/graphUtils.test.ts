@@ -8,8 +8,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Node, Edge, XYPosition, MarkerType, ConnectionLineType } from '@xyflow/react';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
-import { BoardSettings } from '@/lib/board-utils';
+import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { BoardSettings } from '@/lib/ideamap-utils';
 import {
   saveLayout,
   saveEdges,

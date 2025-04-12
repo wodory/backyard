@@ -2,9 +2,10 @@
 
 **목표:** 프로젝트 전체에서 'Board' 관련 네이밍을 'IdeaMap'으로 일관되게 변경합니다. 여기에는 디렉토리, 파일명, 컴포넌트, 스토어, 훅, 변수, 상수, API 경로, 테스트 코드 등이 포함됩니다.
 
-**(사전 준비)**
-*   현재 프로젝트 상태를 Git에 커밋합니다.
-*   전체 테스트를 실행하여 현재 상태가 안정적인지 확인합니다.
+**주의사항:** 
+- 테스크 안정성을 위해 각 단계별 Task의 범위를 철저히 준수합니다.
+- 내가 확인하면서 진행할 수 있도록, Task에 없지만 반드시 필요한 일이라고 생각하면 작업을 멈추고 나에게 do rev 합니다. 
+- 작업 시간을 절약하고, 파일 정리를 위해 폴더/파일 이름을 변경할 때는 mv를 사용한다. 
 
 **단계 1: 디렉토리 및 주요 파일 이름 변경**
 
@@ -38,6 +39,7 @@
 **단계 2: 스토어 및 컨텍스트 내부 이름 변경**
 
 8.  **Task:** `useIdeaMapStore` 내부 이름 변경
+    *   **규칙:** 앱 안정성과 점진적 개선을 위해 아래에 명시된 작업만 진행합니다.
     *   **File:** `src/store/useIdeaMapStore.ts`
     *   **Action:**
         *   스토어 이름 `useBoardStore`를 `useIdeaMapStore`로 변경합니다.
@@ -50,7 +52,8 @@
         *   액션 이름 `saveBoardLayout`을 `saveIdeaMapLayout`로 변경합니다. (또는 `saveIdeaMapState` 등으로 통합 고려)
         *   기타 `board` 또는 `Board`가 포함된 내부 변수, 타입, 함수 이름을 `ideaMap` 또는 `IdeaMap`으로 적절히 변경합니다. (예: `DEFAULT_BOARD_SETTINGS` -> `DEFAULT_IDEAMAP_SETTINGS` import 경로 포함)
     *   **Follow-up:** 이 스토어를 사용하는 모든 컴포넌트 및 훅에서 변경된 이름(스토어, 상태, 액션)을 사용하도록 업데이트합니다.
-9.  **Task:** `ThemeContext` 내부 이름 변경 (선택적)
+9.  **Task:** `ThemeContext` 내부 이름 변경
+    *   **규칙:** 앱 안정성과 점진적 개선을 위해 아래에 명시된 작업만 진행합니다.
     *   **File:** `src/contexts/ThemeContext.tsx`
     *   **Action:** `NodeTheme` 내부 필드나 `LayoutTheme` 관련 필드 중 'Board'의 의미로 사용된 것이 있다면 'IdeaMap' 관련 이름으로 변경하는 것을 고려합니다. (현재 코드에서는 직접적인 'Board' 네이밍은 없어 보임)
 
@@ -60,6 +63,7 @@
 *   Git에 변경 사항을 커밋합니다.
 
 **단계 3: 컴포넌트 및 훅 내부 이름 변경**
+    *   **규칙:** 앱 안정성과 점진적 개선을 위해 각 테스크에서 아래에 명시된 작업만 진행합니다. 만약, 추가 개선이 필요한 부분이 있다면 나에게 말해주고 검토합니다.
 
 10. **Task:** `IdeaMap.tsx` 컴포넌트 내부 이름 변경
     *   **File:** `src/components/ideamap/components/IdeaMap.tsx`
@@ -107,6 +111,7 @@
 *   Git에 변경 사항을 커밋합니다.
 
 **단계 4: 유틸리티, 상수, API 경로 이름 변경**
+*   **규칙:** 앱 안정성과 점진적 개선을 위해 각 테스크에서 아래에 명시된 작업만 진행합니다. 만약, 추가 개선이 필요한 부분이 있다면 나에게 말해주고 검토합니다.
 
 17. **Task:** 보드 관련 상수 파일 내용 변경
     *   **File:** `src/lib/ideamap-constants.ts` (이전 `board-constants.ts`)
@@ -128,6 +133,7 @@
 *   Git에 변경 사항을 커밋합니다.
 
 **단계 5: 테스트 코드 이름 변경**
+*   **규칙:** 앱 안정성과 점진적 개선을 위해 각 테스크에서 아래에 명시된 작업만 진행합니다. 만약, 추가 개선이 필요한 부분이 있다면 나에게 말해주고 검토합니다.
 
 21. **Task:** 테스트 파일 이름 변경
     *   **Action:** `*Board*.test.tsx` 패턴의 테스트 파일 이름을 `*IdeaMap*.test.tsx` 패턴으로 변경합니다. (예: `Board.test.tsx` -> `IdeaMap.test.tsx`, `useBoardStore.test.tsx` -> `useIdeaMapStore.test.tsx`)

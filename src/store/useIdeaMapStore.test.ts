@@ -10,10 +10,10 @@ import { Node, Edge, Viewport, ConnectionLineType, MarkerType, NodeChange, EdgeC
 import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import { CardData } from '@/components/board/types/board-types';
-import { TRANSFORM_STORAGE_KEY, STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
+import { TRANSFORM_STORAGE_KEY, STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { toast } from 'sonner';
-import { applyEdgeSettings } from '@/lib/board-utils';
+import { applyEdgeSettings } from '@/lib/ideamap-utils';
+import { CardData } from '@/components/ideamap/types/ideamap-types';
 
 // Zustand 모듈 모킹
 vi.mock('zustand', () => {
@@ -166,7 +166,7 @@ vi.mock('@xyflow/react', async () => {
 });
 
 // 보드 유틸리티 모킹
-vi.mock('@/lib/board-utils', () => {
+vi.mock('@/lib/ideamap-utils', () => {
   const DEFAULT_BOARD_SETTINGS_MOCK = {
     snapToGrid: false,
     snapGrid: [15, 15],

@@ -1,5 +1,5 @@
 import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
-import { BOARD_SETTINGS_KEY } from './board-constants';
+import { BOARD_SETTINGS_KEY } from './ideamap-constants';
 
 export interface BoardSettings {
   // 그리드 설정
@@ -77,17 +77,21 @@ export function saveBoardSettings(settings: BoardSettings): void {
 /**
  * 서버 API를 통해 보드 설정을 저장하는 함수
  */
-export async function saveBoardSettingsToServer(userId: string, settings: BoardSettings): Promise<boolean> {
+export const saveBoardSettingsToServer = async (settings: BoardSettings, userId: string): Promise<boolean> => {
   try {
-    const response = await fetch('/api/board-settings', {
+    if (!userId) {
+      console.warn('[saveBoardSettingsToServer] 사용자 ID 없음, 설정 저장 스킵');
+      return false;
+    }
+
+    console.log('[saveBoardSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
+    
+    const response = await fetch('/api/ideamap-settings', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        userId,
-        settings,
-      }),
+      body: JSON.stringify({ settings, userId }),
     });
 
     if (!response.ok) {
@@ -106,9 +110,16 @@ export async function saveBoardSettingsToServer(userId: string, settings: BoardS
 /**
  * 서버 API를 통해 보드 설정을 불러오는 함수
  */
-export async function loadBoardSettingsFromServer(userId: string): Promise<BoardSettings | null> {
+export const loadBoardSettingsFromServer = async (userId: string): Promise<BoardSettings | null> => {
   try {
-    const response = await fetch(`/api/board-settings?userId=${encodeURIComponent(userId)}`);
+    if (!userId) {
+      console.warn('[loadBoardSettingsFromServer] 사용자 ID 없음, 설정 로드 스킵');
+      return null;
+    }
+
+    console.log('[loadBoardSettingsFromServer] 서버에서 설정 로드 시작', { userId });
+    
+    const response = await fetch(`/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
     
     if (!response.ok) {
       throw new Error('서버에서 보드 설정을 불러오는데 실패했습니다.');
@@ -148,7 +159,7 @@ export async function updateBoardSettingsOnServer(userId: string, partialSetting
       settings: safeSettings
     });
     
-    const response = await fetch('/api/board-settings', {
+    const response = await fetch('/api/ideamap-settings', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

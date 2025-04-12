@@ -63,7 +63,7 @@ vi.stubGlobal('navigator', {
 });
 
 // 모든 모킹은 import 문 전에
-vi.mock('@/lib/board-constants', () => ({
+vi.mock('@/lib/ideamap-constants', () => ({
     SNAP_GRID_OPTIONS: [
         { value: '0', label: 'Off' },
         { value: '15', label: '15px' }

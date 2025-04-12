@@ -11,7 +11,7 @@ import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWa
 import userEvent from '@testing-library/user-event';
 import { vi, expect as vitestExpect } from 'vitest';
 import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
-import { CardData } from '@/components/board/types/board-types';
+import { CardData } from '@/components/ideamap/types/ideamap-types';
 
 // XYFlow 모킹
 export const mockReactFlow = {

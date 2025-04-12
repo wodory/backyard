@@ -1,4 +1,8 @@
-import { BOARD_SETTINGS_KEY } from './board-constants';
+/*
+  @description: 디버깅용 로컬 스토리지 초기화 함수
+*/
+
+import { BOARD_SETTINGS_KEY } from './ideamap-constants';
 
 // 디버깅용 로컬 스토리지 초기화 함수
 export function resetLocalStorageBoardSettings() {

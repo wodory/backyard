@@ -8,7 +8,7 @@
 
 import React, { useMemo, useEffect } from 'react';
 import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
-import { loadBoardSettings } from '@/lib/board-utils';
+import { loadBoardSettings } from '@/lib/ideamap-utils';
 import { useAppStore } from '@/store/useAppStore';
 import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
 

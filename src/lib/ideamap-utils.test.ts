@@ -1,6 +1,6 @@
 /**
- * 파일명: src/lib/board-utils.test.ts
- * 목적: board-utils.ts 기능 테스트
+ * 파일명: src/lib/ideamap-utils.test.ts
+ * 목적: ideamap-utils.ts 기능 테스트
  * 역할: 보드 설정 관리 유틸리티 기능 검증
  * 작성일: 2025-04-01
  */
@@ -9,13 +9,16 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { 
   loadBoardSettings, 
   saveBoardSettings, 
-  saveBoardSettingsToServer, 
-  loadBoardSettingsFromServer, 
-  applyEdgeSettings,
+  getBoardDefaultSettings,
+  loadBoardSettingsFromLocalStorage,
+  saveBoardSettingsToLocalStorage,
+  loadBoardSettingsFromServer,
+  saveBoardSettingsToServer,
+  applyEdgeStyleToElements,
   DEFAULT_BOARD_SETTINGS,
   type BoardSettings
-} from './board-utils';
-import { BOARD_SETTINGS_KEY } from './board-constants';
+} from './ideamap-utils';
+import { BOARD_SETTINGS_KEY } from './ideamap-constants';
 import { Edge, ConnectionLineType, MarkerType } from '@xyflow/react';
 
 // 전역 모킹 설정
@@ -109,12 +112,12 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         })
       });
       
-      const result = await saveBoardSettingsToServer(userId, testSettings);
+      const result = await saveBoardSettingsToServer(testSettings, userId);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(Object)
       );
-      expect(mockFetch.mock.calls[0][0].url).toContain('/api/board-settings');
+      expect(mockFetch.mock.calls[0][0].url).toContain('/api/ideamap-settings');
       expect(result).toBe(true);
       
       // localStorage.setItem이 호출되었는지 확인
@@ -142,7 +145,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(Object)
       );
-      expect(mockFetch.mock.calls[0][0].url).toContain(`/api/board-settings?userId=${encodeURIComponent(userId)}`);
+      expect(mockFetch.mock.calls[0][0].url).toContain(`/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
       expect(result).toEqual(testSettings);
       
       // localStorage.setItem이 호출되었는지 확인
@@ -158,7 +161,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
       
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
       
-      const result = await saveBoardSettingsToServer(userId, testSettings);
+      const result = await saveBoardSettingsToServer(testSettings, userId);
       
       expect(result).toBe(false);
     });
@@ -187,7 +190,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         { id: 'edge-1', source: 'node-1', target: 'node-2' }
       ];
       
-      const updatedEdges = applyEdgeSettings(edges, settings);
+      const updatedEdges = applyEdgeStyleToElements(edges, settings);
       
       expect(updatedEdges[0].style).toEqual(
         expect.objectContaining({
@@ -210,7 +213,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         { id: 'edge-1', source: 'node-1', target: 'node-2', selected: true }
       ];
       
-      const updatedEdges = applyEdgeSettings(edges, settings);
+      const updatedEdges = applyEdgeStyleToElements(edges, settings);
       
       expect(updatedEdges[0].style?.stroke).toBe(settings.selectedEdgeColor);
       if (updatedEdges[0].markerEnd && typeof updatedEdges[0].markerEnd !== 'string') {
@@ -227,7 +230,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         { id: 'edge-1', source: 'node-1', target: 'node-2' }
       ];
       
-      const updatedEdges = applyEdgeSettings(edges, settings);
+      const updatedEdges = applyEdgeStyleToElements(edges, settings);
       
       expect(updatedEdges[0].markerEnd).toBeUndefined();
     });

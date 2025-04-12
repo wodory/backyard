@@ -19,21 +19,21 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/useAppStore';
-import { useBoardStore } from '@/store/useBoardStore';
+import { useBoardStore } from '@/store/useIdeaMapStore';
 
 // 보드 관련 컴포넌트 임포트
 import CreateCardModal from '@/components/cards/CreateCardModal';
-import BoardCanvas from './BoardCanvas';
+import BoardCanvas from './IdeaMapCanvas';
 
 // 보드 관련 훅 임포트
 import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
-import { useBoardData } from '../hooks/useBoardData';
+import { useBoardData } from '../hooks/useIdeaMapData';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
-import { useBoardHandlers } from '../hooks/useBoardHandlers';
+import { useBoardHandlers } from '../hooks/useIdeaMapHandlers';
 
 // 타입 임포트
-import { BoardComponentProps, XYPosition } from '../types/board-types';
+import { BoardComponentProps, XYPosition } from '../types/ideamap-types';
 import { Node, Edge } from '@xyflow/react';
 import { NodeInspector } from '../nodes/NodeInspector';
 import { Card } from '@/store/useAppStore';

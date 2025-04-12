@@ -24,15 +24,17 @@ import {
 import { 
   BoardSettings, 
   DEFAULT_BOARD_SETTINGS, 
-  saveBoardSettingsToServer,
-  loadBoardSettingsFromServer,
+  loadBoardSettings, 
+  saveBoardSettings,
   applyEdgeSettings,
-  saveBoardSettings
-} from '@/lib/board-utils';
-import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+  loadBoardSettingsFromServer,
+  saveBoardSettingsToServer,
+  updateBoardSettingsOnServer
+} from '@/lib/ideamap-utils';
+import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import { toast } from 'sonner';
-import { CardData } from '@/components/board/types/board-types';
+import { CardData } from '@/components/ideamap/types/ideamap-types';
 import { useAppStore } from './useAppStore';
 
 // 보드 스토어 상태 인터페이스
@@ -91,7 +93,7 @@ interface BoardState {
   isSettingsLoading: boolean;
   settingsError: string | null;
   
-  // useBoardUtils에서 이전된 액션들
+  // useIdeaMapUtils에서 이전된 액션들
   loadAndApplyBoardSettings: (userId: string) => Promise<void>;
   updateAndSaveBoardSettings: (newSettings: Partial<BoardSettings>, userId?: string) => Promise<void>;
   saveViewport: () => void;
@@ -557,7 +559,7 @@ export const useBoardStore = create<BoardState>()(
       reactFlowInstance: null,
       setReactFlowInstance: (instance) => set({ reactFlowInstance: instance }),
       
-      // useBoardUtils에서 이전된 액션들
+      // useIdeaMapUtils에서 이전된 액션들
       loadAndApplyBoardSettings: async (userId) => {
         if (!userId) {
           console.error('사용자 ID가 제공되지 않았습니다');

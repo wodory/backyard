@@ -6,8 +6,8 @@
  * 수정일: 2025-04-10
  */
 
-import { useBoardStore } from '@/store/useBoardStore';
-import { Node, CardData } from '../types/board-types';
+import { useBoardStore } from '@/store/useIdeaMapStore';
+import { Node, CardData } from '../types/ideamap-types';
 import { Edge } from '@xyflow/react';
 
 /**

@@ -7,11 +7,11 @@ import {
   DEFAULT_BOARD_SETTINGS, 
   loadBoardSettings,
   saveBoardSettings
-} from '@/lib/board-utils'
+} from '@/lib/ideamap-utils'
 import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants'
-import { saveAllLayoutData } from '@/components/board/utils/graphUtils'
+import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
+import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
 import { signOut } from "next-auth/react"
 
 // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)

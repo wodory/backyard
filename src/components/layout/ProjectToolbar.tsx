@@ -40,7 +40,7 @@ import {
 import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
-import { BoardSettings } from '@/lib/board-utils';
+import { BoardSettings } from '@/lib/ideamap-utils';
 import {
   SNAP_GRID_OPTIONS,
   CONNECTION_TYPE_OPTIONS,
@@ -49,8 +49,13 @@ import {
   MARKER_SIZE_OPTIONS,
   EDGE_COLOR_OPTIONS,
   EDGE_ANIMATION_OPTIONS
-} from '@/lib/board-constants';
+} from '@/lib/ideamap-constants';
 import createLogger from '@/lib/logger';
+import {
+  STORAGE_KEY,
+  EDGES_STORAGE_KEY,
+  TRANSFORM_STORAGE_KEY
+} from '@/lib/ideamap-constants';
 
 // 모듈별 로거 생성
 const logger = createLogger('ProjectToolbar');

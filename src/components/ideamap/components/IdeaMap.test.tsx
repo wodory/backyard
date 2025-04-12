@@ -1,5 +1,5 @@
 /**
- * 파일명: Board.test.tsx
+ * 파일명: IdeaMap.test.tsx
  * 목적: Board 컴포넌트 테스트
  * 역할: Board 컴포넌트의 기능을 검증하는 테스트 코드 제공
  * 작성일: 2025-03-28
@@ -11,10 +11,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import Board from './Board';
+import Board from './IdeaMap';
 import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
-import { useBoardUtils } from '../hooks/useBoardUtils';
+import { useBoardUtils } from '../hooks/useIdeaMapUtils';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -131,7 +131,7 @@ vi.mock('../hooks/useEdges', () => ({
   })),
 }));
 
-vi.mock('../hooks/useBoardUtils', () => ({
+vi.mock('../hooks/useIdeaMapUtils', () => ({
   useBoardUtils: vi.fn(() => ({
     loadBoardSettingsFromServerIfAuthenticated: vi.fn(),
     saveAllLayoutData: vi.fn(() => true),

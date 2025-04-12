@@ -9,8 +9,8 @@
 import { useCallback } from 'react';
 import { Node, Edge, XYPosition } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
-import { useBoardStore } from '@/store/useBoardStore';
-import { CardData } from '../types/board-types';
+import { useBoardStore } from '@/store/useIdeaMapStore';
+import { CardData } from '../types/ideamap-types';
 
 /**
  * useBoardHandlers: 보드 이벤트 핸들러 관련 로직을 관리하는 훅

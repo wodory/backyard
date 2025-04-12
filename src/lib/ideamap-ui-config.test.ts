@@ -1,6 +1,6 @@
 /**
- * 파일명: board-ui-config.test.ts
- * 목적: board-ui-config.ts 모듈의 기능 테스트
+ * 파일명: ideamap-ui-config.test.ts
+ * 목적: ideamap-ui-config.ts 모듈의 기능 테스트
  * 역할: 보드 UI 설정과 관련된 유틸리티 함수 테스트
  * 작성일: 2025-04-01
  */
@@ -61,15 +61,23 @@ vi.mock('../config/cardBoardUiOptions.json', () => ({
 }));
 
 import {
-  getCssVariable,
-  getCssVariableAsNumber,
   loadDefaultBoardUIConfig,
+  getCssVariable,
+  flattenColors,
   extractBoardSettings,
   extractLayoutSettings,
-  BoardUIConfig
-} from './board-ui-config';
+  BoardUIConfig,
+  NODE_DEFAULTS,
+  EDGE_DEFAULTS,
+  HANDLE_DEFAULTS,
+  loadBoardUIConfig,
+  mergeBoardUIConfig,
+  saveBoardUIConfig,
+  getNodeColor,
+  generateHandlePositions
+} from './ideamap-ui-config';
 
-describe('board-ui-config', () => {
+describe('ideamap-ui-config', () => {
   describe('getCssVariable', () => {
     // 전역 객체 저장
     const originalGlobal = { ...global };

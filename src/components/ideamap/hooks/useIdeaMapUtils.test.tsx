@@ -1,7 +1,7 @@
 /**
- * 파일명: useBoardUtils.test.tsx
+ * 파일명: useIdeaMapUtils.test.tsx
  * 목적: useBoardUtils 훅을 테스트
- * 역할: 보드 유틸리티 함수 관련 로직 테스트
+ * 역할: 보드 유틸리티 함수 관련 기능을 검증
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
  */
@@ -9,13 +9,13 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { toast } from 'sonner';
-import { useBoardUtils } from './useBoardUtils';
-import { BoardSettings, saveBoardSettingsToServer, loadBoardSettingsFromServer } from '@/lib/board-utils';
+import { useBoardUtils } from './useIdeaMapUtils';
+import { BoardSettings, saveBoardSettingsToServer, loadBoardSettingsFromServer } from '@/lib/ideamap-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
-import { TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+import { TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
 import { AppState } from '@/store/useAppStore';
@@ -99,8 +99,8 @@ vi.mock('@/store/useAppStore', () => {
   };
 });
 
-// Board-utils 모킹
-vi.mock('@/lib/board-utils', () => ({
+// IdeaMap-utils 모킹
+vi.mock('@/lib/ideamap-utils', () => ({
   BoardSettings: {},
   saveBoardSettings: vi.fn(),
   // 항상 유효한 엣지 배열 반환

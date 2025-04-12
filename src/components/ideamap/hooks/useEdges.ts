@@ -8,8 +8,8 @@
 
 import { useCallback } from 'react';
 import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
-import { BoardSettings } from '@/lib/board-utils';
-import { useBoardStore } from '@/store/useBoardStore';
+import { BoardSettings } from '@/lib/ideamap-utils';
+import { useBoardStore } from '@/store/useIdeaMapStore';
 
 /**
  * useEdges: useBoardStore의 엣지 관련 액션들을 사용하는 래퍼 훅

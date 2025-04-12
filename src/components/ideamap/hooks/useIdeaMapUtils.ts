@@ -1,5 +1,5 @@
 /**
- * 파일명: useBoardUtils.ts
+ * 파일명: useIdeaMapUtils.ts
  * 목적: 보드 유틸리티 함수 관련 로직 분리
  * 역할: 보드 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
  * 작성일: 2025-03-28
@@ -9,15 +9,16 @@ import { useCallback, useRef } from 'react';
 import { Node, Edge, useReactFlow, Viewport } from '@xyflow/react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/useAppStore';
-import { 
-  BoardSettings, 
-  saveBoardSettings, 
-  applyEdgeSettings, 
-  saveBoardSettingsToServer, 
-  loadBoardSettingsFromServer 
-} from '@/lib/board-utils';
+import {
+  BoardSettings,
+  DEFAULT_BOARD_SETTINGS,
+  loadBoardSettings,
+  saveBoardSettings,
+  loadBoardSettingsFromServer,
+  saveBoardSettingsToServer
+} from '@/lib/ideamap-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
-import { TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+import { TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { CardData } from '../types/board-types';
 
 /**

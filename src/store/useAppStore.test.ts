@@ -8,14 +8,14 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
 import { useAppStore, Card } from '@/store/useAppStore';
-import { DEFAULT_BOARD_SETTINGS, BoardSettings } from '@/lib/board-utils';
+import { DEFAULT_BOARD_SETTINGS, BoardSettings } from '@/lib/ideamap-utils';
 import { toast } from 'sonner';
 import { act } from '@testing-library/react';
 import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
 import { CreateCardInput } from '@/types/card';
 import * as layoutUtils from '@/lib/layout-utils';
-import * as graphUtils from '@/components/board/utils/graphUtils';
+import * as graphUtils from '@/components/ideamap/utils/ideamap-graphUtils';
 import { Node, Edge } from '@xyflow/react';
 import { waitFor } from '@testing-library/react';
 import { signOut } from "next-auth/react";
@@ -25,7 +25,7 @@ import { mockReactFlow } from '@/tests/utils/react-flow-mock'; // ReactFlow 모�
 mockReactFlow();
 
 // 모든 모킹을 파일 상단에 배치
-vi.mock('@/lib/board-utils', () => ({
+vi.mock('@/lib/ideamap-utils', () => ({
   DEFAULT_BOARD_SETTINGS: {
     edgeColor: '#000000',
     strokeWidth: 1,
@@ -70,7 +70,7 @@ vi.mock('@/lib/layout-utils', () => ({
 }));
 
 // graphUtils 모킹
-vi.mock('@/components/board/utils/graphUtils', () => ({
+vi.mock('@/components/ideamap/utils/ideamap-graphUtils', () => ({
   saveAllLayoutData: vi.fn().mockResolvedValue(undefined)
 }));
 

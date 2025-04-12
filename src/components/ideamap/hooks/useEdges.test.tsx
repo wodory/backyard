@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
-import { BoardSettings } from '@/lib/board-utils';
+import { BoardSettings } from '@/lib/ideamap-utils';
 
 // 모든 모킹은 파일 최상단에 위치
 vi.mock('sonner', () => ({

@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
+import { DEFAULT_BOARD_SETTINGS } from '@/lib/ideamap-utils';
 
 // TiptapViewer 모킹
 vi.mock('@/components/editor/TiptapViewer', () => ({

@@ -10,7 +10,7 @@ import { renderHook, act } from '@testing-library/react';
 import { server } from '@/tests/msw/server';
 import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
 import { mockLocalStorage } from '@/tests/mocks/storage-mock';
-import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
+import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 
 // 모든 모킹은 파일 상단에 그룹화
 // 외부 모듈부터 모킹 (호이스팅 고려)

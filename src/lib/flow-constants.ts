@@ -6,9 +6,9 @@
  * 수정일: 2025-03-28
  */
 
-import CardNode from '@/components/board/nodes/CardNode';
-import CustomEdge from '@/components/board/nodes/CustomEdge';
-import NodeInspect from '@/components/board/nodes/NodeInspect';
+import CardNode from '@/components/ideamap/nodes/CardNode';
+import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
+import NodeInspect from '@/components/ideamap/nodes/NodeInspect';
 
 // 1. 먼저 타입 키 상수를 정의 (문자열만 포함)
 // 노드 타입 키 정의 - 문자열 상수로 분리
