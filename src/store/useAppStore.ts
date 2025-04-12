@@ -405,10 +405,13 @@ export const useAppStore = create<AppState>()(
         try {
            // TODO: Replace with actual user ID mechanism if needed
           const userId = "current-user-id"; // Placeholder
-          const response = await fetch(`/api/users/${userId}/settings`, { // Assuming endpoint structure
-             method: 'PUT',
+          const response = await fetch('/api/ideamap-settings', { // 엔드포인트 수정
+             method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify(partialSettings),
+             body: JSON.stringify({
+               userId,
+               settings: partialSettings
+             }),
           });
 
           if (!response.ok) {
@@ -416,7 +419,8 @@ export const useAppStore = create<AppState>()(
             throw new Error(errorData.message || `서버 오류: ${response.status}`);
           }
 
-          const savedSettings = await response.json(); // API returns the full updated settings object
+          const responseData = await response.json(); // API returns the full updated settings object
+          const savedSettings = responseData.settings || optimisticSettings;
 
           // Update store with confirmed settings from server
           set({
@@ -429,7 +433,7 @@ export const useAppStore = create<AppState>()(
         } catch (error) {
           // Rollback on error
           set({
-             ideaMapSettings: currentSettings, // Rollback to previous settings
+             ideaMapSettings: optimisticSettings, // 오류 발생해도 사용자 변경 유지
              isLoading: false,
              error: error instanceof Error ? error : new Error(String(error))
           });

@@ -197,6 +197,20 @@ vi.mock('@/lib/ideamap-utils', () => {
         color: settings.edgeColor,
       } : undefined,
     }))),
+    applyIdeaMapEdgeSettings: vi.fn((edges, settings) => edges.map((edge) => ({
+      ...edge,
+      style: {
+        stroke: settings.edgeColor,
+        strokeWidth: settings.strokeWidth,
+      },
+      animated: settings.animated,
+      markerEnd: settings.markerEnd ? {
+        type: settings.markerEnd,
+        width: settings.markerSize,
+        height: settings.markerSize,
+        color: settings.edgeColor,
+      } : undefined,
+    }))),
     saveBoardSettingsToServer: vi.fn().mockImplementation((userId, settings) => {
       return Promise.resolve({ success: true });
     }),

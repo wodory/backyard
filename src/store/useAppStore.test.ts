@@ -489,12 +489,12 @@ describe('useAppStore', () => {
       const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
       const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
       
-      // 요청 인터셉터 설정
+      // 서버 응답 모킹
       server.use(
         http.post('/api/ideamap-settings', async ({ request }) => {
-          const reqBody = await request.json() as Partial<IdeaMapSettings>;
+          const reqBody = await request.json() as { userId: string; settings: Partial<IdeaMapSettings> };
           
-          const saved = { ...useAppStore.getState().ideaMapSettings, ...reqBody };
+          const saved = { ...DEFAULT_IDEAMAP_SETTINGS, ...reqBody.settings };
           
           return HttpResponse.json({
             success: true,
@@ -519,14 +519,12 @@ describe('useAppStore', () => {
       // 실패 시뮬레이션
       server.use(
         http.post('/api/ideamap-settings', async ({ request }) => {
-          const reqBody = await request.json() as Partial<IdeaMapSettings>;
-          
-          const saved = { ...useAppStore.getState().ideaMapSettings, ...reqBody };
+          const reqBody = await request.json() as { userId: string; settings: Partial<IdeaMapSettings> };
           
           return HttpResponse.json({
             success: false,
             error: '설정 저장 실패'
-          });
+          }, { status: 400 });
         })
       );
       
@@ -539,33 +537,36 @@ describe('useAppStore', () => {
     });
 
     it('updateIdeaMapSettings 액션이 로딩 상태를 적절히 처리해야 함', async () => {
+      // Arrange
       const { updateIdeaMapSettings } = useAppStore.getState();
       const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
-      const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
       
-      // 지연된 응답 시뮬레이션
+      // 응답 핸들러 설정 - 지연 없이 즉시 응답
       server.use(
-        http.post('/api/ideamap-settings', async ({ request }) => {
-          const reqBody = await request.json() as Partial<IdeaMapSettings>;
-          
-          const saved = { ...useAppStore.getState().ideaMapSettings, ...reqBody };
-          
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
+        http.post('/api/ideamap-settings', ({ request }) => {
           return HttpResponse.json({
             success: true,
-            settings: saved
+            settings: { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings }
           });
         })
       );
       
-      await updateIdeaMapSettings(newSettings);
+      // Act
+      useAppStore.setState({ isLoading: false }); // 초기 상태 명확하게 설정
+      const promise = updateIdeaMapSettings(newSettings);
       
-      // 최종 상태 확인
-      const state = useAppStore.getState();
-      expect(state.ideaMapSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
-      expect(state.ideaMapSettings.animated).toBe(expectedSavedSettings.animated);
-    });
+      // Assert - 업데이트 중 로딩 상태 확인
+      expect(useAppStore.getState().isLoading).toBe(true);
+      
+      // Act - 완료 대기
+      await promise;
+      
+      // Assert - 업데이트 후 상태 확인
+      const finalState = useAppStore.getState();
+      expect(finalState.isLoading).toBe(false);
+      expect(finalState.ideaMapSettings.snapToGrid).toBe(true);
+      expect(finalState.ideaMapSettings.animated).toBe(true);
+    }, 5000);  // 타임아웃 명시적 설정
   });
 
   describe('로그아웃 액션 테스트 (logoutAction)', () => {

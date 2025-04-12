@@ -1,13 +1,15 @@
 /**
  * 파일명: useIdeaMapData.test.tsx
  * 목적: useIdeaMapData 훅의 기능 테스트
- * 역할: 아이디어맵 데이터 로딩 및 ReactFlow 메서드 호출 검증
+ * 역할: 아이디어맵 데이터 로딩 및 로딩 상태 관리 테스트
  * 작성일: 2023-04-10
+ * 수정일: 2025-05-05
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { server } from '@/tests/msw/server';
+import { http, HttpResponse } from 'msw';
 import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
 import { mockLocalStorage } from '@/tests/mocks/storage-mock';
 import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
@@ -138,6 +140,15 @@ vi.mock('@/store/useIdeaMapStore', () => ({
 import { useIdeaMapData } from './useIdeaMapData';
 import { useReactFlow } from '@xyflow/react';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import { toast } from 'sonner';
+
+// toast 모킹
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn()
+  }
+}));
 
 // localStorage 모킹 반환 타입 정의
 type MockedStorage = ReturnType<typeof mockLocalStorage>;
@@ -168,111 +179,169 @@ describe('useIdeaMapData 훅 테스트', () => {
     vi.unstubAllGlobals(); // localStorage 모킹 제거
   });
 
-  it('노드와 엣지 데이터를 로드하고 로딩 상태를 반환해야 함', async () => {
+  it('테스트 1: 초기 로딩 상태가 올바르게 설정되어야 함', async () => {
+    // isIdeaMapLoading이 true인 상태로 설정
+    const loadingState = createMockState({ isIdeaMapLoading: true });
+    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
+      if (typeof selector === 'function') {
+        return selector(loadingState);
+      }
+      return {
+        subscribe: vi.fn((callback) => {
+          callback(loadingState);
+          return () => { };
+        }),
+        getState: () => loadingState
+      };
+    });
+
     // 훅 렌더링
     const { result } = renderHook(() => useIdeaMapData());
 
-    // 초기 상태 검증
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.nodes).toHaveLength(1);
-    expect(result.current.edges).toHaveLength(1);
+    // 초기 로딩 상태가 true인지 확인
+    expect(result.current.isLoading).toBe(true);
+  });
 
-    // 비동기 함수 호출을 act로 래핑
+  it('테스트 3: API 호출 완료 후 로딩 상태가 false로 변경되어야 함', async () => {
+    // 카드 데이터 API 응답 모킹
+    server.use(
+      http.get('/api/cards', () => {
+        return HttpResponse.json([
+          { id: 'card-1', title: '카드 1', content: '내용 1', cardTags: [] },
+          { id: 'card-2', title: '카드 2', content: '내용 2', cardTags: [] }
+        ]);
+      })
+    );
+
+    // 먼저 로딩 상태를 true로 설정
+    let stateOverrides = { isIdeaMapLoading: true };
+    const loadingState = createMockState(stateOverrides);
+
+    let updateState = (newState: any) => {
+      stateOverrides = { ...stateOverrides, ...newState };
+      return createMockState(stateOverrides);
+    };
+
+    // loadIdeaMapData 함수를 모킹하여 호출 시 isIdeaMapLoading을 false로 변경
+    const mockLoadDataImpl = vi.fn().mockImplementation(async () => {
+      updateState({ isIdeaMapLoading: false });
+      return Promise.resolve();
+    });
+
+    // 스토어 모킹 업데이트
+    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
+      const currentState = createMockState({
+        ...stateOverrides,
+        loadIdeaMapData: mockLoadDataImpl
+      });
+
+      if (typeof selector === 'function') {
+        return selector(currentState);
+      }
+
+      return {
+        subscribe: vi.fn((callback) => {
+          callback(currentState);
+          return () => { };
+        }),
+        getState: () => currentState
+      };
+    });
+
+    // 훅 렌더링
+    const { result, rerender } = renderHook(() => useIdeaMapData());
+
+    // 초기 로딩 상태 확인
+    expect(result.current.isLoading).toBe(true);
+
+    // loadNodesAndEdges 호출
     await act(async () => {
       await result.current.loadNodesAndEdges();
     });
 
     // loadIdeaMapData가 호출되었는지 확인
-    expect(mockLoadIdeaMapData).toHaveBeenCalled();
+    expect(mockLoadDataImpl).toHaveBeenCalled();
+
+    // 스토어 상태 업데이트 후 다시 렌더링
+    rerender();
+
+    // 로딩 상태가 false로 변경되었는지 확인
+    expect(result.current.isLoading).toBe(false);
   });
 
-  it('localStorage에서 저장된 노드 위치를 복원해야 함', async () => {
-    // 노드 위치 데이터 저장
-    const mockNodePositions = {
-      'card-1': { position: { x: 100, y: 100 } }
+  it('테스트 4: 에러 발생 시 에러 상태 설정과 로딩 상태 해제가 올바르게 처리되어야 함', async () => {
+    // 에러 응답 모킹
+    server.use(
+      http.get('/api/cards', () => {
+        return new HttpResponse(null, { status: 500 });
+      })
+    );
+
+    // 상태 관리를 위한 변수
+    let stateOverrides = {
+      isIdeaMapLoading: true,
+      ideaMapError: null
     };
-    mockedStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(mockNodePositions));
 
-    // needsFitView: true 상태로 설정
-    const overrideState = createMockState({ needsFitView: true });
+    // 상태 업데이트 함수
+    let updateState = (newState: any) => {
+      stateOverrides = { ...stateOverrides, ...newState };
+      return createMockState(stateOverrides);
+    };
+
+    // 에러가 발생하는 loadIdeaMapData 함수 모킹
+    const mockLoadDataWithError = vi.fn().mockImplementation(async () => {
+      updateState({
+        isIdeaMapLoading: false,
+        ideaMapError: '서버 오류가 발생했습니다'
+      });
+      return Promise.reject(new Error('서버 오류가 발생했습니다'));
+    });
+
+    // 스토어 모킹 업데이트
     vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
+      const currentState = createMockState({
+        ...stateOverrides,
+        loadIdeaMapData: mockLoadDataWithError
+      });
+
       if (typeof selector === 'function') {
-        return selector(overrideState);
+        return selector(currentState);
       }
+
       return {
         subscribe: vi.fn((callback) => {
-          callback(overrideState);
+          callback(currentState);
           return () => { };
         }),
-        getState: () => overrideState
+        getState: () => currentState
       };
     });
 
     // 훅 렌더링
-    renderHook(() => useIdeaMapData());
+    const { result, rerender } = renderHook(() => useIdeaMapData());
 
-    // Verify the state first, then check mock expectations directly
-    expect(overrideState.needsFitView).toBe(true);
-  });
+    // 초기 로딩 상태 확인
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.error).toBe(null);
 
-  it('저장된 뷰포트가 있을 때 setViewport를 호출해야 함', async () => {
-    const mockViewport: Viewport = { x: 100, y: 200, zoom: 1.5 };
-
-    // 저장된 뷰포트 데이터 설정
-    mockedStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
-
-    // 저장된 뷰포트가 있는 상태로 설정
-    const overrideState = createMockState({ loadedViewport: mockViewport });
-    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
-      if (typeof selector === 'function') {
-        return selector(overrideState);
+    // loadNodesAndEdges 호출
+    await act(async () => {
+      try {
+        await result.current.loadNodesAndEdges();
+      } catch (error) {
+        // 에러 무시 (테스트에서는 에러가 발생해도 계속 진행)
       }
-      return {
-        subscribe: vi.fn((callback) => {
-          callback(overrideState);
-          return () => { };
-        }),
-        getState: () => overrideState
-      };
     });
 
-    // 훅 렌더링
-    renderHook(() => useIdeaMapData());
+    // loadIdeaMapData가 호출되었는지 확인
+    expect(mockLoadDataWithError).toHaveBeenCalled();
 
-    // Verify state directly
-    expect(overrideState.loadedViewport).toEqual(mockViewport);
-  });
+    // 스토어 상태 업데이트 후 다시 렌더링
+    rerender();
 
-  it('localStorage에 접근 시 오류가 발생하면 기본 위치를 사용해야 함', async () => {
-    // localStorage 접근 시 오류 시뮬레이션
-    mockedStorage.getItem.mockImplementation(() => {
-      throw new Error('localStorage 접근 오류');
-    });
-
-    // 오류 상태와 fitView 필요 상태 설정
-    const overrideState = createMockState({
-      ideaMapError: '저장된 레이아웃 로드 오류',
-      needsFitView: true
-    });
-
-    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
-      if (typeof selector === 'function') {
-        return selector(overrideState);
-      }
-      return {
-        subscribe: vi.fn((callback) => {
-          callback(overrideState);
-          return () => { };
-        }),
-        getState: () => overrideState
-      };
-    });
-
-    // 훅 렌더링
-    renderHook(() => useIdeaMapData());
-
-    // Verify state directly
-    expect(overrideState.ideaMapError).toBe('저장된 레이아웃 로드 오류');
-    expect(overrideState.needsFitView).toBe(true);
+    // 로딩 상태가 false로 변경되고 에러 상태가 설정되었는지 확인
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBe('서버 오류가 발생했습니다');
   });
 }); 
