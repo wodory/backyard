@@ -1,7 +1,7 @@
 /**
- * 파일명: useBoardStore.ts
- * 목적: Zustand를 활용한 보드 관련 전역 상태 관리
- * 역할: 보드의 노드, 엣지, 설정 등 모든 상태를 중앙 관리
+ * 파일명: useIdeaMapStore.ts
+ * 목적: Zustand를 활용한 아이디어맵 관련 전역 상태 관리
+ * 역할: 아이디어맵의 노드, 엣지, 설정 등 모든 상태를 중앙 관리
  * 작성일: 2025-03-28
  */
 
@@ -37,8 +37,8 @@ import { toast } from 'sonner';
 import { CardData } from '@/components/ideamap/types/ideamap-types';
 import { useAppStore } from './useAppStore';
 
-// 보드 스토어 상태 인터페이스
-interface BoardState {
+// 아이디어맵 스토어 상태 인터페이스
+interface IdeaMapState {
   // 노드 관련 상태
   nodes: Node<CardData>[];
   setNodes: (nodes: Node<CardData>[]) => void;
@@ -50,10 +50,10 @@ interface BoardState {
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
   
-  // 보드 설정 관련 상태
-  boardSettings: BoardSettings;
-  setBoardSettings: (settings: BoardSettings) => void;
-  updateBoardSettings: (settings: Partial<BoardSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
+  // 아이디어맵 설정 관련 상태
+  ideaMapSettings: BoardSettings;
+  setIdeaMapSettings: (settings: BoardSettings) => void;
+  updateIdeaMapSettings: (settings: Partial<BoardSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
   
   // 레이아웃 관련 함수
   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
@@ -68,7 +68,7 @@ interface BoardState {
   updateEdgeStyles: (settings: BoardSettings) => void;
   
   // 서버 동기화 함수
-  loadBoardSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
+  loadIdeaMapSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
   
   // 엣지 생성 함수
   createEdgeOnDrop: (sourceId: string, targetId: string) => Edge;
@@ -81,12 +81,12 @@ interface BoardState {
   reactFlowInstance: any;
   setReactFlowInstance: (instance: any) => void;
   
-  // 보드 데이터 로딩 상태 및 액션
-  isBoardLoading: boolean;
-  boardError: string | null;
+  // 아이디어맵 데이터 로딩 상태 및 액션
+  isIdeaMapLoading: boolean;
+  ideaMapError: string | null;
   loadedViewport: Viewport | null;
   needsFitView: boolean;
-  loadBoardData: () => Promise<void>;
+  loadIdeaMapData: () => Promise<void>;
   
   // 추가된 상태 및 액션
   viewportToRestore: Viewport | null;
@@ -94,11 +94,11 @@ interface BoardState {
   settingsError: string | null;
   
   // useIdeaMapUtils에서 이전된 액션들
-  loadAndApplyBoardSettings: (userId: string) => Promise<void>;
-  updateAndSaveBoardSettings: (newSettings: Partial<BoardSettings>, userId?: string) => Promise<void>;
+  loadAndApplyIdeaMapSettings: (userId: string) => Promise<void>;
+  updateAndSaveIdeaMapSettings: (newSettings: Partial<BoardSettings>, userId?: string) => Promise<void>;
   saveViewport: () => void;
   restoreViewport: () => void;
-  saveBoardState: () => boolean;
+  saveIdeaMapState: () => boolean;
 
   // 노드 추가 관련 액션
   addNodeAtPosition: (type: string, position: XYPosition, data?: any) => Promise<Node<CardData> | null>;
@@ -121,8 +121,8 @@ interface BoardState {
   createEdgeOnDropAction: (sourceId: string, targetId: string) => Edge;
 }
 
-// 보드 스토어 생성
-export const useBoardStore = create<BoardState>()(
+// 아이디어맵 스토어 생성
+export const useIdeaMapStore = create<IdeaMapState>()(
   persist(
     (set, get) => ({
       // 노드 관련 초기 상태 및 함수
@@ -183,25 +183,25 @@ export const useBoardStore = create<BoardState>()(
           edges: addEdge({
             ...connection,
             type: 'custom',
-            animated: state.boardSettings.animated,
+            animated: state.ideaMapSettings.animated,
             style: {
-              stroke: state.boardSettings.edgeColor,
-              strokeWidth: state.boardSettings.strokeWidth,
+              stroke: state.ideaMapSettings.edgeColor,
+              strokeWidth: state.ideaMapSettings.strokeWidth,
             },
-            markerEnd: state.boardSettings.markerEnd ? {
-              type: state.boardSettings.markerEnd,
-              width: state.boardSettings.markerSize,
-              height: state.boardSettings.markerSize,
-              color: state.boardSettings.edgeColor,
+            markerEnd: state.ideaMapSettings.markerEnd ? {
+              type: state.ideaMapSettings.markerEnd,
+              width: state.ideaMapSettings.markerSize,
+              height: state.ideaMapSettings.markerSize,
+              color: state.ideaMapSettings.edgeColor,
             } : undefined,
             data: {
-              edgeType: state.boardSettings.connectionLineType,
+              edgeType: state.ideaMapSettings.connectionLineType,
               settings: {
-                animated: state.boardSettings.animated,
-                connectionLineType: state.boardSettings.connectionLineType,
-                strokeWidth: state.boardSettings.strokeWidth,
-                edgeColor: state.boardSettings.edgeColor,
-                selectedEdgeColor: state.boardSettings.selectedEdgeColor,
+                animated: state.ideaMapSettings.animated,
+                connectionLineType: state.ideaMapSettings.connectionLineType,
+                strokeWidth: state.ideaMapSettings.strokeWidth,
+                edgeColor: state.ideaMapSettings.edgeColor,
+                selectedEdgeColor: state.ideaMapSettings.selectedEdgeColor,
               }
             }
           }, state.edges),
@@ -209,23 +209,23 @@ export const useBoardStore = create<BoardState>()(
         }));
       },
       
-      // 보드 설정 관련 초기 상태 및 함수
-      boardSettings: DEFAULT_BOARD_SETTINGS,
+      // 아이디어맵 설정 관련 초기 상태 및 함수
+      ideaMapSettings: DEFAULT_BOARD_SETTINGS,
       isSettingsLoading: false,
       settingsError: null,
       viewportToRestore: null,
-      setBoardSettings: (settings) => {
-        set({ boardSettings: settings });
+      setIdeaMapSettings: (settings) => {
+        set({ ideaMapSettings: settings });
         saveBoardSettings(settings);
       },
-      updateBoardSettings: async (partialSettings, isAuthenticated, userId) => {
-        const currentSettings = get().boardSettings;
+      updateIdeaMapSettings: async (partialSettings, isAuthenticated, userId) => {
+        const currentSettings = get().ideaMapSettings;
         const newSettings = { ...currentSettings, ...partialSettings };
         
-        console.log('[BoardStore] 보드 설정 변경:', newSettings);
+        console.log('[IdeaMapStore] 아이디어맵 설정 변경:', newSettings);
         
         // 1. 전역 상태 업데이트
-        set({ boardSettings: newSettings });
+        set({ ideaMapSettings: newSettings });
         
         // 2. 새 설정을 엣지에 적용
         const updatedEdges = applyEdgeSettings(get().edges, newSettings);
@@ -235,38 +235,38 @@ export const useBoardStore = create<BoardState>()(
         if (isAuthenticated && userId) {
           try {
             await saveBoardSettingsToServer(userId, newSettings);
-            toast.success('보드 설정이 저장되었습니다');
+            toast.success('아이디어맵 설정이 저장되었습니다');
           } catch (err) {
-            console.error('[BoardStore] 서버 저장 실패:', err);
+            console.error('[IdeaMapStore] 서버 저장 실패:', err);
             toast.error('서버에 설정 저장 실패');
           }
         }
       },
       
-      // 보드 데이터 로딩 상태 및 함수 (신규 추가)
-      isBoardLoading: true,
-      boardError: null,
+      // 아이디어맵 데이터 로딩 상태 및 함수 (신규 추가)
+      isIdeaMapLoading: true,
+      ideaMapError: null,
       loadedViewport: null,
       needsFitView: false,
       
       /**
-       * loadBoardData: 보드 데이터(노드, 엣지)를 로드하는 액션
+       * loadIdeaMapData: 아이디어맵 데이터(노드, 엣지)를 로드하는 액션
        * API에서 카드 데이터를 가져와 노드 데이터로 변환하고 
        * 로컬 스토리지에서 위치, 엣지, 뷰포트 정보를 불러와 적용
        */
-      loadBoardData: async () => {
+      loadIdeaMapData: async () => {
         // 이미 로딩 중이면 중복 호출 방지
-        if (get().isBoardLoading) {
+        if (get().isIdeaMapLoading) {
           return;
         }
         
         set({ 
-          isBoardLoading: true, 
-          boardError: null, 
+          isIdeaMapLoading: true, 
+          ideaMapError: null, 
           loadedViewport: null, 
           needsFitView: false 
         });
-        console.log('[loadBoardData Action] 보드 데이터 로딩 시작');
+        console.log('[loadIdeaMapData Action] 아이디어맵 데이터 로딩 시작');
         try {
           // 1. API 호출
           const response = await fetch('/api/cards');
@@ -275,7 +275,7 @@ export const useBoardStore = create<BoardState>()(
             throw new Error(errorData.error || `데이터 불러오기 실패 (상태: ${response.status})`);
           }
           const cards = await response.json();
-          console.log('[loadBoardData Action] API 카드 데이터:', cards);
+          console.log('[loadIdeaMapData Action] API 카드 데이터:', cards);
 
           // 2. 로컬 스토리지에서 노드 위치, 엣지, 뷰포트 정보 읽기
           let nodePositions: Record<string, { position: XYPosition }> = {};
@@ -292,8 +292,8 @@ export const useBoardStore = create<BoardState>()(
             const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
             if (transformString) savedViewport = JSON.parse(transformString);
           } catch (err) {
-            console.error('[loadBoardData Action] 로컬 스토리지 읽기 오류:', err);
-            toast.error('저장된 보드 레이아웃을 불러오는 중 문제가 발생했습니다.');
+            console.error('[loadIdeaMapData Action] 로컬 스토리지 읽기 오류:', err);
+            toast.error('저장된 아이디어맵 레이아웃을 불러오는 중 문제가 발생했습니다.');
           }
 
           // 3. 노드 데이터 생성 및 위치 적용
@@ -321,17 +321,17 @@ export const useBoardStore = create<BoardState>()(
           });
 
           // 4. 엣지 데이터 설정 (저장된 엣지 사용 및 설정 적용)
-          const boardSettings = get().boardSettings;
+          const boardSettings = get().ideaMapSettings;
           const finalEdges = applyEdgeSettings(savedEdges, boardSettings);
 
           // 5. 스토어 상태 업데이트
           set({
             nodes,
             edges: finalEdges,
-            isBoardLoading: false,
+            isIdeaMapLoading: false,
             loadedViewport: savedViewport,
             needsFitView: !savedViewport,
-            boardError: null,
+            ideaMapError: null,
           });
           
           // 6. 카드 데이터를 전역 상태에 저장 (useAppStore)
@@ -354,29 +354,29 @@ export const useBoardStore = create<BoardState>()(
             });
 
           if (hasCardsChanged) {
-            console.log('[loadBoardData Action] 카드 데이터가 변경되어 상태를 업데이트합니다');
+            console.log('[loadIdeaMapData Action] 카드 데이터가 변경되어 상태를 업데이트합니다');
             useAppStore.getState().setCards(cards);
           } else {
-            console.log('[loadBoardData Action] 카드 데이터가 변경되지 않아 상태 업데이트를 건너뜁니다');
+            console.log('[loadIdeaMapData Action] 카드 데이터가 변경되지 않아 상태 업데이트를 건너뜁니다');
           }
 
-          toast.success('보드 데이터를 성공적으로 불러왔습니다.');
+          toast.success('아이디어맵 데이터를 성공적으로 불러왔습니다.');
 
         } catch (error: any) {
-          console.error('[loadBoardData Action] 보드 데이터 로딩 실패:', error);
+          console.error('[loadIdeaMapData Action] 아이디어맵 데이터 로딩 실패:', error);
           set({ 
-            isBoardLoading: false, 
-            boardError: error.message,
+            isIdeaMapLoading: false, 
+            ideaMapError: error.message,
             nodes: [],
             edges: []
           });
-          toast.error(`보드 데이터 로딩 실패: ${error.message}`);
+          toast.error(`아이디어맵 데이터 로딩 실패: ${error.message}`);
         }
       },
       
       // 레이아웃 함수
       applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => {
-        const { nodes, edges, boardSettings } = get();
+        const { nodes, edges, ideaMapSettings } = get();
         
         if (nodes.length === 0) {
           toast.error('노드가 없어 레이아웃을 적용할 수 없습니다');
@@ -436,7 +436,7 @@ export const useBoardStore = create<BoardState>()(
           
           return true;
         } catch (error) {
-          console.error('[BoardStore] 레이아웃 저장 중 오류:', error);
+          console.error('[IdeaMapStore] 레이아웃 저장 중 오류:', error);
           return false;
         }
       },
@@ -451,7 +451,7 @@ export const useBoardStore = create<BoardState>()(
           
           return true;
         } catch (error) {
-          console.error('[BoardStore] 엣지 저장 중 오류:', error);
+          console.error('[IdeaMapStore] 엣지 저장 중 오류:', error);
           return false;
         }
       },
@@ -484,12 +484,12 @@ export const useBoardStore = create<BoardState>()(
             set({ edges: updatedEdges });
           }
         } catch (error) {
-          console.error('[BoardStore] 엣지 스타일 업데이트 중 오류:', error);
+          console.error('[IdeaMapStore] 엣지 스타일 업데이트 중 오류:', error);
         }
       },
       
       // 서버 동기화 함수
-      loadBoardSettingsFromServerIfAuthenticated: async (isAuthenticated, userId) => {
+      loadIdeaMapSettingsFromServerIfAuthenticated: async (isAuthenticated, userId) => {
         if (isAuthenticated && userId) {
           try {
             const settings = await loadBoardSettingsFromServer(userId);
@@ -497,21 +497,21 @@ export const useBoardStore = create<BoardState>()(
               const state = get();
               
               // 전역 상태 업데이트
-              set({ boardSettings: settings });
+              set({ ideaMapSettings: settings });
               
               // 새 설정을 엣지에 적용
               const updatedEdges = applyEdgeSettings(state.edges, settings);
               set({ edges: updatedEdges });
             }
           } catch (err) {
-            console.error('서버에서 보드 설정 불러오기 실패:', err);
+            console.error('서버에서 아이디어맵 설정 불러오기 실패:', err);
           }
         }
       },
       
       // 엣지 생성 함수
       createEdgeOnDrop: (sourceId, targetId) => {
-        const { boardSettings } = get();
+        const { ideaMapSettings } = get();
         
         // 새 엣지 생성
         const newEdge: Edge = {
@@ -519,25 +519,25 @@ export const useBoardStore = create<BoardState>()(
           source: sourceId,
           target: targetId,
           type: 'custom',
-          animated: boardSettings.animated,
+          animated: ideaMapSettings.animated,
           style: {
-            stroke: boardSettings.edgeColor,
-            strokeWidth: boardSettings.strokeWidth,
+            stroke: ideaMapSettings.edgeColor,
+            strokeWidth: ideaMapSettings.strokeWidth,
           },
-          markerEnd: boardSettings.markerEnd ? {
-            type: boardSettings.markerEnd,
-            width: boardSettings.markerSize,
-            height: boardSettings.markerSize,
-            color: boardSettings.edgeColor,
+          markerEnd: ideaMapSettings.markerEnd ? {
+            type: ideaMapSettings.markerEnd,
+            width: ideaMapSettings.markerSize,
+            height: ideaMapSettings.markerSize,
+            color: ideaMapSettings.edgeColor,
           } : undefined,
           data: {
-            edgeType: boardSettings.connectionLineType,
+            edgeType: ideaMapSettings.connectionLineType,
             settings: {
-              animated: boardSettings.animated,
-              connectionLineType: boardSettings.connectionLineType,
-              strokeWidth: boardSettings.strokeWidth,
-              edgeColor: boardSettings.edgeColor,
-              selectedEdgeColor: boardSettings.selectedEdgeColor,
+              animated: ideaMapSettings.animated,
+              connectionLineType: ideaMapSettings.connectionLineType,
+              strokeWidth: ideaMapSettings.strokeWidth,
+              edgeColor: ideaMapSettings.edgeColor,
+              selectedEdgeColor: ideaMapSettings.selectedEdgeColor,
             }
           }
         };
@@ -560,7 +560,7 @@ export const useBoardStore = create<BoardState>()(
       setReactFlowInstance: (instance) => set({ reactFlowInstance: instance }),
       
       // useIdeaMapUtils에서 이전된 액션들
-      loadAndApplyBoardSettings: async (userId) => {
+      loadAndApplyIdeaMapSettings: async (userId) => {
         if (!userId) {
           console.error('사용자 ID가 제공되지 않았습니다');
           return;
@@ -573,8 +573,8 @@ export const useBoardStore = create<BoardState>()(
           const settings = await loadBoardSettingsFromServer(userId);
           
           if (settings) {
-            // 1. 보드 설정 상태 업데이트
-            set({ boardSettings: settings });
+            // 1. 아이디어맵 설정 상태 업데이트
+            set({ ideaMapSettings: settings });
             
             // 2. 로컬 스토리지에 저장
             saveBoardSettings(settings);
@@ -584,32 +584,32 @@ export const useBoardStore = create<BoardState>()(
             set({ edges: updatedEdges });
             
             set({ isSettingsLoading: false });
-            toast.success('보드 설정을 불러왔습니다');
+            toast.success('아이디어맵 설정을 불러왔습니다');
           } else {
             // 설정이 없는 경우 기본 설정 사용
             set({ 
-              boardSettings: DEFAULT_BOARD_SETTINGS, 
+              ideaMapSettings: DEFAULT_BOARD_SETTINGS, 
               isSettingsLoading: false 
             });
             console.log('서버에 저장된 설정이 없어 기본 설정을 사용합니다');
           }
         } catch (error: any) {
-          console.error('보드 설정 로드 중 오류:', error);
+          console.error('아이디어맵 설정 로드 중 오류:', error);
           set({ 
             isSettingsLoading: false, 
             settingsError: error.message || '알 수 없는 오류' 
           });
-          toast.error(`보드 설정 로드 실패: ${error.message || '알 수 없는 오류'}`);
+          toast.error(`아이디어맵 설정 로드 실패: ${error.message || '알 수 없는 오류'}`);
         }
       },
       
-      updateAndSaveBoardSettings: async (newSettings, userId) => {
-        const currentSettings = get().boardSettings;
+      updateAndSaveIdeaMapSettings: async (newSettings, userId) => {
+        const currentSettings = get().ideaMapSettings;
         const updatedSettings = { ...currentSettings, ...newSettings };
         
         // 1. 상태 업데이트
         set({ 
-          boardSettings: updatedSettings, 
+          ideaMapSettings: updatedSettings, 
           isSettingsLoading: true,
           settingsError: null
         });
@@ -626,9 +626,9 @@ export const useBoardStore = create<BoardState>()(
           try {
             await saveBoardSettingsToServer(userId, updatedSettings);
             set({ isSettingsLoading: false });
-            toast.success('보드 설정이 저장되었습니다');
+            toast.success('아이디어맵 설정이 저장되었습니다');
           } catch (error: any) {
-            console.error('서버에 보드 설정 저장 중 오류:', error);
+            console.error('서버에 아이디어맵 설정 저장 중 오류:', error);
             set({ 
               isSettingsLoading: false,
               settingsError: error.message || '알 수 없는 오류'
@@ -637,7 +637,7 @@ export const useBoardStore = create<BoardState>()(
           }
         } else {
           set({ isSettingsLoading: false });
-          toast.info('보드 설정이 로컬에 저장되었습니다');
+          toast.info('아이디어맵 설정이 로컬에 저장되었습니다');
         }
       },
       
@@ -655,7 +655,7 @@ export const useBoardStore = create<BoardState>()(
           
           // 로컬 스토리지에 저장
           localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
-          console.log('[BoardStore] 뷰포트 저장 완료:', viewport);
+          console.log('[IdeaMapStore] 뷰포트 저장 완료:', viewport);
           
           toast.info('현재 보기가 저장되었습니다');
         } catch (error) {
@@ -680,7 +680,7 @@ export const useBoardStore = create<BoardState>()(
           // 복원할 뷰포트 상태 설정
           set({ viewportToRestore: viewport });
           
-          console.log('[BoardStore] 뷰포트 복원 예정:', viewport);
+          console.log('[IdeaMapStore] 뷰포트 복원 예정:', viewport);
         } catch (error) {
           console.error('뷰포트 복원 중 오류:', error);
           toast.error('저장된 보기를 복원할 수 없습니다');
@@ -795,7 +795,7 @@ export const useBoardStore = create<BoardState>()(
           state.onConnect(connection);
           
           // 3. 데이터 저장
-          state.saveBoardState();
+          state.saveIdeaMapState();
           
           toast.success('카드 및 연결선이 생성되었습니다');
           return newNode;
@@ -806,7 +806,7 @@ export const useBoardStore = create<BoardState>()(
         }
       },
       
-      saveBoardState: () => {
+      saveIdeaMapState: () => {
         const state = get();
         const layoutSaved = state.saveLayout();
         const edgesSaved = state.saveEdges();
@@ -814,11 +814,11 @@ export const useBoardStore = create<BoardState>()(
         
         if (layoutSaved && edgesSaved) {
           set({ hasUnsavedChanges: false });
-          toast.success('보드 상태가 저장되었습니다');
+          toast.success('아이디어맵 상태가 저장되었습니다');
           return true;
         }
         
-        toast.error('보드 상태 저장에 실패했습니다');
+        toast.error('아이디어맵 상태 저장에 실패했습니다');
         return false;
       },
       
@@ -1050,7 +1050,7 @@ export const useBoardStore = create<BoardState>()(
        * @param connection 연결 파라미터
        */
       connectNodesAction: (connection: Connection) => {
-        const { nodes, boardSettings } = get();
+        const { nodes, ideaMapSettings } = get();
         
         // 소스 노드와 타겟 노드가 같은 경우 연결 방지
         if (connection.source === connection.target) {
@@ -1100,21 +1100,21 @@ export const useBoardStore = create<BoardState>()(
           sourceHandle,
           targetHandle,
           type: 'custom', // 명시적으로 타입 설정
-          animated: boardSettings.animated,
+          animated: ideaMapSettings.animated,
           style: {
-            strokeWidth: boardSettings.strokeWidth,
-            stroke: boardSettings.edgeColor,
+            strokeWidth: ideaMapSettings.strokeWidth,
+            stroke: ideaMapSettings.edgeColor,
           },
           // 방향 표시가 활성화된 경우에만 마커 추가
-          markerEnd: boardSettings.markerEnd ? {
+          markerEnd: ideaMapSettings.markerEnd ? {
             type: MarkerType.ArrowClosed,
-            width: boardSettings.strokeWidth * 2,
-            height: boardSettings.strokeWidth * 2,
-            color: boardSettings.edgeColor,
+            width: ideaMapSettings.strokeWidth * 2,
+            height: ideaMapSettings.strokeWidth * 2,
+            color: ideaMapSettings.edgeColor,
           } : undefined,
           data: {
-            edgeType: boardSettings.connectionLineType,
-            settings: { ...boardSettings },
+            edgeType: ideaMapSettings.connectionLineType,
+            settings: { ...ideaMapSettings },
           },
         };
         
@@ -1151,16 +1151,16 @@ export const useBoardStore = create<BoardState>()(
       },
       
       /**
-       * updateAllEdgeStylesAction: 보드 설정에 따라 모든 엣지 스타일을 업데이트하는 액션
+       * updateAllEdgeStylesAction: 아이디어맵 설정에 따라 모든 엣지 스타일을 업데이트하는 액션
        */
       updateAllEdgeStylesAction: () => {
-        const { edges, boardSettings } = get();
+        const { edges, ideaMapSettings } = get();
         
         if (edges.length === 0) return;
         
         try {
           // applyEdgeSettings 함수는 새 엣지 배열을 반환함
-          const updatedEdges = applyEdgeSettings(edges, boardSettings);
+          const updatedEdges = applyEdgeSettings(edges, ideaMapSettings);
           
           // 엣지 배열 자체가 변경된 경우에만 setEdges 호출
           if (JSON.stringify(updatedEdges) !== JSON.stringify(edges)) {
@@ -1181,38 +1181,38 @@ export const useBoardStore = create<BoardState>()(
        * @returns 생성된 엣지 객체
        */
       createEdgeOnDropAction: (sourceId: string, targetId: string) => {
-        const { boardSettings } = get();
+        const { ideaMapSettings } = get();
         
         const newEdge: Edge = {
           id: `${sourceId}-${targetId}-${Date.now()}`,
           source: sourceId,
           target: targetId,
           type: 'custom',
-          animated: boardSettings.animated,
+          animated: ideaMapSettings.animated,
           style: {
-            strokeWidth: boardSettings.strokeWidth,
-            stroke: boardSettings.edgeColor,
+            strokeWidth: ideaMapSettings.strokeWidth,
+            stroke: ideaMapSettings.edgeColor,
           },
-          markerEnd: boardSettings.markerEnd ? {
+          markerEnd: ideaMapSettings.markerEnd ? {
             type: MarkerType.ArrowClosed,
-            width: boardSettings.strokeWidth * 2,
-            height: boardSettings.strokeWidth * 2,
-            color: boardSettings.edgeColor,
+            width: ideaMapSettings.strokeWidth * 2,
+            height: ideaMapSettings.strokeWidth * 2,
+            color: ideaMapSettings.edgeColor,
           } : undefined,
           data: {
-            edgeType: boardSettings.connectionLineType,
-            settings: { ...boardSettings },
+            edgeType: ideaMapSettings.connectionLineType,
+            settings: { ...ideaMapSettings },
           },
         };
         
-        const styledEdge = applyEdgeSettings([newEdge], boardSettings)[0];
+        const styledEdge = applyEdgeSettings([newEdge], ideaMapSettings)[0];
         return styledEdge;
       },
     }),
     {
-      name: 'board-store',
+      name: 'ideaMap-store',
       partialize: (state) => ({
-        boardSettings: state.boardSettings,
+        ideaMapSettings: state.ideaMapSettings,
       }),
     }
   )

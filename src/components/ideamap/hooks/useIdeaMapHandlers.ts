@@ -9,7 +9,7 @@
 import { useCallback } from 'react';
 import { Node, Edge, XYPosition } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
-import { useBoardStore } from '@/store/useIdeaMapStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { CardData } from '../types/ideamap-types';
 
 /**
@@ -32,9 +32,9 @@ export function useBoardHandlers({
   const { selectCards } = useAppStore();
   
   // 보드 스토어에서 노드 추가 관련 액션 가져오기
-  const addNodeAtPosition = useBoardStore(state => state.addNodeAtPosition);
-  const addCardAtCenterPosition = useBoardStore(state => state.addCardAtCenterPosition);
-  const createEdgeAndNodeOnDrop = useBoardStore(state => state.createEdgeAndNodeOnDrop);
+  const addNodeAtPosition = useIdeaMapStore(state => state.addNodeAtPosition);
+  const addCardAtCenterPosition = useIdeaMapStore(state => state.addCardAtCenterPosition);
+  const createEdgeAndNodeOnDrop = useIdeaMapStore(state => state.createEdgeAndNodeOnDrop);
 
   /**
    * ReactFlow 선택 변경 이벤트 핸들러

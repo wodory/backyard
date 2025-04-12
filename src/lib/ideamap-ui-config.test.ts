@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // JSON 파일 모킹
-vi.mock('../config/cardBoardUiOptions.json', () => ({
+vi.mock('../config/uiOptions.json', () => ({
   default: {
     autoSaveIntervalMinutes: 1,
     board: {

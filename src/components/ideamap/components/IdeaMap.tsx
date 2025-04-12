@@ -19,7 +19,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/store/useAppStore';
-import { useBoardStore } from '@/store/useIdeaMapStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 // 보드 관련 컴포넌트 임포트
 import CreateCardModal from '@/components/cards/CreateCardModal';
@@ -28,7 +28,7 @@ import BoardCanvas from './IdeaMapCanvas';
 // 보드 관련 훅 임포트
 import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
-import { useBoardData } from '../hooks/useIdeaMapData';
+import { useIdeaMapData } from '../hooks/useIdeaMapData';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { useBoardHandlers } from '../hooks/useIdeaMapHandlers';
 
@@ -85,13 +85,13 @@ export default function Board({
   // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
   const storeCards = useAppStore(state => state.cards);
 
-  // useBoardStore에서 보드 데이터 관련 상태와 액션 가져오기
+  // useIdeaMapStore에서 보드 데이터 관련 상태와 액션 가져오기
   const {
     nodes: boardStoreNodes,
     edges: boardStoreEdges,
-    isBoardLoading,
-    boardError,
-    loadBoardData,
+    isIdeaMapLoading,
+    ideaMapError,
+    loadIdeaMapData,
     loadedViewport,
     needsFitView,
     viewportToRestore,
@@ -101,9 +101,9 @@ export default function Board({
     saveAllLayoutData,
     applyLayout: applyBoardLayout,
     applyGridLayout,
-    loadAndApplyBoardSettings,
-    updateAndSaveBoardSettings,
-    saveBoardState,
+    loadAndApplyIdeaMapSettings,
+    updateAndSaveIdeaMapSettings,
+    saveIdeaMapState,
     applyNodeChangesAction,
     deleteNodeAction,
     saveNodesAction,
@@ -113,7 +113,7 @@ export default function Board({
     saveEdgesAction,
     updateAllEdgeStylesAction,
     createEdgeOnDropAction
-  } = useBoardStore();
+  } = useIdeaMapStore();
 
   // 보드 데이터 훅 사용 (하위 호환성을 위해 유지)
   const {
@@ -122,7 +122,7 @@ export default function Board({
     isLoading,
     error,
     loadNodesAndEdges
-  } = useBoardData(onSelectCard);
+  } = useIdeaMapData(onSelectCard);
 
   // 커스텀 훅 사용
   const {
@@ -137,7 +137,7 @@ export default function Board({
   });
 
   // 기존 useEdges 훅 사용 (하위 호환성 유지를 위해 일단 남겨둠)
-  // 내부적으로는 이미 useBoardStore 액션들을 호출하고 있음
+  // 내부적으로는 이미 useIdeaMapStore 액션들을 호출하고 있음
   const {
     edges,
     setEdges,
@@ -155,8 +155,8 @@ export default function Board({
 
   // BoardSettings 변경 핸들러 래퍼
   const handleBoardSettingsChangeWrapper = useCallback((newSettings: any) => {
-    updateAndSaveBoardSettings(newSettings, user?.id);
-  }, [updateAndSaveBoardSettings, user?.id]);
+    updateAndSaveIdeaMapSettings(newSettings, user?.id);
+  }, [updateAndSaveIdeaMapSettings, user?.id]);
 
   // 레이아웃 변경 핸들러
   const handleLayoutChange = useCallback((direction: 'horizontal' | 'vertical') => {
@@ -202,7 +202,7 @@ export default function Board({
   // 초기 데이터 로드 - 한 번만 실행되도록 의존성 배열 비움
   useEffect(() => {
     if (!initialDataLoadedRef.current) {
-      loadBoardData();
+      loadIdeaMapData();
       initialDataLoadedRef.current = true;
     }
   }, []);
@@ -259,10 +259,10 @@ export default function Board({
   useEffect(() => {
     if (!isAuthLoading && user?.id && previousUserIdRef.current !== user.id) {
       console.log('[Board] 사용자 ID가 변경되어 보드 설정을 로드합니다:', user.id);
-      loadAndApplyBoardSettings(user.id);
+      loadAndApplyIdeaMapSettings(user.id);
       previousUserIdRef.current = user.id;
     }
-  }, [isAuthLoading, loadAndApplyBoardSettings, user]);
+  }, [isAuthLoading, loadAndApplyIdeaMapSettings, user]);
 
   // 보드 설정 변경 시 엣지 스타일 업데이트
   useEffect(() => {
@@ -369,12 +369,12 @@ export default function Board({
 
   // 수동 저장 핸들러
   const handleSaveLayout = useCallback(() => {
-    if (saveBoardState()) {
+    if (saveIdeaMapState()) {
       toast.success('보드 레이아웃이 저장되었습니다.');
     } else {
       toast.error('보드 레이아웃 저장에 실패했습니다.');
     }
-  }, [saveBoardState]);
+  }, [saveIdeaMapState]);
 
   /**
    * 뷰포트 변경 핸들러 (확대/축소, 이동)

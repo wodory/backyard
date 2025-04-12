@@ -8,7 +8,7 @@
 
 import dagre from 'dagre';
 import { Node, Edge, Position } from '@xyflow/react';
-import defaultConfig from '../config/cardBoardUiOptions.json';
+import defaultConfig from '../config/uiOptions.json';
 import { useTheme } from '../contexts/ThemeContext';
 
 // 기본 노드 크기 설정 (ThemeContext가 없을 때 폴백용)

@@ -6,7 +6,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import defaultConfig from '../config/cardBoardUiOptions.json';
+import defaultConfig from '../config/uiOptions.json';
 
 export interface NodeTheme {
   width: number;
@@ -107,25 +107,25 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
-  
+
   // 테마 업데이트 함수
   const updateTheme = (newTheme: Partial<Theme>) => {
     setTheme(prev => {
       // 깊은 병합을 수동으로 구현
       const merged = { ...prev };
-      
+
       if (newTheme.node) merged.node = { ...prev.node, ...newTheme.node };
       if (newTheme.edge) merged.edge = { ...prev.edge, ...newTheme.edge };
       if (newTheme.handle) merged.handle = { ...prev.handle, ...newTheme.handle };
       if (newTheme.layout) merged.layout = { ...prev.layout, ...newTheme.layout };
-      
+
       return merged;
     });
   };
-  
+
   // 노드 크기만 간편하게 업데이트하는 함수
   const updateNodeSize = (width: number, height: number, maxHeight?: number) => {
-    const nodeUpdate = { 
+    const nodeUpdate = {
       node: {
         ...theme.node,
         width,
@@ -133,40 +133,40 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         ...(maxHeight !== undefined ? { maxHeight } : {})
       }
     };
-    
+
     updateTheme(nodeUpdate);
   };
-  
+
   // CSS 변수를 테마와 동기화
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    
+
     // 노드 관련 변수
     document.documentElement.style.setProperty('--card-default-width', `${theme.node.width}px`);
     document.documentElement.style.setProperty('--card-header-height', `${theme.node.height}px`);
     document.documentElement.style.setProperty('--card-max-height', `${theme.node.maxHeight}px`);
     document.documentElement.style.setProperty('--card-bg', theme.node.backgroundColor);
     document.documentElement.style.setProperty('--card-radius', `${theme.node.borderRadius}px`);
-    
+
     // 엣지 관련 변수
     document.documentElement.style.setProperty('--edge-color', theme.edge.color);
     document.documentElement.style.setProperty('--edge-width', `${theme.edge.width}px`);
     document.documentElement.style.setProperty('--edge-selected-color', theme.edge.selectedColor);
-    
+
     // 핸들 관련 변수
     document.documentElement.style.setProperty('--handle-size', `${theme.handle.size}px`);
     document.documentElement.style.setProperty('--handle-bg', theme.handle.backgroundColor);
     document.documentElement.style.setProperty('--handle-border', theme.handle.borderColor);
     document.documentElement.style.setProperty('--handle-border-width', `${theme.handle.borderWidth}px`);
-    
+
     // 폰트 크기 변수
     document.documentElement.style.setProperty('--font-size-title', `${theme.node.font.titleSize}px`);
     document.documentElement.style.setProperty('--font-size-content', `${theme.node.font.contentSize}px`);
     document.documentElement.style.setProperty('--font-size-tags', `${theme.node.font.tagsSize}px`);
-    
+
     console.log('테마 변경됨:', theme.node.width, theme.node.height);
   }, [theme]);
-  
+
   return (
     <ThemeContext.Provider value={{ theme, updateTheme, updateNodeSize }}>
       {children}

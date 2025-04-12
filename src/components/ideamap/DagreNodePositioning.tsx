@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useReactFlow, Node, Edge, Position } from '@xyflow/react';
 import dagre from 'dagre';
-import defaultConfig from '../../config/cardBoardUiOptions.json';
+import defaultConfig from '../../config/uiOptions.json';
 
 interface DagreNodePositioningProps {
   Options: { rankdir: 'TB' | 'LR' | 'BT' | 'RL' };
@@ -18,7 +18,7 @@ const nodeHeight = defaultConfig.layout.nodeSize?.height || 48;
 const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
   const [nodesPositioned, setNodesPositioned] = useState(false);
   const { fitView, getNodes } = useReactFlow();
-  
+
   // React Flow 인스턴스에서 노드 직접 가져오기
   const flattenedNodes = getNodes();
 
@@ -49,7 +49,7 @@ const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Ed
         if (!nodeWithPosition) {
           return node;
         }
-        
+
         let updatedNode = {
           ...node,
           position: {
@@ -73,7 +73,7 @@ const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Ed
       // 엣지 핸들 업데이트
       const layoutedEdges = Edges.map(edge => {
         const updatedEdge = { ...edge };
-        
+
         // 방향에 따라 엣지 핸들 위치 설정
         if (Options.rankdir === 'TB' || Options.rankdir === 'BT') {
           updatedEdge.sourceHandle = 'bottom-source'; // 수직 레이아웃에서는 아래쪽이 소스
@@ -82,14 +82,14 @@ const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Ed
           updatedEdge.sourceHandle = 'right-source';  // 수평 레이아웃에서는 오른쪽이 소스
           updatedEdge.targetHandle = 'left-target';   // 수평 레이아웃에서는 왼쪽이 타겟
         }
-        
+
         return updatedEdge;
       });
 
       SetNodes(layoutedNodes);
       // 업데이트된 엣지 적용
       SetEdges(layoutedEdges);
-      
+
       setNodesPositioned(true);
       window.requestAnimationFrame(() => {
         fitView();

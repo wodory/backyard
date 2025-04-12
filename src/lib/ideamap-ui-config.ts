@@ -1,5 +1,5 @@
 import { MarkerType, ConnectionLineType } from '@xyflow/react';
-import defaultConfig from '../config/cardBoardUiOptions.json';
+import defaultConfig from '../config/uiOptions.json';
 
 // 카드 보드 UI 설정 타입 정의
 export interface BoardUIConfig {
