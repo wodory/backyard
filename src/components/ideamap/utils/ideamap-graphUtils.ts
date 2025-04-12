@@ -216,10 +216,10 @@ export const arraysEqual = (a: string[], b: string[]): boolean => {
  * 새 엣지 생성 함수
  * @param source 소스 노드 ID
  * @param target 타겟 노드 ID
- * @param boardSettings 보드 설정
+ * @param ideaMapSettings 보드 설정
  * @returns 새 엣지 객체
  */
-export const createEdge = (source: string, target: string, boardSettings: IdeaMapSettings): Edge => {
+export const createEdge = (source: string, target: string, ideaMapSettings: IdeaMapSettings): Edge => {
   // 엣지 ID 생성 - 소스ID-타겟ID-타임스탬프
   const edgeId = `${source}-${target}-${Date.now()}`;
   
@@ -229,21 +229,21 @@ export const createEdge = (source: string, target: string, boardSettings: IdeaMa
     source,
     target,
     type: 'custom',
-    animated: boardSettings.animated,
+    animated: ideaMapSettings.animated,
     style: {
-      strokeWidth: boardSettings.strokeWidth,
-      stroke: boardSettings.edgeColor,
+      strokeWidth: ideaMapSettings.strokeWidth,
+      stroke: ideaMapSettings.edgeColor,
     },
     // 방향 표시가 활성화된 경우에만 마커 추가
-    markerEnd: boardSettings.markerEnd ? {
+    markerEnd: ideaMapSettings.markerEnd ? {
       type: MarkerType.ArrowClosed,
-      width: boardSettings.strokeWidth * 2,
-      height: boardSettings.strokeWidth * 2,
-      color: boardSettings.edgeColor,
+      width: ideaMapSettings.strokeWidth * 2,
+      height: ideaMapSettings.strokeWidth * 2,
+      color: ideaMapSettings.edgeColor,
     } : undefined,
     data: {
-      edgeType: boardSettings.connectionLineType,
-      settings: { ...boardSettings }
+      edgeType: ideaMapSettings.connectionLineType,
+      settings: { ...ideaMapSettings }
     },
   };
 };

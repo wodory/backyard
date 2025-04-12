@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
 import TiptapViewer from '@/components/editor/TiptapViewer';
-import { loadDefaultBoardUIConfig } from '@/lib/ideamap-ui-config';
+import { loadDefaultIdeaMapUIConfig } from '@/lib/ideamap-ui-config';
 import { CSSProperties } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardContent } from '@/components/ui/card';
@@ -115,7 +115,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   }, [selectedCardIds]);
 
   // 보드 설정 가져오기 - 기존 설정 유지 (폴백용)
-  const uiConfig = loadDefaultBoardUIConfig();
+  const uiConfig = loadDefaultIdeaMapUIConfig();
 
   // 필요한 값들 추출 - 테마 컨텍스트에서 가져오기
   const defaultCardWidth = theme.node.width;

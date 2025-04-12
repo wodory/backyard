@@ -1,6 +1,6 @@
 /**
- * 파일명: useBoardHandlers.test.tsx
- * 목적: 보드 핸들러 훅의 기능 테스트
+ * 파일명: useIdeaMapHandlers.test.tsx
+ * 목적: 아이디어맵 핸들러 훅의 기능 테스트
  * 역할: 선택, 드래그 앤 드롭, 카드 생성 핸들러 테스트
  * 작성일: 2025-03-28
  * 수정일: 2025-04-11
@@ -10,10 +10,10 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import { Node, Edge } from '@xyflow/react';
-import { useBoardHandlers } from './useBoardHandlers';
-import { CardData } from '../types/board-types';
+import { useIdeaMapHandlers } from './useIdeaMapHandlers';
+import { CardData } from '../types/ideamap-types';
 import { useAppStore } from '@/store/useAppStore';
-import { useBoardStore } from '@/store/useBoardStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import {
   createTestNode,
   createDragEvent,
@@ -33,13 +33,13 @@ vi.mock('@/store/useAppStore', () => ({
   }),
 }));
 
-// useBoardStore 모킹
+// useIdeaMapStore 모킹
 const mockAddNodeAtPosition = vi.fn().mockResolvedValue({ id: 'new-node', data: { title: '새 노드' } });
 const mockAddCardAtCenterPosition = vi.fn().mockResolvedValue({ id: 'new-card', data: { title: '새 카드' } });
 const mockCreateEdgeAndNodeOnDrop = vi.fn().mockResolvedValue({ id: 'edge-node', data: { title: '연결 노드' } });
 
-vi.mock('@/store/useBoardStore', () => ({
-  useBoardStore: vi.fn((selector) => {
+vi.mock('@/store/useIdeaMapStore', () => ({
+  useIdeaMapStore: vi.fn((selector) => {
     const state = {
       addNodeAtPosition: mockAddNodeAtPosition,
       addCardAtCenterPosition: mockAddCardAtCenterPosition,
@@ -49,7 +49,7 @@ vi.mock('@/store/useBoardStore', () => ({
   }),
 }));
 
-describe('useBoardHandlers', () => {
+describe('useIdeaMapHandlers', () => {
   // 테스트 데이터 준비
   const testNodes = [
     createTestNode('card1'),
@@ -89,7 +89,7 @@ describe('useBoardHandlers', () => {
 
   describe('선택 핸들러', () => {
     it('노드가 선택되면 선택된 카드 ID를 업데이트한다', () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
 
       act(() => {
         result.current.handleSelectionChange({ nodes: [testNodes[0]], edges: [] });
@@ -99,7 +99,7 @@ describe('useBoardHandlers', () => {
     });
 
     it('여러 노드가 선택되면 모든 선택된 카드 ID를 업데이트한다', () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
 
       act(() => {
         result.current.handleSelectionChange({ nodes: testNodes, edges: [] });
@@ -109,7 +109,7 @@ describe('useBoardHandlers', () => {
     });
 
     it('선택이 해제되면 빈 배열로 업데이트한다', () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
 
       act(() => {
         result.current.handleSelectionChange({ nodes: [], edges: [] });
@@ -121,7 +121,7 @@ describe('useBoardHandlers', () => {
 
   describe('드래그 앤 드롭 핸들러', () => {
     it('드래그 오버 시 기본 동작을 방지한다', () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
       const mockEvent = createDragEvent();
 
       act(() => {
@@ -133,7 +133,7 @@ describe('useBoardHandlers', () => {
     });
 
     it('유효한 카드 데이터를 드롭하면 addNodeAtPosition 액션을 호출한다', async () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
       const cardData = { id: 'new-card', title: '새 카드', content: '내용' };
       const mockEvent = createDragEvent(cardData);
 
@@ -145,7 +145,7 @@ describe('useBoardHandlers', () => {
     });
 
     it('ReactFlow 래퍼가 없으면 addNodeAtPosition 액션을 호출하지 않는다', async () => {
-      const { result } = renderHook(() => useBoardHandlers({
+      const { result } = renderHook(() => useIdeaMapHandlers({
         ...mockProps,
         reactFlowWrapper: { current: null } as any
       }));
@@ -163,7 +163,7 @@ describe('useBoardHandlers', () => {
 
   describe('카드 생성 핸들러', () => {
     it('새 카드를 생성하면 addCardAtCenterPosition 액션을 호출한다', async () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
       const cardData = { id: 'new-card', title: '새 카드', content: '내용' };
 
       await act(async () => {
@@ -174,7 +174,7 @@ describe('useBoardHandlers', () => {
     });
 
     it('엣지 드롭 시 createEdgeAndNodeOnDrop 액션을 호출한다', async () => {
-      const { result } = renderHook(() => useBoardHandlers(mockProps));
+      const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
       const cardData = { id: 'new-card', title: '새 카드', content: '내용' };
       const position = { x: 200, y: 200 };
       const connectingNodeId = 'node1';

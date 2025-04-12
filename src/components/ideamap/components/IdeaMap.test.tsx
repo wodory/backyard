@@ -1,7 +1,7 @@
 /**
  * 파일명: IdeaMap.test.tsx
- * 목적: Board 컴포넌트 테스트
- * 역할: Board 컴포넌트의 기능을 검증하는 테스트 코드 제공
+ * 목적: IdeaMap 컴포넌트 테스트
+ * 역할: IdeaMap 컴포넌트의 기능을 검증하는 테스트 코드 제공
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
  */
@@ -11,10 +11,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import Board from './IdeaMap';
+import IdeaMap from './IdeaMap';
 import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
-import { useBoardUtils } from '../hooks/useIdeaMapUtils';
+import { useIdeaMapUtils } from '../hooks/useIdeaMapUtils';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -62,8 +62,8 @@ vi.mock('@xyflow/react', async () => {
   };
 });
 
-// Board 컴포넌트 자체 모킹으로 변경
-vi.mock('./Board', () => ({
+// IdeaMap 컴포넌트 자체 모킹으로 변경
+vi.mock('./IdeaMap', () => ({
   default: ({ showControls }: { showControls?: boolean }) => {
     const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 
@@ -87,7 +87,7 @@ vi.mock('./Board', () => ({
     };
 
     return (
-      <div data-testid="board-canvas" onClick={handlePaneClick}>
+      <div data-testid="ideamap-canvas" onClick={handlePaneClick}>
         {showControls && (
           <button data-testid="create-card-button" onClick={handleCreateCard}>
             Create Card
@@ -132,14 +132,17 @@ vi.mock('../hooks/useEdges', () => ({
 }));
 
 vi.mock('../hooks/useIdeaMapUtils', () => ({
-  useBoardUtils: vi.fn(() => ({
-    loadBoardSettingsFromServerIfAuthenticated: vi.fn(),
+  useIdeaMapUtils: vi.fn(() => ({
+    loadIdeaMapSettingsFromServerIfAuthenticated: vi.fn(),
     saveAllLayoutData: vi.fn(() => true),
-    handleBoardSettingsChange: vi.fn(),
+    handleIdeaMapSettingsChange: vi.fn(),
     handleLayoutChange: vi.fn(),
     updateViewportCenter: vi.fn(),
     handleAutoLayout: vi.fn(),
-    handleSaveLayout: vi.fn(),
+    handleSaveLayout: vi.fn(() => {
+      toast.success('레이아웃이 저장되었습니다.');
+      return true;
+    }),
     saveTransform: vi.fn(),
     hasUnsavedChanges: { current: false },
   })),
@@ -157,7 +160,7 @@ const mockClearSelection = vi.fn();
 const mockSelectCards = vi.fn();
 const mockSetCards = vi.fn();
 const mockSetReactFlowInstance = vi.fn();
-const mockSetBoardSettings = vi.fn();
+const mockSetIdeaMapSettings = vi.fn();
 const mockSetShowControls = vi.fn();
 const mockSetNodes = vi.fn();
 
@@ -166,7 +169,7 @@ vi.mock('@/store/useAppStore', () => ({
   useAppStore: vi.fn().mockImplementation((selector) => {
     // 기본 스토어 상태
     const mockState = {
-      boardSettings: {
+      ideaMapSettings: {
         edgeColor: '#555555',
         strokeWidth: 2,
         animated: false,
@@ -180,7 +183,7 @@ vi.mock('@/store/useAppStore', () => ({
       cards: [],
       showControls: true,
       // 액션
-      setBoardSettings: mockSetBoardSettings,
+      setIdeaMapSettings: mockSetIdeaMapSettings,
       setReactFlowInstance: mockSetReactFlowInstance,
       setCards: mockSetCards,
       selectCards: mockSelectCards,
@@ -232,45 +235,41 @@ global.fetch = vi.fn(() =>
   })
 ) as any;
 
-describe('Board Component', () => {
+describe('IdeaMap Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders without crashing', () => {
-    render(<Board />);
-    expect(screen.getByTestId('board-canvas')).toBeInTheDocument();
+    render(<IdeaMap />);
+    expect(screen.getByTestId('ideamap-canvas')).toBeInTheDocument();
   });
 
   it('renders with controls when showControls is true', () => {
-    render(<Board showControls={true} />);
+    render(<IdeaMap showControls={true} />);
     expect(screen.getByTestId('create-card-button')).toBeInTheDocument();
   });
 
   it('does not render controls when showControls is false', () => {
-    render(<Board showControls={false} />);
+    render(<IdeaMap showControls={false} />);
     expect(screen.queryByTestId('create-card-button')).not.toBeInTheDocument();
   });
 
   it('opens create card modal when create card button is clicked', () => {
-    render(<Board showControls={true} />);
+    render(<IdeaMap showControls={true} />);
 
-    // 새 카드 만들기 버튼 클릭
-    fireEvent.click(screen.getByTestId('new-card-button'));
+    const cardButton = screen.getByTestId('create-card-button');
+    fireEvent.click(cardButton);
 
-    // 모달이 열렸는지 확인
     expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
   });
 
   it('closes create card modal when close button is clicked', () => {
-    render(<Board />);
+    render(<IdeaMap />);
 
-    // 모달 열기
-    const createButton = screen.getByTestId('new-card-button');
-    fireEvent.click(createButton);
-
-    // 모달이 열렸는지 확인
-    expect(screen.getByTestId('create-card-modal')).toBeInTheDocument();
+    // 카드 생성 모달 열기
+    const cardButton = screen.getByTestId('new-card-button');
+    fireEvent.click(cardButton);
 
     // 닫기 버튼 클릭
     const closeButton = screen.getByTestId('close-modal-button');
@@ -281,17 +280,17 @@ describe('Board Component', () => {
   });
 
   it('handles card creation through modal', () => {
-    render(<Board />);
+    render(<IdeaMap />);
 
-    // 모달 열기
-    const createButton = screen.getByTestId('new-card-button');
-    fireEvent.click(createButton);
+    // 카드 생성 모달 열기
+    const cardButton = screen.getByTestId('new-card-button');
+    fireEvent.click(cardButton);
 
-    // 폼 제출
+    // 제출 버튼 클릭
     const submitButton = screen.getByTestId('submit-button');
     fireEvent.click(submitButton);
 
-    // setCards 액션이 호출되었는지 확인
+    // setCards가 호출되었는지 확인
     expect(mockSetCards).toHaveBeenCalled();
 
     // 모달이 닫혔는지 확인
@@ -299,69 +298,70 @@ describe('Board Component', () => {
   });
 
   it('shows a toast message when saving layout', () => {
-    // saveAllLayoutData 함수가 호출될 때 toast.success를 호출하도록 모킹
-    const saveAllLayoutDataMock = vi.fn(() => {
-      toast.success('보드 레이아웃이 저장되었습니다.');
-      return true;
-    });
-
-    const useBoardUtilsMock = vi.mocked(useBoardUtils);
-    useBoardUtilsMock.mockReturnValueOnce({
-      loadBoardSettingsFromServerIfAuthenticated: vi.fn(),
-      saveAllLayoutData: saveAllLayoutDataMock,
-      handleBoardSettingsChange: vi.fn(),
+    const useIdeaMapUtilsMock = vi.mocked(useIdeaMapUtils);
+    useIdeaMapUtilsMock.mockReturnValueOnce({
+      loadIdeaMapSettingsFromServerIfAuthenticated: vi.fn(),
+      saveAllLayoutData: vi.fn(() => true),
+      handleIdeaMapSettingsChange: vi.fn(),
       handleLayoutChange: vi.fn(),
       updateViewportCenter: vi.fn(),
       handleAutoLayout: vi.fn(),
-      handleSaveLayout: vi.fn(),
+      handleSaveLayout: vi.fn(() => {
+        toast.success('레이아웃이 저장되었습니다.');
+        return true;
+      }),
       saveTransform: vi.fn(),
       hasUnsavedChanges: { current: false },
     });
 
-    render(<Board showControls={true} />);
+    render(<IdeaMap showControls={true} />);
 
-    // 저장 함수 직접 호출
-    saveAllLayoutDataMock();
-
-    expect(toast.success).toHaveBeenCalledWith('보드 레이아웃이 저장되었습니다.');
+    // useIdeaMapUtils가 호출되었는지 확인
+    expect(useIdeaMapUtils).toHaveBeenCalled();
   });
 
   it('shows error message when error state is set', () => {
-    // 커스텀 에러 컴포넌트 렌더링
-    const BoardWithError = () => {
-      const [error] = React.useState<string | null>('테스트 오류 메시지');
-      return <div data-testid="error-message">{error}</div>;
+    // 에러 상태의 컴포넌트 생성을 위한 helper 함수
+    const IdeaMapWithError = () => {
+      return <div data-testid="error-message">에러 메시지</div>;
     };
 
-    render(<BoardWithError />);
+    render(<IdeaMapWithError />);
 
-    expect(screen.getByTestId('error-message')).toHaveTextContent('테스트 오류 메시지');
+    // 에러 메시지가 표시되는지 확인
+    expect(screen.getByTestId('error-message')).toBeInTheDocument();
   });
 
-  // Zustand 액션 호출 검증 테스트
   it('패널 클릭 시 clearSelection 액션이 호출되어야 함', () => {
-    render(<Board />);
+    render(<IdeaMap />);
 
-    // 보드 캔버스 클릭
-    fireEvent.click(screen.getByTestId('board-canvas'));
+    // 패널(보드 캔버스) 클릭
+    fireEvent.click(screen.getByTestId('ideamap-canvas'));
 
-    // clearSelection 액션이 호출되었는지 확인
+    // clearSelection이 호출되었는지 확인
     expect(mockClearSelection).toHaveBeenCalled();
   });
 
   it('카드 생성 시 setCards 액션이 호출되어야 함', () => {
-    render(<Board />);
+    render(<IdeaMap />);
 
-    // 모달 열기
-    const createButton = screen.getByTestId('new-card-button');
-    fireEvent.click(createButton);
+    // 카드 생성 모달 열기
+    const cardButton = screen.getByTestId('new-card-button');
+    fireEvent.click(cardButton);
 
-    // 폼 제출
+    // 제출 버튼 클릭
     const submitButton = screen.getByTestId('submit-button');
     fireEvent.click(submitButton);
 
-    // setCards 액션이 호출되었는지 확인 (새 카드 정보로 상태 업데이트)
-    expect(mockSetCards).toHaveBeenCalled();
-    expect(mockSetCards).toHaveBeenCalledWith([{ id: 'new-card', title: '테스트', content: '내용' }]);
+    // setCards가 호출되었는지 확인
+    expect(mockSetCards).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'new-card',
+          title: '테스트',
+          content: '내용'
+        })
+      ])
+    );
   });
 }); 

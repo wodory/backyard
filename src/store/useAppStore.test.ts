@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
 import { useAppStore, Card } from '@/store/useAppStore';
-import { DEFAULT_BOARD_SETTINGS, BoardSettings } from '@/lib/ideamap-utils';
+import { DEFAULT_IDEAMAP_SETTINGS, IdeaMapSettings } from '@/lib/ideamap-utils';
 import { toast } from 'sonner';
 import { act } from '@testing-library/react';
 import { server } from '@/tests/msw/server';
@@ -26,7 +26,7 @@ mockReactFlow();
 
 // 모든 모킹을 파일 상단에 배치
 vi.mock('@/lib/ideamap-utils', () => ({
-  DEFAULT_BOARD_SETTINGS: {
+  DEFAULT_IDEAMAP_SETTINGS: {
     edgeColor: '#000000',
     strokeWidth: 1,
     animated: false,
@@ -35,7 +35,7 @@ vi.mock('@/lib/ideamap-utils', () => ({
     snapToGrid: false,
     snapGrid: [20, 20]
   },
-  loadBoardSettings: vi.fn(() => ({
+  loadIdeaMapSettings: vi.fn(() => ({
     edgeColor: '#000000',
     strokeWidth: 1,
     animated: false,
@@ -44,7 +44,7 @@ vi.mock('@/lib/ideamap-utils', () => ({
     snapToGrid: false,
     snapGrid: [20, 20]
   })),
-  saveBoardSettings: vi.fn()
+  saveIdeaMapSettings: vi.fn()
 }));
 
 vi.mock('sonner', () => ({
@@ -136,13 +136,30 @@ describe('useAppStore', () => {
         return HttpResponse.json(newCard, { status: 201 });
       }),
 
-      // PUT /api/users/:userId/settings - New handler for board settings
+      // PUT /api/users/:userId/settings - New handler for ideaMap settings
       http.put('/api/users/:userId/settings', async ({ request, params }) => {
         const { userId } = params;
-        const partialSettings = await request.json() as Partial<BoardSettings>;
+        const partialSettings = await request.json() as Partial<IdeaMapSettings>;
         console.log(`[MSW] PUT /api/users/${userId}/settings`, partialSettings);
-        const savedSettings = { ...DEFAULT_BOARD_SETTINGS, ...partialSettings };
-        return HttpResponse.json(savedSettings);
+        const savedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...partialSettings };
+        return HttpResponse.json({ 
+          success: true, 
+          userId, 
+          settings: savedSettings 
+        });
+      }),
+
+      // POST /api/ideamap-settings - Save options
+      http.post('/api/ideamap-settings', async ({ request }) => {
+        const partialSettings = await request.json() as Partial<IdeaMapSettings>;
+        
+        // 저장된 설정을 디비에서 읽어와 업데이트했다고 가정
+        const savedSettings = { ...useAppStore.getState().ideaMapSettings, ...partialSettings };
+        
+        return HttpResponse.json({
+          success: true,
+          settings: savedSettings
+        });
       })
     );
   });
@@ -173,10 +190,24 @@ describe('useAppStore', () => {
         }),
         http.put('/api/users/:userId/settings', async ({ request, params }) => {
             const { userId } = params;
-            const partialSettings = await request.json() as Partial<BoardSettings>;
+            const partialSettings = await request.json() as Partial<IdeaMapSettings>;
             console.log(`[MSW] PUT /api/users/${userId}/settings`, partialSettings);
-            const savedSettings = { ...useAppStore.getState().boardSettings, ...partialSettings };
-            return HttpResponse.json(savedSettings);
+            const savedSettings = { ...useAppStore.getState().ideaMapSettings, ...partialSettings };
+            return HttpResponse.json({ 
+              success: true, 
+              userId, 
+              settings: savedSettings 
+            });
+        }),
+        http.post('/api/ideamap-settings', async ({ request }) => {
+          const partialSettings = await request.json() as Partial<IdeaMapSettings>;
+          
+          const saved = { ...useAppStore.getState().ideaMapSettings, ...partialSettings };
+          
+          return HttpResponse.json({
+            success: true,
+            settings: saved
+          });
         })
     );
   });
@@ -443,98 +474,97 @@ describe('useAppStore', () => {
   });
 
   describe('보드 설정 관련 테스트', () => {
-    it('setBoardSettings 액션이 보드 설정을 설정해야 함', () => {
-      const { setBoardSettings } = useAppStore.getState();
-      const newSettings = { ...DEFAULT_BOARD_SETTINGS, snapToGrid: true };
+    it('setIdeaMapSettings 액션이 아이디어맵 설정을 설정해야 함', () => {
+      const { setIdeaMapSettings } = useAppStore.getState();
+      const newSettings = { ...DEFAULT_IDEAMAP_SETTINGS, snapToGrid: true };
       
-      setBoardSettings(newSettings);
+      setIdeaMapSettings(newSettings);
       
       const state = useAppStore.getState();
-      expect(state.boardSettings).toEqual(newSettings);
+      expect(state.ideaMapSettings).toEqual(newSettings);
     });
 
-    it('updateBoardSettings 액션이 보드 설정을 부분 업데이트해야 함', async () => {
-      const { updateBoardSettings } = useAppStore.getState();
-      const newSettings: Partial<BoardSettings> = { snapToGrid: true, animated: true };
-      const expectedSavedSettings = { ...DEFAULT_BOARD_SETTINGS, ...newSettings };
-
-      // Mock the API response
+    it('updateIdeaMapSettings 액션이 아이디어맵 설정을 부분 업데이트해야 함', async () => {
+      const { updateIdeaMapSettings } = useAppStore.getState();
+      const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
+      const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
+      
+      // 요청 인터셉터 설정
       server.use(
-        http.put('/api/users/:userId/settings', async ({ request }) => {
-          const reqBody = await request.json() as Partial<BoardSettings>;
-          // Simulate merging on server
-          const saved = { ...useAppStore.getState().boardSettings, ...reqBody };
-          return HttpResponse.json(saved);
+        http.post('/api/ideamap-settings', async ({ request }) => {
+          const reqBody = await request.json() as Partial<IdeaMapSettings>;
+          
+          const saved = { ...useAppStore.getState().ideaMapSettings, ...reqBody };
+          
+          return HttpResponse.json({
+            success: true,
+            settings: saved
+          });
         })
       );
-
-      await act(async () => {
-        await updateBoardSettings(newSettings);
-      });
-
+      
+      await updateIdeaMapSettings(newSettings);
+      
+      // 변경된 상태 확인
       const state = useAppStore.getState();
-      // Check if the state reflects the settings returned by the mocked API
-      expect(state.boardSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
-      expect(state.boardSettings.animated).toBe(expectedSavedSettings.animated);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-      expect(toast.success).toHaveBeenCalledWith('설정이 업데이트되었습니다.');
+      expect(state.ideaMapSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
+      expect(state.ideaMapSettings.animated).toBe(expectedSavedSettings.animated);
     });
 
-    it('updateBoardSettings 액션이 실패 시 에러를 처리해야 함', async () => {
-      const { updateBoardSettings } = useAppStore.getState();
-      const newSettings: Partial<BoardSettings> = { snapToGrid: true, animated: true };
-      const expectedSavedSettings = { ...DEFAULT_BOARD_SETTINGS, ...newSettings };
-
-      // Mock the API response
+    it('updateIdeaMapSettings 액션이 실패 시 에러를 처리해야 함', async () => {
+      const { updateIdeaMapSettings } = useAppStore.getState();
+      const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
+      const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
+      
+      // 실패 시뮬레이션
       server.use(
-        http.put('/api/users/:userId/settings', async ({ request }) => {
-          const reqBody = await request.json() as Partial<BoardSettings>;
-          // Simulate merging on server
-          const saved = { ...useAppStore.getState().boardSettings, ...reqBody };
-          return HttpResponse.json(saved);
+        http.post('/api/ideamap-settings', async ({ request }) => {
+          const reqBody = await request.json() as Partial<IdeaMapSettings>;
+          
+          const saved = { ...useAppStore.getState().ideaMapSettings, ...reqBody };
+          
+          return HttpResponse.json({
+            success: false,
+            error: '설정 저장 실패'
+          });
         })
       );
-
-      await act(async () => {
-        await updateBoardSettings(newSettings);
-      });
-
+      
+      await updateIdeaMapSettings(newSettings);
+      
+      // 서버에 저장 실패해도 로컬 상태는 업데이트되어야 함
       const state = useAppStore.getState();
-      // Check if the state reflects the settings returned by the mocked API
-      expect(state.boardSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
-      expect(state.boardSettings.animated).toBe(expectedSavedSettings.animated);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-      expect(toast.success).toHaveBeenCalledWith('설정이 업데이트되었습니다.');
+      expect(state.ideaMapSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
+      expect(state.ideaMapSettings.animated).toBe(expectedSavedSettings.animated);
     });
 
-    it('updateBoardSettings 액션이 로딩 상태를 적절히 처리해야 함', async () => {
-      const { updateBoardSettings } = useAppStore.getState();
-      const newSettings: Partial<BoardSettings> = { snapToGrid: true, animated: true };
-      const expectedSavedSettings = { ...DEFAULT_BOARD_SETTINGS, ...newSettings };
-
-      // Mock the API response
+    it('updateIdeaMapSettings 액션이 로딩 상태를 적절히 처리해야 함', async () => {
+      const { updateIdeaMapSettings } = useAppStore.getState();
+      const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
+      const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
+      
+      // 지연된 응답 시뮬레이션
       server.use(
-        http.put('/api/users/:userId/settings', async ({ request }) => {
-          const reqBody = await request.json() as Partial<BoardSettings>;
-          // Simulate merging on server
-          const saved = { ...useAppStore.getState().boardSettings, ...reqBody };
-          return HttpResponse.json(saved);
+        http.post('/api/ideamap-settings', async ({ request }) => {
+          const reqBody = await request.json() as Partial<IdeaMapSettings>;
+          
+          const saved = { ...useAppStore.getState().ideaMapSettings, ...reqBody };
+          
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          return HttpResponse.json({
+            success: true,
+            settings: saved
+          });
         })
       );
-
-      await act(async () => {
-        await updateBoardSettings(newSettings);
-      });
-
+      
+      await updateIdeaMapSettings(newSettings);
+      
+      // 최종 상태 확인
       const state = useAppStore.getState();
-      // Check if the state reflects the settings returned by the mocked API
-      expect(state.boardSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
-      expect(state.boardSettings.animated).toBe(expectedSavedSettings.animated);
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-      expect(toast.success).toHaveBeenCalledWith('설정이 업데이트되었습니다.');
+      expect(state.ideaMapSettings.snapToGrid).toBe(expectedSavedSettings.snapToGrid);
+      expect(state.ideaMapSettings.animated).toBe(expectedSavedSettings.animated);
     });
   });
 

@@ -1,8 +1,11 @@
 {
   "autoSaveIntervalMinutes": 1,
-  "board": {
+  "ideaMap": {
     "snapToGrid": false,
-    "snapGrid": [15, 15],
+    "snapGrid": [
+      15,
+      15
+    ],
     "connectionLineType": "bezier",
     "markerEnd": "arrowclosed",
     "strokeWidth": 2,
@@ -46,4 +49,4 @@
       "edgesep": 140
     }
   }
-} 
+}

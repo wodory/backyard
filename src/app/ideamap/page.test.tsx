@@ -1,14 +1,14 @@
 /**
  * 파일명: page.test.tsx
- * 목적: 보드 페이지 컴포넌트 테스트
- * 역할: Board 컴포넌트를 사용하는 페이지 컴포넌트 테스트
+ * 목적: 아이디어맵 페이지 컴포넌트 테스트
+ * 역할: IdeaMap 컴포넌트를 사용하는 페이지 컴포넌트 테스트
  * 작성일: 2025-03-05
- * 수정일: 2025-03-30
+ * 수정일: 2025-04-15
  */
 
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import BoardPage from './page';
+import IdeaMapPage from './page';
 import { Node, Edge, NodeChange } from '@xyflow/react';
 import '@testing-library/jest-dom/vitest';
 import { autoLayoutNodes } from './page';
@@ -194,7 +194,7 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }));
 
-vi.mock('@/components/board/CardNode', () => ({
+vi.mock('@/components/ideamap/nodes/CardNode', () => ({
   default: ({ data }: any) => (
     <div data-testid={`card-node-${data.id}`}>
       <h3>{data.title}</h3>
@@ -220,12 +220,12 @@ vi.mock('lucide-react', () => ({
   Paintbrush: () => <div data-testid="paintbrush-icon">Paintbrush</div>,
 }));
 
-// BoardPage 컴포넌트 모킹을 위한 내부 함수 모킹
+// IdeaMapPage 컴포넌트 모킹을 위한 내부 함수 모킹
 vi.mock('./page', async (importOriginal) => {
   // 원본 모듈 가져오기
   const originalModule = await importOriginal();
 
-  // 실제 BoardPage 컴포넌트를 사용, 단 내부 함수는 모킹
+  // 실제 IdeaMapPage 컴포넌트를 사용, 단 내부 함수는 모킹
   return {
     ...(originalModule as object),
     // 필요한 내부 함수만 모킹하고 컴포넌트는 그대로 유지
@@ -252,15 +252,15 @@ const mockCardData = [
 ];
 
 // 필요한 모의 설정 추가
-vi.mock('@/components/board/components/Board', () => ({
+vi.mock('@/components/ideamap/components/IdeaMap', () => ({
   default: ({ onSelectCard, className, showControls }: any) => (
     <div
-      data-testid="board-component"
+      data-testid="ideamap-component"
       data-selectcard={!!onSelectCard}
       data-classname={className}
       data-showcontrols={showControls}
     >
-      Board Component
+      IdeaMap Component
     </div>
   ),
 }));
@@ -278,33 +278,37 @@ vi.mock('@/store/useAppStore', () => ({
   }),
 }));
 
-describe('BoardPage', () => {
+describe('IdeaMap Page', () => {
   beforeEach(() => {
+    // 모든 모킹 함수 초기화
     vi.clearAllMocks();
-
-    // fetch 모킹
-    global.fetch = vi.fn().mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([]),
-      })
-    );
+    localStorageMock.clear();
   });
 
-  test('renders Board component inside ReactFlowProvider', async () => {
-    render(<BoardPage />);
+  test('렌더링 시 로딩 상태를 표시해야 함', async () => {
+    // 진행 중인 fetch 요청 모킹
+    (global.fetch as any).mockImplementation(() => new Promise(() => { }));
+
+    render(<IdeaMapPage />);
+
+    // 로딩 상태 확인
+    expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
+  });
+
+  test('renders IdeaMap component inside ReactFlowProvider', async () => {
+    render(<IdeaMapPage />);
 
     // ReactFlowProvider가 렌더링되었는지 확인
     expect(screen.getByTestId('react-flow-provider')).toBeInTheDocument();
 
-    // Board 컴포넌트가 렌더링되었는지 확인
-    const boardComponent = screen.getByTestId('board-component');
-    expect(boardComponent).toBeInTheDocument();
+    // IdeaMap 컴포넌트가 렌더링되었는지 확인
+    const ideaMapComponent = screen.getByTestId('ideamap-component');
+    expect(ideaMapComponent).toBeInTheDocument();
 
-    // Board 컴포넌트에 올바른 props가 전달되었는지 확인
-    expect(boardComponent.getAttribute('data-selectcard')).toBe('true');
-    expect(boardComponent.getAttribute('data-classname')).toBe('bg-background');
-    expect(boardComponent.getAttribute('data-showcontrols')).toBe('true');
+    // IdeaMap 컴포넌트에 올바른 props가 전달되었는지 확인
+    expect(ideaMapComponent.getAttribute('data-selectcard')).toBe('true');
+    expect(ideaMapComponent.getAttribute('data-classname')).toBe('bg-background');
+    expect(ideaMapComponent.getAttribute('data-showcontrols')).toBe('true');
   });
 
   test('autoLayoutNodes function returns correctly formatted nodes', () => {

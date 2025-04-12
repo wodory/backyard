@@ -136,15 +136,15 @@
 **단계 5: 테스트 코드 이름 변경**
 *   **규칙:** 앱 안정성과 점진적 개선을 위해 각 테스크에서 아래에 명시된 작업만 진행합니다. 만약, 추가 개선이 필요한 부분이 있다면 나에게 말해주고 검토합니다.
 
-21. **Task:** 테스트 파일 이름 변경
-    *   **Action:** `*Board*.test.tsx` 패턴의 테스트 파일 이름을 `*IdeaMap*.test.tsx` 패턴으로 변경합니다. (예: `Board.test.tsx` -> `IdeaMap.test.tsx`, `useBoardStore.test.tsx` -> `useIdeaMapStore.test.tsx`)
-22. **Task:** 테스트 코드 내부 이름 변경
+21. **Task:** 테스트 코드 내부 이름 변경
     *   **Action:** 모든 테스트 파일(`*.test.tsx`)을 검사하여 다음을 변경합니다:
         *   `describe` 블록 이름 (예: `describe('Board 컴포넌트')` -> `describe('IdeaMap 컴포넌트')`)
         *   모킹 대상 이름 (`vi.mock('@/components/board/...'`) -> `vi.mock('@/components/ideamap/...'`)
         *   테스트 내 변수/상수 이름 (`mockBoardSettings` -> `mockIdeaMapSettings`)
         *   컴포넌트/훅/스토어 참조 이름 (`useBoardStore` -> `useIdeaMapStore`)
         *   API 호출 경로 모킹 (`/api/board-settings` -> `/api/ideamap-settings`)
+22. **Task:** 테스트 파일 이름 변경
+    *   **Action:** `*Board*.test.tsx` 패턴의 테스트 파일 이름을 `*IdeaMap*.test.tsx` 패턴으로 변경합니다. (예: `Board.test.tsx` -> `IdeaMap.test.tsx`, `useBoardStore.test.tsx` -> `useIdeaMapStore.test.tsx`)
 
 **(단계 5 완료 후)**
 *   Agent의 변경 사항을 검토합니다.

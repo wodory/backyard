@@ -20,7 +20,7 @@ import {
   arraysEqual,
   createEdge,
   getDefaultHandles
-} from '../graphUtils';
+} from '../ideamap-graphUtils';
 
 describe('saveLayout', () => {
   // 로컬 스토리지 모킹

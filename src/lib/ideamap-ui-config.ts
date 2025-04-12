@@ -1,10 +1,11 @@
 import { MarkerType, ConnectionLineType } from '@xyflow/react';
 import defaultConfig from '../config/uiOptions.json';
+import { I } from 'vitest/dist/chunks/reporters.d.CfRkRKN2.js';
 
 // 카드 보드 UI 설정 타입 정의
-export interface BoardUIConfig {
+export interface IdeaMapUIConfig {
   autoSaveIntervalMinutes: number;
-  board: {
+  ideaMap: {
     snapToGrid: boolean;
     snapGrid: number[];
     connectionLineType: string;
@@ -74,14 +75,14 @@ export function getCssVariableAsNumber(name: string, fallback: number): number {
 }
 
 // 기본 설정값 (타입 변환 포함)
-export const DEFAULT_UI_CONFIG: BoardUIConfig = {
-  ...defaultConfig as BoardUIConfig,
-  board: {
-    ...defaultConfig.board,
-    connectionLineType: defaultConfig.board.connectionLineType as ConnectionLineType,
-    markerEnd: defaultConfig.board.markerEnd as MarkerType,
+export const DEFAULT_UI_CONFIG: IdeaMapUIConfig = {
+  ...defaultConfig as IdeaMapUIConfig,
+  ideaMap: {
+    ...defaultConfig.ideaMap,
+    connectionLineType: defaultConfig.ideaMap.connectionLineType as ConnectionLineType,
+    markerEnd: defaultConfig.ideaMap.markerEnd as MarkerType,
     selectedEdgeColor: '#000000',
-    snapGrid: defaultConfig.board.snapGrid as number[],
+    snapGrid: defaultConfig.ideaMap.snapGrid as number[],
   }
 };
 
@@ -90,7 +91,7 @@ export const DEFAULT_UI_CONFIG: BoardUIConfig = {
  * - 기본값을 불러오지 못할 경우 하드코딩된 대체 기본값을 사용
  * - CSS 변수가 정의되어 있으면 CSS 변수 값을 우선 사용
  */
-export function loadDefaultBoardUIConfig(): BoardUIConfig {
+export function loadDefaultIdeaMapUIConfig(): IdeaMapUIConfig {
   try {
     const isClient = typeof window !== 'undefined';
 
@@ -101,11 +102,11 @@ export function loadDefaultBoardUIConfig(): BoardUIConfig {
     if (isClient) {
       return {
         ...baseConfig,
-        board: {
-          ...baseConfig.board,
-          edgeColor: getCssVariable('--edge-color', baseConfig.board.edgeColor),
-          selectedEdgeColor: getCssVariable('--edge-selected-color', baseConfig.board.selectedEdgeColor),
-          strokeWidth: getCssVariableAsNumber('--edge-width', baseConfig.board.strokeWidth),
+        ideaMap: {
+          ...baseConfig.ideaMap,
+          edgeColor: getCssVariable('--edge-color', baseConfig.ideaMap.edgeColor),
+          selectedEdgeColor: getCssVariable('--edge-selected-color', baseConfig.ideaMap.selectedEdgeColor),
+          strokeWidth: getCssVariableAsNumber('--edge-width', baseConfig.ideaMap.strokeWidth),
         },
         card: {
           ...baseConfig.card,
@@ -144,7 +145,7 @@ export function loadDefaultBoardUIConfig(): BoardUIConfig {
     // 대체 기본값 (하드코딩된 fallback)
     return {
       autoSaveIntervalMinutes: 1,
-      board: {
+      ideaMap: {
         snapToGrid: false,
         snapGrid: [15, 15],
         connectionLineType: 'bezier' as ConnectionLineType,
@@ -168,9 +169,9 @@ export function loadDefaultBoardUIConfig(): BoardUIConfig {
         }
       },
       handles: {
-        size: 12,
-        backgroundColor: '#555555',
-        borderColor: '#FFFFFF',
+        size: 10,
+        backgroundColor: '#FFFFFF',
+        borderColor: '#C1C1C1',
         borderWidth: 2
       },
       layout: {
@@ -197,21 +198,24 @@ export function loadDefaultBoardUIConfig(): BoardUIConfig {
 /**
  * 보드 설정 인터페이스에 필요한 기본값을 추출하는 함수
  */
-export function extractBoardSettings(config: BoardUIConfig) {
+export function extractIdeaMapSettings(config: IdeaMapUIConfig) {
   return {
-    snapToGrid: config.board.snapToGrid,
-    snapGrid: config.board.snapGrid,
-    connectionLineType: config.board.connectionLineType as ConnectionLineType,
-    markerEnd: config.board.markerEnd as MarkerType,
-    strokeWidth: config.board.strokeWidth,
-    markerSize: config.board.markerSize,
+    snapToGrid: config.ideaMap.snapToGrid,
+    snapGrid: config.ideaMap.snapGrid,
+    connectionLineType: config.ideaMap.connectionLineType as ConnectionLineType,
+    markerEnd: config.ideaMap.markerEnd as MarkerType,
+    strokeWidth: config.ideaMap.strokeWidth,
+    markerSize: config.ideaMap.markerSize,
+    edgeColor: config.ideaMap.edgeColor,
+    selectedEdgeColor: config.ideaMap.selectedEdgeColor,
+    animated: config.ideaMap.animated
   };
 }
 
 /**
  * 레이아웃 설정을 추출하는 함수
  */
-export function extractLayoutSettings(config: BoardUIConfig) {
+export function extractLayoutSettings(config: IdeaMapUIConfig) {
   const layoutConfig = config.layout;
   return {
     defaultPadding: layoutConfig.defaultPadding,

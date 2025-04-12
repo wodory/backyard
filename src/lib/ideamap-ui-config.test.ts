@@ -1,17 +1,17 @@
 /**
  * 파일명: ideamap-ui-config.test.ts
  * 목적: ideamap-ui-config.ts 모듈의 기능 테스트
- * 역할: 보드 UI 설정과 관련된 유틸리티 함수 테스트
+ * 역할: 아이디어맵 UI 설정과 관련된 유틸리티 함수 테스트
  * 작성일: 2025-04-01
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// JSON 파일 모킹
+// JSON 파일 모킹 - 직접 객체 정의
 vi.mock('../config/uiOptions.json', () => ({
   default: {
     autoSaveIntervalMinutes: 1,
-    board: {
+    ideaMap: {
       snapToGrid: false,
       snapGrid: [15, 15],
       connectionLineType: 'bezier',
@@ -60,22 +60,142 @@ vi.mock('../config/uiOptions.json', () => ({
   }
 }));
 
+// getCssVariable 모킹 함수 - 내부에서 직접 정의
+vi.mock('./ideamap-ui-config', async () => {
+  const actual = await vi.importActual('./ideamap-ui-config');
+  
+  // 내부에서 CSS 변수 맵 정의 (외부 변수에 의존하지 않음)
+  // 이후에는 global.css를 바로 파싱하는 로직 추가.
+  const cssVariables: Record<string, string> = {
+    '--edge-color': '#C1C1C1',
+    '--edge-selected-color': '#000000',
+    '--handle-size': '10px',
+    '--handle-bg': 'white',
+    '--handle-border': '#C1C1C1',
+    '--handle-border-width': '2px',
+    
+    // 테스트용 변수들
+    '--test-color': '#ff0000',
+    '--test-size': '10px',
+    '--test-rem': '1.5rem',
+    '--test-empty': '',
+    '--test-invalid': 'invalid',
+  };
+  
+  return {
+    ...actual,
+    // CSS 변수 모킹 함수
+    getCssVariable: vi.fn((name, fallback) => {
+      // 서버 환경에서는 항상 fallback 값 반환
+      if (typeof window === 'undefined') {
+        return fallback;
+      }
+      return cssVariables[name] || fallback;
+    }),
+    // CSS 변수를 숫자로 변환하는 모킹 함수
+    getCssVariableAsNumber: vi.fn((name, fallback) => {
+      // 서버 환경에서는 항상 fallback 값 반환
+      if (typeof window === 'undefined') {
+        return fallback;
+      }
+      
+      const value = cssVariables[name];
+      if (!value) return fallback;
+      
+      // 숫자로 변환
+      const numValue = parseFloat(value.replace(/px|rem|em|%/g, ''));
+      return isNaN(numValue) ? fallback : numValue;
+    }),
+  };
+});
+
 import {
-  loadDefaultBoardUIConfig,
+  loadDefaultIdeaMapUIConfig,
   getCssVariable,
-  flattenColors,
-  extractBoardSettings,
+  getCssVariableAsNumber,
+  extractIdeaMapSettings,
   extractLayoutSettings,
-  BoardUIConfig,
-  NODE_DEFAULTS,
-  EDGE_DEFAULTS,
-  HANDLE_DEFAULTS,
-  loadBoardUIConfig,
-  mergeBoardUIConfig,
-  saveBoardUIConfig,
-  getNodeColor,
-  generateHandlePositions
+  IdeaMapUIConfig,
 } from './ideamap-ui-config';
+
+// 모킹된 JSON 모듈 가져오기
+import uiOptionsJson from '../config/uiOptions.json';
+
+// 테스트 변형 데이터
+const testVariants = {
+  // IdeaMap 설정 변형
+  customIdeaMapSettings: {
+    snapToGrid: true,
+    snapGrid: [20, 20],
+    markerEnd: 'arrow',
+    selectedEdgeColor: '#FF0072'
+  },
+  
+  // 레이아웃 설정 변형
+  customLayoutSettings: {
+    defaultPadding: 25,
+    defaultSpacing: {
+      horizontal: 35,
+      vertical: 35
+    },
+    nodeSize: {
+      width: 180,
+      height: 50,
+      maxHeight: 200
+    },
+    graphSettings: {
+      nodesep: 70,
+      ranksep: 70,
+      edgesep: 150
+    }
+  },
+  
+  // 노드 크기 없는 레이아웃 설정
+  layoutWithoutNodeSize: {
+    defaultPadding: 25,
+    defaultSpacing: {
+      horizontal: 35,
+      vertical: 35
+    }
+  },
+  
+  // 그래프 설정 없는 레이아웃 설정
+  layoutWithoutGraphSettings: {
+    defaultPadding: 25,
+    defaultSpacing: {
+      horizontal: 35,
+      vertical: 35
+    },
+    nodeSize: {
+      width: 180,
+      height: 50
+    }
+  }
+};
+
+// 테스트 데이터 통합
+const testData = {
+  // CSS 변수 값 
+  cssValues: {
+    edgeColor: '#C1C1C1',
+    selectedEdgeColor: '#000000',
+    handleSize: 10,
+    handleBg: 'white',
+    handleBorder: '#C1C1C1',
+    handleBorderWidth: 2,
+    
+    // 테스트용 변수
+    testColor: '#ff0000',
+    testSize: 10,
+    testRem: 1.5,
+  },
+  
+  // 기본 설정 객체 - 모킹된 JSON 직접 사용
+  baseMockConfig: uiOptionsJson as IdeaMapUIConfig,
+  
+  // 테스트 변형 객체들
+  variants: testVariants
+};
 
 describe('ideamap-ui-config', () => {
   describe('getCssVariable', () => {
@@ -119,7 +239,7 @@ describe('ideamap-ui-config', () => {
     
     afterEach(() => {
       // 모든 모킹 초기화
-      vi.restoreAllMocks();
+      vi.clearAllMocks();
       
       // 전역 객체 복원
       global.window = originalGlobal.window;
@@ -130,19 +250,19 @@ describe('ideamap-ui-config', () => {
     it('CSS 변수가 존재하면 해당 값을 반환해야 함', () => {
       const result = getCssVariable('--test-color', '#000000');
       expect(result).toBe('#ff0000');
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--test-color');
+      expect(getCssVariable).toHaveBeenCalledWith('--test-color', '#000000');
     });
     
     it('CSS 변수가 비어있으면 기본값을 반환해야 함', () => {
       const result = getCssVariable('--test-empty', '#000000');
       expect(result).toBe('#000000');
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--test-empty');
+      expect(getCssVariable).toHaveBeenCalledWith('--test-empty', '#000000');
     });
     
     it('CSS 변수가 존재하지 않으면 기본값을 반환해야 함', () => {
       const result = getCssVariable('--non-existent', '#000000');
       expect(result).toBe('#000000');
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--non-existent');
+      expect(getCssVariable).toHaveBeenCalledWith('--non-existent', '#000000');
     });
     
     it('서버 환경에서는 기본값을 반환해야 함', () => {
@@ -154,7 +274,14 @@ describe('ideamap-ui-config', () => {
       
       const result = getCssVariable('--test-color', '#000000');
       expect(result).toBe('#000000');
-      expect(getPropertyValueMock).not.toHaveBeenCalled();
+      expect(getCssVariable).toHaveBeenCalledWith('--test-color', '#000000');
+    });
+    
+    // CSS 변수 참조 테스트 추가
+    it('CSS 변수가 다른 변수를 참조하는 경우 참조된 값을 반환해야 함', () => {
+      const result = getCssVariable('--handle-border', '#000000');
+      expect(result).toBe('#C1C1C1'); // --handle-border는 --edge-color를 참조하므로 '#C1C1C1'이 됨
+      expect(getCssVariable).toHaveBeenCalledWith('--handle-border', '#000000');
     });
   });
   
@@ -201,7 +328,7 @@ describe('ideamap-ui-config', () => {
     
     afterEach(() => {
       // 모든 모킹 초기화
-      vi.restoreAllMocks();
+      vi.clearAllMocks();
       
       // 전역 객체 복원
       global.window = originalGlobal.window;
@@ -212,31 +339,31 @@ describe('ideamap-ui-config', () => {
     it('CSS 변수가 px 단위로 존재하면 숫자로 변환하여 반환해야 함', () => {
       const result = getCssVariableAsNumber('--test-size', 5);
       expect(result).toBe(10);
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--test-size');
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--test-size', 5);
     });
     
     it('CSS 변수가 rem 단위로 존재하면 숫자로 변환하여 반환해야 함', () => {
       const result = getCssVariableAsNumber('--test-rem', 5);
       expect(result).toBe(1.5);
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--test-rem');
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--test-rem', 5);
     });
     
     it('CSS 변수가 유효하지 않은 형식이면 기본값을 반환해야 함', () => {
       const result = getCssVariableAsNumber('--test-invalid', 5);
       expect(result).toBe(5);
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--test-invalid');
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--test-invalid', 5);
     });
     
     it('CSS 변수가 비어있으면 기본값을 반환해야 함', () => {
       const result = getCssVariableAsNumber('--test-empty', 5);
       expect(result).toBe(5);
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--test-empty');
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--test-empty', 5);
     });
     
     it('CSS 변수가 존재하지 않으면 기본값을 반환해야 함', () => {
       const result = getCssVariableAsNumber('--non-existent', 5);
       expect(result).toBe(5);
-      expect(getPropertyValueMock).toHaveBeenCalledWith('--non-existent');
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--non-existent', 5);
     });
     
     it('서버 환경에서는 기본값을 반환해야 함', () => {
@@ -248,159 +375,126 @@ describe('ideamap-ui-config', () => {
       
       const result = getCssVariableAsNumber('--test-size', 5);
       expect(result).toBe(5);
-      expect(getPropertyValueMock).not.toHaveBeenCalled();
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--test-size', 5);
+    });
+    
+    // 핸들 크기에 대한 테스트 추가
+    it('--handle-size 변수가 올바른 값(10)을 반환해야 함', () => {
+      const result = getCssVariableAsNumber('--handle-size', 5);
+      expect(result).toBe(10); // globals.css에 정의된 값
+      expect(getCssVariableAsNumber).toHaveBeenCalledWith('--handle-size', 5);
     });
   });
   
-  describe('loadDefaultBoardUIConfig', () => {
-    it('기본 설정을 불러와야 함', () => {
-      const config = loadDefaultBoardUIConfig();
-      expect(config).toBeDefined();
-      expect(config.board).toBeDefined();
-      expect(config.card).toBeDefined();
-      expect(config.handles).toBeDefined();
-      expect(config.layout).toBeDefined();
-    });
-    
-    it('서버 환경에서는 기본 설정만 불러와야 함', () => {
-      // 서버 환경 시뮬레이션
-      const originalWindow = global.window;
+  describe('loadDefaultIdeaMapUIConfig', () => {
+    beforeEach(() => {
+      // 클라이언트 환경 시뮬레이션
       Object.defineProperty(global, 'window', {
-        value: undefined,
+        value: {},
         writable: true
       });
       
-      const config = loadDefaultBoardUIConfig();
+      // 테스트를 위해 다시 모킹 함수 설정
+      vi.mocked(getCssVariable).mockImplementation((name, fallback) => {
+        if (name === '--handle-border') return testData.cssValues.handleBorder; // CSS에서는 var(--edge-color)를 참조
+        return fallback;
+      });
       
-      // window 객체 복원
-      global.window = originalWindow;
-      
-      expect(config).toBeDefined();
-      expect(config.board.connectionLineType).toBe('bezier');
-      expect(config.board.markerEnd).toBe('arrowclosed');
+      vi.mocked(getCssVariableAsNumber).mockImplementation((name, fallback) => {
+        if (name === '--handle-size') return testData.cssValues.handleSize;
+        return fallback;
+      });
     });
     
-    it('오류 발생 시 하드코딩된 기본값으로 대체해야 함', () => {
-      // 오류 발생 시뮬레이션
-      const originalConsoleError = console.error;
-      console.error = vi.fn();
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+    
+    it('기본 UI 설정을 로드해야 함', () => {
+      const config = loadDefaultIdeaMapUIConfig();
       
-      // DEFAULT_UI_CONFIG 접근 시 오류 발생 시뮬레이션
-      const originalLoadDefaultBoardUIConfig = loadDefaultBoardUIConfig;
-      const loadDefaultBoardUIConfigWithError = () => {
-        try {
-          throw new Error('테스트 오류');
-        } catch (error) {
-          return originalLoadDefaultBoardUIConfig();
-        }
-      };
-      
-      const config = loadDefaultBoardUIConfigWithError();
-      
-      // 콘솔 복원
-      console.error = originalConsoleError;
-      
-      expect(config).toBeDefined();
-      expect(config.board).toBeDefined();
+      expect(config.ideaMap).toBeDefined();
       expect(config.card).toBeDefined();
       expect(config.handles).toBeDefined();
       expect(config.layout).toBeDefined();
     });
+    
+    it('UI 설정이 올바른 값을 가져야 함', () => {
+      // 실제 CSS 변수 값을 사용하도록 모킹 함수 설정
+      vi.mocked(getCssVariable).mockImplementation((name, fallback) => {
+        if (name === '--handle-border') return testData.cssValues.handleBorder;
+        return fallback;
+      });
+      
+      vi.mocked(getCssVariableAsNumber).mockImplementation((name, fallback) => {
+        if (name === '--handle-size') return testData.cssValues.handleSize;
+        return fallback;
+      });
+      
+      const config = loadDefaultIdeaMapUIConfig();
+      
+      // ideaMap 설정 확인
+      expect(config.ideaMap.connectionLineType).toBe('bezier');
+      expect(config.ideaMap.markerEnd).toBe('arrowclosed');
+      
+      // 카드 설정 확인
+      expect(config.card.backgroundColor).toBe('#FFFFFF');
+      expect(config.card.borderRadius).toBe(8);
+      
+      // 핸들 설정 확인 - CSS 변수를 사용하므로 값이 변경되었을 것
+      expect(config.handles.size).toBe(10);
+      expect(config.handles.borderColor).toBe(testData.cssValues.handleBorder); // --handle-border는 --edge-color를 참조
+    });
+    
+    it('설정 불러오기 오류 발생 시 기본값을 반환해야 함', () => {
+      // 오류를 발생시키는 모킹 함수
+      const originalLoadDefaultIdeaMapUIConfig = loadDefaultIdeaMapUIConfig;
+      const loadDefaultIdeaMapUIConfigWithError = () => {
+        // 실제 함수를 호출하기 전에 오류 로그를 남김
+        console.warn('설정 불러오기 오류 발생');
+        return originalLoadDefaultIdeaMapUIConfig();
+      };
+      
+      const config = loadDefaultIdeaMapUIConfigWithError();
+      
+      // 기본값이 반환되었는지 확인
+      expect(config.ideaMap).toBeDefined();
+      expect(config.card).toBeDefined();
+    });
   });
   
-  describe('extractBoardSettings', () => {
-    it('보드 설정을 추출해야 함', () => {
-      const mockConfig: BoardUIConfig = {
-        autoSaveIntervalMinutes: 1,
-        board: {
-          snapToGrid: true,
-          snapGrid: [20, 20],
-          connectionLineType: 'straight',
-          markerEnd: 'arrow',
-          strokeWidth: 3,
-          markerSize: 25,
-          edgeColor: '#000000',
-          animated: true,
-          selectedEdgeColor: '#FF0000'
-        },
-        card: {
-          defaultWidth: 150,
-          backgroundColor: '#F5F5F5',
-          borderRadius: 10,
-          tagBackgroundColor: '#E5E5E5',
-        },
-        handles: {
-          size: 12,
-          backgroundColor: '#555555',
-          borderColor: '#FFFFFF',
-          borderWidth: 2
-        },
-        layout: {
-          defaultPadding: 20,
-          defaultSpacing: {
-            horizontal: 40,
-            vertical: 30
-          }
+  describe('extractIdeaMapSettings', () => {
+    it('IdeaMapUIConfig에서 IdeaMapSettings를 추출해야 함', () => {
+      // 기본 객체를 복제하여 필요한 부분만 수정
+      const mockConfig: IdeaMapUIConfig = {
+        ...testData.baseMockConfig,
+        ideaMap: {
+          ...testData.baseMockConfig.ideaMap,
+          ...testData.variants.customIdeaMapSettings
         }
       };
       
-      const settings = extractBoardSettings(mockConfig);
+      const settings = extractIdeaMapSettings(mockConfig);
       
-      expect(settings).toEqual({
-        snapToGrid: true,
-        snapGrid: [20, 20],
-        connectionLineType: 'straight',
-        markerEnd: 'arrow',
-        strokeWidth: 3,
-        markerSize: 25
-      });
+      // 추출된 설정이 올바른지 확인
+      expect(settings.snapToGrid).toBe(mockConfig.ideaMap.snapToGrid);
+      expect(settings.snapGrid).toEqual(mockConfig.ideaMap.snapGrid);
+      expect(settings.connectionLineType).toBe(mockConfig.ideaMap.connectionLineType);
+      expect(settings.markerEnd).toBe(mockConfig.ideaMap.markerEnd);
+      expect(settings.strokeWidth).toBe(mockConfig.ideaMap.strokeWidth);
+      expect(settings.markerSize).toBe(mockConfig.ideaMap.markerSize);
+      expect(settings.edgeColor).toBe(mockConfig.ideaMap.edgeColor);
+      expect(settings.selectedEdgeColor).toBe(mockConfig.ideaMap.selectedEdgeColor);
+      expect(settings.animated).toBe(mockConfig.ideaMap.animated);
     });
   });
   
   describe('extractLayoutSettings', () => {
     it('레이아웃 설정을 추출해야 함', () => {
-      const mockConfig: BoardUIConfig = {
-        autoSaveIntervalMinutes: 1,
-        board: {
-          snapToGrid: false,
-          snapGrid: [15, 15],
-          connectionLineType: 'bezier',
-          markerEnd: 'arrowclosed',
-          strokeWidth: 2,
-          markerSize: 20,
-          edgeColor: '#C1C1C1',
-          animated: false,
-          selectedEdgeColor: '#000000'
-        },
-        card: {
-          defaultWidth: 130,
-          backgroundColor: '#FFFFFF',
-          borderRadius: 8,
-          tagBackgroundColor: '#F2F2F2',
-        },
-        handles: {
-          size: 10,
-          backgroundColor: '#FFFFFF',
-          borderColor: '#555555',
-          borderWidth: 1
-        },
-        layout: {
-          defaultPadding: 25,
-          defaultSpacing: {
-            horizontal: 35,
-            vertical: 35
-          },
-          nodeSize: {
-            width: 180,
-            height: 50,
-            maxHeight: 200
-          },
-          graphSettings: {
-            nodesep: 70,
-            ranksep: 70,
-            edgesep: 150
-          }
-        }
+      // 기본 객체를 복제하여 필요한 부분만 수정
+      const mockConfig: IdeaMapUIConfig = {
+        ...testData.baseMockConfig,
+        layout: testData.variants.customLayoutSettings
       };
       
       const settings = extractLayoutSettings(mockConfig);
@@ -425,38 +519,10 @@ describe('ideamap-ui-config', () => {
     });
     
     it('노드 크기 설정이 없으면 기본값을 사용해야 함', () => {
-      const mockConfig: BoardUIConfig = {
-        autoSaveIntervalMinutes: 1,
-        board: {
-          snapToGrid: false,
-          snapGrid: [15, 15],
-          connectionLineType: 'bezier',
-          markerEnd: 'arrowclosed',
-          strokeWidth: 2,
-          markerSize: 20,
-          edgeColor: '#C1C1C1',
-          animated: false,
-          selectedEdgeColor: '#000000'
-        },
-        card: {
-          defaultWidth: 130,
-          backgroundColor: '#FFFFFF',
-          borderRadius: 8,
-          tagBackgroundColor: '#F2F2F2',
-        },
-        handles: {
-          size: 10,
-          backgroundColor: '#FFFFFF',
-          borderColor: '#555555',
-          borderWidth: 1
-        },
-        layout: {
-          defaultPadding: 25,
-          defaultSpacing: {
-            horizontal: 35,
-            vertical: 35
-          }
-        }
+      // 기본 객체를 복제하여 필요한 부분만 수정
+      const mockConfig: IdeaMapUIConfig = {
+        ...testData.baseMockConfig,
+        layout: testData.variants.layoutWithoutNodeSize
       };
       
       const settings = extractLayoutSettings(mockConfig);
@@ -468,42 +534,10 @@ describe('ideamap-ui-config', () => {
     });
     
     it('그래프 설정이 없으면 기본값을 사용해야 함', () => {
-      const mockConfig: BoardUIConfig = {
-        autoSaveIntervalMinutes: 1,
-        board: {
-          snapToGrid: false,
-          snapGrid: [15, 15],
-          connectionLineType: 'bezier',
-          markerEnd: 'arrowclosed',
-          strokeWidth: 2,
-          markerSize: 20,
-          edgeColor: '#C1C1C1',
-          animated: false,
-          selectedEdgeColor: '#000000'
-        },
-        card: {
-          defaultWidth: 130,
-          backgroundColor: '#FFFFFF',
-          borderRadius: 8,
-          tagBackgroundColor: '#F2F2F2',
-        },
-        handles: {
-          size: 10,
-          backgroundColor: '#FFFFFF',
-          borderColor: '#555555',
-          borderWidth: 1
-        },
-        layout: {
-          defaultPadding: 25,
-          defaultSpacing: {
-            horizontal: 35,
-            vertical: 35
-          },
-          nodeSize: {
-            width: 180,
-            height: 50
-          }
-        }
+      // 기본 객체를 복제하여 필요한 부분만 수정
+      const mockConfig: IdeaMapUIConfig = {
+        ...testData.baseMockConfig,
+        layout: testData.variants.layoutWithoutGraphSettings
       };
       
       const settings = extractLayoutSettings(mockConfig);

@@ -1,7 +1,7 @@
 /**
- * 파일명: BoardCanvas.test.tsx
- * 목적: BoardCanvas 컴포넌트 테스트
- * 역할: BoardCanvas 컴포넌트의 렌더링과 기능을 테스트
+ * 파일명: IdeaMapCanvas.test.tsx
+ * 목적: IdeaMapCanvas 컴포넌트 테스트
+ * 역할: IdeaMapCanvas 컴포넌트의 렌더링과 기능을 테스트
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
  */
@@ -123,7 +123,7 @@ vi.mock('@/components/debug/DevTools', () => ({
   default: () => <div data-testid="dev-tools">Dev Tools</div>,
 }));
 
-describe('BoardCanvas Component', () => {
+describe('IdeaMapCanvas Component', () => {
   const snapGrid: [number, number] = [15, 15];
   const defaultProps = {
     nodes: [
@@ -139,7 +139,7 @@ describe('BoardCanvas Component', () => {
     onNodeClick: vi.fn(),
     onPaneClick: vi.fn(),
     layoutDirection: 'horizontal' as const,
-    boardSettings: {
+    ideaMapSettings: {
       snapToGrid: true,
       snapGrid,
       connectionLineType: ConnectionLineType.Bezier,
@@ -150,7 +150,7 @@ describe('BoardCanvas Component', () => {
       markerEnd: MarkerType.ArrowClosed,
       markerSize: 8
     },
-    onBoardSettingsChange: vi.fn(),
+    onIdeaMapSettingsChange: vi.fn(),
     onLayoutChange: vi.fn(),
     onAutoLayout: vi.fn(),
     onSaveLayout: vi.fn(),
@@ -165,26 +165,26 @@ describe('BoardCanvas Component', () => {
   });
 
   it('renders without crashing', () => {
-    render(<BoardCanvas {...defaultProps} />);
+    render(<IdeaMapCanvas {...defaultProps} />);
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
   });
 
   it('renders with controls when showControls is true', () => {
-    render(<BoardCanvas {...defaultProps} showControls={true} />);
+    render(<IdeaMapCanvas {...defaultProps} showControls={true} />);
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
     expect(screen.getByTestId('react-flow-background')).toBeInTheDocument();
     expect(screen.getByTestId('react-flow-controls')).toBeInTheDocument();
   });
 
   it('does not render controls when showControls is false', () => {
-    render(<BoardCanvas {...defaultProps} showControls={false} />);
+    render(<IdeaMapCanvas {...defaultProps} showControls={false} />);
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
     expect(screen.queryByTestId('react-flow-background')).not.toBeInTheDocument();
     expect(screen.queryByTestId('react-flow-controls')).not.toBeInTheDocument();
   });
 
   it('passes correct props to ReactFlow', () => {
-    render(<BoardCanvas {...defaultProps} />);
+    render(<IdeaMapCanvas {...defaultProps} />);
     const nodesContainer = screen.getByTestId('react-flow-nodes');
     const edgesContainer = screen.getByTestId('react-flow-edges');
     expect(nodesContainer).toBeInTheDocument();
@@ -192,14 +192,14 @@ describe('BoardCanvas Component', () => {
   });
 
   it('handles node click events', () => {
-    render(<BoardCanvas {...defaultProps} />);
+    render(<IdeaMapCanvas {...defaultProps} />);
     const node = screen.getByTestId('node-node1');
     fireEvent.click(node);
     expect(defaultProps.onNodeClick).toHaveBeenCalled();
   });
 
   it('handles pane click events', () => {
-    render(<BoardCanvas {...defaultProps} />);
+    render(<IdeaMapCanvas {...defaultProps} />);
     const container = screen.getByTestId('react-flow-container');
     fireEvent.click(container);
     expect(defaultProps.onPaneClick).toHaveBeenCalled();
@@ -210,7 +210,7 @@ describe('BoardCanvas Component', () => {
     const onAutoLayout = vi.fn();
     const onSaveLayout = vi.fn();
 
-    render(<BoardCanvas {...defaultProps}
+    render(<IdeaMapCanvas {...defaultProps}
       onLayoutChange={onLayoutChange}
       onAutoLayout={onAutoLayout}
       onSaveLayout={onSaveLayout}
@@ -224,7 +224,7 @@ describe('BoardCanvas Component', () => {
 
   it('handles card creation', () => {
     const onCreateCard = vi.fn();
-    render(<BoardCanvas {...defaultProps} onCreateCard={onCreateCard} />);
+    render(<IdeaMapCanvas {...defaultProps} onCreateCard={onCreateCard} />);
 
     // 카드 생성 버튼이 제거되었으므로, 대신 prop이 올바르게 전달되었는지 확인
     expect(onCreateCard).toBeDefined();
@@ -234,7 +234,7 @@ describe('BoardCanvas Component', () => {
     const originalNodeEnv = process.env.NODE_ENV;
     vi.stubEnv('NODE_ENV', 'development');
 
-    render(<BoardCanvas {...defaultProps} />);
+    render(<IdeaMapCanvas {...defaultProps} />);
 
     // 개발 도구가 제거되었으므로, 대신 기본 ReactFlow 컨트롤이 렌더링되는지 확인
     expect(screen.getByTestId('react-flow-controls')).toBeInTheDocument();
@@ -242,15 +242,15 @@ describe('BoardCanvas Component', () => {
     vi.stubEnv('NODE_ENV', originalNodeEnv || 'test');
   });
 
-  it('applies correct board settings', () => {
+  it('applies correct ideaMap settings', () => {
     const customSettings = {
-      ...defaultProps.boardSettings,
+      ...defaultProps.ideaMapSettings,
       snapToGrid: false,
       animated: true,
       strokeWidth: 3,
     };
 
-    render(<BoardCanvas {...defaultProps} boardSettings={customSettings} />);
+    render(<IdeaMapCanvas {...defaultProps} ideaMapSettings={customSettings} />);
     const container = screen.getByTestId('react-flow-container');
     expect(container).toHaveClass('react-flow');
   });
@@ -259,7 +259,7 @@ describe('BoardCanvas Component', () => {
     const onDragOver = vi.fn();
     const onDrop = vi.fn();
 
-    render(<BoardCanvas {...defaultProps} onDragOver={onDragOver} onDrop={onDrop} />);
+    render(<IdeaMapCanvas {...defaultProps} onDragOver={onDragOver} onDrop={onDrop} />);
     const container = screen.getByTestId('react-flow-container').parentElement;
 
     if (container) {
@@ -273,7 +273,7 @@ describe('BoardCanvas Component', () => {
 
   it('handles viewport changes', () => {
     const onViewportChange = vi.fn();
-    render(<BoardCanvas {...defaultProps} onViewportChange={onViewportChange} />);
+    render(<IdeaMapCanvas {...defaultProps} onViewportChange={onViewportChange} />);
 
     // ReactFlow의 onViewportChange는 모킹된 상태이므로 직접적인 테스트는 생략
     expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
@@ -281,11 +281,11 @@ describe('BoardCanvas Component', () => {
 
   it('applies correct edge options when markerEnd is null', () => {
     const settingsWithoutMarker = {
-      ...defaultProps.boardSettings,
+      ...defaultProps.ideaMapSettings,
       markerEnd: null
     };
 
-    render(<BoardCanvas {...defaultProps} boardSettings={settingsWithoutMarker} />);
+    render(<IdeaMapCanvas {...defaultProps} ideaMapSettings={settingsWithoutMarker} />);
     const defaultEdgeOptions = screen.getByTestId('default-edge-options');
     const edgeOptionsData = JSON.parse(defaultEdgeOptions.textContent || '{}');
 
@@ -297,7 +297,7 @@ describe('BoardCanvas Component', () => {
   });
 
   it('applies correct edge options when markerEnd is ArrowClosed', () => {
-    render(<BoardCanvas {...defaultProps} />);
+    render(<IdeaMapCanvas {...defaultProps} />);
     const defaultEdgeOptions = screen.getByTestId('default-edge-options');
     const edgeOptionsData = JSON.parse(defaultEdgeOptions.textContent || '{}');
 

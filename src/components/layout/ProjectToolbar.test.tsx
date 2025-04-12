@@ -110,15 +110,15 @@ vi.mock('sonner', () => ({
 }));
 
 // 액션 모킹 함수들
-const mockUpdateBoardSettings = vi.fn();
+const mockUpdateIdeaMapSettings = vi.fn();
 const mockSetLayoutDirection = vi.fn();
-const mockSaveBoardLayout = vi.fn();
+const mockSaveIdeaMapLayout = vi.fn();
 const mockLogoutAction = vi.fn();
 const mockFetchProjects = vi.fn();
 const mockCreateProject = vi.fn();
 const mockSetActiveProject = vi.fn();
 
-const mockBoardSettings = {
+const mockIdeaMapSettings = {
     snapToGrid: false,
     snapGrid: [15, 15],
     connectionLineType: 'bezier',
@@ -144,9 +144,9 @@ const mockProjects = [
 const mockStore = {
     layoutDirection: 'horizontal',
     setLayoutDirection: mockSetLayoutDirection,
-    boardSettings: mockBoardSettings,
-    updateBoardSettings: mockUpdateBoardSettings,
-    saveBoardLayout: mockSaveBoardLayout,
+    ideaMapSettings: mockIdeaMapSettings,
+    updateIdeaMapSettings: mockUpdateIdeaMapSettings,
+    saveIdeaMapLayout: mockSaveIdeaMapLayout,
     logoutAction: mockLogoutAction,
     strokeWidth: 2,
     strokeColor: '#000000',
@@ -208,10 +208,10 @@ describe('ProjectToolbar', () => {
         render(<ProjectToolbar />);
 
         // 모킹된 함수 직접 호출하여 내부 로직만 테스트
-        mockSaveBoardLayout();
+        mockSaveIdeaMapLayout();
 
-        // saveBoardLayout 액션이 호출되었는지 확인
-        expect(mockSaveBoardLayout).toHaveBeenCalledTimes(1);
+        // saveIdeaMapLayout 액션이 호출되었는지 확인
+        expect(mockSaveIdeaMapLayout).toHaveBeenCalledTimes(1);
     });
 
     it('로그아웃 액션이 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
@@ -224,17 +224,17 @@ describe('ProjectToolbar', () => {
         expect(mockLogoutAction).toHaveBeenCalledTimes(1);
     });
 
-    it('스냅 그리드 설정 변경 시 updateBoardSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
+    it('스냅 그리드 설정 변경 시 updateIdeaMapSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
         // 핸들러 함수 및 모킹 함수 호출 테스트 - ProjectToolbar의 인스턴스를 통해 접근
         // 변수 선언 및 초기화를 함께 수행
         let handleSnapGridChange: (value: string) => void = () => { };
 
         // 컴포넌트를 커스텀 렌더링하여 핸들러 함수에 직접 접근
         const TestComponent: React.FC = () => {
-            const { updateBoardSettings } = useAppStore();
+            const { updateIdeaMapSettings } = useAppStore();
             handleSnapGridChange = (value: string) => {
                 const gridSize = parseInt(value, 10);
-                updateBoardSettings({
+                updateIdeaMapSettings({
                     snapGrid: [gridSize, gridSize],
                     snapToGrid: gridSize > 0,
                 });
@@ -247,24 +247,23 @@ describe('ProjectToolbar', () => {
         // 핸들러 함수 직접 호출
         handleSnapGridChange('15');
 
-        // updateBoardSettings가 올바른 인자와 함께 호출되었는지 확인
-        expect(mockUpdateBoardSettings).toHaveBeenCalledWith({
+        // updateIdeaMapSettings가 올바른 인자와 함께 호출되었는지 확인
+        expect(mockUpdateIdeaMapSettings).toHaveBeenCalledWith({
             snapGrid: [15, 15],
-            snapToGrid: true
+            snapToGrid: true,
         });
     });
 
-    it('스냅 그리드 활성화 설정 토글 시 updateBoardSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
+    it('스냅 그리드 활성화 설정 토글 시 updateIdeaMapSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
         // 핸들러 함수 및 모킹 함수 호출 테스트
-        // 변수 선언 및 초기화를 함께 수행
         let handleSnapToGridToggle: () => void = () => { };
 
         // 컴포넌트를 커스텀 렌더링하여 핸들러 함수에 직접 접근
         const TestComponent: React.FC = () => {
-            const { boardSettings, updateBoardSettings } = useAppStore();
+            const { ideaMapSettings, updateIdeaMapSettings } = useAppStore();
             handleSnapToGridToggle = () => {
-                updateBoardSettings({
-                    snapToGrid: !boardSettings.snapToGrid,
+                updateIdeaMapSettings({
+                    snapToGrid: !ideaMapSettings.snapToGrid,
                 });
             };
             return null;
@@ -275,22 +274,21 @@ describe('ProjectToolbar', () => {
         // 핸들러 함수 직접 호출
         handleSnapToGridToggle();
 
-        // updateBoardSettings가 올바른 인자와 함께 호출되었는지 확인
-        expect(mockUpdateBoardSettings).toHaveBeenCalledWith({
-            snapToGrid: true
+        // updateIdeaMapSettings가 올바른 인자와 함께 호출되었는지 확인
+        expect(mockUpdateIdeaMapSettings).toHaveBeenCalledWith({
+            snapToGrid: true, // 초기값이 false라고 가정
         });
     });
 
-    it('연결선 스타일 변경 시 updateBoardSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
+    it('연결선 스타일 변경 시 updateIdeaMapSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
         // 핸들러 함수 및 모킹 함수 호출 테스트
-        // 변수 선언 및 초기화를 함께 수행
         let handleConnectionTypeChange: (value: string) => void = () => { };
 
         // 컴포넌트를 커스텀 렌더링하여 핸들러 함수에 직접 접근
         const TestComponent: React.FC = () => {
-            const { updateBoardSettings } = useAppStore();
+            const { updateIdeaMapSettings } = useAppStore();
             handleConnectionTypeChange = (value: string) => {
-                updateBoardSettings({
+                updateIdeaMapSettings({
                     connectionLineType: value as ConnectionLineType,
                 });
             };
@@ -302,23 +300,22 @@ describe('ProjectToolbar', () => {
         // 핸들러 함수 직접 호출
         handleConnectionTypeChange('straight');
 
-        // updateBoardSettings가 올바른 인자와 함께 호출되었는지 확인
-        expect(mockUpdateBoardSettings).toHaveBeenCalledWith({
-            connectionLineType: 'straight'
+        // updateIdeaMapSettings가 올바른 인자와 함께 호출되었는지 확인
+        expect(mockUpdateIdeaMapSettings).toHaveBeenCalledWith({
+            connectionLineType: 'straight',
         });
     });
 
-    it('화살표 스타일 변경 시 updateBoardSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
+    it('화살표 스타일 변경 시 updateIdeaMapSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
         // 핸들러 함수 및 모킹 함수 호출 테스트
-        // 변수 선언 및 초기화를 함께 수행
         let handleMarkerTypeChange: (value: string) => void = () => { };
 
         // 컴포넌트를 커스텀 렌더링하여 핸들러 함수에 직접 접근
         const TestComponent: React.FC = () => {
-            const { updateBoardSettings } = useAppStore();
+            const { updateIdeaMapSettings } = useAppStore();
             handleMarkerTypeChange = (value: string) => {
-                updateBoardSettings({
-                    markerEnd: value === 'null' ? null : (value as MarkerType),
+                updateIdeaMapSettings({
+                    markerEnd: value as MarkerType,
                 });
             };
             return null;
@@ -329,22 +326,21 @@ describe('ProjectToolbar', () => {
         // 핸들러 함수 직접 호출
         handleMarkerTypeChange('arrowclosed');
 
-        // updateBoardSettings가 올바른 인자와 함께 호출되었는지 확인
-        expect(mockUpdateBoardSettings).toHaveBeenCalledWith({
-            markerEnd: 'arrowclosed'
+        // updateIdeaMapSettings가 올바른 인자와 함께 호출되었는지 확인
+        expect(mockUpdateIdeaMapSettings).toHaveBeenCalledWith({
+            markerEnd: 'arrowclosed',
         });
     });
 
-    it('연결선 두께 변경 시 updateBoardSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
+    it('연결선 두께 변경 시 updateIdeaMapSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
         // 핸들러 함수 및 모킹 함수 호출 테스트
-        // 변수 선언 및 초기화를 함께 수행
         let handleStrokeWidthChange: (value: string) => void = () => { };
 
         // 컴포넌트를 커스텀 렌더링하여 핸들러 함수에 직접 접근
         const TestComponent: React.FC = () => {
-            const { updateBoardSettings } = useAppStore();
+            const { updateIdeaMapSettings } = useAppStore();
             handleStrokeWidthChange = (value: string) => {
-                updateBoardSettings({
+                updateIdeaMapSettings({
                     strokeWidth: parseInt(value, 10),
                 });
             };
@@ -354,24 +350,23 @@ describe('ProjectToolbar', () => {
         render(<TestComponent />);
 
         // 핸들러 함수 직접 호출
-        handleStrokeWidthChange('2');
+        handleStrokeWidthChange('3');
 
-        // updateBoardSettings가 올바른 인자와 함께 호출되었는지 확인
-        expect(mockUpdateBoardSettings).toHaveBeenCalledWith({
-            strokeWidth: 2
+        // updateIdeaMapSettings가 올바른 인자와 함께 호출되었는지 확인
+        expect(mockUpdateIdeaMapSettings).toHaveBeenCalledWith({
+            strokeWidth: 3,
         });
     });
 
-    it('연결선 애니메이션 변경 시 updateBoardSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
+    it('연결선 애니메이션 변경 시 updateIdeaMapSettings가 호출되어야 함', { timeout: TEST_TIMEOUT }, () => {
         // 핸들러 함수 및 모킹 함수 호출 테스트
-        // 변수 선언 및 초기화를 함께 수행
         let handleAnimatedChange: (value: string) => void = () => { };
 
         // 컴포넌트를 커스텀 렌더링하여 핸들러 함수에 직접 접근
         const TestComponent: React.FC = () => {
-            const { updateBoardSettings } = useAppStore();
+            const { updateIdeaMapSettings } = useAppStore();
             handleAnimatedChange = (value: string) => {
-                updateBoardSettings({
+                updateIdeaMapSettings({
                     animated: value === 'true',
                 });
             };
@@ -383,9 +378,9 @@ describe('ProjectToolbar', () => {
         // 핸들러 함수 직접 호출
         handleAnimatedChange('true');
 
-        // updateBoardSettings가 올바른 인자와 함께 호출되었는지 확인
-        expect(mockUpdateBoardSettings).toHaveBeenCalledWith({
-            animated: true
+        // updateIdeaMapSettings가 올바른 인자와 함께 호출되었는지 확인
+        expect(mockUpdateIdeaMapSettings).toHaveBeenCalledWith({
+            animated: true,
         });
     });
 }); 

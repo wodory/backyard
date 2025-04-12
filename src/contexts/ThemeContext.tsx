@@ -73,10 +73,10 @@ const defaultTheme: Theme = {
     }
   },
   edge: {
-    color: defaultConfig.board.edgeColor,
-    width: defaultConfig.board.strokeWidth,
-    selectedColor: defaultConfig.board.selectedEdgeColor,
-    animated: defaultConfig.board.animated,
+    color: defaultConfig.ideaMap.edgeColor,
+    width: defaultConfig.ideaMap.strokeWidth,
+    selectedColor: defaultConfig.ideaMap.selectedEdgeColor,
+    animated: defaultConfig.ideaMap.animated,
   },
   handle: {
     size: defaultConfig.handles.size,

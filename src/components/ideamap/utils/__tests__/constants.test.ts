@@ -1,6 +1,6 @@
 /**
  * 파일명: constants.test.ts
- * 목적: 보드 컴포넌트 상수 테스트
+ * 목적: 아이디어맵 컴포넌트 상수 테스트
  * 역할: 상수 정의가 올바르게 되었는지 검증
  * 작성일: 2025-03-28
  */
@@ -19,9 +19,9 @@ import {
   DEFAULT_NEW_CARD,
   ZOOM_SETTINGS,
   TOOLTIP_DELAY
-} from '../constants';
+} from '../ideamap-constants';
 
-describe('보드 컴포넌트 상수', () => {
+describe('아이디어맵 컴포넌트 상수', () => {
   it('레이아웃 방향 상수가 정의되어 있어야 함', () => {
     expect(LAYOUT_DIRECTION).toBeDefined();
     expect(LAYOUT_DIRECTION.HORIZONTAL).toBe('LR');

@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { DEFAULT_BOARD_SETTINGS } from '@/lib/ideamap-utils';
+import { DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
 
 // TiptapViewer 모킹
 vi.mock('@/components/editor/TiptapViewer', () => ({
@@ -95,10 +95,10 @@ vi.mock('@/store/useAppStore', () => ({
         sidebarWidth: 300,
         setSidebarWidth: vi.fn(),
 
-        // 보드 설정
-        boardSettings: DEFAULT_BOARD_SETTINGS,
-        setBoardSettings: vi.fn(),
-        updateBoardSettings: vi.fn(),
+        // 아이디어맵 설정
+        ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+        setIdeaMapSettings: vi.fn(),
+        updateIdeaMapSettings: vi.fn(),
 
         // 로딩 상태
         isLoading: false,
@@ -187,10 +187,10 @@ describe('CardNode', () => {
             sidebarWidth: 300,
             setSidebarWidth: vi.fn(),
 
-            // 보드 설정
-            boardSettings: DEFAULT_BOARD_SETTINGS,
-            setBoardSettings: vi.fn(),
-            updateBoardSettings: vi.fn(),
+            // 아이디어맵 설정
+            ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+            setIdeaMapSettings: vi.fn(),
+            updateIdeaMapSettings: vi.fn(),
 
             // 로딩 상태
             isLoading: false,
@@ -264,10 +264,10 @@ describe('CardNode', () => {
             sidebarWidth: 300,
             setSidebarWidth: vi.fn(),
 
-            // 보드 설정
-            boardSettings: DEFAULT_BOARD_SETTINGS,
-            setBoardSettings: vi.fn(),
-            updateBoardSettings: vi.fn(),
+            // 아이디어맵 설정
+            ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+            setIdeaMapSettings: vi.fn(),
+            updateIdeaMapSettings: vi.fn(),
 
             // 로딩 상태
             isLoading: false,
@@ -350,10 +350,10 @@ describe('CardNode', () => {
             sidebarWidth: 300,
             setSidebarWidth: vi.fn(),
 
-            // 보드 설정
-            boardSettings: DEFAULT_BOARD_SETTINGS,
-            setBoardSettings: vi.fn(),
-            updateBoardSettings: vi.fn(),
+            // 아이디어맵 설정
+            ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+            setIdeaMapSettings: vi.fn(),
+            updateIdeaMapSettings: vi.fn(),
 
             // 로딩 상태
             isLoading: false,

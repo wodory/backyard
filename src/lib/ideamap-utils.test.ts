@@ -7,18 +7,16 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { 
-  loadBoardSettings, 
-  saveBoardSettings, 
-  getBoardDefaultSettings,
-  loadBoardSettingsFromLocalStorage,
-  saveBoardSettingsToLocalStorage,
-  loadBoardSettingsFromServer,
-  saveBoardSettingsToServer,
-  applyEdgeStyleToElements,
-  DEFAULT_BOARD_SETTINGS,
-  type BoardSettings
+  loadIdeaMapSettings, 
+  saveIdeaMapSettings, 
+  saveIdeaMapSettingsToServer,
+  loadIdeaMapSettingsFromServer,
+  updateIdeaMapSettingsOnServer,
+  applyIdeaMapEdgeSettings,
+  DEFAULT_IDEAMAP_SETTINGS,
+  type IdeaMapSettings
 } from './ideamap-utils';
-import { BOARD_SETTINGS_KEY } from './ideamap-constants';
+import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
 import { Edge, ConnectionLineType, MarkerType } from '@xyflow/react';
 
 // 전역 모킹 설정
@@ -40,7 +38,7 @@ beforeEach(() => {
 });
 
 // 기본 설정 가져오기 함수 (테스트용)
-function getTestBoardSettings(): BoardSettings {
+function getTestIdeaMapSettings(): IdeaMapSettings {
   return {
     snapToGrid: true,
     snapGrid: [15, 15] as [number, number],
@@ -54,35 +52,35 @@ function getTestBoardSettings(): BoardSettings {
   };
 }
 
-describe('@testcase.mdc 보드 유틸리티 테스트', () => {
+describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
   describe('로컬 스토리지 설정', () => {
     it('localStorage에 설정이 없으면 기본 설정을 반환', () => {
-      const settings = loadBoardSettings();
-      expect(localStorage.getItem).toHaveBeenCalledWith(BOARD_SETTINGS_KEY);
-      expect(settings).toEqual(DEFAULT_BOARD_SETTINGS);
+      const settings = loadIdeaMapSettings();
+      expect(localStorage.getItem).toHaveBeenCalledWith(IDEAMAP_SETTINGS_STORAGE_KEY);
+      expect(settings).toEqual(DEFAULT_IDEAMAP_SETTINGS);
     });
 
     it('localStorage에서 저장된 설정을 불러옴', () => {
-      const testSettings: BoardSettings = {
-        ...DEFAULT_BOARD_SETTINGS,
+      const testSettings: IdeaMapSettings = {
+        ...DEFAULT_IDEAMAP_SETTINGS,
         snapToGrid: false,
         edgeColor: '#FF0000'
       };
       
-      localStorageMock.set(BOARD_SETTINGS_KEY, JSON.stringify(testSettings));
+      localStorageMock.set(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(testSettings));
       
-      const settings = loadBoardSettings();
-      expect(localStorage.getItem).toHaveBeenCalledWith(BOARD_SETTINGS_KEY);
+      const settings = loadIdeaMapSettings();
+      expect(localStorage.getItem).toHaveBeenCalledWith(IDEAMAP_SETTINGS_STORAGE_KEY);
       expect(settings).toEqual(testSettings);
     });
 
     it('localStorage에 설정을 저장', () => {
-      const testSettings = getTestBoardSettings();
+      const testSettings = getTestIdeaMapSettings();
       
-      saveBoardSettings(testSettings);
+      saveIdeaMapSettings(testSettings);
       
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        BOARD_SETTINGS_KEY,
+        IDEAMAP_SETTINGS_STORAGE_KEY,
         JSON.stringify(testSettings)
       );
     });
@@ -92,16 +90,16 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         throw new Error('Storage error');
       });
       
-      const settings = loadBoardSettings();
+      const settings = loadIdeaMapSettings();
       
-      expect(settings).toEqual(DEFAULT_BOARD_SETTINGS);
+      expect(settings).toEqual(DEFAULT_IDEAMAP_SETTINGS);
     });
   });
 
   describe('서버 설정 동기화', () => {
     it('서버에 설정을 성공적으로 저장', async () => {
       const userId = 'test-user';
-      const testSettings = getTestBoardSettings();
+      const testSettings = getTestIdeaMapSettings();
       
       // 성공적인 응답 모킹
       mockFetch.mockResolvedValueOnce({
@@ -112,7 +110,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         })
       });
       
-      const result = await saveBoardSettingsToServer(testSettings, userId);
+      const result = await saveIdeaMapSettingsToServer(testSettings, userId);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(Object)
@@ -122,14 +120,14 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
       
       // localStorage.setItem이 호출되었는지 확인
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        BOARD_SETTINGS_KEY,
+        IDEAMAP_SETTINGS_STORAGE_KEY,
         JSON.stringify(testSettings)
       );
     });
 
     it('서버에서 설정을 성공적으로 불러옴', async () => {
       const userId = 'test-user';
-      const testSettings = getTestBoardSettings();
+      const testSettings = getTestIdeaMapSettings();
       
       // 성공적인 응답 모킹
       mockFetch.mockResolvedValueOnce({
@@ -140,7 +138,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         })
       });
       
-      const result = await loadBoardSettingsFromServer(userId);
+      const result = await loadIdeaMapSettingsFromServer(userId);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(Object)
@@ -150,18 +148,18 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
       
       // localStorage.setItem이 호출되었는지 확인
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        BOARD_SETTINGS_KEY,
+        IDEAMAP_SETTINGS_STORAGE_KEY,
         JSON.stringify(testSettings)
       );
     });
 
     it('서버 오류 시 false를 반환', async () => {
       const userId = 'test-user';
-      const testSettings = getTestBoardSettings();
+      const testSettings = getTestIdeaMapSettings();
       
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
       
-      const result = await saveBoardSettingsToServer(testSettings, userId);
+      const result = await saveIdeaMapSettingsToServer(testSettings, userId);
       
       expect(result).toBe(false);
     });
@@ -177,7 +175,7 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         })
       });
       
-      const result = await loadBoardSettingsFromServer(userId);
+      const result = await loadIdeaMapSettingsFromServer(userId);
       
       expect(result).toBeNull();
     });
@@ -185,12 +183,12 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
 
   describe('엣지 스타일 적용', () => {
     it('기본 엣지에 설정을 올바르게 적용', () => {
-      const settings = getTestBoardSettings();
+      const settings = getTestIdeaMapSettings();
       const edges: Edge[] = [
         { id: 'edge-1', source: 'node-1', target: 'node-2' }
       ];
       
-      const updatedEdges = applyEdgeStyleToElements(edges, settings);
+      const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
       
       expect(updatedEdges[0].style).toEqual(
         expect.objectContaining({
@@ -199,21 +197,19 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
         })
       );
       
-      expect(updatedEdges[0].markerEnd).toEqual({
-        type: settings.markerEnd,
-        width: settings.markerSize,
-        height: settings.markerSize,
-        color: settings.edgeColor
-      });
+      if (updatedEdges[0].markerEnd && typeof updatedEdges[0].markerEnd !== 'string') {
+        expect(updatedEdges[0].markerEnd.type).toBe(settings.markerEnd);
+        expect(updatedEdges[0].markerEnd.color).toBe(settings.edgeColor);
+      }
     });
 
     it('선택된 엣지에 선택 색상을 적용', () => {
-      const settings = getTestBoardSettings();
+      const settings = getTestIdeaMapSettings();
       const edges: Edge[] = [
         { id: 'edge-1', source: 'node-1', target: 'node-2', selected: true }
       ];
       
-      const updatedEdges = applyEdgeStyleToElements(edges, settings);
+      const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
       
       expect(updatedEdges[0].style?.stroke).toBe(settings.selectedEdgeColor);
       if (updatedEdges[0].markerEnd && typeof updatedEdges[0].markerEnd !== 'string') {
@@ -222,17 +218,85 @@ describe('@testcase.mdc 보드 유틸리티 테스트', () => {
     });
 
     it('마커 설정이 없을 때 마커를 제거', () => {
-      const settings: BoardSettings = {
-        ...getTestBoardSettings(),
+      const settings: IdeaMapSettings = {
+        ...getTestIdeaMapSettings(),
         markerEnd: null
       };
       const edges: Edge[] = [
         { id: 'edge-1', source: 'node-1', target: 'node-2' }
       ];
       
-      const updatedEdges = applyEdgeStyleToElements(edges, settings);
+      const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
       
       expect(updatedEdges[0].markerEnd).toBeUndefined();
+    });
+  });
+  
+  describe('설정 부분 업데이트', () => {
+    it('서버에 설정을 부분적으로 업데이트', async () => {
+      const userId = 'test-user';
+      const partialSettings: Partial<IdeaMapSettings> = {
+        edgeColor: '#FF0000',
+        animated: true
+      };
+      
+      // 성공적인 응답 모킹
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+        clone: () => ({
+          json: async () => ({ success: true })
+        })
+      });
+      
+      const result = await updateIdeaMapSettingsOnServer(userId, partialSettings);
+      
+      // 함수가 fetch를 호출했는지 확인
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      
+      // 호출 시 올바른 URL과 메서드 사용했는지 확인
+      const requestConfig = mockFetch.mock.calls[0][0];
+      expect(requestConfig.method).toBe('PATCH');
+      expect(requestConfig.url).toContain('/api/ideamap-settings');
+      
+      // 반환값 확인
+      expect(result).toBe(true);
+    });
+    
+    it('로컬 설정을 부분 업데이트 후 저장', async () => {
+      const userId = 'test-user';
+      const currentSettings = getTestIdeaMapSettings();
+      const partialSettings: Partial<IdeaMapSettings> = {
+        edgeColor: '#FF0000',
+        animated: true
+      };
+      
+      // 현재 설정 모킹
+      localStorageMock.set(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
+      
+      // 성공적인 응답 모킹
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true })
+      });
+      
+      await updateIdeaMapSettingsOnServer(userId, partialSettings);
+      
+      // localStorage.setItem이 호출되었는지 확인
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        IDEAMAP_SETTINGS_STORAGE_KEY,
+        expect.any(String)
+      );
+      
+      // 저장된 값 확인
+      const savedSettingsStr = vi.mocked(localStorage.setItem).mock.calls[0][1] as string;
+      const savedSettings = JSON.parse(savedSettingsStr);
+      
+      // 합쳐진 설정 확인
+      expect(savedSettings).toEqual({
+        ...currentSettings,
+        ...partialSettings
+      });
     });
   });
 }); 

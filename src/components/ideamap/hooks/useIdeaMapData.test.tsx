@@ -1,7 +1,7 @@
 /**
- * 파일명: useBoardData.test.tsx
- * 목적: useBoardData 훅의 기능 테스트
- * 역할: 보드 데이터 로딩 및 ReactFlow 메서드 호출 검증
+ * 파일명: useIdeaMapData.test.tsx
+ * 목적: useIdeaMapData 훅의 기능 테스트
+ * 역할: 아이디어맵 데이터 로딩 및 ReactFlow 메서드 호출 검증
  * 작성일: 2023-04-10
  */
 
@@ -33,10 +33,10 @@ vi.mock('@xyflow/react', async () => {
   };
 });
 
-// loadBoardData 모킹을 위한 함수
-const mockLoadBoardData = vi.fn().mockResolvedValue(undefined);
+// loadIdeaMapData 모킹을 위한 함수
+const mockLoadIdeaMapData = vi.fn().mockResolvedValue(undefined);
 
-// 기본 상태 객체 정의 - BoardState 인터페이스에 맞춰 모든 필수 속성 포함
+// 기본 상태 객체 정의 - IdeaMapState 인터페이스에 맞춰 모든 필수 속성 포함
 const createMockState = (overrides = {}) => ({
   // 노드 관련
   nodes: [{
@@ -58,8 +58,8 @@ const createMockState = (overrides = {}) => ({
   onEdgesChange: vi.fn(),
   onConnect: vi.fn(),
 
-  // 보드 설정
-  boardSettings: {
+  // 아이디어맵 설정
+  ideaMapSettings: {
     layout: 'horizontal',
     strokeWidth: 2,
     animated: false,
@@ -78,8 +78,8 @@ const createMockState = (overrides = {}) => ({
     edgeColor: '#555555',
     selectedEdgeColor: '#0096FF'
   },
-  setBoardSettings: vi.fn(),
-  updateBoardSettings: vi.fn(),
+  setIdeaMapSettings: vi.fn(),
+  updateIdeaMapSettings: vi.fn(),
 
   // 레이아웃
   applyLayout: vi.fn(),
@@ -94,7 +94,7 @@ const createMockState = (overrides = {}) => ({
   updateEdgeStyles: vi.fn(),
 
   // 서버 동기화
-  loadBoardSettingsFromServerIfAuthenticated: vi.fn(),
+  loadIdeaMapSettingsFromServerIfAuthenticated: vi.fn(),
 
   // 엣지 생성
   createEdgeOnDrop: vi.fn().mockReturnValue({ id: 'new-edge', source: 'node-1', target: 'node-2' }),
@@ -107,19 +107,19 @@ const createMockState = (overrides = {}) => ({
   reactFlowInstance: null,
   setReactFlowInstance: vi.fn(),
 
-  // 보드 데이터 상태
-  isBoardLoading: false,
-  boardError: null,
+  // 아이디어맵 데이터 상태
+  isIdeaMapLoading: false,
+  ideaMapError: null,
   loadedViewport: null,
   needsFitView: false,
-  loadBoardData: mockLoadBoardData,  // 일관된 모킹 함수 사용
+  loadIdeaMapData: mockLoadIdeaMapData,  // 일관된 모킹 함수 사용
 
   ...overrides
 });
 
-// useBoardStore 모킹
-vi.mock('@/store/useBoardStore', () => ({
-  useBoardStore: vi.fn((selector) => {
+// useIdeaMapStore 모킹
+vi.mock('@/store/useIdeaMapStore', () => ({
+  useIdeaMapStore: vi.fn((selector) => {
     const mockState = createMockState();
     if (typeof selector === 'function') {
       return selector(mockState);
@@ -135,14 +135,14 @@ vi.mock('@/store/useBoardStore', () => ({
 }));
 
 // 모킹 이후에 필요한 모듈 가져오기
-import { useBoardData } from './useBoardData';
+import { useIdeaMapData } from './useIdeaMapData';
 import { useReactFlow } from '@xyflow/react';
-import { useBoardStore } from '@/store/useBoardStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 // localStorage 모킹 반환 타입 정의
 type MockedStorage = ReturnType<typeof mockLocalStorage>;
 
-describe('useBoardData 훅 테스트', () => {
+describe('useIdeaMapData 훅 테스트', () => {
   // 모킹된 localStorage
   let mockedStorage: MockedStorage;
 
@@ -170,7 +170,7 @@ describe('useBoardData 훅 테스트', () => {
 
   it('노드와 엣지 데이터를 로드하고 로딩 상태를 반환해야 함', async () => {
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardData());
+    const { result } = renderHook(() => useIdeaMapData());
 
     // 초기 상태 검증
     expect(result.current.isLoading).toBe(false);
@@ -182,8 +182,8 @@ describe('useBoardData 훅 테스트', () => {
       await result.current.loadNodesAndEdges();
     });
 
-    // loadBoardData가 호출되었는지 확인
-    expect(mockLoadBoardData).toHaveBeenCalled();
+    // loadIdeaMapData가 호출되었는지 확인
+    expect(mockLoadIdeaMapData).toHaveBeenCalled();
   });
 
   it('localStorage에서 저장된 노드 위치를 복원해야 함', async () => {
@@ -195,7 +195,7 @@ describe('useBoardData 훅 테스트', () => {
 
     // needsFitView: true 상태로 설정
     const overrideState = createMockState({ needsFitView: true });
-    vi.mocked(useBoardStore).mockImplementation((selector) => {
+    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
       if (typeof selector === 'function') {
         return selector(overrideState);
       }
@@ -209,7 +209,7 @@ describe('useBoardData 훅 테스트', () => {
     });
 
     // 훅 렌더링
-    renderHook(() => useBoardData());
+    renderHook(() => useIdeaMapData());
 
     // Verify the state first, then check mock expectations directly
     expect(overrideState.needsFitView).toBe(true);
@@ -223,7 +223,7 @@ describe('useBoardData 훅 테스트', () => {
 
     // 저장된 뷰포트가 있는 상태로 설정
     const overrideState = createMockState({ loadedViewport: mockViewport });
-    vi.mocked(useBoardStore).mockImplementation((selector) => {
+    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
       if (typeof selector === 'function') {
         return selector(overrideState);
       }
@@ -237,7 +237,7 @@ describe('useBoardData 훅 테스트', () => {
     });
 
     // 훅 렌더링
-    renderHook(() => useBoardData());
+    renderHook(() => useIdeaMapData());
 
     // Verify state directly
     expect(overrideState.loadedViewport).toEqual(mockViewport);
@@ -251,11 +251,11 @@ describe('useBoardData 훅 테스트', () => {
 
     // 오류 상태와 fitView 필요 상태 설정
     const overrideState = createMockState({
-      boardError: '저장된 레이아웃 로드 오류',
+      ideaMapError: '저장된 레이아웃 로드 오류',
       needsFitView: true
     });
 
-    vi.mocked(useBoardStore).mockImplementation((selector) => {
+    vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
       if (typeof selector === 'function') {
         return selector(overrideState);
       }
@@ -269,10 +269,10 @@ describe('useBoardData 훅 테스트', () => {
     });
 
     // 훅 렌더링
-    renderHook(() => useBoardData());
+    renderHook(() => useIdeaMapData());
 
     // Verify state directly
-    expect(overrideState.boardError).toBe('저장된 레이아웃 로드 오류');
+    expect(overrideState.ideaMapError).toBe('저장된 레이아웃 로드 오류');
     expect(overrideState.needsFitView).toBe(true);
   });
 }); 
