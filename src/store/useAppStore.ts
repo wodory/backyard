@@ -3,14 +3,14 @@ import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middl
 import { toast } from 'sonner'
 import type { CreateCardInput } from '@/types/card'
 import { 
-  BoardSettings, 
-  DEFAULT_BOARD_SETTINGS, 
-  loadBoardSettings,
-  saveBoardSettings
+  IdeaMapSettings, 
+  DEFAULT_IDEAMAP_SETTINGS, 
+  loadIdeaMapSettings,
+  saveIdeaMapSettings
 } from '@/lib/ideamap-utils'
 import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
+import { IDEAMAP_LAYOUT_KEY, IDEAMAP_EDGES_KEY } from '@/lib/ideamap-constants'
 import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
 import { signOut } from "next-auth/react"
 
@@ -73,16 +73,16 @@ export interface AppState {
   
   // 레이아웃 적용 및 저장 액션
   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
-  saveBoardLayout: () => Promise<boolean>;
+  saveIdeaMapLayout: () => Promise<boolean>;
   
   // 사이드바 너비
   sidebarWidth: number;
   setSidebarWidth: (width: number) => void;
   
-  // 보드 설정
-  boardSettings: BoardSettings;
-  setBoardSettings: (settings: BoardSettings) => void;
-  updateBoardSettings: (settings: Partial<BoardSettings>) => Promise<void>;
+  // 아이디어맵 설정
+  ideaMapSettings: IdeaMapSettings;
+  setIdeaMapSettings: (settings: IdeaMapSettings) => void;
+  updateIdeaMapSettings: (settings: Partial<IdeaMapSettings>) => Promise<void>;
   
   // 로딩 상태
   isLoading: boolean;
@@ -109,6 +109,9 @@ export interface AppState {
   createProject: (projectData: Partial<Project>) => Promise<Project | null>;
   updateProject: (projectId: string, projectData: Partial<Project>) => Promise<Project | null>;
   deleteProject: (projectId: string) => Promise<boolean>;
+
+  // Reset app state for new/different project
+  resetAppState: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -358,7 +361,7 @@ export const useAppStore = create<AppState>()(
       },
       
       // 레이아웃 저장 액션
-      saveBoardLayout: async () => {
+      saveIdeaMapLayout: async () => {
           const rfInstance = get().reactFlowInstance;
           if (!rfInstance) {
             toast.error("레이아웃 저장 실패: React Flow 인스턴스가 없습니다.");
@@ -385,19 +388,19 @@ export const useAppStore = create<AppState>()(
       sidebarWidth: 320,
       setSidebarWidth: (width) => set({ sidebarWidth: width }),
       
-      // 보드 설정 초기값 및 액션
-      boardSettings: loadBoardSettings(), // Load initial settings
-      setBoardSettings: (settings) => {
-        set({ boardSettings: settings });
-        // Removed direct saveBoardSettings(settings) call here
+      // 아이디어맵 설정 초기값 및 액션
+      ideaMapSettings: loadIdeaMapSettings(), // Load initial settings
+      setIdeaMapSettings: (settings) => {
+        set({ ideaMapSettings: settings });
+        // Removed direct saveIdeaMapSettings(settings) call here
       },
-      // Updated updateBoardSettings Action
-      updateBoardSettings: async (partialSettings) => {
-        const currentSettings = get().boardSettings;
+      // Updated updateIdeaMapSettings Action
+      updateIdeaMapSettings: async (partialSettings) => {
+        const currentSettings = get().ideaMapSettings;
         const optimisticSettings = { ...currentSettings, ...partialSettings };
 
         // Optimistic update
-        set({ boardSettings: optimisticSettings, isLoading: true, error: null });
+        set({ ideaMapSettings: optimisticSettings, isLoading: true, error: null });
 
         try {
            // TODO: Replace with actual user ID mechanism if needed
@@ -417,7 +420,7 @@ export const useAppStore = create<AppState>()(
 
           // Update store with confirmed settings from server
           set({
-            boardSettings: savedSettings,
+            ideaMapSettings: savedSettings,
             isLoading: false,
             error: null
           });
@@ -426,7 +429,7 @@ export const useAppStore = create<AppState>()(
         } catch (error) {
           // Rollback on error
           set({
-             boardSettings: currentSettings, // Rollback to previous settings
+             ideaMapSettings: currentSettings, // Rollback to previous settings
              isLoading: false,
              error: error instanceof Error ? error : new Error(String(error))
           });
@@ -462,7 +465,7 @@ export const useAppStore = create<AppState>()(
             projects: [], // 프로젝트 데이터도 초기화
             activeProjectId: null, // 활성 프로젝트 ID도 초기화
             // Reset other relevant states if necessary
-            // boardSettings: DEFAULT_BOARD_SETTINGS, // Reset settings to default? Or keep user settings?
+            // boardSettings: DEFAULT_IDEAMAP_SETTINGS, // Reset settings to default? Or keep user settings?
             isLoading: false,
             error: null,
             // Consider clearing reactFlowInstance?
@@ -477,8 +480,8 @@ export const useAppStore = create<AppState>()(
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ isLoading: false, error: new Error(errorMessage) });
           toast.error(`로그아웃 실패: ${errorMessage}`);
-           // Re-throw or handle error as needed
-           // throw error;
+          // Re-throw or handle error as needed
+          // throw error;
         }
       },
 
@@ -634,6 +637,18 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      // Reset app state for new/different project
+      resetAppState: () => {
+        set({
+          selectedCardIds: [],
+          reactFlowInstance: null,
+          // ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS, // Reset settings to default? Or keep user settings?
+          isLoading: false,
+          error: null,
+          // ...other state to reset
+        });
+      },
+
     })),
     {
       name: 'app-storage', // 로컬 스토리지 키
@@ -645,7 +660,7 @@ export const useAppStore = create<AppState>()(
         expandedCardId: state.expandedCardId,
         isSidebarOpen: state.isSidebarOpen,
         sidebarWidth: state.sidebarWidth,
-        boardSettings: state.boardSettings, // Persist board settings
+        ideaMapSettings: state.ideaMapSettings, // Persist board settings
         layoutDirection: state.layoutDirection, // Persist layout direction
         activeProjectId: state.activeProjectId, // 활성 프로젝트 ID 저장
         projects: state.projects, // 프로젝트 목록 저장
@@ -704,9 +719,9 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   window.appCommands.selectCards = state.selectCards;
   window.appCommands.toggleExpandCard = state.toggleExpandCard;
   window.appCommands.clearSelectedCards = state.clearSelectedCards;
-  window.appCommands.updateBoardSettings = state.updateBoardSettings;
+  window.appCommands.updateIdeaMapSettings = state.updateIdeaMapSettings;
   window.appCommands.applyLayout = state.applyLayout;
-  window.appCommands.saveLayout = state.saveBoardLayout;
+  window.appCommands.saveLayout = state.saveIdeaMapLayout;
   window.appCommands.logout = state.logoutAction; // Expose logout action
   window.appCommands.getState = () => useAppStore.getState(); // Expose getState for debugging
   window.appCommands.getRfInstance = () => useAppStore.getState().reactFlowInstance; // Expose RF instance
@@ -716,6 +731,7 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   window.appCommands.createProject = state.createProject;
   window.appCommands.updateProject = state.updateProject;
   window.appCommands.deleteProject = state.deleteProject;
+  window.appCommands.resetAppState = state.resetAppState; // 앱 상태 초기화 명령 추가
 
   console.log('App commands registered to window.appCommands');
 }
@@ -728,7 +744,7 @@ declare global {
       selectCards?: (cardIds: string[]) => void;
       toggleExpandCard?: (cardId: string) => void;
       clearSelectedCards?: () => void;
-      updateBoardSettings?: (settings: Partial<BoardSettings>) => Promise<void>;
+      updateIdeaMapSettings?: (settings: Partial<IdeaMapSettings>) => Promise<void>;
       applyLayout?: (direction: 'horizontal' | 'vertical' | 'auto') => void;
       saveLayout?: () => Promise<boolean>;
       logout?: () => Promise<void>; // Add logout command type
@@ -740,6 +756,7 @@ declare global {
       createProject?: (projectData: Partial<Project>) => Promise<Project | null>;
       updateProject?: (projectId: string, projectData: Partial<Project>) => Promise<Project | null>;
       deleteProject?: (projectId: string) => Promise<boolean>;
+      resetAppState?: () => void; // 앱 상태 초기화 명령 타입 추가
     };
   }
 }
