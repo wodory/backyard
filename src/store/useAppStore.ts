@@ -10,7 +10,7 @@ import {
 } from '@/lib/ideamap-utils'
 import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
-import { IDEAMAP_LAYOUT_KEY, IDEAMAP_EDGES_KEY } from '@/lib/ideamap-constants'
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
 import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
 import { signOut } from "next-auth/react"
 

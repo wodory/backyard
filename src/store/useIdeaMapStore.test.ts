@@ -10,9 +10,9 @@ import { Node, Edge, Viewport, ConnectionLineType, MarkerType, NodeChange, EdgeC
 import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import { TRANSFORM_STORAGE_KEY, STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IDEAMAP_TRANSFORM_STORAGE_KEY, IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { toast } from 'sonner';
-import { applyEdgeSettings } from '@/lib/ideamap-utils';
+import { applyIdeaMapEdgeSettings } from '@/lib/ideamap-utils';
 import { CardData } from '@/components/ideamap/types/ideamap-types';
 
 // Zustand 모듈 모킹
@@ -268,12 +268,12 @@ vi.mock('@/store/useAppStore', () => ({
 
 // 테스트 헬퍼 함수
 function setupLocalStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify({
     'node1': { position: { x: 0, y: 0 } },
     'node2': { position: { x: 100, y: 100 } }
   }));
-  localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(mockEdges));
-  localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
+  localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(mockEdges));
+  localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
 }
 
 // MSW 서버 설정
@@ -407,14 +407,14 @@ describe('useBoardStore', () => {
         }
         
         const viewport = instance.getViewport();
-        localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
+        localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
         toast.info('현재 보기가 저장되었습니다');
       });
       
       store.saveViewport();
       
       expect(setItemSpy).toHaveBeenCalledWith(
-        TRANSFORM_STORAGE_KEY, 
+        IDEAMAP_TRANSFORM_STORAGE_KEY, 
         JSON.stringify(mockViewport)
       );
       expect(toast.info).toHaveBeenCalledWith('현재 보기가 저장되었습니다');
@@ -436,7 +436,7 @@ describe('useBoardStore', () => {
       store.saveViewport();
       
       expect(toast.error).toHaveBeenCalledWith('뷰포트를 저장할 수 없습니다');
-      expect(setItemSpy).not.toHaveBeenCalledWith(TRANSFORM_STORAGE_KEY, expect.any(String));
+      expect(setItemSpy).not.toHaveBeenCalledWith(IDEAMAP_TRANSFORM_STORAGE_KEY, expect.any(String));
     });
   });
 
@@ -446,11 +446,11 @@ describe('useBoardStore', () => {
       localStorage.clear();
       
       // localStorage에 미리 뷰포트 정보 저장
-      localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
+      localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
       
       // restoreViewport 구현 시뮬레이션
       mockRestoreViewport.mockImplementation(() => {
-        const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
+        const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_STORAGE_KEY);
         if (!transformString) {
           toast.info('저장된 보기가 없습니다');
           return;
@@ -472,7 +472,7 @@ describe('useBoardStore', () => {
       initialState.viewportToRestore = mockViewport;
       
       // 호출 및 상태 검증
-      expect(getItemSpy).toHaveBeenCalledWith(TRANSFORM_STORAGE_KEY);
+      expect(getItemSpy).toHaveBeenCalledWith(IDEAMAP_TRANSFORM_STORAGE_KEY);
       // 이제 이 시점에서 viewportToRestore 상태가 업데이트되어야 합니다
       expect(mockStore.getState().viewportToRestore).toEqual(mockViewport);
       
@@ -484,7 +484,7 @@ describe('useBoardStore', () => {
       // localStorage가 비어 있는 상태
       // restoreViewport 구현 시뮬레이션
       mockRestoreViewport.mockImplementation(() => {
-        const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
+        const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_STORAGE_KEY);
         if (!transformString) {
           toast.info('저장된 보기가 없습니다');
           return;
@@ -493,7 +493,7 @@ describe('useBoardStore', () => {
       
       store.restoreViewport();
       
-      expect(getItemSpy).toHaveBeenCalledWith(TRANSFORM_STORAGE_KEY);
+      expect(getItemSpy).toHaveBeenCalledWith(IDEAMAP_TRANSFORM_STORAGE_KEY);
       expect(toast.info).toHaveBeenCalledWith('저장된 보기가 없습니다');
       expect(store.viewportToRestore).toBeNull();
     });
@@ -785,7 +785,7 @@ describe('엣지 관련 새 액션 테스트', () => {
       // 1. localStorage에서 엣지 가져오기
       // 2. 특정 ID 제외 필터링
       // 3. 다시 저장
-      localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify([]));
+      localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify([]));
       return true;
     });
     
@@ -872,7 +872,7 @@ describe('엣지 관련 새 액션 테스트', () => {
     const testImplementation = () => {
       try {
         const { edges } = mockStore.getState();
-        localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
+        localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
         mockStore.setState({ hasUnsavedChanges: false });
         return true;
       } catch (err) {
@@ -893,7 +893,7 @@ describe('엣지 관련 새 액션 테스트', () => {
     
     // 로컬 스토리지에 저장되었는지 확인
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      EDGES_STORAGE_KEY,
+      IDEAMAP_EDGES_STORAGE_KEY,
       expect.any(String)
     );
     
@@ -908,7 +908,7 @@ describe('엣지 관련 새 액션 테스트', () => {
       if (edges.length === 0) return;
       
       try {
-        const updatedEdges = applyEdgeSettings(edges, boardSettings);
+        const updatedEdges = applyIdeaMapEdgeSettings(edges, boardSettings);
         
         if (JSON.stringify(updatedEdges) !== JSON.stringify(edges)) {
           mockStore.setState({
@@ -958,8 +958,8 @@ describe('엣지 관련 새 액션 테스트', () => {
         },
       };
       
-      // applyEdgeSettings 함수를 사용하여 스타일 적용
-      return applyEdgeSettings([newEdge], boardSettings)[0];
+      // applyIdeaMapEdgeSettings 함수를 사용하여 스타일 적용
+      return applyIdeaMapEdgeSettings([newEdge], boardSettings)[0];
     };
 
     // 모킹된 구현 설정

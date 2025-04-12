@@ -1,7 +1,7 @@
 import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
-import { BOARD_SETTINGS_KEY } from './ideamap-constants';
+import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
 
-export interface BoardSettings {
+export interface IdeaMapSettings {
   // 그리드 설정
   snapToGrid: boolean;
   snapGrid: [number, number];
@@ -16,8 +16,8 @@ export interface BoardSettings {
   animated: boolean;
 }
 
-// 기본 보드 설정
-export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
+// 기본 아이디어맵 설정
+export const DEFAULT_IDEAMAP_SETTINGS: IdeaMapSettings = {
   // 그리드 설정
   snapToGrid: false,
   snapGrid: [15, 15],
@@ -33,18 +33,18 @@ export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
 };
 
 /**
- * 로컬 스토리지에서 보드 설정을 불러오는 함수
+ * 로컬 스토리지에서 아이디어맵 설정을 불러오는 함수
  */
-export function loadBoardSettings(): BoardSettings {
+export function loadIdeaMapSettings(): IdeaMapSettings {
   if (typeof window === 'undefined') {
-    return DEFAULT_BOARD_SETTINGS;
+    return DEFAULT_IDEAMAP_SETTINGS;
   }
 
   try {
-    const savedSettings = localStorage.getItem(BOARD_SETTINGS_KEY);
+    const savedSettings = localStorage.getItem(IDEAMAP_SETTINGS_STORAGE_KEY);
     
     if (!savedSettings) {
-      return DEFAULT_BOARD_SETTINGS;
+      return DEFAULT_IDEAMAP_SETTINGS;
     }
 
     // 저장된 설정 복원
@@ -52,39 +52,39 @@ export function loadBoardSettings(): BoardSettings {
     
     // 기존 설정이 없는 경우 기본값으로 통합
     return {
-      ...DEFAULT_BOARD_SETTINGS,
+      ...DEFAULT_IDEAMAP_SETTINGS,
       ...parsedSettings,
     };
   } catch (error) {
-    console.error('보드 설정 로드 중 오류:', error);
-    return DEFAULT_BOARD_SETTINGS;
+    console.error('아이디어맵 설정 로드 중 오류:', error);
+    return DEFAULT_IDEAMAP_SETTINGS;
   }
 }
 
 /**
- * 보드 설정을 로컬 스토리지에 저장하는 함수
+ * 아이디어맵 설정을 로컬 스토리지에 저장하는 함수
  */
-export function saveBoardSettings(settings: BoardSettings): void {
+export function saveIdeaMapSettings(settings: IdeaMapSettings): void {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(BOARD_SETTINGS_KEY, JSON.stringify(settings));
+      localStorage.setItem(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
-      console.error('보드 설정 저장 중 오류:', error);
+      console.error('아이디어맵 설정 저장 중 오류:', error);
     }
   }
 }
 
 /**
- * 서버 API를 통해 보드 설정을 저장하는 함수
+ * 서버 API를 통해 아이디어맵 설정을 저장하는 함수
  */
-export const saveBoardSettingsToServer = async (settings: BoardSettings, userId: string): Promise<boolean> => {
+export const saveIdeaMapSettingsToServer = async (settings: IdeaMapSettings, userId: string): Promise<boolean> => {
   try {
     if (!userId) {
-      console.warn('[saveBoardSettingsToServer] 사용자 ID 없음, 설정 저장 스킵');
+      console.warn('[saveIdeaMapSettingsToServer] 사용자 ID 없음, 설정 저장 스킵');
       return false;
     }
 
-    console.log('[saveBoardSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
+    console.log('[saveIdeaMapSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
     
     const response = await fetch('/api/ideamap-settings', {
       method: 'POST',
@@ -95,34 +95,34 @@ export const saveBoardSettingsToServer = async (settings: BoardSettings, userId:
     });
 
     if (!response.ok) {
-      throw new Error('서버에 보드 설정을 저장하는데 실패했습니다.');
+      throw new Error('서버에 아이디어맵 설정을 저장하는데 실패했습니다.');
     }
 
     // 로컬에도 저장
-    saveBoardSettings(settings);
+    saveIdeaMapSettings(settings);
     return true;
   } catch (error) {
-    console.error('서버 보드 설정 저장 중 오류:', error);
+    console.error('서버 아이디어맵 설정 저장 중 오류:', error);
     return false;
   }
 }
 
 /**
- * 서버 API를 통해 보드 설정을 불러오는 함수
+ * 서버 API를 통해 아이디어맵 설정을 불러오는 함수
  */
-export const loadBoardSettingsFromServer = async (userId: string): Promise<BoardSettings | null> => {
+export const loadIdeaMapSettingsFromServer = async (userId: string): Promise<IdeaMapSettings | null> => {
   try {
     if (!userId) {
-      console.warn('[loadBoardSettingsFromServer] 사용자 ID 없음, 설정 로드 스킵');
+      console.warn('[loadIdeaMapSettingsFromServer] 사용자 ID 없음, 설정 로드 스킵');
       return null;
     }
 
-    console.log('[loadBoardSettingsFromServer] 서버에서 설정 로드 시작', { userId });
+    console.log('[loadIdeaMapSettingsFromServer] 서버에서 설정 로드 시작', { userId });
     
     const response = await fetch(`/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
     
     if (!response.ok) {
-      throw new Error('서버에서 보드 설정을 불러오는데 실패했습니다.');
+      throw new Error('서버에서 아이디어맵 설정을 불러오는데 실패했습니다.');
     }
 
     const data = await response.json();
@@ -132,29 +132,29 @@ export const loadBoardSettingsFromServer = async (userId: string): Promise<Board
     }
 
     const settings = {
-      ...DEFAULT_BOARD_SETTINGS,
+      ...DEFAULT_IDEAMAP_SETTINGS,
       ...data.settings,
     };
 
     // 로컬에도 저장
-    saveBoardSettings(settings);
+    saveIdeaMapSettings(settings);
     return settings;
   } catch (error) {
-    console.error('서버 보드 설정 로드 중 오류:', error);
+    console.error('서버 아이디어맵 설정 로드 중 오류:', error);
     return null;
   }
 }
 
 /**
- * 서버 API를 통해 보드 설정을 부분 업데이트하는 함수
+ * 서버 API를 통해 아이디어맵 설정을 부분 업데이트하는 함수
  */
-export async function updateBoardSettingsOnServer(userId: string, partialSettings: Partial<BoardSettings>): Promise<boolean> {
+export async function updateIdeaMapSettingsOnServer(userId: string, partialSettings: Partial<IdeaMapSettings>): Promise<boolean> {
   try {
     // 요청 데이터 깊은 복사 및 문자열 변환 확인
     // markerEnd 값이 null인 경우 명시적으로 null로 처리
     const safeSettings = JSON.parse(JSON.stringify(partialSettings));
     
-    console.log('보드 설정 업데이트 요청:', {
+    console.log('아이디어맵 설정 업데이트 요청:', {
       userId,
       settings: safeSettings
     });
@@ -177,7 +177,7 @@ export async function updateBoardSettingsOnServer(userId: string, partialSetting
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
       console.error('응답 오류 데이터:', errorData);
       throw new Error(
-        errorData.details || errorData.error || '서버에 보드 설정을 업데이트하는데 실패했습니다.'
+        errorData.details || errorData.error || '서버에 아이디어맵 설정을 업데이트하는데 실패했습니다.'
       );
     }
 
@@ -186,23 +186,23 @@ export async function updateBoardSettingsOnServer(userId: string, partialSetting
     console.log('업데이트 성공 응답:', responseData);
 
     // 로컬 설정도 업데이트 (기존 설정과 병합)
-    const currentSettings = loadBoardSettings();
+    const currentSettings = loadIdeaMapSettings();
     const updatedSettings = {
       ...currentSettings,
       ...safeSettings,
     };
     
     // 로컬 스토리지에 저장
-    saveBoardSettings(updatedSettings);
+    saveIdeaMapSettings(updatedSettings);
     console.log('로컬 설정 업데이트 완료:', updatedSettings);
     
     return true;
   } catch (error) {
-    console.error('서버 보드 설정 부분 업데이트 중 오류:', error);
+    console.error('서버 아이디어맵 설정 부분 업데이트 중 오류:', error);
     // 로컬 저장소에만 저장 (서버 저장 실패시 임시 대안)
     try {
-      const currentSettings = loadBoardSettings();
-      saveBoardSettings({
+      const currentSettings = loadIdeaMapSettings();
+      saveIdeaMapSettings({
         ...currentSettings,
         ...partialSettings,
       });
@@ -215,10 +215,10 @@ export async function updateBoardSettingsOnServer(userId: string, partialSetting
 }
 
 /**
- * 보드 설정에 따라 엣지 스타일을 적용하는 함수
+ * 아이디어맵 설정에 따라 엣지 스타일을 적용하는 함수
  * 모든 연결선에 설정이 즉시 반영되도록 함
  */
-export function applyEdgeSettings(edges: Edge[], settings: BoardSettings): Edge[] {
+export function applyIdeaMapEdgeSettings(edges: Edge[], settings: IdeaMapSettings): Edge[] {
   // 각 엣지에 새 설정을 적용
   return edges.map(edge => {
     // 기존 속성은 유지하면서 새로운 속성 추가
@@ -248,19 +248,20 @@ export function applyEdgeSettings(edges: Edge[], settings: BoardSettings): Edge[
         stroke: edge.selected ? settings.selectedEdgeColor : settings.edgeColor, // 선 색상
       },
     };
-
-    // 마커 설정 (화살표)
+    
+    // 화살표 마커 설정
     if (settings.markerEnd) {
       updatedEdge.markerEnd = {
-        type: settings.markerEnd,
-        width: settings.markerSize,
-        height: settings.markerSize,
-        color: edge.selected ? settings.selectedEdgeColor : settings.edgeColor,
+        type: settings.markerEnd,          // 마커 타입 설정
+        width: settings.markerSize,        // 마커 너비
+        height: settings.markerSize,       // 마커 높이
+        color: edge.selected ? settings.selectedEdgeColor : settings.edgeColor, // 마커 색상
       };
     } else {
+      // 마커 제거
       updatedEdge.markerEnd = undefined;
     }
-
+    
     return updatedEdge;
   });
 } 

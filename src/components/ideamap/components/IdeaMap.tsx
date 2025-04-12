@@ -76,8 +76,8 @@ export default function IdeaMap({
 
   // useAppStore에서 상태 가져오기
   const layoutDirection = useAppStore(state => state.layoutDirection);
-  const ideaMapSettings = useAppStore(state => state.boardSettings);
-  const setIdeaMapSettings = useAppStore(state => state.setBoardSettings);
+  const ideaMapSettings = useAppStore(state => state.ideaMapSettings);
+  const setIdeaMapSettings = useAppStore(state => state.setIdeaMapSettings);
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
   const setCards = useAppStore(state => state.setCards);
   const { selectCards, selectedCardIds } = useAppStore();
@@ -148,7 +148,7 @@ export default function IdeaMap({
     createEdgeOnDrop,
     hasUnsavedChanges: hasUnsavedEdgesChanges
   } = useEdges({
-    boardSettings: ideaMapSettings,
+    ideaMapSettings,
     nodes: ideaMapStoreNodes,
     initialEdges: ideaMapStoreEdges
   });
@@ -423,8 +423,8 @@ export default function IdeaMap({
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         layoutDirection={layoutDirection as 'horizontal' | 'vertical'}
-        boardSettings={ideaMapSettings}
-        onBoardSettingsChange={handleIdeaMapSettingsChangeWrapper}
+        ideaMapSettings={ideaMapSettings}
+        onIdeaMapSettingsChange={handleIdeaMapSettingsChangeWrapper}
         onLayoutChange={handleLayoutChange}
         onAutoLayout={applyGridLayout}
         onSaveLayout={handleSaveLayout}

@@ -62,13 +62,19 @@ export const EDGE_COLOR_OPTIONS = [
 ];
 
 // 스토리지 키
-export const STORAGE_KEY = 'backyard-board-layout';
-export const EDGES_STORAGE_KEY = 'backyard-board-edges';
-export const BOARD_SETTINGS_KEY = 'backyard-board-settings';
-export const TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
+// export const STORAGE_KEY = 'backyard-board-layout';
+// export const EDGES_STORAGE_KEY = 'backyard-board-edges';
+// export const IDEAMAP_SETTINGS_KEY = 'backyard-board-settings';
+// export const TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
+
+export const IDEAMAP_LAYOUT_STORAGE_KEY = 'backyard-board-layout';
+export const IDEAMAP_EDGES_STORAGE_KEY = 'backyard-board-edges';
+export const IDEAMAP_SETTINGS_STORAGE_KEY = 'backyard-board-settings';
+export const IDEAMAP_TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
+
 
 // 자동 저장 설정
-export const BOARD_CONFIG = {
+export const IDEAMAP_CONFIG = {
   // 자동 저장 간격 (분)
   autoSaveInterval: 1,
   // 토스트 메시지 표시 여부

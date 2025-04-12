@@ -1,6 +1,6 @@
 /**
- * 파일명: board-types.ts
- * 목적: BoardComponent 및 관련 컴포넌트에서 사용되는 타입 정의
+ * 파일명: ideamap-types.ts
+ * 목적: IdeaMapComponent 및 관련 컴포넌트에서 사용되는 타입 정의
  * 역할: 타입 정의를 중앙화하여 코드 중복을 방지하고 타입 안정성 제공
  * 작성일: 2025-03-28
  */
@@ -8,10 +8,10 @@
 import { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode } from '@xyflow/react';
 
 /**
- * BoardComponent의 Props 인터페이스
- * @interface BoardComponentProps
+ * IdeaMapComponent의 Props 인터페이스
+ * @interface IdeaMapComponentProps
  */
-export interface BoardComponentProps {
+export interface IdeaMapComponentProps {
   /** 카드 선택 시 호출될 콜백 함수 */
   onSelectCard?: (cardId: string | null) => void;
   /** 컴포넌트에 적용할 추가 CSS 클래스 */
@@ -34,10 +34,10 @@ export interface CardData {
 }
 
 /**
- * 보드 설정 인터페이스
- * @interface BoardSettings
+ * 아이디어맵 설정 인터페이스
+ * @interface IdeaMapSettings
  */
-export interface BoardSettings {
+export interface IdeaMapSettings {
   /** 엣지 색상 */
   edgeColor: string;
   /** 엣지 두께 */
@@ -56,16 +56,16 @@ export interface BoardSettings {
 }
 
 /**
- * 보드 노드 타입
- * @type BoardNode
+ * 아이디어맵 노드 타입
+ * @type IdeaMapNode
  */
-export type BoardNode = Node<CardData>;
+export type IdeaMapNode = Node<CardData>;
 
 /**
- * 보드 엣지 타입
- * @type BoardEdge
+ * 아이디어맵 엣지 타입
+ * @type IdeaMapEdge
  */
-export type BoardEdge = Edge;
+export type IdeaMapEdge = Edge;
 
 /**
  * 엣지 드롭 데이터 인터페이스

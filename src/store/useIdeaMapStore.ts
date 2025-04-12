@@ -22,16 +22,16 @@ import {
   Viewport
 } from '@xyflow/react';
 import { 
-  BoardSettings, 
-  DEFAULT_BOARD_SETTINGS, 
-  loadBoardSettings, 
-  saveBoardSettings,
-  applyEdgeSettings,
-  loadBoardSettingsFromServer,
-  saveBoardSettingsToServer,
-  updateBoardSettingsOnServer
+  IdeaMapSettings, 
+  DEFAULT_IDEAMAP_SETTINGS, 
+  loadIdeaMapSettings, 
+  saveIdeaMapSettings,
+  applyIdeaMapEdgeSettings,
+  loadIdeaMapSettingsFromServer,
+  saveIdeaMapSettingsToServer,
+  updateIdeaMapSettingsOnServer
 } from '@/lib/ideamap-utils';
-import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import { toast } from 'sonner';
 import { CardData } from '@/components/ideamap/types/ideamap-types';
@@ -51,9 +51,9 @@ interface IdeaMapState {
   onConnect: (connection: Connection) => void;
   
   // 아이디어맵 설정 관련 상태
-  ideaMapSettings: BoardSettings;
-  setIdeaMapSettings: (settings: BoardSettings) => void;
-  updateIdeaMapSettings: (settings: Partial<BoardSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
+  ideaMapSettings: IdeaMapSettings;
+  setIdeaMapSettings: (settings: IdeaMapSettings) => void;
+  updateIdeaMapSettings: (settings: Partial<IdeaMapSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
   
   // 레이아웃 관련 함수
   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
@@ -65,7 +65,7 @@ interface IdeaMapState {
   saveAllLayoutData: () => boolean;
   
   // 엣지 스타일 업데이트
-  updateEdgeStyles: (settings: BoardSettings) => void;
+  updateEdgeStyles: (settings: IdeaMapSettings) => void;
   
   // 서버 동기화 함수
   loadIdeaMapSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
@@ -95,7 +95,7 @@ interface IdeaMapState {
   
   // useIdeaMapUtils에서 이전된 액션들
   loadAndApplyIdeaMapSettings: (userId: string) => Promise<void>;
-  updateAndSaveIdeaMapSettings: (newSettings: Partial<BoardSettings>, userId?: string) => Promise<void>;
+  updateAndSaveIdeaMapSettings: (newSettings: Partial<IdeaMapSettings>, userId?: string) => Promise<void>;
   saveViewport: () => void;
   restoreViewport: () => void;
   saveIdeaMapState: () => boolean;
@@ -210,13 +210,13 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       },
       
       // 아이디어맵 설정 관련 초기 상태 및 함수
-      ideaMapSettings: DEFAULT_BOARD_SETTINGS,
+      ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
       isSettingsLoading: false,
       settingsError: null,
       viewportToRestore: null,
       setIdeaMapSettings: (settings) => {
         set({ ideaMapSettings: settings });
-        saveBoardSettings(settings);
+        saveIdeaMapSettings(settings);
       },
       updateIdeaMapSettings: async (partialSettings, isAuthenticated, userId) => {
         const currentSettings = get().ideaMapSettings;
@@ -228,13 +228,13 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         set({ ideaMapSettings: newSettings });
         
         // 2. 새 설정을 엣지에 적용
-        const updatedEdges = applyEdgeSettings(get().edges, newSettings);
+        const updatedEdges = applyIdeaMapEdgeSettings(get().edges, newSettings);
         set({ edges: updatedEdges });
         
         // 3. 인증된 사용자인 경우 서버에도 저장
         if (isAuthenticated && userId) {
           try {
-            await saveBoardSettingsToServer(userId, newSettings);
+            await saveIdeaMapSettingsToServer(userId, newSettings);
             toast.success('아이디어맵 설정이 저장되었습니다');
           } catch (err) {
             console.error('[IdeaMapStore] 서버 저장 실패:', err);
@@ -283,13 +283,13 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           let savedViewport: Viewport | null = null;
 
           try {
-            const savedPositionsStr = localStorage.getItem(STORAGE_KEY);
+            const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_KEY);
             if (savedPositionsStr) nodePositions = JSON.parse(savedPositionsStr);
 
-            const savedEdgesStr = localStorage.getItem(EDGES_STORAGE_KEY);
+            const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_KEY);
             if (savedEdgesStr) savedEdges = JSON.parse(savedEdgesStr);
 
-            const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
+            const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_KEY);
             if (transformString) savedViewport = JSON.parse(transformString);
           } catch (err) {
             console.error('[loadIdeaMapData Action] 로컬 스토리지 읽기 오류:', err);
@@ -322,7 +322,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
 
           // 4. 엣지 데이터 설정 (저장된 엣지 사용 및 설정 적용)
           const boardSettings = get().ideaMapSettings;
-          const finalEdges = applyEdgeSettings(savedEdges, boardSettings);
+          const finalEdges = applyIdeaMapEdgeSettings(savedEdges, boardSettings);
 
           // 5. 스토어 상태 업데이트
           set({
@@ -432,7 +432,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           });
           
           // 로컬 스토리지에 저장
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(positionsData));
+          localStorage.setItem(IDEAMAP_LAYOUT_KEY, JSON.stringify(positionsData));
           
           return true;
         } catch (error) {
@@ -447,7 +447,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           const edges = edgesToSave || get().edges;
           
           // 로컬 스토리지에 저장
-          localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
+          localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(edges));
           
           return true;
         } catch (error) {
@@ -476,8 +476,8 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         if (state.edges.length === 0) return;
         
         try {
-          // applyEdgeSettings 함수는 새 엣지 배열을 반환함
-          const updatedEdges = applyEdgeSettings(state.edges, settings);
+          // applyIdeaMapEdgeSettings 함수는 새 엣지 배열을 반환함
+          const updatedEdges = applyIdeaMapEdgeSettings(state.edges, settings);
           
           // 엣지 배열 자체가 변경된 경우에만 setEdges 호출
           if (JSON.stringify(updatedEdges) !== JSON.stringify(state.edges)) {
@@ -492,7 +492,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       loadIdeaMapSettingsFromServerIfAuthenticated: async (isAuthenticated, userId) => {
         if (isAuthenticated && userId) {
           try {
-            const settings = await loadBoardSettingsFromServer(userId);
+            const settings = await loadIdeaMapSettingsFromServer(userId);
             if (settings) {
               const state = get();
               
@@ -500,7 +500,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               set({ ideaMapSettings: settings });
               
               // 새 설정을 엣지에 적용
-              const updatedEdges = applyEdgeSettings(state.edges, settings);
+              const updatedEdges = applyIdeaMapEdgeSettings(state.edges, settings);
               set({ edges: updatedEdges });
             }
           } catch (err) {
@@ -570,17 +570,17 @@ export const useIdeaMapStore = create<IdeaMapState>()(
 
         try {
           // 서버에서 설정 불러오기
-          const settings = await loadBoardSettingsFromServer(userId);
+          const settings = await loadIdeaMapSettingsFromServer(userId);
           
           if (settings) {
             // 1. 아이디어맵 설정 상태 업데이트
             set({ ideaMapSettings: settings });
             
             // 2. 로컬 스토리지에 저장
-            saveBoardSettings(settings);
+            saveIdeaMapSettings(settings);
             
             // 3. 새 설정을 엣지에 적용
-            const updatedEdges = applyEdgeSettings(get().edges, settings);
+            const updatedEdges = applyIdeaMapEdgeSettings(get().edges, settings);
             set({ edges: updatedEdges });
             
             set({ isSettingsLoading: false });
@@ -588,7 +588,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           } else {
             // 설정이 없는 경우 기본 설정 사용
             set({ 
-              ideaMapSettings: DEFAULT_BOARD_SETTINGS, 
+              ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS, 
               isSettingsLoading: false 
             });
             console.log('서버에 저장된 설정이 없어 기본 설정을 사용합니다');
@@ -615,16 +615,16 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         });
         
         // 2. 로컬 스토리지에 저장
-        saveBoardSettings(updatedSettings);
+        saveIdeaMapSettings(updatedSettings);
         
         // 3. 새 설정을 엣지에 적용
-        const updatedEdges = applyEdgeSettings(get().edges, updatedSettings);
+        const updatedEdges = applyIdeaMapEdgeSettings(get().edges, updatedSettings);
         set({ edges: updatedEdges });
         
         // 4. 인증된 사용자인 경우 서버에도 저장
         if (userId) {
           try {
-            await saveBoardSettingsToServer(userId, updatedSettings);
+            await saveIdeaMapSettingsToServer(userId, updatedSettings);
             set({ isSettingsLoading: false });
             toast.success('아이디어맵 설정이 저장되었습니다');
           } catch (error: any) {
@@ -654,7 +654,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           const viewport = reactFlowInstance.getViewport();
           
           // 로컬 스토리지에 저장
-          localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
+          localStorage.setItem(IDEAMAP_TRANSFORM_KEY, JSON.stringify(viewport));
           console.log('[IdeaMapStore] 뷰포트 저장 완료:', viewport);
           
           toast.info('현재 보기가 저장되었습니다');
@@ -667,7 +667,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       restoreViewport: () => {
         try {
           // 로컬 스토리지에서 뷰포트 정보 읽기
-          const transformString = localStorage.getItem(TRANSFORM_STORAGE_KEY);
+          const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_KEY);
           
           if (!transformString) {
             toast.info('저장된 보기가 없습니다');
@@ -858,7 +858,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       removeNodesAndRelatedEdgesFromStorage: (deletedNodeIds: string[]) => {
         try {
           // 현재 저장된 노드 위치 정보 가져오기
-          const savedPositionsStr = localStorage.getItem(STORAGE_KEY);
+          const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_KEY);
           if (savedPositionsStr) {
             const savedPositions = JSON.parse(savedPositionsStr);
             
@@ -868,10 +868,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             );
             
             // 업데이트된 위치 정보 저장
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPositions));
+            localStorage.setItem(IDEAMAP_LAYOUT_KEY, JSON.stringify(updatedPositions));
             
             // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
-            const savedEdgesStr = localStorage.getItem(EDGES_STORAGE_KEY);
+            const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_KEY);
             if (savedEdgesStr) {
               const savedEdges = JSON.parse(savedEdgesStr);
               const updatedEdges = savedEdges.filter(
@@ -879,7 +879,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
                   !deletedNodeIds.includes(edge.source) && 
                   !deletedNodeIds.includes(edge.target)
               );
-              localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
+              localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(updatedEdges));
             }
           }
         } catch (err) {
@@ -977,7 +977,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             return acc;
           }, {});
           
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(nodePositions));
+          localStorage.setItem(IDEAMAP_LAYOUT_KEY, JSON.stringify(nodePositions));
           
           // 변경 사항 플래그 업데이트
           set({ hasUnsavedChanges: false });
@@ -1027,7 +1027,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       removeEdgesFromStorage: (deletedEdgeIds: string[]) => {
         try {
           // 로컬 스토리지에서 현재 엣지 정보 가져오기
-          const storedEdgesJSON = localStorage.getItem(EDGES_STORAGE_KEY);
+          const storedEdgesJSON = localStorage.getItem(IDEAMAP_EDGES_KEY);
           if (!storedEdgesJSON) return;
           
           // JSON 파싱
@@ -1039,7 +1039,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           );
           
           // 업데이트된 엣지 정보를 다시 로컬 스토리지에 저장
-          localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
+          localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(updatedEdges));
         } catch (err) {
           console.error('엣지 제거 중 오류 발생:', err);
         }
@@ -1140,7 +1140,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       saveEdgesAction: () => {
         try {
           const { edges } = get();
-          localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
+          localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(edges));
           set({ hasUnsavedChanges: false });
           return true;
         } catch (err) {
@@ -1159,8 +1159,8 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         if (edges.length === 0) return;
         
         try {
-          // applyEdgeSettings 함수는 새 엣지 배열을 반환함
-          const updatedEdges = applyEdgeSettings(edges, ideaMapSettings);
+          // applyIdeaMapEdgeSettings 함수는 새 엣지 배열을 반환함
+          const updatedEdges = applyIdeaMapEdgeSettings(edges, ideaMapSettings);
           
           // 엣지 배열 자체가 변경된 경우에만 setEdges 호출
           if (JSON.stringify(updatedEdges) !== JSON.stringify(edges)) {
@@ -1205,7 +1205,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           },
         };
         
-        const styledEdge = applyEdgeSettings([newEdge], ideaMapSettings)[0];
+        const styledEdge = applyIdeaMapEdgeSettings([newEdge], ideaMapSettings)[0];
         return styledEdge;
       },
     }),

@@ -8,22 +8,22 @@
 
 import { useCallback } from 'react';
 import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
-import { BoardSettings } from '@/lib/ideamap-utils';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 /**
  * useEdges: useIdeaMapStore의 엣지 관련 액션들을 사용하는 래퍼 훅
- * @param boardSettings 보드 설정 객체
+ * @param ideaMapSettings 아이디어맵 설정 객체
  * @param nodes 노드 배열
  * @param initialEdges 초기 엣지 데이터 (옵션)
  * @returns 엣지 관련 상태 및 함수들
  */
 export function useEdges({
-  boardSettings,
+  ideaMapSettings,
   nodes,
   initialEdges = []
 }: {
-  boardSettings: BoardSettings;
+  ideaMapSettings: IdeaMapSettings;
   nodes: Node[];
   initialEdges?: Edge[];
 }) {

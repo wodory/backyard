@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 
-// 보드 설정 스키마
-const boardSettingsSchema = z.object({
+// 아이디어맵 설정 스키마
+const ideaMapSettingsSchema = z.object({
   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
   settings: z.object({
     snapToGrid: z.boolean(),
@@ -18,8 +18,8 @@ const boardSettingsSchema = z.object({
   })
 });
 
-// 부분 업데이트용 보드 설정 스키마 (더 유연한 검사)
-const partialBoardSettingsSchema = z.object({
+// 부분 업데이트용 아이디어맵 설정 스키마 (더 유연한 검사)
+const partialIdeaMapSettingsSchema = z.object({
   userId: z.string(), // UUID 검사 제거하여 더 유연하게 함
   settings: z.object({
     snapToGrid: z.boolean().optional(),
@@ -34,11 +34,11 @@ const partialBoardSettingsSchema = z.object({
   }).partial()
 });
 
-// 보드 설정 저장 API
+// 아이디어맵 설정 저장 API
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, settings } = boardSettingsSchema.parse(body);
+    const { userId, settings } = ideaMapSettingsSchema.parse(body);
 
     // 기존 설정이 있는지 확인
     const existingSettings = await prisma.boardSettings.findUnique({
@@ -64,16 +64,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error('보드 설정 저장 실패:', error);
-    return NextResponse.json({ error: '보드 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
+    console.error('아이디어맵 설정 저장 실패:', error);
+    return NextResponse.json({ error: '아이디어맵 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
   }
 }
 
-// 보드 설정 업데이트 API
+// 아이디어맵 설정 업데이트 API
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, settings } = boardSettingsSchema.parse(body);
+    const { userId, settings } = ideaMapSettingsSchema.parse(body);
 
     // 기존 설정이 있는지 확인
     const existingSettings = await prisma.boardSettings.findUnique({
@@ -99,12 +99,12 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error('보드 설정 업데이트 실패:', error);
-    return NextResponse.json({ error: '보드 설정을 업데이트하는 데 실패했습니다.' }, { status: 500 });
+    console.error('아이디어맵 설정 업데이트 실패:', error);
+    return NextResponse.json({ error: '아이디어맵 설정을 업데이트하는 데 실패했습니다.' }, { status: 500 });
   }
 }
 
-// 보드 설정 부분 업데이트 API
+// 아이디어맵 설정 부분 업데이트 API
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest) {
     }
     
     // 부분 스키마로 유효성 검사
-    const validatedData = partialBoardSettingsSchema.safeParse(body);
+    const validatedData = partialIdeaMapSettingsSchema.safeParse(body);
     
     if (!validatedData.success) {
       console.error('유효성 검사 실패:', 
@@ -196,7 +196,7 @@ export async function PATCH(request: NextRequest) {
     }, { status: 200 });
   } catch (error) {
     // 더 자세한 오류 정보 로깅
-    console.error('보드 설정 부분 업데이트 실패:', error);
+    console.error('아이디어맵 설정 부분 업데이트 실패:', error);
     console.error('오류 세부 정보:', {
       name: error instanceof Error ? error.name : 'Unknown Error',
       message: error instanceof Error ? error.message : String(error),
@@ -212,13 +212,13 @@ export async function PATCH(request: NextRequest) {
     }
     
     return NextResponse.json({ 
-      error: '보드 설정을 부분 업데이트하는 데 실패했습니다.',
+      error: '아이디어맵 설정을 부분 업데이트하는 데 실패했습니다.',
       details: error instanceof Error ? error.message : String(error)
     }, { status: statusCode });
   }
 }
 
-// 보드 설정 조회 API
+// 아이디어맵 설정 조회 API
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
@@ -238,7 +238,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ settings: boardSettings.settings }, { status: 200 });
   } catch (error) {
-    console.error('보드 설정 조회 실패:', error);
-    return NextResponse.json({ error: '보드 설정을 조회하는 데 실패했습니다.' }, { status: 500 });
+    console.error('아이디어맵 설정 조회 실패:', error);
+    return NextResponse.json({ error: '아이디어맵 설정을 조회하는 데 실패했습니다.' }, { status: 500 });
   }
 } 

@@ -25,7 +25,7 @@ import {
   MarkerType,
   Viewport
 } from '@xyflow/react';
-import { BoardSettings } from '@/lib/ideamap-utils';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
 // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
 // import CardNode from '@/components/ideamap/nodes/CardNode';
 // import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
@@ -57,10 +57,10 @@ interface IdeaMapCanvasProps {
   onPaneClick: (e: React.MouseEvent) => void;
   /** 레이아웃 방향 */
   layoutDirection: 'horizontal' | 'vertical';
-  /** 보드 설정 */
-  boardSettings: BoardSettings;
-  /** 보드 설정 변경 핸들러 */
-  onBoardSettingsChange: (settings: BoardSettings, isAuthenticated: boolean, userId?: string) => void;
+  /** 아이디어맵 설정 */
+  ideaMapSettings: IdeaMapSettings;
+  /** 아이디어맵 설정 변경 핸들러 */
+  onIdeaMapSettingsChange: (settings: IdeaMapSettings, isAuthenticated: boolean, userId?: string) => void;
   /** 레이아웃 변경 핸들러 */
   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
   /** 자동 레이아웃 적용 핸들러 */
@@ -102,8 +102,8 @@ export default function IdeaMapCanvas({
   onNodeClick,
   onPaneClick,
   layoutDirection,
-  boardSettings,
-  onBoardSettingsChange,
+  ideaMapSettings,
+  onIdeaMapSettingsChange,
   onLayoutChange,
   onAutoLayout,
   onSaveLayout,
@@ -136,17 +136,17 @@ export default function IdeaMapCanvas({
   // 기본 엣지 옵션 메모이제이션
   const defaultEdgeOptions = useMemo(() => ({
     type: 'custom',
-    animated: boardSettings.animated,
+    animated: ideaMapSettings.animated,
     style: {
-      strokeWidth: boardSettings.strokeWidth,
-      stroke: boardSettings.edgeColor
+      strokeWidth: ideaMapSettings.strokeWidth,
+      stroke: ideaMapSettings.edgeColor
     },
-    markerEnd: boardSettings.markerEnd ? {
+    markerEnd: ideaMapSettings.markerEnd ? {
       type: MarkerType.ArrowClosed,
-      width: boardSettings.markerSize,
-      height: boardSettings.markerSize,
+      width: ideaMapSettings.markerSize,
+      height: ideaMapSettings.markerSize,
     } : undefined
-  }), [boardSettings]);
+  }), [ideaMapSettings]);
 
   return (
     <div
@@ -172,9 +172,9 @@ export default function IdeaMapCanvas({
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
         connectionMode={ConnectionMode.Loose}
-        connectionLineType={boardSettings.connectionLineType as any}
-        snapToGrid={boardSettings.snapToGrid}
-        snapGrid={boardSettings.snapGrid}
+        connectionLineType={ideaMapSettings.connectionLineType as any}
+        snapToGrid={ideaMapSettings.snapToGrid}
+        snapGrid={ideaMapSettings.snapGrid}
         fitView
         attributionPosition="bottom-right"
         defaultEdgeOptions={defaultEdgeOptions}

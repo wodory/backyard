@@ -40,7 +40,7 @@ import {
 import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
-import { BoardSettings } from '@/lib/ideamap-utils';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import {
   SNAP_GRID_OPTIONS,
   CONNECTION_TYPE_OPTIONS,
@@ -52,9 +52,9 @@ import {
 } from '@/lib/ideamap-constants';
 import createLogger from '@/lib/logger';
 import {
-  STORAGE_KEY,
-  EDGES_STORAGE_KEY,
-  TRANSFORM_STORAGE_KEY
+  IDEAMAP_LAYOUT_STORAGE_KEY,
+  IDEAMAP_EDGES_STORAGE_KEY,
+  IDEAMAP_TRANSFORM_STORAGE_KEY
 } from '@/lib/ideamap-constants';
 
 // 모듈별 로거 생성
@@ -65,9 +65,10 @@ export function ProjectToolbar() {
   const {
     layoutDirection,
     setLayoutDirection,
-    boardSettings: ideaMapSettings,
-    updateBoardSettings: updateIdeaMapSettings,
-    saveBoardLayout: saveIdeaMapLayout,
+    // rename board -> ideaMap
+    ideaMapSettings,
+    updateIdeaMapSettings,
+    saveIdeaMapLayout,
     logoutAction,
     projects,
     activeProjectId,

@@ -1,7 +1,7 @@
 /**
  * 파일명: useIdeaMapUtils.test.tsx
- * 목적: useBoardUtils 훅을 테스트
- * 역할: 보드 유틸리티 함수 관련 기능을 검증
+ * 목적: useIdeaMapUtils 훅을 테스트
+ * 역할: 아이디어맵 유틸리티 함수 관련 기능을 검증
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
  */
@@ -9,13 +9,13 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { toast } from 'sonner';
-import { useBoardUtils } from './useIdeaMapUtils';
-import { BoardSettings, saveBoardSettingsToServer, loadBoardSettingsFromServer } from '@/lib/ideamap-utils';
+import { useIdeaMapUtils } from './useIdeaMapUtils';
+import { IdeaMapSettings, saveIdeaMapSettingsToServer, loadIdeaMapSettingsFromServer } from '@/lib/ideamap-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
-import { TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IDEAMAP_TRANSFORM_KEY } from '@/lib/ideamap-constants';
 import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
 import { AppState } from '@/store/useAppStore';
@@ -59,13 +59,13 @@ vi.mock('@xyflow/react', async () => {
 
 // Zustand 스토어 모킹
 vi.mock('@/store/useAppStore', () => {
-  const setBoardSettingsMock = vi.fn();
+  const setIdeaMapSettingsMock = vi.fn();
 
   return {
     useAppStore: (selector: ((state: Partial<AppState>) => any) | undefined) => {
       if (typeof selector === 'function') {
         return selector({
-          boardSettings: {
+          ideaMapSettings: {
             strokeWidth: 2,
             edgeColor: '#000000',
             selectedEdgeColor: '#ff0000',
@@ -76,13 +76,13 @@ vi.mock('@/store/useAppStore', () => {
             snapGrid: [20, 20] as [number, number],
             markerSize: 20,
           },
-          setBoardSettings: setBoardSettingsMock,
+          setIdeaMapSettings: setIdeaMapSettingsMock,
         });
       }
 
       // selector가 함수가 아닌 경우 (드물게 발생할 수 있음)
       return {
-        boardSettings: {
+        ideaMapSettings: {
           strokeWidth: 2,
           edgeColor: '#000000',
           selectedEdgeColor: '#ff0000',
@@ -93,7 +93,7 @@ vi.mock('@/store/useAppStore', () => {
           snapGrid: [20, 20] as [number, number],
           markerSize: 20,
         },
-        setBoardSettings: setBoardSettingsMock,
+        setIdeaMapSettings: setIdeaMapSettingsMock,
       };
     },
   };
@@ -101,14 +101,14 @@ vi.mock('@/store/useAppStore', () => {
 
 // IdeaMap-utils 모킹
 vi.mock('@/lib/ideamap-utils', () => ({
-  BoardSettings: {},
-  saveBoardSettings: vi.fn(),
+  IdeaMapSettings: {},
+  saveIdeaMapSettings: vi.fn(),
   // 항상 유효한 엣지 배열 반환
-  applyEdgeSettings: vi.fn().mockImplementation((edges, settings) => {
+  applyIdeaMapEdgeSettings: vi.fn().mockImplementation((edges, settings) => {
     return defaultMockEdges;
   }),
-  saveBoardSettingsToServer: vi.fn().mockResolvedValue({}),
-  loadBoardSettingsFromServer: vi.fn().mockResolvedValue({
+  saveIdeaMapSettingsToServer: vi.fn().mockResolvedValue({}),
+  loadIdeaMapSettingsFromServer: vi.fn().mockResolvedValue({
     strokeWidth: 2,
     edgeColor: '#000000',
     selectedEdgeColor: '#ff0000',
@@ -149,14 +149,14 @@ vi.mock('sonner', () => {
   };
 });
 
-// 실제 useBoardUtils 실행 대신 테스트 함수 제공
-const mockHandleBoardSettingsChange = vi.fn(async (newSettings, isAuthenticated, userId) => {
-  const setBoardSettings = useAppStore(state => state.setBoardSettings);
-  setBoardSettings(newSettings);
+// 실제 useIdeaMapUtils 실행 대신 테스트 함수 제공
+const mockHandleIdeaMapSettingsChange = vi.fn(async (newSettings, isAuthenticated, userId) => {
+  const setIdeaMapSettings = useAppStore(state => state.setIdeaMapSettings);
+  setIdeaMapSettings(newSettings);
 
   if (isAuthenticated && userId) {
-    await saveBoardSettingsToServer(userId, newSettings);
-    toast.success('보드 설정이 저장되었습니다');
+    await saveIdeaMapSettingsToServer(userId, newSettings);
+    toast.success('아이디어맵 설정이 저장되었습니다');
   }
   return true;
 });
@@ -167,24 +167,24 @@ const mockHandleLayoutChange = vi.fn((direction) => {
   return { nodes: defaultLayoutedNodes, edges: defaultMockEdges };
 });
 
-// useBoardUtils 모킹
-vi.mock('./useBoardUtils', () => {
+// useIdeaMapUtils 모킹
+vi.mock('./useIdeaMapUtils', () => {
   return {
-    useBoardUtils: () => {
+    useIdeaMapUtils: () => {
       return {
         saveAllLayoutData: vi.fn().mockImplementation(() => {
-          localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify({ x: 100, y: 200, zoom: 2 }));
+          localStorage.setItem(IDEAMAP_TRANSFORM_KEY, JSON.stringify({ x: 100, y: 200, zoom: 2 }));
           return true;
         }),
         saveTransform: vi.fn().mockImplementation(() => {
-          localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify({ x: 100, y: 200, zoom: 2 }));
+          localStorage.setItem(IDEAMAP_TRANSFORM_KEY, JSON.stringify({ x: 100, y: 200, zoom: 2 }));
           return true;
         }),
         handleSaveLayout: vi.fn().mockImplementation(() => {
           toast.error('레이아웃 저장에 실패했습니다');
           return false;
         }),
-        handleBoardSettingsChange: mockHandleBoardSettingsChange,
+        handleIdeaMapSettingsChange: mockHandleIdeaMapSettingsChange,
         handleLayoutChange: mockHandleLayoutChange,
         handleAutoLayout: vi.fn().mockImplementation(() => {
           toast.success("카드가 격자 형태로 배치되었습니다.");
@@ -197,15 +197,15 @@ vi.mock('./useBoardUtils', () => {
   };
 });
 
-describe('useBoardUtils', () => {
+describe('useIdeaMapUtils', () => {
   // 테스트를 위한 모의 함수 및 데이터 준비
   const saveLayout = vi.fn().mockReturnValue(true);
   const saveEdges = vi.fn().mockReturnValue(true);
   const setNodes = vi.fn();
   const setEdges = vi.fn();
   const updateNodeInternals = vi.fn();
-  const mockedSaveBoardSettingsToServer = vi.mocked(saveBoardSettingsToServer);
-  const mockedLoadBoardSettingsFromServer = vi.mocked(loadBoardSettingsFromServer);
+  const mockedSaveIdeaMapSettingsToServer = vi.mocked(saveIdeaMapSettingsToServer);
+  const mockedLoadIdeaMapSettingsFromServer = vi.mocked(loadIdeaMapSettingsFromServer);
   const mockedGetGridLayout = vi.mocked(getGridLayout);
   const mockedGetLayoutedElements = vi.mocked(getLayoutedElements);
   let setItemSpy: any;
@@ -238,10 +238,10 @@ describe('useBoardUtils', () => {
 
     // API 응답 모킹 (MSW 핸들러)
     server.use(
-      http.post('/api/board-settings', async ({ request }) => {
+      http.post('/api/ideamap-settings', async ({ request }) => {
         return HttpResponse.json({ success: true });
       }),
-      http.get('/api/board-settings/:userId', ({ params }) => {
+      http.get('/api/ideamap-settings/:userId', ({ params }) => {
         const { userId } = params;
         return HttpResponse.json({
           strokeWidth: 2,
@@ -264,7 +264,7 @@ describe('useBoardUtils', () => {
 
   it('saveAllLayoutData가 레이아웃과 엣지를 저장하고 성공 메시지를 표시해야 함', () => {
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,
@@ -290,7 +290,7 @@ describe('useBoardUtils', () => {
 
   it('saveTransform이 뷰포트 상태를 로컬 스토리지에 저장해야 함', () => {
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,
@@ -310,7 +310,7 @@ describe('useBoardUtils', () => {
     // 결과 검증
     expect(success).toBe(true);
     expect(setItemSpy).toHaveBeenCalledWith(
-      TRANSFORM_STORAGE_KEY,
+      IDEAMAP_TRANSFORM_KEY,
       expect.any(String)
     );
   });
@@ -321,7 +321,7 @@ describe('useBoardUtils', () => {
     saveEdges.mockReturnValue(true);
 
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,
@@ -341,7 +341,7 @@ describe('useBoardUtils', () => {
     // 결과 검증
     expect(success).toBe(true);
     expect(setItemSpy).toHaveBeenCalledWith(
-      TRANSFORM_STORAGE_KEY,
+      IDEAMAP_TRANSFORM_KEY,
       expect.any(String)
     );
   });
@@ -351,7 +351,7 @@ describe('useBoardUtils', () => {
     saveLayout.mockReturnValueOnce(false);
 
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,
@@ -371,9 +371,9 @@ describe('useBoardUtils', () => {
     expect(toast.error).toHaveBeenCalledWith('레이아웃 저장에 실패했습니다');
   });
 
-  it('handleBoardSettingsChange가 설정 변경 및 서버 저장을 처리해야 함', async () => {
+  it('handleIdeaMapSettingsChange가 설정 변경 및 서버 저장을 처리해야 함', async () => {
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,
@@ -385,7 +385,7 @@ describe('useBoardUtils', () => {
     }));
 
     // 새로운 설정
-    const newSettings: BoardSettings = {
+    const newSettings: IdeaMapSettings = {
       strokeWidth: 3,
       edgeColor: '#ff0000',
       selectedEdgeColor: '#00ff00',
@@ -399,17 +399,17 @@ describe('useBoardUtils', () => {
 
     // 함수 호출
     await act(async () => {
-      await result.current.handleBoardSettingsChange(newSettings, true, 'user123');
+      await result.current.handleIdeaMapSettingsChange(newSettings, true, 'user123');
     });
 
     // 결과 검증
-    expect(mockHandleBoardSettingsChange).toHaveBeenCalledWith(newSettings, true, 'user123');
-    expect(mockedSaveBoardSettingsToServer).toHaveBeenCalledWith('user123', newSettings);
+    expect(mockHandleIdeaMapSettingsChange).toHaveBeenCalledWith(newSettings, true, 'user123');
+    expect(mockedSaveIdeaMapSettingsToServer).toHaveBeenCalledWith('user123', newSettings);
   });
 
   it('handleLayoutChange가 레이아웃 방향을 변경하고 노드 내부를 업데이트해야 함', () => {
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,
@@ -432,7 +432,7 @@ describe('useBoardUtils', () => {
 
   it('handleAutoLayout이 그리드 레이아웃을 적용해야 함', () => {
     // 훅 렌더링
-    const { result } = renderHook(() => useBoardUtils({
+    const { result } = renderHook(() => useIdeaMapUtils({
       reactFlowWrapper,
       updateNodeInternals,
       saveLayout,

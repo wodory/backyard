@@ -6,8 +6,8 @@
  */
 
 import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';
-import { BoardSettings } from '@/lib/ideamap-utils';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 
 /**
  * 레이아웃을 로컬 스토리지에 저장
@@ -22,7 +22,7 @@ export const saveLayout = (nodes: Node[]): boolean => {
       return acc;
     }, {});
     
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nodePositions));
+    localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(nodePositions));
     return true;
   } catch (err) {
     console.error('레이아웃 저장 실패:', err);
@@ -37,7 +37,7 @@ export const saveLayout = (nodes: Node[]): boolean => {
  */
 export const saveEdges = (edges: Edge[]): boolean => {
   try {
-    localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
+    localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
     return true;
   } catch (err) {
     console.error('엣지 저장 실패:', err);
@@ -65,7 +65,7 @@ export const saveAllLayoutData = (nodes: Node[], edges: Edge[]): boolean => {
 export const removeDeletedNodesFromStorage = (deletedNodeIds: string[]): void => {
   try {
     // 노드 위치 정보 처리
-    const savedPositionsStr = localStorage.getItem(STORAGE_KEY);
+    const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
     if (savedPositionsStr) {
       const savedPositions = JSON.parse(savedPositionsStr);
       
@@ -75,10 +75,10 @@ export const removeDeletedNodesFromStorage = (deletedNodeIds: string[]): void =>
       );
       
       // 업데이트된 위치 정보 저장
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPositions));
+      localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(updatedPositions));
       
       // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
-      const savedEdgesStr = localStorage.getItem(EDGES_STORAGE_KEY);
+      const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
       if (savedEdgesStr) {
         const savedEdges = JSON.parse(savedEdgesStr);
         const updatedEdges = savedEdges.filter(
@@ -86,7 +86,7 @@ export const removeDeletedNodesFromStorage = (deletedNodeIds: string[]): void =>
             !deletedNodeIds.includes(edge.source) && 
             !deletedNodeIds.includes(edge.target)
         );
-        localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
+        localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
       }
     }
   } catch (err) {
@@ -219,7 +219,7 @@ export const arraysEqual = (a: string[], b: string[]): boolean => {
  * @param boardSettings 보드 설정
  * @returns 새 엣지 객체
  */
-export const createEdge = (source: string, target: string, boardSettings: BoardSettings): Edge => {
+export const createEdge = (source: string, target: string, boardSettings: IdeaMapSettings): Edge => {
   // 엣지 ID 생성 - 소스ID-타겟ID-타임스탬프
   const edgeId = `${source}-${target}-${Date.now()}`;
   

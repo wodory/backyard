@@ -8,8 +8,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Node, Edge, XYPosition, MarkerType, ConnectionLineType } from '@xyflow/react';
-import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
-import { BoardSettings } from '@/lib/ideamap-utils';
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import {
   saveLayout,
   saveEdges,
@@ -27,12 +27,12 @@ describe('saveLayout', () => {
   beforeEach(() => {
     // 로컬 스토리지 스파이 설정
     vi.spyOn(window.localStorage, 'getItem').mockImplementation((key: string) => {
-      if (key === STORAGE_KEY) return JSON.stringify({
+      if (key === IDEAMAP_LAYOUT_STORAGE_KEY) return JSON.stringify({
         '1': { position: { x: 100, y: 100 } },
         '2': { position: { x: 200, y: 200 } },
         '3': { position: { x: 300, y: 300 } }
       });
-      if (key === EDGES_STORAGE_KEY) return JSON.stringify([
+      if (key === IDEAMAP_EDGES_STORAGE_KEY) return JSON.stringify([
         { id: 'e1', source: '1', target: '2' },
         { id: 'e2', source: '2', target: '3' },
         { id: 'e3', source: '1', target: '3' }
@@ -61,7 +61,7 @@ describe('saveLayout', () => {
     
     expect(result).toBe(true);
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      STORAGE_KEY, 
+      IDEAMAP_LAYOUT_STORAGE_KEY, 
       expect.any(String)
     );
   });
@@ -102,7 +102,7 @@ describe('saveEdges', () => {
     
     expect(result).toBe(true);
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      EDGES_STORAGE_KEY, 
+      IDEAMAP_EDGES_STORAGE_KEY, 
       expect.any(String)
     );
   });
@@ -165,12 +165,12 @@ describe('saveAllLayoutData', () => {
 describe('removeDeletedNodesFromStorage', () => {
   beforeEach(() => {
     vi.spyOn(window.localStorage, 'getItem').mockImplementation((key: string) => {
-      if (key === STORAGE_KEY) return JSON.stringify({
+      if (key === IDEAMAP_LAYOUT_STORAGE_KEY) return JSON.stringify({
         '1': { position: { x: 100, y: 100 } },
         '2': { position: { x: 200, y: 200 } },
         '3': { position: { x: 300, y: 300 } }
       });
-      if (key === EDGES_STORAGE_KEY) return JSON.stringify([
+      if (key === IDEAMAP_EDGES_STORAGE_KEY) return JSON.stringify([
         { id: 'e1', source: '1', target: '2' },
         { id: 'e2', source: '2', target: '3' },
         { id: 'e3', source: '1', target: '3' }
@@ -191,11 +191,11 @@ describe('removeDeletedNodesFromStorage', () => {
     
     // 삭제된 노드가 제거된 positions 검증
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      STORAGE_KEY,
+      IDEAMAP_LAYOUT_STORAGE_KEY,
       expect.any(String)
     );
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      EDGES_STORAGE_KEY,
+      IDEAMAP_EDGES_STORAGE_KEY,
       expect.any(String)
     );
 
@@ -302,7 +302,7 @@ describe('createEdge', () => {
     
     const source = 'node1';
     const target = 'node2';
-    const boardSettings: BoardSettings = {
+    const boardSettings: IdeaMapSettings = {
       snapToGrid: false,
       snapGrid: [15, 15],
       connectionLineType: ConnectionLineType.Bezier,
@@ -336,7 +336,7 @@ describe('createEdge', () => {
   });
   
   it('markerEnd가 false면 마커가 없어야 함', () => {
-    const boardSettings: BoardSettings = {
+    const boardSettings: IdeaMapSettings = {
       snapToGrid: false,
       snapGrid: [15, 15],
       connectionLineType: ConnectionLineType.Straight,

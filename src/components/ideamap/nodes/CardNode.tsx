@@ -26,7 +26,7 @@ import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
 const COMPONENT_ID = 'CardNode_from_nodes_directory';
 
 // 디버깅용 로그 - 순환 참조 방지를 위해 NODE_TYPES 접근 제거
-console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CardNode`);
+console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/ideamap/nodes/CardNode`);
 
 // 노드 데이터 타입 정의
 export interface NodeData {

@@ -10,7 +10,7 @@ import { renderHook, act } from '@testing-library/react';
 import { server } from '@/tests/msw/server';
 import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
 import { mockLocalStorage } from '@/tests/mocks/storage-mock';
-import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 
 // 모든 모킹은 파일 상단에 그룹화
 // 외부 모듈부터 모킹 (호이스팅 고려)
@@ -191,7 +191,7 @@ describe('useBoardData 훅 테스트', () => {
     const mockNodePositions = {
       'card-1': { position: { x: 100, y: 100 } }
     };
-    mockedStorage.setItem(STORAGE_KEY, JSON.stringify(mockNodePositions));
+    mockedStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(mockNodePositions));
 
     // needsFitView: true 상태로 설정
     const overrideState = createMockState({ needsFitView: true });
@@ -219,7 +219,7 @@ describe('useBoardData 훅 테스트', () => {
     const mockViewport: Viewport = { x: 100, y: 200, zoom: 1.5 };
 
     // 저장된 뷰포트 데이터 설정
-    mockedStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
+    mockedStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(mockViewport));
 
     // 저장된 뷰포트가 있는 상태로 설정
     const overrideState = createMockState({ loadedViewport: mockViewport });

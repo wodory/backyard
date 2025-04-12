@@ -1,7 +1,7 @@
 /**
  * 파일명: useIdeaMapUtils.ts
- * 목적: 보드 유틸리티 함수 관련 로직 분리
- * 역할: 보드 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
+ * 목적: 아이디어맵 유틸리티 함수 관련 로직 분리
+ * 역할: 아이디어맵 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
  * 작성일: 2025-03-28
  */
 
@@ -10,16 +10,16 @@ import { Node, Edge, useReactFlow, Viewport } from '@xyflow/react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/useAppStore';
 import {
-  BoardSettings,
-  DEFAULT_BOARD_SETTINGS,
-  loadBoardSettings,
-  saveBoardSettings,
-  loadBoardSettingsFromServer,
-  saveBoardSettingsToServer
+  IdeaMapSettings,
+  DEFAULT_IDEAMAP_SETTINGS,
+  loadIdeaMapSettings,
+  saveIdeaMapSettings,
+  loadIdeaMapSettingsFromServer,
+  saveIdeaMapSettingsToServer
 } from '@/lib/ideamap-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
-import { TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
-import { CardData } from '../types/board-types';
+import { IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { CardData } from '../types/ideamap-types';
 
 /**
  * useIdeaMapUtils: 아이디어맵 유틸리티 함수 관련 로직을 관리하는 훅
@@ -52,8 +52,8 @@ export function useIdeaMapUtils({
   setNodes: (updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void;
   setEdges: (updater: ((edges: Edge[]) => Edge[]) | Edge[]) => void;
 }) {
-  // 전역 상태에서 보드 설정 가져오기
-  const { boardSettings, setBoardSettings } = useAppStore();
+  // 전역 상태에서 아이디어맵 설정 가져오기
+  const { ideaMapSettings, setIdeaMapSettings } = useAppStore();
   
   // 저장되지 않은 변경사항 플래그
   const hasUnsavedChanges = useRef(false);
@@ -72,20 +72,20 @@ export function useIdeaMapUtils({
   ) => {
     if (isAuthenticated && userId) {
       try {
-        const settings = await loadBoardSettingsFromServer(userId);
+        const settings = await loadIdeaMapSettingsFromServer(userId);
         if (settings) {
           // 전역 상태 업데이트 (이것이 localStorage에도 저장됨)
-          setBoardSettings(settings);
+          setIdeaMapSettings(settings);
           
           // 새 설정을 엣지에 적용
-          const updatedEdges = applyEdgeSettings(edges, settings);
+          const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
           setEdges(updatedEdges);
         }
       } catch (err) {
         console.error('서버에서 아이디어맵 설정 불러오기 실패:', err);
       }
     }
-  }, [edges, setEdges, setBoardSettings]);
+  }, [edges, setEdges, setIdeaMapSettings]);
 
   /**
    * 뷰포트(transform) 저장
@@ -102,7 +102,7 @@ export function useIdeaMapUtils({
       const viewport = reactFlowInstance.getViewport();
       
       // 뷰포트 저장
-      localStorage.setItem(TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
+      localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
       console.log('[useIdeaMapUtils] 뷰포트 저장 완료:', viewport);
       
       return true;
@@ -152,25 +152,25 @@ export function useIdeaMapUtils({
    * @param userId 사용자 ID
    */
   const handleIdeaMapSettingsChange = useCallback((
-    newSettings: BoardSettings,
+    newSettings: IdeaMapSettings,
     isAuthenticated: boolean,
     userId?: string
   ) => {
     console.log('[useIdeaMapUtils] 아이디어맵 설정 변경 핸들러 호출됨:', newSettings);
     
     // 1. 전역 상태 업데이트
-    setBoardSettings(newSettings);
+    setIdeaMapSettings(newSettings);
     console.log('[useIdeaMapUtils] 전역 상태 업데이트 완료');
     
     // 2. 새 설정을 엣지에 적용
-    const updatedEdges = applyEdgeSettings(edges, newSettings);
+    const updatedEdges = applyIdeaMapEdgeSettings(edges, newSettings);
     console.log('[useIdeaMapUtils] 엣지 설정 적용 완료, 엣지 수:', updatedEdges.length);
     setEdges(updatedEdges);
     
     // 3. 인증된 사용자인 경우 서버에도 저장
     if (isAuthenticated && userId) {
       console.log('[useIdeaMapUtils] 서버에 아이디어맵 설정 저장 시도');
-      saveBoardSettingsToServer(userId, newSettings)
+      saveIdeaMapSettingsToServer(newSettings, userId)
         .then(() => {
           console.log('[useIdeaMapUtils] 서버 저장 성공');
           toast.success('아이디어맵 설정이 저장되었습니다');
@@ -182,7 +182,7 @@ export function useIdeaMapUtils({
     } else {
       console.log('[useIdeaMapUtils] 비인증 사용자, 서버 저장 생략');
     }
-  }, [edges, setEdges, setBoardSettings]);
+  }, [edges, setEdges, setIdeaMapSettings]);
 
   /**
    * 뷰포트 중앙 업데이트
@@ -264,7 +264,7 @@ export function useIdeaMapUtils({
    * @param settings 적용할 설정
    * @returns 설정이 적용된 엣지 배열
    */
-  const applyEdgeSettings = useCallback((currentEdges: Edge[], settings: BoardSettings) => {
+  const applyIdeaMapEdgeSettings = useCallback((currentEdges: Edge[], settings: IdeaMapSettings) => {
     return currentEdges.map(edge => ({
       ...edge,
       animated: settings.animated,
@@ -290,7 +290,7 @@ export function useIdeaMapUtils({
     updateViewportCenter,
     handleAutoLayout,
     handleLayoutChange,
-    applyEdgeSettings,
+    applyIdeaMapEdgeSettings,
     hasUnsavedChanges: hasUnsavedChanges.current
   };
 } 
