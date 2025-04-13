@@ -56,6 +56,7 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
   - [ ] 멀티 샐랙트 -> 사이드 바 통합 표시 안 됨
 
 **Todo**
+- [ ] 각 행동을 명령 객체(Command Pattern)**으로 캡슐화하여, 그 실행(execute())과 취소(undo()) 동작을 별도 정의합니다.
 - [ ] 카드 리스트 삭제 -> 캔버스 삭제 
 - [ ] Sidebar 필터 
 - [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows

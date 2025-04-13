@@ -60,7 +60,6 @@ Project Structure:
 ├── tailwind.config.js
 ├── tsconfig.jest.json
 ├── tsconfig.json
-├── tsconfig.tsbuildinfo
 ├── types
 │   └── vitest.d.ts
 ├── update-modified-dates.js
@@ -316,13 +315,44 @@ vitest.config.ts
 72 |         '**/src/lib/supabase-server.ts',
 73 |         '**/src/lib/supabase.ts',
 74 |         '**/src/lib/debug-utils.ts',
-75 |         '**/src/lib/board-ui-config.ts',
-76 |         '**/src/lib/board-utils.ts',
-77 |         '**/src/lib/layout-utils.ts',
-78 |         // root       // 모든 서브 폴더의 test-utils.ts 파일 제외
-79 |         './*.config.js', // 루트 경로의 config 파일들
-80 |         './*.config.ts',
+75 |         '**/src/lib/ideamap-utils.ts',
+76 |         '**/src/lib/layout-utils.ts',
+77 |         // root       // 모든 서브 폴더의 test-utils.ts 파일 제외
+78 |         './*.config.js', // 루트 경로의 config 파일들
+79 |         './*.config.ts',
+80 |         './*.config.mjs',
 [TRUNCATED]
+```
+
+src/middleware.ts
+```
+1 | /**
+2 |  * 파일명: middleware.ts
+3 |  * 목적: Supabase 인증 토큰 새로고침을 위한 미들웨어
+4 |  * 역할: 인증 토큰을 새로고침하고 브라우저와 서버 컴포넌트에 전달
+5 |  * 작성일: 2025-03-08
+6 |  * 수정일: 2025-03-27
+7 |  */
+8 | 
+9 | import { NextRequest } from 'next/server'
+10 | import { updateSession } from '@/utils/supabase/middleware'
+11 | 
+12 | export async function middleware(request: NextRequest) {
+13 |   return await updateSession(request)
+14 | }
+15 | 
+16 | export const config = {
+17 |   matcher: [
+18 |     /*
+19 |      * Match all request paths except for the ones starting with:
+20 |      * - _next/static (static files)
+21 |      * - _next/image (image optimization files)
+22 |      * - favicon.ico (favicon file)
+23 |      * Feel free to modify this pattern to include more paths.
+24 |      */
+25 |     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+26 |   ],
+27 | } 
 ```
 
 scripts/check-port.js
@@ -812,55 +842,6 @@ scripts/update-file-dates.js
 [TRUNCATED]
 ```
 
-src/middleware.ts
-```
-1 | /**
-2 |  * 파일명: middleware.ts
-3 |  * 목적: Supabase 인증 토큰 새로고침을 위한 미들웨어
-4 |  * 역할: 인증 토큰을 새로고침하고 브라우저와 서버 컴포넌트에 전달
-5 |  * 작성일: 2025-03-08
-6 |  * 수정일: 2025-03-27
-7 |  */
-8 | 
-9 | import { NextRequest } from 'next/server'
-10 | import { updateSession } from '@/utils/supabase/middleware'
-11 | 
-12 | export async function middleware(request: NextRequest) {
-13 |   return await updateSession(request)
-14 | }
-15 | 
-16 | export const config = {
-17 |   matcher: [
-18 |     /*
-19 |      * Match all request paths except for the ones starting with:
-20 |      * - _next/static (static files)
-21 |      * - _next/image (image optimization files)
-22 |      * - favicon.ico (favicon file)
-23 |      * Feel free to modify this pattern to include more paths.
-24 |      */
-25 |     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-26 |   ],
-27 | } 
-```
-
-vitest/failed-files-reporter.js
-```
-1 | // failed-files-reporter.js
-2 | export default class FailedFilesReporter {
-3 |     onFinished(results) {
-4 |         // results.testFileResults는 각 테스트 파일의 결과 정보를 담고 있습니다.
-5 |         const failedFiles = results.testFileResults
-6 |             .filter(fileResult => fileResult.numFailingTests > 0)
-7 |             .map(fileResult => fileResult.file)
-8 | 
-9 |         if (failedFiles.length > 0) {
-10 |             console.log('\n실패한 테스트 파일:');
-11 |             failedFiles.forEach(file => console.log(file))
-12 |         }
-13 |     }
-14 | }
-```
-
 types/vitest.d.ts
 ```
 1 | /// <reference types="vitest" />
@@ -907,6 +888,24 @@ types/vitest.d.ts
 42 |     };
 43 |   }
 44 | } 
+```
+
+vitest/failed-files-reporter.js
+```
+1 | // failed-files-reporter.js
+2 | export default class FailedFilesReporter {
+3 |     onFinished(results) {
+4 |         // results.testFileResults는 각 테스트 파일의 결과 정보를 담고 있습니다.
+5 |         const failedFiles = results.testFileResults
+6 |             .filter(fileResult => fileResult.numFailingTests > 0)
+7 |             .map(fileResult => fileResult.file)
+8 | 
+9 |         if (failedFiles.length > 0) {
+10 |             console.log('\n실패한 테스트 파일:');
+11 |             failedFiles.forEach(file => console.log(file))
+12 |         }
+13 |     }
+14 | }
 ```
 
 html/assets/index-CsZqQx26.js
@@ -982,270 +981,7 @@ prisma/seed/index.js
 60 | main(); 
 ```
 
-src/app/layout.test.tsx
-```
-1 | /**
-2 |  * 파일명: layout.test.tsx
-3 |  * 목적: RootLayout 컴포넌트 테스트
-4 |  * 역할: 레이아웃 컴포넌트의 기능과 구조 검증
-5 |  * 작성일: 2025-03-05
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | import { render, screen } from '@testing-library/react';
-10 | import '@testing-library/jest-dom/vitest';
-11 | import RootLayout from './layout';
-12 | import { metadata } from './metadata';
-13 | import { describe, it, expect, vi, beforeEach } from 'vitest';
-14 | 
-15 | // next/font 모듈 모킹
-16 | vi.mock('next/font/google', () => ({
-17 |   Geist: vi.fn().mockReturnValue({
-18 |     variable: 'mocked-geist-sans',
-19 |   }),
-20 |   Geist_Mono: vi.fn().mockReturnValue({
-21 |     variable: 'mocked-geist-mono',
-22 |   }),
-23 | }));
-24 | 
-25 | // ClientLayout 모킹
-26 | vi.mock('@/components/layout/ClientLayout', () => ({
-27 |   ClientLayout: ({ children }: { children: React.ReactNode }) => (
-28 |     <div data-testid="client-layout">{children}</div>
-29 |   ),
-30 | }));
-31 | 
-32 | describe('메타데이터 테스트', () => {
-33 |   it('기본 메타데이터가 올바르게 설정되어 있어야 합니다', () => {
-34 |     expect(metadata.title).toBeDefined();
-35 |     expect(metadata.description).toBeDefined();
-36 |   });
-37 | });
-38 | 
-39 | describe('RootLayout 컴포넌트 테스트', () => {
-40 |   beforeEach(() => {
-41 |     render(
-42 |       <RootLayout>
-43 |         <div data-testid="test-child">Test Child</div>
-44 |       </RootLayout>
-45 |     );
-46 |   });
-47 | 
-48 |   it('컴포넌트가 정의되어 있어야 합니다', () => {
-49 |     expect(RootLayout).toBeDefined();
-50 |   });
-51 | 
-52 |   it('자식 컴포넌트를 올바르게 렌더링해야 합니다', () => {
-53 |     const testChild = screen.getByTestId('test-child');
-54 |     expect(testChild).toBeInTheDocument();
-55 |     expect(testChild).toHaveTextContent('Test Child');
-56 |   });
-57 | 
-58 |   it('ClientLayout이 렌더링되어야 합니다', () => {
-59 |     const clientLayout = screen.getByTestId('client-layout');
-60 |     expect(clientLayout).toBeInTheDocument();
-61 |     expect(clientLayout).toContainElement(screen.getByTestId('test-child'));
-62 |   });
-63 | }); 
-```
-
-src/app/layout.tsx
-```
-1 | /**
-2 |  * 파일명: layout.tsx
-3 |  * 목적: 앱의 기본 레이아웃 구조 정의
-4 |  * 역할: 전체 페이지 구조와 공통 UI 요소 제공
-5 |  * 작성일: 2025-02-27
-6 |  * 수정일: 2025-03-28
-7 |  */
-8 | 
-9 | import { ClientLayout } from "@/components/layout/ClientLayout";
-10 | import "@/app/globals.css";
-11 | import "@xyflow/react/dist/style.css";
-12 | 
-13 | export default function RootLayout({
-14 |   children,
-15 | }: {
-16 |   children: React.ReactNode;
-17 | }) {
-18 |   return (
-19 |     <html lang="ko">
-20 |       <body className="antialiased" suppressHydrationWarning>
-21 |         <ClientLayout>
-22 |           {children}
-23 |         </ClientLayout>
-24 |       </body>
-25 |     </html>
-26 |   );
-27 | }
-```
-
-src/app/metadata.ts
-```
-1 | import { Metadata } from "next";
-2 | 
-3 | export const metadata: Metadata = {
-4 |   title: "Backyard - 모든 아이디어를 정리하는 공간",
-5 |   description: "효율적인 메모와 지식 관리를 위한 솔루션",
-6 |   icons: {
-7 |     icon: "/favicon.ico",
-8 |   },
-9 | }; 
-```
-
-src/app/not-found.test.tsx
-```
-1 | /**
-2 |  * 파일명: not-found.test.tsx
-3 |  * 목적: NotFound 컴포넌트의 기능 검증
-4 |  * 역할: 404 페이지가 올바르게 렌더링되는지 확인
-5 |  * 작성일: 2025-04-01
-6 |  */
-7 | 
-8 | import { render, screen } from '@testing-library/react';
-9 | import { expect, describe, it, vi } from 'vitest';
-10 | import NotFound from './not-found';
-11 | 
-12 | // Next.js Link 컴포넌트 모킹
-13 | vi.mock('next/link', () => ({
-14 |     default: ({ children, href }: { children: React.ReactNode, href: string }) => (
-15 |         <a href={href} data-testid="link">
-16 |             {children}
-17 |         </a>
-18 |     ),
-19 | }));
-20 | 
-21 | describe('NotFound 컴포넌트', () => {
-22 |     it('404 텍스트가 표시되어야 함', () => {
-23 |         render(<NotFound />);
-24 |         expect(screen.getByText('404')).toBeInTheDocument();
-25 |     });
-26 | 
-27 |     it('페이지를 찾을 수 없다는 메시지가 표시되어야 함', () => {
-28 |         render(<NotFound />);
-29 |         expect(screen.getByText('페이지를 찾을 수 없습니다')).toBeInTheDocument();
-30 |     });
-31 | 
-32 |     it('설명 텍스트가 표시되어야 함', () => {
-33 |         render(<NotFound />);
-34 |         expect(screen.getByText('요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.')).toBeInTheDocument();
-35 |     });
-36 | 
-37 |     it('홈으로 돌아가는 링크가 있어야 함', () => {
-38 |         render(<NotFound />);
-39 |         const link = screen.getByTestId('link');
-40 |         expect(link).toBeInTheDocument();
-41 |         expect(link).toHaveAttribute('href', '/');
-42 |         expect(link).toHaveTextContent('홈으로 돌아가기');
-43 |     });
-44 | }); 
-```
-
-src/app/not-found.tsx
-```
-1 | 'use client';
-2 | 
-3 | import Link from 'next/link';
-4 | 
-5 | export default function NotFound() {
-6 |   return (
-7 |     <div className="flex flex-col items-center justify-center min-h-screen p-8">
-8 |       <div className="text-center">
-9 |         <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
-10 |         <h2 className="text-2xl font-semibold text-gray-700 mb-6">페이지를 찾을 수 없습니다</h2>
-11 |         <p className="text-gray-600 mb-8">
-12 |           요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
-13 |         </p>
-14 |         <Link
-15 |           href="/"
-16 |           className="px-6 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-17 |         >
-18 |           홈으로 돌아가기
-19 |         </Link>
-20 |       </div>
-21 |     </div>
-22 |   );
-23 | } 
-```
-
-src/app/page.test.tsx
-```
-1 | /**
-2 |  * 파일명: page.test.tsx
-3 |  * 목적: 홈 페이지 컴포넌트 테스트
-4 |  * 역할: 홈 페이지의 렌더링과 기능 검증
-5 |  * 작성일: 2025-03-05
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | import { render, screen } from '@testing-library/react';
-10 | import '@testing-library/jest-dom/vitest';
-11 | import Home from './page';
-12 | import { DashboardLayout } from '@/components/layout/DashboardLayout';
-13 | import { describe, it, expect, vi } from 'vitest';
-14 | import React from 'react';
-15 | 
-16 | // DashboardLayout 모킹
-17 | vi.mock('@/components/layout/DashboardLayout', () => ({
-18 |   DashboardLayout: vi.fn().mockImplementation(() => (
-19 |     <div data-testid="dashboard-layout">
-20 |       <h1>Backyard</h1>
-21 |       <p>아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구</p>
-22 |       <a href="/cards">카드 목록 보기</a>
-23 |     </div>
-24 |   )),
-25 | }));
-26 | 
-27 | describe('Home 페이지', () => {
-28 |   it('컴포넌트가 정의되어 있어야 합니다', () => {
-29 |     expect(typeof Home).toBe('function');
-30 |   });
-31 | 
-32 |   it('DashboardLayout을 렌더링해야 합니다', () => {
-33 |     render(<Home />);
-34 |     const dashboard = screen.getByTestId('dashboard-layout');
-35 |     expect(dashboard).toBeInTheDocument();
-36 |   });
-37 | 
-38 |   it('Backyard 제목이 렌더링되어야 합니다', () => {
-39 |     render(<Home />);
-40 |     const heading = screen.getByText('Backyard');
-41 |     expect(heading).toBeInTheDocument();
-42 |     expect(heading.tagName).toBe('H1');
-43 |   });
-44 |   
-45 |   it('설명 텍스트가 렌더링되어야 합니다', () => {
-46 |     render(<Home />);
-47 |     const description = screen.getByText('아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구');
-48 |     expect(description).toBeInTheDocument();
-49 |     expect(description.tagName).toBe('P');
-50 |   });
-51 |   
-52 |   it('카드 목록 보기 링크가 렌더링되어야 합니다', () => {
-53 |     render(<Home />);
-54 |     const link = screen.getByText('카드 목록 보기');
-55 |     expect(link).toBeInTheDocument();
-56 |     expect(link.tagName).toBe('A');
-57 |     expect(link).toHaveAttribute('href', '/cards');
-58 |   });
-59 | 
-60 |   it('DashboardLayout이 호출되어야 합니다', () => {
-61 |     render(<Home />);
-62 |     expect(DashboardLayout).toHaveBeenCalled();
-63 |   });
-64 | }); 
-```
-
-src/app/page.tsx
-```
-1 | import { DashboardLayout } from '@/components/layout/DashboardLayout';
-2 | 
-3 | export default function Home() {
-4 |   return <DashboardLayout />;
-5 | }
-```
-
-src/components/Board.tsx
+src/components/IdeaMap.tsx
 ```
 1 | const newNodes = prevNodes.map((node) => {
 2 |     if (node.id === cardData.id) {
@@ -1435,7 +1171,7 @@ src/contexts/ThemeContext.tsx
 6 |  */
 7 | 
 8 | import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-9 | import defaultConfig from '../config/cardBoardUiOptions.json';
+9 | import defaultConfig from '../config/uiOptions.json';
 10 | 
 11 | export interface NodeTheme {
 12 |   width: number;
@@ -1502,10 +1238,10 @@ src/contexts/ThemeContext.tsx
 73 |     }
 74 |   },
 75 |   edge: {
-76 |     color: defaultConfig.board.edgeColor,
-77 |     width: defaultConfig.board.strokeWidth,
-78 |     selectedColor: defaultConfig.board.selectedEdgeColor,
-79 |     animated: defaultConfig.board.animated,
+76 |     color: defaultConfig.ideaMap.edgeColor,
+77 |     width: defaultConfig.ideaMap.strokeWidth,
+78 |     selectedColor: defaultConfig.ideaMap.selectedEdgeColor,
+79 |     animated: defaultConfig.ideaMap.animated,
 80 |   },
 81 |   handle: {
 82 |     size: defaultConfig.handles.size,
@@ -1951,191 +1687,328 @@ src/services/auth-service.ts
 [TRUNCATED]
 ```
 
-src/tests/helper.ts
+src/store/useAppStore.ts
+```
+1 | import { create } from 'zustand'
+2 | import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middleware'
+3 | import { toast } from 'sonner'
+4 | import type { CreateCardInput } from '@/types/card'
+5 | import { 
+6 |   IdeaMapSettings, 
+7 |   DEFAULT_IDEAMAP_SETTINGS, 
+8 |   loadIdeaMapSettings,
+9 |   saveIdeaMapSettings
+10 | } from '@/lib/ideamap-utils'
+11 | import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
+12 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
+13 | import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
+14 | import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
+15 | import { signOut } from "next-auth/react"
+16 | 
+17 | // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
+18 | export interface Card {
+19 |   id: string;
+20 |   title: string;
+21 |   content: string | null;
+22 |   createdAt: string;
+23 |   updatedAt: string;
+24 |   userId: string;
+25 |   user?: import('@/types/card').User;
+26 |   cardTags?: Array<{ tag: { id: string; name: string; } }>;
+27 |   [key: string]: any;
+28 | }
+29 | 
+30 | // 프로젝트 정보 인터페이스
+31 | export interface Project {
+32 |   id: string;
+33 |   name: string;
+34 |   ownerNickname?: string;
+35 |   userId: string;
+36 |   createdAt: string;
+37 |   updatedAt: string;
+38 |   settings?: any;
+39 | }
+40 | 
+41 | export interface AppState {
+42 |   // 선택된 카드 상태 (통합된 단일 소스)
+43 |   selectedCardIds: string[];
+44 |   // 이전 단일 선택 상태 (내부적으로 selectedCardIds로 변환)
+45 |   selectedCardId: string | null; // 하위 호환성 유지 (파생 값)
+46 |   // 확장된 카드 ID
+47 |   expandedCardId: string | null;
+48 |   
+49 |   // 선택 관련 액션들
+50 |   selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
+51 |   selectCards: (cardIds: string[]) => void; // 다중 카드 선택 (주요 액션)
+52 |   addSelectedCard: (cardId: string) => void; // 선택된 카드 목록에 추가
+53 |   removeSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 제거
+54 |   toggleSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 토글
+55 |   clearSelectedCards: () => void; // 모든 선택 해제
+56 |   // 카드 확장 액션
+57 |   toggleExpandCard: (cardId: string) => void; // 카드 확장 토글
+58 |   
+59 |   // 카드 데이터 상태
+60 |   cards: Card[]; // 현재 로드된 카드 목록
+61 |   setCards: (cards: Card[]) => void; // 카드 목록 설정
+62 |   updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
+63 |   createCard: (input: CreateCardInput) => Promise<Card | null>; // 카드 생성 액션 추가
+64 |   
+65 |   // 사이드바 상태
+66 |   isSidebarOpen: boolean;
+67 |   setSidebarOpen: (open: boolean) => void;
+68 |   toggleSidebar: () => void;
+69 |   
+70 |   // 레이아웃 옵션 (수평/수직/자동배치/없음)
+71 |   layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
+[TRUNCATED]
+```
+
+src/store/useAuthStore.ts
 ```
 1 | /**
-2 |  * 파일명: src/tests/helper.ts
-3 |  * 목적: 테스트 유틸리티 함수 제공
-4 |  * 역할: 테스트 코드에서 사용되는 공통 유틸리티 함수 모음
-5 |  * 작성일: 2025-03-30
+2 |  * 파일명: src/store/useAuthStore.ts
+3 |  * 목적: Zustand를 사용한 인증 상태 관리
+4 |  * 역할: 클라이언트 측 인증 상태(토큰, 사용자 ID 등)를 중앙 집중적으로 관리
+5 |  * 작성일: 2025-04-09
 6 |  */
 7 | 
-8 | /**
-9 |  * flushPromises: 비동기 작업이 처리될 수 있도록 이벤트 루프를 비웁니다.
-10 |  * @returns {Promise<void>} 비동기 작업이 완료된 후의 프로미스
-11 |  */
-12 | export const flushPromises = (): Promise<void> => {
-13 |   return new Promise(resolve => setTimeout(resolve, 0));
-14 | }; 
-```
-
-src/tests/setup.ts
-```
-1 | /**
-2 |  * 파일명: setup.ts
-3 |  * 목적: Vitest 테스트 설정
-4 |  * 역할: 테스트 환경 설정 및 전역 설정 제공
-5 |  * 작성일: 2025-03-27
-6 |  * 수정일: 2025-04-08 - waitFor 제대로 작동하도록 setTimeout 모킹 방식 수정
-7 |  */
-8 | 
-9 | import '@testing-library/jest-dom/vitest';
-10 | import { beforeEach, afterEach, vi, expect, beforeAll, afterAll } from 'vitest';
-11 | import { cleanup } from '@testing-library/react';
-12 | import * as matchers from '@testing-library/jest-dom/matchers';
-13 | import { server } from './msw/server'; // MSW 서버 임포트
-14 | 
-15 | // Testing Library의 jest-dom 매처 확장
-16 | expect.extend(matchers);
-17 | 
-18 | // --- MSW 서버 설정 ---
-19 | // Node.js v20 undici 타임아웃 이슈 해결을 위한 설정
-20 | beforeAll(() => {
-21 |   // fetch 타임아웃 관련 이슈 해결을 위해 bypass 모드 사용
-22 |   server.listen({ 
-23 |     onUnhandledRequest: 'bypass',
-24 |   });
-25 |   
-26 |   // 타이머 모킹 제거 - wait-for가 정상적으로 작동하도록 수정
-27 |   // 실제 타이머를 사용하도록 설정
-28 |   if (typeof window !== 'undefined') {
-29 |     // 실제 타이머를 사용 (모킹하지 않음)
-30 |     vi.useRealTimers(); // waitFor가 의존하는 실제 타이머 사용
-31 |   }
-32 | });
-33 | 
-34 | afterEach(() => {
-35 |   // 각 테스트 후 핸들러 초기화
-36 |   server.resetHandlers();
-37 |   // React 컴포넌트 정리
-38 |   cleanup();
-39 | });
-40 | 
-41 | afterAll(() => {
-42 |   // 모든 테스트 후 서버 정리
-43 |   server.close();
-44 | });
-45 | // --- MSW 서버 설정 끝 ---
-46 | 
-47 | // 항상 document.body가 존재하도록 함
-48 | if (typeof document !== 'undefined' && !document.body) {
-49 |   document.body = document.createElement('body');
-50 | }
-51 | 
-52 | // 문서 초기화 함수 - 테스트 전 호출
-53 | function setupDocument() {
-54 |   if (typeof document !== 'undefined') {
-55 |     if (!document.body) {
-56 |       document.body = document.createElement('body');
-57 |     }
-58 |     // 루트 컨테이너 초기화 (기존 로직 유지)
-59 |     const rootEl = document.querySelector('#test-root');
-60 |     if (!rootEl) {
-61 |         const newRootEl = document.createElement('div');
-62 |         newRootEl.id = 'test-root';
-63 |         document.body.appendChild(newRootEl);
-64 |     } else if (rootEl.parentNode !== document.body) {
-65 |         document.body.appendChild(rootEl); // 루트가 body 밖에 있으면 다시 추가
-66 |     }
-67 |   }
-68 | }
-69 | 
-70 | // Logger 모킹 (실제 구현과 일치하도록 수정)
-71 | vi.mock('@/lib/logger', () => {
-72 |   const mockLogs: any[] = [];
-73 |   const mockSessionId = 'test-session-id';
-74 |   let isWindowDefined = true;
-75 | 
-76 |   const mockLogStorage = {
-77 |     getInstance: vi.fn(() => ({
-78 |       getSessionId: vi.fn(() => mockSessionId),
-79 |       addLog: vi.fn((log: any) => {
+8 | 'use client';
+9 | 
+10 | import { create } from 'zustand';
+11 | import { persist, createJSONStorage } from 'zustand/middleware';
+12 | import createLogger from '@/lib/logger';
+13 | 
+14 | // 로거 생성
+15 | const logger = createLogger('AuthStore');
+16 | 
+17 | // 인증 상태 인터페이스
+18 | interface AuthState {
+19 |   // 상태 (State)
+20 |   accessToken: string | null;
+21 |   refreshToken: string | null;
+22 |   userId: string | null;
+23 |   provider: string | null;
+24 |   codeVerifier: string | null;
+25 |   isLoading: boolean;
+26 |   error: Error | null;
+27 |   
+28 |   // 액션 (Actions)
+29 |   setTokens: (accessToken: string | null, refreshToken: string | null) => void;
+30 |   setUser: (userId: string | null, provider?: string | null) => void;
+31 |   setCodeVerifier: (value: string | null) => void;
+32 |   setLoading: (isLoading: boolean) => void;
+33 |   setError: (error: Error | null) => void;
+34 |   clearAuth: () => void;
+35 |   removeCodeVerifier: () => void;
+36 | }
+37 | 
+38 | // Zustand 스토어 생성
+39 | export const useAuthStore = create<AuthState>()(
+40 |   persist(
+41 |     (set) => ({
+42 |       // 초기 상태
+43 |       accessToken: null,
+44 |       refreshToken: null,
+45 |       userId: null,
+46 |       provider: null,
+47 |       codeVerifier: null,
+48 |       isLoading: false,
+49 |       error: null,
+50 |       
+51 |       // 액션 구현
+52 |       setTokens: (accessToken, refreshToken) => {
+53 |         logger.info('인증 토큰 설정', { 
+54 |           hasAccessToken: !!accessToken, 
+55 |           hasRefreshToken: !!refreshToken
+56 |         });
+57 |         set({ accessToken, refreshToken });
+58 |       },
+59 |       
+60 |       setUser: (userId, provider = null) => {
+61 |         logger.info('사용자 정보 설정', { 
+62 |           hasUserId: !!userId, 
+63 |           provider
+64 |         });
+65 |         set({ userId, provider });
+66 |       },
+67 |       
+68 |       setCodeVerifier: (codeVerifier) => {
+69 |         if (codeVerifier) {
+70 |           logger.debug('PKCE 코드 검증기 설정', { 
+71 |             length: codeVerifier.length, 
+72 |             firstChars: codeVerifier.substring(0, 5) + '...' 
+73 |           });
+74 |         } else {
+75 |           logger.debug('PKCE 코드 검증기 초기화');
+76 |         }
+77 |         set({ codeVerifier });
+78 |       },
+79 |       
+80 |       setLoading: (isLoading) => {
+81 |         set({ isLoading });
+82 |       },
+83 |       
+84 |       setError: (error) => {
+85 |         if (error) {
+86 |           logger.error('인증 오류 설정', error);
+87 |         } else {
+88 |           logger.debug('인증 오류 초기화');
+89 |         }
+90 |         set({ error });
+91 |       },
+92 |       
+93 |       clearAuth: () => {
+94 |         logger.info('인증 상태 초기화');
+95 |         set({
+96 |           accessToken: null,
 [TRUNCATED]
 ```
 
-src/tests/test-utils.tsx
+src/store/useIdeaMapStore.ts
 ```
 1 | /**
-2 |  * 파일명: test-utils.tsx
-3 |  * 목적: 테스트 유틸리티 함수 및 래퍼 제공
-4 |  * 역할: Next.js, React 컴포넌트를 테스트하기 위한 유틸리티 제공
-5 |  * 작성일: 2025-03-30
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import React, { ReactElement } from 'react';
-10 | import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
-11 | import userEvent from '@testing-library/user-event';
-12 | import { vi, expect as vitestExpect } from 'vitest';
-13 | import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
-14 | import { CardData } from '@/components/board/types/board-types';
-15 | 
-16 | // XYFlow 모킹
-17 | export const mockReactFlow = {
-18 |     project: vi.fn(({ x, y }) => ({ x, y })),
-19 |     getIntersectingNodes: vi.fn(() => []),
-20 |     getNode: vi.fn(),
-21 |     getNodes: vi.fn(() => []),
-22 |     getEdge: vi.fn(),
-23 |     getEdges: vi.fn(() => []),
-24 |     viewportInitialized: true,
-25 |     getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
-26 |     screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
-27 | } as unknown as ReactFlowInstance;
-28 | 
-29 | // 테스트 노드 생성 유틸리티
-30 | export const createTestNode = (id: string, position = { x: 0, y: 0 }): Node<CardData> => ({
-31 |     id,
-32 |     type: 'default',
-33 |     position,
-34 |     data: {
-35 |         id,
-36 |         title: `Test Card ${id}`,
-37 |         content: `Test Content ${id}`,
-38 |         tags: [],
-39 |     },
-40 | });
-41 | 
-42 | // 테스트 엣지 생성 유틸리티
-43 | export const createTestEdge = (id: string, source: string, target: string): Edge => ({
-44 |     id,
-45 |     source,
-46 |     target,
-47 |     type: 'default',
-48 |     markerEnd: MarkerType.ArrowClosed,
-49 | });
-50 | 
-51 | // 이벤트 객체 생성 유틸리티
-52 | export const createDragEvent = (data: any = {}): React.DragEvent => ({
-53 |     preventDefault: vi.fn(),
-54 |     stopPropagation: vi.fn(),
-55 |     dataTransfer: {
-56 |         dropEffect: 'none',
-57 |         getData: vi.fn((format: string) => {
-58 |             try {
-59 |                 return typeof data === 'string' ? data : JSON.stringify(data);
-60 |             } catch (error) {
-61 |                 return '';
-62 |             }
-63 |         }),
-64 |         setData: vi.fn(),
-65 |     },
-66 | } as unknown as React.DragEvent);
-67 | 
-68 | export const createMouseEvent = (options: Partial<MouseEvent> = {}): React.MouseEvent => ({
-69 |     preventDefault: vi.fn(),
-70 |     stopPropagation: vi.fn(),
-71 |     ctrlKey: false,
-72 |     metaKey: false,
-73 |     ...options,
-74 | } as unknown as React.MouseEvent);
-75 | 
-76 | // 모킹된 screen 객체
-77 | export const screen = {
-78 |     ...rtlScreen,
-79 |     getByText: (text: string) => {
-80 |         try {
+2 |  * 파일명: useIdeaMapStore.ts
+3 |  * 목적: Zustand를 활용한 아이디어맵 관련 전역 상태 관리
+4 |  * 역할: 아이디어맵의 노드, 엣지, 설정 등 모든 상태를 중앙 관리
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | import { create } from 'zustand';
+9 | import { persist } from 'zustand/middleware';
+10 | import { 
+11 |   Node, 
+12 |   Edge, 
+13 |   Connection, 
+14 |   applyNodeChanges, 
+15 |   applyEdgeChanges,
+16 |   addEdge,
+17 |   NodeChange,
+18 |   EdgeChange,
+19 |   XYPosition,
+20 |   MarkerType,
+21 |   Position,
+22 |   Viewport
+23 | } from '@xyflow/react';
+24 | import { 
+25 |   IdeaMapSettings, 
+26 |   DEFAULT_IDEAMAP_SETTINGS, 
+27 |   loadIdeaMapSettings, 
+28 |   saveIdeaMapSettings,
+29 |   applyIdeaMapEdgeSettings,
+30 |   loadIdeaMapSettingsFromServer,
+31 |   saveIdeaMapSettingsToServer,
+32 |   updateIdeaMapSettingsOnServer
+33 | } from '@/lib/ideamap-utils';
+34 | import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+35 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
+36 | import { toast } from 'sonner';
+37 | import { CardData } from '@/components/ideamap/types/ideamap-types';
+38 | import { useAppStore } from './useAppStore';
+39 | 
+40 | // 아이디어맵 스토어 상태 인터페이스
+41 | interface IdeaMapState {
+42 |   // 노드 관련 상태
+43 |   nodes: Node<CardData>[];
+44 |   setNodes: (nodes: Node<CardData>[]) => void;
+45 |   onNodesChange: (changes: NodeChange[]) => void;
+46 |   
+47 |   // 엣지 관련 상태
+48 |   edges: Edge[];
+49 |   setEdges: (edges: Edge[]) => void;
+50 |   onEdgesChange: (changes: EdgeChange[]) => void;
+51 |   onConnect: (connection: Connection) => void;
+52 |   
+53 |   // 아이디어맵 설정 관련 상태
+54 |   ideaMapSettings: IdeaMapSettings;
+55 |   setIdeaMapSettings: (settings: IdeaMapSettings) => void;
+56 |   updateIdeaMapSettings: (settings: Partial<IdeaMapSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
+57 |   
+58 |   // 레이아웃 관련 함수
+59 |   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
+60 |   applyGridLayout: () => void;
+61 |   
+62 |   // 저장 관련 함수
+63 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
+64 |   saveEdges: (edgesToSave?: Edge[]) => boolean;
+65 |   saveAllLayoutData: () => boolean;
+66 |   
+67 |   // 엣지 스타일 업데이트
+68 |   updateEdgeStyles: (settings: IdeaMapSettings) => void;
+69 |   
+70 |   // 서버 동기화 함수
+71 |   loadIdeaMapSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
+72 |   
+73 |   // 엣지 생성 함수
+74 |   createEdgeOnDrop: (sourceId: string, targetId: string) => Edge;
+75 |   
+76 |   // 변경 사항 추적
+77 |   hasUnsavedChanges: boolean;
+78 |   setHasUnsavedChanges: (value: boolean) => void;
+79 |   
+80 |   // 리액트 플로우 인스턴스
+81 |   reactFlowInstance: any;
+82 |   setReactFlowInstance: (instance: any) => void;
+83 |   
+84 |   // 아이디어맵 데이터 로딩 상태 및 액션
+85 |   isIdeaMapLoading: boolean;
+86 |   ideaMapError: string | null;
+87 |   loadedViewport: Viewport | null;
+88 |   needsFitView: boolean;
+89 |   loadIdeaMapData: () => Promise<void>;
+90 |   
+91 |   // 추가된 상태 및 액션
 [TRUNCATED]
+```
+
+src/store/useNodeStore.ts
+```
+1 | /**
+2 |  * 파일명: useNodeStore.ts
+3 |  * 목적: 노드 인스펙터 관련 상태 관리
+4 |  * 역할: 선택된 노드 정보와 인스펙터 UI 상태 관리
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | import { create } from 'zustand';
+9 | import { Node } from '@xyflow/react';
+10 | 
+11 | // 노드 스토어 상태 인터페이스
+12 | interface NodeStore {
+13 |   // 인스펙터 관련 상태
+14 |   inspectorOpen: boolean;
+15 |   inspectedNode: Node | null;
+16 |   
+17 |   // 상태 변경 함수
+18 |   setInspectorOpen: (open: boolean) => void;
+19 |   setInspectedNode: (node: Node | null) => void;
+20 |   
+21 |   // 노드 검사 함수
+22 |   inspectNode: (node: Node) => void;
+23 |   closeInspector: () => void;
+24 | }
+25 | 
+26 | /**
+27 |  * useNodeStore: 노드 인스펙터 관련 상태 관리 스토어
+28 |  */
+29 | export const useNodeStore = create<NodeStore>((set) => ({
+30 |   // 초기 상태
+31 |   inspectorOpen: false,
+32 |   inspectedNode: null,
+33 |   
+34 |   // 상태 변경 함수
+35 |   setInspectorOpen: (open) => set({ inspectorOpen: open }),
+36 |   setInspectedNode: (node) => set({ inspectedNode: node }),
+37 |   
+38 |   // 유틸리티 함수
+39 |   inspectNode: (node) => set({ 
+40 |     inspectedNode: node, 
+41 |     inspectorOpen: true 
+42 |   }),
+43 |   
+44 |   closeInspector: () => set({ 
+45 |     inspectorOpen: false 
+46 |   }),
+47 | })); 
 ```
 
 src/lib/auth-server.ts
@@ -2357,292 +2230,6 @@ src/lib/base64.ts
 [TRUNCATED]
 ```
 
-src/lib/board-constants.ts
-```
-1 | import { ConnectionLineType, MarkerType } from '@xyflow/react';
-2 | 
-3 | // 스냅 그리드 옵션
-4 | export const SNAP_GRID_OPTIONS = [
-5 |   { value: 0, label: '끄기' },
-6 |   { value: 10, label: '10px' },
-7 |   { value: 15, label: '15px' },
-8 |   { value: 20, label: '20px' },
-9 |   { value: 25, label: '25px' },
-10 | ];
-11 | 
-12 | // 기본 스냅 그리드 설정
-13 | export const DEFAULT_SNAP_GRID = [15, 15];
-14 | 
-15 | // 연결선 타입 옵션
-16 | export const CONNECTION_TYPE_OPTIONS = [
-17 |   { value: ConnectionLineType.Bezier, label: '곡선 (Bezier)' },
-18 |   { value: ConnectionLineType.Straight, label: '직선 (Straight)' },
-19 |   { value: ConnectionLineType.Step, label: '계단식 (Step)' },
-20 |   { value: ConnectionLineType.SmoothStep, label: '부드러운 계단식 (SmoothStep)' },
-21 |   { value: ConnectionLineType.SimpleBezier, label: '단순 곡선 (SimpleBezier)' },
-22 | ];
-23 | 
-24 | // 화살표 마커 타입 옵션
-25 | export const MARKER_TYPE_OPTIONS = [
-26 |   { value: MarkerType.Arrow, label: '화살표 (Arrow)' },
-27 |   { value: MarkerType.ArrowClosed, label: '닫힌 화살표 (ArrowClosed)' },
-28 |   { value: null, label: '없음 (None)' },
-29 | ];
-30 | 
-31 | // 연결선 두께 옵션
-32 | export const STROKE_WIDTH_OPTIONS = [
-33 |   { value: 1, label: '얇게 (1px)' },
-34 |   { value: 2, label: '보통 (2px)' },
-35 |   { value: 3, label: '굵게 (3px)' },
-36 |   { value: 4, label: '매우 굵게 (4px)' },
-37 | ];
-38 | 
-39 | // 마커 크기 옵션
-40 | export const MARKER_SIZE_OPTIONS = [
-41 |   { value: 10, label: '작게 (10px)' },
-42 |   { value: 15, label: '보통 (15px)' },
-43 |   { value: 20, label: '크게 (20px)' },
-44 |   { value: 25, label: '매우 크게 (25px)' },
-45 | ];
-46 | 
-47 | // 연결선 애니메이션 옵션
-48 | export const EDGE_ANIMATION_OPTIONS = [
-49 |   { value: true, label: '켜기' },
-50 |   { value: false, label: '끄기' },
-51 | ];
-52 | 
-53 | // 연결선 색상 옵션
-54 | export const EDGE_COLOR_OPTIONS = [
-55 |   { value: '#C1C1C1', label: '회색 (기본)', color: '#C1C1C1' },
-56 |   { value: '#000000', label: '검정색', color: '#000000' },
-57 |   { value: '#FF0072', label: '핑크색', color: '#FF0072' },
-58 |   { value: '#3366FF', label: '파란색', color: '#3366FF' },
-59 |   { value: '#43A047', label: '녹색', color: '#43A047' },
-60 |   { value: '#FFC107', label: '노란색', color: '#FFC107' },
-61 |   { value: '#9C27B0', label: '보라색', color: '#9C27B0' },
-62 | ];
-63 | 
-64 | // 스토리지 키
-65 | export const STORAGE_KEY = 'backyard-board-layout';
-66 | export const EDGES_STORAGE_KEY = 'backyard-board-edges';
-67 | export const BOARD_SETTINGS_KEY = 'backyard-board-settings';
-68 | export const TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
-69 | 
-70 | // 자동 저장 설정
-71 | export const BOARD_CONFIG = {
-72 |   // 자동 저장 간격 (분)
-73 |   autoSaveInterval: 1,
-[TRUNCATED]
-```
-
-src/lib/board-ui-config.ts
-```
-1 | import { MarkerType, ConnectionLineType } from '@xyflow/react';
-2 | import defaultConfig from '../config/cardBoardUiOptions.json';
-3 | 
-4 | // 카드 보드 UI 설정 타입 정의
-5 | export interface BoardUIConfig {
-6 |   autoSaveIntervalMinutes: number;
-7 |   board: {
-8 |     snapToGrid: boolean;
-9 |     snapGrid: number[];
-10 |     connectionLineType: string;
-11 |     markerEnd: string | null;
-12 |     strokeWidth: number;
-13 |     markerSize: number;
-14 |     edgeColor: string;
-15 |     animated: boolean;
-16 |     selectedEdgeColor: string;
-17 |   };
-18 |   card: {
-19 |     defaultWidth: number;
-20 |     backgroundColor: string;
-21 |     borderRadius: number;
-22 |     tagBackgroundColor: string;
-23 |     fontSizes?: {
-24 |       default: number;
-25 |       title: number;
-26 |       content: number;
-27 |       tags: number;
-28 |     };
-29 |   };
-30 |   handles: {
-31 |     size: number;
-32 |     backgroundColor: string;
-33 |     borderColor: string;
-34 |     borderWidth: number;
-35 |   };
-36 |   layout: {
-37 |     defaultPadding: number;
-38 |     defaultSpacing: {
-39 |       horizontal: number;
-40 |       vertical: number;
-41 |     };
-42 |     nodeSize?: {
-43 |       width: number;
-44 |       height: number;
-45 |       maxHeight?: number;
-46 |     };
-47 |     graphSettings?: {
-48 |       nodesep: number;
-49 |       ranksep: number;
-50 |       edgesep: number;
-51 |     };
-52 |   };
-53 | }
-54 | 
-55 | // CSS 변수에서 값을 가져오는 함수 (클라이언트 사이드에서만 작동)
-56 | export function getCssVariable(name: string, fallback: string): string {
-57 |   if (typeof window !== 'undefined') {
-58 |     return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-59 |   }
-60 |   return fallback;
-61 | }
-62 | 
-63 | // CSS 변수에서 숫자 값을 가져오는 함수
-64 | export function getCssVariableAsNumber(name: string, fallback: number): number {
-65 |   if (typeof window !== 'undefined') {
-66 |     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-67 |     if (value) {
-68 |       // px 단위 제거 및 숫자로 변환
-69 |       const numericValue = parseFloat(value.replace('px', '').replace('rem', ''));
-70 |       return isNaN(numericValue) ? fallback : numericValue;
-71 |     }
-72 |   }
-73 |   return fallback;
-74 | }
-75 | 
-76 | // 기본 설정값 (타입 변환 포함)
-77 | export const DEFAULT_UI_CONFIG: BoardUIConfig = {
-78 |   ...defaultConfig as BoardUIConfig,
-79 |   board: {
-80 |     ...defaultConfig.board,
-81 |     connectionLineType: defaultConfig.board.connectionLineType as ConnectionLineType,
-82 |     markerEnd: defaultConfig.board.markerEnd as MarkerType,
-83 |     selectedEdgeColor: '#000000',
-84 |     snapGrid: defaultConfig.board.snapGrid as number[],
-85 |   }
-86 | };
-87 | 
-88 | /**
-89 |  * 기본 설정을 불러오는 함수
-90 |  * - 기본값을 불러오지 못할 경우 하드코딩된 대체 기본값을 사용
-91 |  * - CSS 변수가 정의되어 있으면 CSS 변수 값을 우선 사용
-92 |  */
-93 | export function loadDefaultBoardUIConfig(): BoardUIConfig {
-94 |   try {
-95 |     const isClient = typeof window !== 'undefined';
-96 | 
-97 |     // 기본 설정 가져오기
-[TRUNCATED]
-```
-
-src/lib/board-utils.ts
-```
-1 | import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
-2 | import { BOARD_SETTINGS_KEY } from './board-constants';
-3 | 
-4 | export interface BoardSettings {
-5 |   // 그리드 설정
-6 |   snapToGrid: boolean;
-7 |   snapGrid: [number, number];
-8 |   
-9 |   // 연결선 설정
-10 |   connectionLineType: ConnectionLineType;
-11 |   markerEnd: MarkerType | null;
-12 |   strokeWidth: number;
-13 |   markerSize: number;
-14 |   edgeColor: string;
-15 |   selectedEdgeColor: string;
-16 |   animated: boolean;
-17 | }
-18 | 
-19 | // 기본 보드 설정
-20 | export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
-21 |   // 그리드 설정
-22 |   snapToGrid: false,
-23 |   snapGrid: [15, 15],
-24 |   
-25 |   // 연결선 설정
-26 |   connectionLineType: ConnectionLineType.SmoothStep,
-27 |   markerEnd: MarkerType.Arrow,
-28 |   strokeWidth: 2,
-29 |   markerSize: 20,
-30 |   edgeColor: '#C1C1C1',
-31 |   selectedEdgeColor: '#FF0072',
-32 |   animated: false,
-33 | };
-34 | 
-35 | /**
-36 |  * 로컬 스토리지에서 보드 설정을 불러오는 함수
-37 |  */
-38 | export function loadBoardSettings(): BoardSettings {
-39 |   if (typeof window === 'undefined') {
-40 |     return DEFAULT_BOARD_SETTINGS;
-41 |   }
-42 | 
-43 |   try {
-44 |     const savedSettings = localStorage.getItem(BOARD_SETTINGS_KEY);
-45 |     
-46 |     if (!savedSettings) {
-47 |       return DEFAULT_BOARD_SETTINGS;
-48 |     }
-49 | 
-50 |     // 저장된 설정 복원
-51 |     const parsedSettings = JSON.parse(savedSettings);
-52 |     
-53 |     // 기존 설정이 없는 경우 기본값으로 통합
-54 |     return {
-55 |       ...DEFAULT_BOARD_SETTINGS,
-56 |       ...parsedSettings,
-57 |     };
-58 |   } catch (error) {
-59 |     console.error('보드 설정 로드 중 오류:', error);
-60 |     return DEFAULT_BOARD_SETTINGS;
-61 |   }
-62 | }
-63 | 
-64 | /**
-65 |  * 보드 설정을 로컬 스토리지에 저장하는 함수
-66 |  */
-67 | export function saveBoardSettings(settings: BoardSettings): void {
-68 |   if (typeof window !== 'undefined') {
-69 |     try {
-70 |       localStorage.setItem(BOARD_SETTINGS_KEY, JSON.stringify(settings));
-71 |     } catch (error) {
-72 |       console.error('보드 설정 저장 중 오류:', error);
-73 |     }
-74 |   }
-75 | }
-76 | 
-77 | /**
-78 |  * 서버 API를 통해 보드 설정을 저장하는 함수
-79 |  */
-80 | export async function saveBoardSettingsToServer(userId: string, settings: BoardSettings): Promise<boolean> {
-81 |   try {
-82 |     const response = await fetch('/api/board-settings', {
-83 |       method: 'POST',
-84 |       headers: {
-85 |         'Content-Type': 'application/json',
-86 |       },
-87 |       body: JSON.stringify({
-88 |         userId,
-89 |         settings,
-90 |       }),
-91 |     });
-92 | 
-93 |     if (!response.ok) {
-94 |       throw new Error('서버에 보드 설정을 저장하는데 실패했습니다.');
-95 |     }
-96 | 
-97 |     // 로컬에도 저장
-98 |     saveBoardSettings(settings);
-99 |     return true;
-100 |   } catch (error) {
-101 |     console.error('서버 보드 설정 저장 중 오류:', error);
-[TRUNCATED]
-```
-
 src/lib/constants.ts
 ```
 1 | // 애플리케이션 전체에서 사용되는 상수 값들
@@ -2859,56 +2446,60 @@ src/lib/db-init.ts
 
 src/lib/debug-utils.ts
 ```
-1 | import { BOARD_SETTINGS_KEY } from './board-constants';
-2 | 
-3 | // 디버깅용 로컬 스토리지 초기화 함수
-4 | export function resetLocalStorageBoardSettings() {
-5 |   try {
-6 |     localStorage.removeItem(BOARD_SETTINGS_KEY);
-7 |     console.log('보드 설정 로컬 스토리지 초기화 완료');
-8 |     return true;
-9 |   } catch (e) {
-10 |     console.error('보드 설정 초기화 실패:', e);
-11 |     return false;
-12 |   }
-13 | }
-14 | 
-15 | // 현재 보드 설정 출력 함수
-16 | export function logCurrentBoardSettings() {
-17 |   try {
-18 |     const settings = localStorage.getItem(BOARD_SETTINGS_KEY);
-19 |     console.log('현재 보드 설정 (localStorage):', settings ? JSON.parse(settings) : null);
-20 |     
-21 |     // Zustand 저장소 내용도 확인
-22 |     const appStorage = localStorage.getItem('backyard-app-storage');
-23 |     console.log('Zustand 앱 스토리지:', appStorage ? JSON.parse(appStorage) : null);
+1 | /*
+2 |   @description: 디버깅용 로컬 스토리지 초기화 함수
+3 | */
+4 | 
+5 | import { BOARD_SETTINGS_KEY } from './ideamap-constants';
+6 | 
+7 | // 디버깅용 로컬 스토리지 초기화 함수
+8 | export function resetLocalStorageBoardSettings() {
+9 |   try {
+10 |     localStorage.removeItem(BOARD_SETTINGS_KEY);
+11 |     console.log('보드 설정 로컬 스토리지 초기화 완료');
+12 |     return true;
+13 |   } catch (e) {
+14 |     console.error('보드 설정 초기화 실패:', e);
+15 |     return false;
+16 |   }
+17 | }
+18 | 
+19 | // 현재 보드 설정 출력 함수
+20 | export function logCurrentBoardSettings() {
+21 |   try {
+22 |     const settings = localStorage.getItem(BOARD_SETTINGS_KEY);
+23 |     console.log('현재 보드 설정 (localStorage):', settings ? JSON.parse(settings) : null);
 24 |     
-25 |     return settings ? JSON.parse(settings) : null;
-26 |   } catch (e) {
-27 |     console.error('보드 설정 출력 실패:', e);
-28 |     return null;
-29 |   }
-30 | }
-31 | 
-32 | // Zustand 스토리지 초기화 함수
-33 | export function resetZustandStorage() {
-34 |   try {
-35 |     localStorage.removeItem('backyard-app-storage');
-36 |     console.log('Zustand 스토리지 초기화 완료');
-37 |     return true;
-38 |   } catch (e) {
-39 |     console.error('Zustand 스토리지 초기화 실패:', e);
-40 |     return false;
-41 |   }
-42 | }
-43 | 
-44 | // 전체 스토리지 초기화 함수
-45 | export function resetAllStorage() {
-46 |   const boardReset = resetLocalStorageBoardSettings();
-47 |   const zustandReset = resetZustandStorage();
-48 |   
-49 |   return boardReset && zustandReset;
-50 | } 
+25 |     // Zustand 저장소 내용도 확인
+26 |     const appStorage = localStorage.getItem('backyard-app-storage');
+27 |     console.log('Zustand 앱 스토리지:', appStorage ? JSON.parse(appStorage) : null);
+28 |     
+29 |     return settings ? JSON.parse(settings) : null;
+30 |   } catch (e) {
+31 |     console.error('보드 설정 출력 실패:', e);
+32 |     return null;
+33 |   }
+34 | }
+35 | 
+36 | // Zustand 스토리지 초기화 함수
+37 | export function resetZustandStorage() {
+38 |   try {
+39 |     localStorage.removeItem('backyard-app-storage');
+40 |     console.log('Zustand 스토리지 초기화 완료');
+41 |     return true;
+42 |   } catch (e) {
+43 |     console.error('Zustand 스토리지 초기화 실패:', e);
+44 |     return false;
+45 |   }
+46 | }
+47 | 
+48 | // 전체 스토리지 초기화 함수
+49 | export function resetAllStorage() {
+50 |   const boardReset = resetLocalStorageBoardSettings();
+51 |   const zustandReset = resetZustandStorage();
+52 |   
+53 |   return boardReset && zustandReset;
+54 | } 
 ```
 
 src/lib/environment.ts
@@ -3001,9 +2592,9 @@ src/lib/flow-constants.ts
 6 |  * 수정일: 2025-03-28
 7 |  */
 8 | 
-9 | import CardNode from '@/components/board/nodes/CardNode';
-10 | import CustomEdge from '@/components/board/nodes/CustomEdge';
-11 | import NodeInspect from '@/components/board/nodes/NodeInspect';
+9 | import CardNode from '@/components/ideamap/nodes/CardNode';
+10 | import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
+11 | import NodeInspect from '@/components/ideamap/nodes/NodeInspect';
 12 | 
 13 | // 1. 먼저 타입 키 상수를 정의 (문자열만 포함)
 14 | // 노드 타입 키 정의 - 문자열 상수로 분리
@@ -3068,6 +2659,285 @@ src/lib/flow-constants.ts
 73 | } 
 ```
 
+src/lib/ideamap-constants.ts
+```
+1 | import { ConnectionLineType, MarkerType } from '@xyflow/react';
+2 | 
+3 | // 스냅 그리드 옵션
+4 | export const SNAP_GRID_OPTIONS = [
+5 |   { value: 0, label: '끄기' },
+6 |   { value: 10, label: '10px' },
+7 |   { value: 15, label: '15px' },
+8 |   { value: 20, label: '20px' },
+9 |   { value: 25, label: '25px' },
+10 | ];
+11 | 
+12 | // 기본 스냅 그리드 설정
+13 | export const DEFAULT_SNAP_GRID = [15, 15];
+14 | 
+15 | // 연결선 타입 옵션
+16 | export const CONNECTION_TYPE_OPTIONS = [
+17 |   { value: ConnectionLineType.Bezier, label: '곡선 (Bezier)' },
+18 |   { value: ConnectionLineType.Straight, label: '직선 (Straight)' },
+19 |   { value: ConnectionLineType.Step, label: '계단식 (Step)' },
+20 |   { value: ConnectionLineType.SmoothStep, label: '부드러운 계단식 (SmoothStep)' },
+21 |   { value: ConnectionLineType.SimpleBezier, label: '단순 곡선 (SimpleBezier)' },
+22 | ];
+23 | 
+24 | // 화살표 마커 타입 옵션
+25 | export const MARKER_TYPE_OPTIONS = [
+26 |   { value: MarkerType.Arrow, label: '화살표 (Arrow)' },
+27 |   { value: MarkerType.ArrowClosed, label: '닫힌 화살표 (ArrowClosed)' },
+28 |   { value: null, label: '없음 (None)' },
+29 | ];
+30 | 
+31 | // 연결선 두께 옵션
+32 | export const STROKE_WIDTH_OPTIONS = [
+33 |   { value: 1, label: '얇게 (1px)' },
+34 |   { value: 2, label: '보통 (2px)' },
+35 |   { value: 3, label: '굵게 (3px)' },
+36 |   { value: 4, label: '매우 굵게 (4px)' },
+37 | ];
+38 | 
+39 | // 마커 크기 옵션
+40 | export const MARKER_SIZE_OPTIONS = [
+41 |   { value: 10, label: '작게 (10px)' },
+42 |   { value: 15, label: '보통 (15px)' },
+43 |   { value: 20, label: '크게 (20px)' },
+44 |   { value: 25, label: '매우 크게 (25px)' },
+45 | ];
+46 | 
+47 | // 연결선 애니메이션 옵션
+48 | export const EDGE_ANIMATION_OPTIONS = [
+49 |   { value: true, label: '켜기' },
+50 |   { value: false, label: '끄기' },
+51 | ];
+52 | 
+53 | // 연결선 색상 옵션
+54 | export const EDGE_COLOR_OPTIONS = [
+55 |   { value: '#C1C1C1', label: '회색 (기본)', color: '#C1C1C1' },
+56 |   { value: '#000000', label: '검정색', color: '#000000' },
+57 |   { value: '#FF0072', label: '핑크색', color: '#FF0072' },
+58 |   { value: '#3366FF', label: '파란색', color: '#3366FF' },
+59 |   { value: '#43A047', label: '녹색', color: '#43A047' },
+60 |   { value: '#FFC107', label: '노란색', color: '#FFC107' },
+61 |   { value: '#9C27B0', label: '보라색', color: '#9C27B0' },
+62 | ];
+63 | 
+64 | // 스토리지 키
+65 | // export const STORAGE_KEY = 'backyard-board-layout';
+66 | // export const EDGES_STORAGE_KEY = 'backyard-board-edges';
+67 | // export const IDEAMAP_SETTINGS_KEY = 'backyard-board-settings';
+68 | // export const TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
+69 | 
+70 | export const IDEAMAP_LAYOUT_STORAGE_KEY = 'backyard-board-layout';
+71 | export const IDEAMAP_EDGES_STORAGE_KEY = 'backyard-board-edges';
+[TRUNCATED]
+```
+
+src/lib/ideamap-ui-config.ts
+```
+1 | import { MarkerType, ConnectionLineType } from '@xyflow/react';
+2 | import defaultConfig from '../config/uiOptions.json';
+3 | import { I } from 'vitest/dist/chunks/reporters.d.CfRkRKN2.js';
+4 | 
+5 | // 카드 보드 UI 설정 타입 정의
+6 | export interface IdeaMapUIConfig {
+7 |   autoSaveIntervalMinutes: number;
+8 |   ideaMap: {
+9 |     snapToGrid: boolean;
+10 |     snapGrid: number[];
+11 |     connectionLineType: string;
+12 |     markerEnd: string | null;
+13 |     strokeWidth: number;
+14 |     markerSize: number;
+15 |     edgeColor: string;
+16 |     animated: boolean;
+17 |     selectedEdgeColor: string;
+18 |   };
+19 |   card: {
+20 |     defaultWidth: number;
+21 |     backgroundColor: string;
+22 |     borderRadius: number;
+23 |     tagBackgroundColor: string;
+24 |     fontSizes?: {
+25 |       default: number;
+26 |       title: number;
+27 |       content: number;
+28 |       tags: number;
+29 |     };
+30 |   };
+31 |   handles: {
+32 |     size: number;
+33 |     backgroundColor: string;
+34 |     borderColor: string;
+35 |     borderWidth: number;
+36 |   };
+37 |   layout: {
+38 |     defaultPadding: number;
+39 |     defaultSpacing: {
+40 |       horizontal: number;
+41 |       vertical: number;
+42 |     };
+43 |     nodeSize?: {
+44 |       width: number;
+45 |       height: number;
+46 |       maxHeight?: number;
+47 |     };
+48 |     graphSettings?: {
+49 |       nodesep: number;
+50 |       ranksep: number;
+51 |       edgesep: number;
+52 |     };
+53 |   };
+54 | }
+55 | 
+56 | // CSS 변수에서 값을 가져오는 함수 (클라이언트 사이드에서만 작동)
+57 | export function getCssVariable(name: string, fallback: string): string {
+58 |   if (typeof window !== 'undefined') {
+59 |     return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+60 |   }
+61 |   return fallback;
+62 | }
+63 | 
+64 | // CSS 변수에서 숫자 값을 가져오는 함수
+65 | export function getCssVariableAsNumber(name: string, fallback: number): number {
+66 |   if (typeof window !== 'undefined') {
+67 |     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+68 |     if (value) {
+69 |       // px 단위 제거 및 숫자로 변환
+70 |       const numericValue = parseFloat(value.replace('px', '').replace('rem', ''));
+71 |       return isNaN(numericValue) ? fallback : numericValue;
+72 |     }
+73 |   }
+74 |   return fallback;
+75 | }
+76 | 
+77 | // 기본 설정값 (타입 변환 포함)
+78 | export const DEFAULT_UI_CONFIG: IdeaMapUIConfig = {
+79 |   ...defaultConfig as IdeaMapUIConfig,
+80 |   ideaMap: {
+81 |     ...defaultConfig.ideaMap,
+82 |     connectionLineType: defaultConfig.ideaMap.connectionLineType as ConnectionLineType,
+83 |     markerEnd: defaultConfig.ideaMap.markerEnd as MarkerType,
+84 |     selectedEdgeColor: '#000000',
+85 |     snapGrid: defaultConfig.ideaMap.snapGrid as number[],
+86 |   }
+87 | };
+88 | 
+89 | /**
+90 |  * 기본 설정을 불러오는 함수
+91 |  * - 기본값을 불러오지 못할 경우 하드코딩된 대체 기본값을 사용
+92 |  * - CSS 변수가 정의되어 있으면 CSS 변수 값을 우선 사용
+93 |  */
+94 | export function loadDefaultIdeaMapUIConfig(): IdeaMapUIConfig {
+95 |   try {
+96 |     const isClient = typeof window !== 'undefined';
+[TRUNCATED]
+```
+
+src/lib/ideamap-utils.ts
+```
+1 | import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
+2 | import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
+3 | 
+4 | export interface IdeaMapSettings {
+5 |   // 그리드 설정
+6 |   snapToGrid: boolean;
+7 |   snapGrid: [number, number];
+8 |   
+9 |   // 연결선 설정
+10 |   connectionLineType: ConnectionLineType;
+11 |   markerEnd: MarkerType | null;
+12 |   strokeWidth: number;
+13 |   markerSize: number;
+14 |   edgeColor: string;
+15 |   selectedEdgeColor: string;
+16 |   animated: boolean;
+17 | }
+18 | 
+19 | // 기본 아이디어맵 설정
+20 | export const DEFAULT_IDEAMAP_SETTINGS: IdeaMapSettings = {
+21 |   // 그리드 설정
+22 |   snapToGrid: false,
+23 |   snapGrid: [15, 15],
+24 |   
+25 |   // 연결선 설정
+26 |   connectionLineType: ConnectionLineType.SmoothStep,
+27 |   markerEnd: MarkerType.Arrow,
+28 |   strokeWidth: 2,
+29 |   markerSize: 20,
+30 |   edgeColor: '#C1C1C1',
+31 |   selectedEdgeColor: '#FF0072',
+32 |   animated: false,
+33 | };
+34 | 
+35 | /**
+36 |  * 로컬 스토리지에서 아이디어맵 설정을 불러오는 함수
+37 |  */
+38 | export function loadIdeaMapSettings(): IdeaMapSettings {
+39 |   if (typeof window === 'undefined') {
+40 |     return DEFAULT_IDEAMAP_SETTINGS;
+41 |   }
+42 | 
+43 |   try {
+44 |     const savedSettings = localStorage.getItem(IDEAMAP_SETTINGS_STORAGE_KEY);
+45 |     
+46 |     if (!savedSettings) {
+47 |       return DEFAULT_IDEAMAP_SETTINGS;
+48 |     }
+49 | 
+50 |     // 저장된 설정 복원
+51 |     const parsedSettings = JSON.parse(savedSettings);
+52 |     
+53 |     // 기존 설정이 없는 경우 기본값으로 통합
+54 |     return {
+55 |       ...DEFAULT_IDEAMAP_SETTINGS,
+56 |       ...parsedSettings,
+57 |     };
+58 |   } catch (error) {
+59 |     console.error('아이디어맵 설정 로드 중 오류:', error);
+60 |     return DEFAULT_IDEAMAP_SETTINGS;
+61 |   }
+62 | }
+63 | 
+64 | /**
+65 |  * 아이디어맵 설정을 로컬 스토리지에 저장하는 함수
+66 |  */
+67 | export function saveIdeaMapSettings(settings: IdeaMapSettings): void {
+68 |   if (typeof window !== 'undefined') {
+69 |     try {
+70 |       localStorage.setItem(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+71 |     } catch (error) {
+72 |       console.error('아이디어맵 설정 저장 중 오류:', error);
+73 |     }
+74 |   }
+75 | }
+76 | 
+77 | /**
+78 |  * 서버 API를 통해 아이디어맵 설정을 저장하는 함수
+79 |  */
+80 | export const saveIdeaMapSettingsToServer = async (settings: IdeaMapSettings, userId: string): Promise<boolean> => {
+81 |   try {
+82 |     if (!userId) {
+83 |       console.warn('[saveIdeaMapSettingsToServer] 사용자 ID 없음, 설정 저장 스킵');
+84 |       return false;
+85 |     }
+86 | 
+87 |     console.log('[saveIdeaMapSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
+88 |     
+89 |     const response = await fetch('/api/ideamap-settings', {
+90 |       method: 'POST',
+91 |       headers: {
+92 |         'Content-Type': 'application/json',
+93 |       },
+94 |       body: JSON.stringify({ settings, userId }),
+95 |     });
+96 | 
+97 |     if (!response.ok) {
+[TRUNCATED]
+```
+
 src/lib/layout-utils.ts
 ```
 1 | /**
@@ -3080,7 +2950,7 @@ src/lib/layout-utils.ts
 8 | 
 9 | import dagre from 'dagre';
 10 | import { Node, Edge, Position } from '@xyflow/react';
-11 | import defaultConfig from '../config/cardBoardUiOptions.json';
+11 | import defaultConfig from '../config/uiOptions.json';
 12 | import { useTheme } from '../contexts/ThemeContext';
 13 | 
 14 | // 기본 노드 크기 설정 (ThemeContext가 없을 때 폴백용)
@@ -3466,330 +3336,6 @@ src/lib/utils.ts
 [TRUNCATED]
 ```
 
-src/store/useAppStore.ts
-```
-1 | import { create } from 'zustand'
-2 | import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middleware'
-3 | import { toast } from 'sonner'
-4 | import type { CreateCardInput } from '@/types/card'
-5 | import { 
-6 |   BoardSettings, 
-7 |   DEFAULT_BOARD_SETTINGS, 
-8 |   loadBoardSettings,
-9 |   saveBoardSettings
-10 | } from '@/lib/board-utils'
-11 | import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
-12 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
-13 | import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants'
-14 | import { saveAllLayoutData } from '@/components/board/utils/graphUtils'
-15 | import { signOut } from "next-auth/react"
-16 | 
-17 | // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
-18 | export interface Card {
-19 |   id: string;
-20 |   title: string;
-21 |   content: string | null;
-22 |   createdAt: string;
-23 |   updatedAt: string;
-24 |   userId: string;
-25 |   user?: import('@/types/card').User;
-26 |   cardTags?: Array<{ tag: { id: string; name: string; } }>;
-27 |   [key: string]: any;
-28 | }
-29 | 
-30 | // 프로젝트 정보 인터페이스
-31 | export interface Project {
-32 |   id: string;
-33 |   name: string;
-34 |   ownerNickname?: string;
-35 |   userId: string;
-36 |   createdAt: string;
-37 |   updatedAt: string;
-38 |   settings?: any;
-39 | }
-40 | 
-41 | export interface AppState {
-42 |   // 선택된 카드 상태 (통합된 단일 소스)
-43 |   selectedCardIds: string[];
-44 |   // 이전 단일 선택 상태 (내부적으로 selectedCardIds로 변환)
-45 |   selectedCardId: string | null; // 하위 호환성 유지 (파생 값)
-46 |   // 확장된 카드 ID
-47 |   expandedCardId: string | null;
-48 |   
-49 |   // 선택 관련 액션들
-50 |   selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
-51 |   selectCards: (cardIds: string[]) => void; // 다중 카드 선택 (주요 액션)
-52 |   addSelectedCard: (cardId: string) => void; // 선택된 카드 목록에 추가
-53 |   removeSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 제거
-54 |   toggleSelectedCard: (cardId: string) => void; // 선택된 카드 목록에서 토글
-55 |   clearSelectedCards: () => void; // 모든 선택 해제
-56 |   // 카드 확장 액션
-57 |   toggleExpandCard: (cardId: string) => void; // 카드 확장 토글
-58 |   
-59 |   // 카드 데이터 상태
-60 |   cards: Card[]; // 현재 로드된 카드 목록
-61 |   setCards: (cards: Card[]) => void; // 카드 목록 설정
-62 |   updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
-63 |   createCard: (input: CreateCardInput) => Promise<Card | null>; // 카드 생성 액션 추가
-64 |   
-65 |   // 사이드바 상태
-66 |   isSidebarOpen: boolean;
-67 |   setSidebarOpen: (open: boolean) => void;
-68 |   toggleSidebar: () => void;
-69 |   
-70 |   // 레이아웃 옵션 (수평/수직/자동배치/없음)
-71 |   layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
-[TRUNCATED]
-```
-
-src/store/useAuthStore.ts
-```
-1 | /**
-2 |  * 파일명: src/store/useAuthStore.ts
-3 |  * 목적: Zustand를 사용한 인증 상태 관리
-4 |  * 역할: 클라이언트 측 인증 상태(토큰, 사용자 ID 등)를 중앙 집중적으로 관리
-5 |  * 작성일: 2025-04-09
-6 |  */
-7 | 
-8 | 'use client';
-9 | 
-10 | import { create } from 'zustand';
-11 | import { persist, createJSONStorage } from 'zustand/middleware';
-12 | import createLogger from '@/lib/logger';
-13 | 
-14 | // 로거 생성
-15 | const logger = createLogger('AuthStore');
-16 | 
-17 | // 인증 상태 인터페이스
-18 | interface AuthState {
-19 |   // 상태 (State)
-20 |   accessToken: string | null;
-21 |   refreshToken: string | null;
-22 |   userId: string | null;
-23 |   provider: string | null;
-24 |   codeVerifier: string | null;
-25 |   isLoading: boolean;
-26 |   error: Error | null;
-27 |   
-28 |   // 액션 (Actions)
-29 |   setTokens: (accessToken: string | null, refreshToken: string | null) => void;
-30 |   setUser: (userId: string | null, provider?: string | null) => void;
-31 |   setCodeVerifier: (value: string | null) => void;
-32 |   setLoading: (isLoading: boolean) => void;
-33 |   setError: (error: Error | null) => void;
-34 |   clearAuth: () => void;
-35 |   removeCodeVerifier: () => void;
-36 | }
-37 | 
-38 | // Zustand 스토어 생성
-39 | export const useAuthStore = create<AuthState>()(
-40 |   persist(
-41 |     (set) => ({
-42 |       // 초기 상태
-43 |       accessToken: null,
-44 |       refreshToken: null,
-45 |       userId: null,
-46 |       provider: null,
-47 |       codeVerifier: null,
-48 |       isLoading: false,
-49 |       error: null,
-50 |       
-51 |       // 액션 구현
-52 |       setTokens: (accessToken, refreshToken) => {
-53 |         logger.info('인증 토큰 설정', { 
-54 |           hasAccessToken: !!accessToken, 
-55 |           hasRefreshToken: !!refreshToken
-56 |         });
-57 |         set({ accessToken, refreshToken });
-58 |       },
-59 |       
-60 |       setUser: (userId, provider = null) => {
-61 |         logger.info('사용자 정보 설정', { 
-62 |           hasUserId: !!userId, 
-63 |           provider
-64 |         });
-65 |         set({ userId, provider });
-66 |       },
-67 |       
-68 |       setCodeVerifier: (codeVerifier) => {
-69 |         if (codeVerifier) {
-70 |           logger.debug('PKCE 코드 검증기 설정', { 
-71 |             length: codeVerifier.length, 
-72 |             firstChars: codeVerifier.substring(0, 5) + '...' 
-73 |           });
-74 |         } else {
-75 |           logger.debug('PKCE 코드 검증기 초기화');
-76 |         }
-77 |         set({ codeVerifier });
-78 |       },
-79 |       
-80 |       setLoading: (isLoading) => {
-81 |         set({ isLoading });
-82 |       },
-83 |       
-84 |       setError: (error) => {
-85 |         if (error) {
-86 |           logger.error('인증 오류 설정', error);
-87 |         } else {
-88 |           logger.debug('인증 오류 초기화');
-89 |         }
-90 |         set({ error });
-91 |       },
-92 |       
-93 |       clearAuth: () => {
-94 |         logger.info('인증 상태 초기화');
-95 |         set({
-96 |           accessToken: null,
-[TRUNCATED]
-```
-
-src/store/useBoardStore.ts
-```
-1 | /**
-2 |  * 파일명: useBoardStore.ts
-3 |  * 목적: Zustand를 활용한 보드 관련 전역 상태 관리
-4 |  * 역할: 보드의 노드, 엣지, 설정 등 모든 상태를 중앙 관리
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { create } from 'zustand';
-9 | import { persist } from 'zustand/middleware';
-10 | import { 
-11 |   Node, 
-12 |   Edge, 
-13 |   Connection, 
-14 |   applyNodeChanges, 
-15 |   applyEdgeChanges,
-16 |   addEdge,
-17 |   NodeChange,
-18 |   EdgeChange,
-19 |   XYPosition,
-20 |   MarkerType,
-21 |   Position,
-22 |   Viewport
-23 | } from '@xyflow/react';
-24 | import { 
-25 |   BoardSettings, 
-26 |   DEFAULT_BOARD_SETTINGS, 
-27 |   saveBoardSettingsToServer,
-28 |   loadBoardSettingsFromServer,
-29 |   applyEdgeSettings,
-30 |   saveBoardSettings
-31 | } from '@/lib/board-utils';
-32 | import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
-33 | import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-34 | import { toast } from 'sonner';
-35 | import { CardData } from '@/components/board/types/board-types';
-36 | import { useAppStore } from './useAppStore';
-37 | 
-38 | // 보드 스토어 상태 인터페이스
-39 | interface BoardState {
-40 |   // 노드 관련 상태
-41 |   nodes: Node<CardData>[];
-42 |   setNodes: (nodes: Node<CardData>[]) => void;
-43 |   onNodesChange: (changes: NodeChange[]) => void;
-44 |   
-45 |   // 엣지 관련 상태
-46 |   edges: Edge[];
-47 |   setEdges: (edges: Edge[]) => void;
-48 |   onEdgesChange: (changes: EdgeChange[]) => void;
-49 |   onConnect: (connection: Connection) => void;
-50 |   
-51 |   // 보드 설정 관련 상태
-52 |   boardSettings: BoardSettings;
-53 |   setBoardSettings: (settings: BoardSettings) => void;
-54 |   updateBoardSettings: (settings: Partial<BoardSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
-55 |   
-56 |   // 레이아웃 관련 함수
-57 |   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
-58 |   applyGridLayout: () => void;
-59 |   
-60 |   // 저장 관련 함수
-61 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
-62 |   saveEdges: (edgesToSave?: Edge[]) => boolean;
-63 |   saveAllLayoutData: () => boolean;
-64 |   
-65 |   // 엣지 스타일 업데이트
-66 |   updateEdgeStyles: (settings: BoardSettings) => void;
-67 |   
-68 |   // 서버 동기화 함수
-69 |   loadBoardSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
-70 |   
-71 |   // 엣지 생성 함수
-72 |   createEdgeOnDrop: (sourceId: string, targetId: string) => Edge;
-73 |   
-74 |   // 변경 사항 추적
-75 |   hasUnsavedChanges: boolean;
-76 |   setHasUnsavedChanges: (value: boolean) => void;
-77 |   
-78 |   // 리액트 플로우 인스턴스
-79 |   reactFlowInstance: any;
-80 |   setReactFlowInstance: (instance: any) => void;
-81 |   
-82 |   // 보드 데이터 로딩 상태 및 액션
-83 |   isBoardLoading: boolean;
-84 |   boardError: string | null;
-85 |   loadedViewport: Viewport | null;
-86 |   needsFitView: boolean;
-87 |   loadBoardData: () => Promise<void>;
-88 |   
-89 |   // 추가된 상태 및 액션
-90 |   viewportToRestore: Viewport | null;
-91 |   isSettingsLoading: boolean;
-[TRUNCATED]
-```
-
-src/store/useNodeStore.ts
-```
-1 | /**
-2 |  * 파일명: useNodeStore.ts
-3 |  * 목적: 노드 인스펙터 관련 상태 관리
-4 |  * 역할: 선택된 노드 정보와 인스펙터 UI 상태 관리
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { create } from 'zustand';
-9 | import { Node } from '@xyflow/react';
-10 | 
-11 | // 노드 스토어 상태 인터페이스
-12 | interface NodeStore {
-13 |   // 인스펙터 관련 상태
-14 |   inspectorOpen: boolean;
-15 |   inspectedNode: Node | null;
-16 |   
-17 |   // 상태 변경 함수
-18 |   setInspectorOpen: (open: boolean) => void;
-19 |   setInspectedNode: (node: Node | null) => void;
-20 |   
-21 |   // 노드 검사 함수
-22 |   inspectNode: (node: Node) => void;
-23 |   closeInspector: () => void;
-24 | }
-25 | 
-26 | /**
-27 |  * useNodeStore: 노드 인스펙터 관련 상태 관리 스토어
-28 |  */
-29 | export const useNodeStore = create<NodeStore>((set) => ({
-30 |   // 초기 상태
-31 |   inspectorOpen: false,
-32 |   inspectedNode: null,
-33 |   
-34 |   // 상태 변경 함수
-35 |   setInspectorOpen: (open) => set({ inspectorOpen: open }),
-36 |   setInspectedNode: (node) => set({ inspectedNode: node }),
-37 |   
-38 |   // 유틸리티 함수
-39 |   inspectNode: (node) => set({ 
-40 |     inspectedNode: node, 
-41 |     inspectorOpen: true 
-42 |   }),
-43 |   
-44 |   closeInspector: () => set({ 
-45 |     inspectorOpen: false 
-46 |   }),
-47 | })); 
-```
-
 src/types/card.ts
 ```
 1 | export interface User {
@@ -4012,859 +3558,454 @@ src/types/vitest.d.ts
 13 | } 
 ```
 
-src/app/board/page.test.tsx
+src/tests/helper.ts
 ```
 1 | /**
-2 |  * 파일명: page.test.tsx
-3 |  * 목적: 보드 페이지 컴포넌트 테스트
-4 |  * 역할: Board 컴포넌트를 사용하는 페이지 컴포넌트 테스트
+2 |  * 파일명: src/tests/helper.ts
+3 |  * 목적: 테스트 유틸리티 함수 제공
+4 |  * 역할: 테스트 코드에서 사용되는 공통 유틸리티 함수 모음
+5 |  * 작성일: 2025-03-30
+6 |  */
+7 | 
+8 | /**
+9 |  * flushPromises: 비동기 작업이 처리될 수 있도록 이벤트 루프를 비웁니다.
+10 |  * @returns {Promise<void>} 비동기 작업이 완료된 후의 프로미스
+11 |  */
+12 | export const flushPromises = (): Promise<void> => {
+13 |   return new Promise(resolve => setTimeout(resolve, 0));
+14 | }; 
+```
+
+src/tests/setup.ts
+```
+1 | /**
+2 |  * 파일명: setup.ts
+3 |  * 목적: Vitest 테스트 설정
+4 |  * 역할: 테스트 환경 설정 및 전역 설정 제공
+5 |  * 작성일: 2025-03-27
+6 |  * 수정일: 2025-04-08 - waitFor 제대로 작동하도록 setTimeout 모킹 방식 수정
+7 |  */
+8 | 
+9 | import '@testing-library/jest-dom/vitest';
+10 | import { beforeEach, afterEach, vi, expect, beforeAll, afterAll } from 'vitest';
+11 | import { cleanup } from '@testing-library/react';
+12 | import * as matchers from '@testing-library/jest-dom/matchers';
+13 | import { server } from './msw/server'; // MSW 서버 임포트
+14 | 
+15 | // Testing Library의 jest-dom 매처 확장
+16 | expect.extend(matchers);
+17 | 
+18 | // --- MSW 서버 설정 ---
+19 | // Node.js v20 undici 타임아웃 이슈 해결을 위한 설정
+20 | beforeAll(() => {
+21 |   // fetch 타임아웃 관련 이슈 해결을 위해 bypass 모드 사용
+22 |   server.listen({ 
+23 |     onUnhandledRequest: 'bypass',
+24 |   });
+25 |   
+26 |   // 타이머 모킹 제거 - wait-for가 정상적으로 작동하도록 수정
+27 |   // 실제 타이머를 사용하도록 설정
+28 |   if (typeof window !== 'undefined') {
+29 |     // 실제 타이머를 사용 (모킹하지 않음)
+30 |     vi.useRealTimers(); // waitFor가 의존하는 실제 타이머 사용
+31 |   }
+32 | });
+33 | 
+34 | afterEach(() => {
+35 |   // 각 테스트 후 핸들러 초기화
+36 |   server.resetHandlers();
+37 |   // React 컴포넌트 정리
+38 |   cleanup();
+39 | });
+40 | 
+41 | afterAll(() => {
+42 |   // 모든 테스트 후 서버 정리
+43 |   server.close();
+44 | });
+45 | // --- MSW 서버 설정 끝 ---
+46 | 
+47 | // 항상 document.body가 존재하도록 함
+48 | if (typeof document !== 'undefined' && !document.body) {
+49 |   document.body = document.createElement('body');
+50 | }
+51 | 
+52 | // 문서 초기화 함수 - 테스트 전 호출
+53 | function setupDocument() {
+54 |   if (typeof document !== 'undefined') {
+55 |     if (!document.body) {
+56 |       document.body = document.createElement('body');
+57 |     }
+58 |     // 루트 컨테이너 초기화 (기존 로직 유지)
+59 |     const rootEl = document.querySelector('#test-root');
+60 |     if (!rootEl) {
+61 |         const newRootEl = document.createElement('div');
+62 |         newRootEl.id = 'test-root';
+63 |         document.body.appendChild(newRootEl);
+64 |     } else if (rootEl.parentNode !== document.body) {
+65 |         document.body.appendChild(rootEl); // 루트가 body 밖에 있으면 다시 추가
+66 |     }
+67 |   }
+68 | }
+69 | 
+70 | // Logger 모킹 (실제 구현과 일치하도록 수정)
+71 | vi.mock('@/lib/logger', () => {
+72 |   const mockLogs: any[] = [];
+73 |   const mockSessionId = 'test-session-id';
+74 |   let isWindowDefined = true;
+75 | 
+76 |   const mockLogStorage = {
+77 |     getInstance: vi.fn(() => ({
+78 |       getSessionId: vi.fn(() => mockSessionId),
+79 |       addLog: vi.fn((log: any) => {
+[TRUNCATED]
+```
+
+src/tests/test-utils.tsx
+```
+1 | /**
+2 |  * 파일명: test-utils.tsx
+3 |  * 목적: 테스트 유틸리티 함수 및 래퍼 제공
+4 |  * 역할: Next.js, React 컴포넌트를 테스트하기 위한 유틸리티 제공
+5 |  * 작성일: 2025-03-30
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import React, { ReactElement } from 'react';
+10 | import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
+11 | import userEvent from '@testing-library/user-event';
+12 | import { vi, expect as vitestExpect } from 'vitest';
+13 | import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
+14 | import { CardData } from '@/components/ideamap/types/ideamap-types';
+15 | 
+16 | // XYFlow 모킹
+17 | export const mockReactFlow = {
+18 |     project: vi.fn(({ x, y }) => ({ x, y })),
+19 |     getIntersectingNodes: vi.fn(() => []),
+20 |     getNode: vi.fn(),
+21 |     getNodes: vi.fn(() => []),
+22 |     getEdge: vi.fn(),
+23 |     getEdges: vi.fn(() => []),
+24 |     viewportInitialized: true,
+25 |     getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
+26 |     screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
+27 | } as unknown as ReactFlowInstance;
+28 | 
+29 | // 테스트 노드 생성 유틸리티
+30 | export const createTestNode = (id: string, position = { x: 0, y: 0 }): Node<CardData> => ({
+31 |     id,
+32 |     type: 'default',
+33 |     position,
+34 |     data: {
+35 |         id,
+36 |         title: `Test Card ${id}`,
+37 |         content: `Test Content ${id}`,
+38 |         tags: [],
+39 |     },
+40 | });
+41 | 
+42 | // 테스트 엣지 생성 유틸리티
+43 | export const createTestEdge = (id: string, source: string, target: string): Edge => ({
+44 |     id,
+45 |     source,
+46 |     target,
+47 |     type: 'default',
+48 |     markerEnd: MarkerType.ArrowClosed,
+49 | });
+50 | 
+51 | // 이벤트 객체 생성 유틸리티
+52 | export const createDragEvent = (data: any = {}): React.DragEvent => ({
+53 |     preventDefault: vi.fn(),
+54 |     stopPropagation: vi.fn(),
+55 |     dataTransfer: {
+56 |         dropEffect: 'none',
+57 |         getData: vi.fn((format: string) => {
+58 |             try {
+59 |                 return typeof data === 'string' ? data : JSON.stringify(data);
+60 |             } catch (error) {
+61 |                 return '';
+62 |             }
+63 |         }),
+64 |         setData: vi.fn(),
+65 |     },
+66 | } as unknown as React.DragEvent);
+67 | 
+68 | export const createMouseEvent = (options: Partial<MouseEvent> = {}): React.MouseEvent => ({
+69 |     preventDefault: vi.fn(),
+70 |     stopPropagation: vi.fn(),
+71 |     ctrlKey: false,
+72 |     metaKey: false,
+73 |     ...options,
+74 | } as unknown as React.MouseEvent);
+75 | 
+76 | // 모킹된 screen 객체
+77 | export const screen = {
+78 |     ...rtlScreen,
+79 |     getByText: (text: string) => {
+80 |         try {
+[TRUNCATED]
+```
+
+src/app/layout.test.tsx
+```
+1 | /**
+2 |  * 파일명: layout.test.tsx
+3 |  * 목적: RootLayout 컴포넌트 테스트
+4 |  * 역할: 레이아웃 컴포넌트의 기능과 구조 검증
 5 |  * 작성일: 2025-03-05
 6 |  * 수정일: 2025-03-30
 7 |  */
 8 | 
-9 | import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
-10 | import { describe, test, expect, vi, beforeEach } from 'vitest';
-11 | import BoardPage from './page';
-12 | import { Node, Edge, NodeChange } from '@xyflow/react';
-13 | import '@testing-library/jest-dom/vitest';
-14 | import { autoLayoutNodes } from './page';
-15 | 
-16 | // LocalStorage 모킹
-17 | const localStorageMock = (() => {
-18 |   let store: Record<string, string> = {};
-19 |   return {
-20 |     getItem: vi.fn((key: string) => store[key] || null),
-21 |     setItem: vi.fn((key: string, value: string) => {
-22 |       store[key] = value.toString();
-23 |     }),
-24 |     clear: vi.fn(() => {
-25 |       store = {};
-26 |     }),
-27 |   };
-28 | })();
-29 | 
-30 | Object.defineProperty(window, 'localStorage', {
-31 |   value: localStorageMock,
-32 | });
-33 | 
-34 | // ResizeObserver 모킹 (ReactFlow에서 필요)
-35 | class ResizeObserverMock {
-36 |   observe = vi.fn();
-37 |   unobserve = vi.fn();
-38 |   disconnect = vi.fn();
-39 | }
-40 | 
-41 | global.ResizeObserver = ResizeObserverMock;
-42 | 
-43 | // React Flow의 applyNodeChanges 함수 결과를 모킹하기 위한 변수
-44 | let mockAppliedNodes: Node[] = [];
-45 | 
-46 | // ReactFlow 전체 모킹 - 테스트에서는 실제 렌더링 없이 모킹된 구성요소만 사용
-47 | const nodesMock: Node[] = [];
-48 | const edgesMock: Edge[] = [];
-49 | const setNodesMock = vi.fn();
-50 | const setEdgesMock = vi.fn();
-51 | const onNodesChangeMock = vi.fn();
-52 | const onEdgesChangeMock = vi.fn();
-53 | 
-54 | // viewportCenter 모킹 - getNewCardPosition에서 사용
-55 | const viewportCenterMock = { x: 500, y: 300 };
-56 | 
-57 | // ReactFlow의 ReactFlowProvider와 useReactFlow hook 모킹
-58 | vi.mock('@xyflow/react', () => {
-59 |   // ReactFlow 컴포넌트 모킹
-60 |   const ReactFlowMock = ({ children, onNodesChange }: { children?: React.ReactNode, onNodesChange?: (changes: NodeChange[]) => void }) => (
-61 |     <div
-62 |       data-testid="react-flow-mock"
-63 |       onClick={() => {
-64 |         // 노드 위치 변경 시뮬레이션
-65 |         if (onNodesChange) {
-66 |           onNodesChange([{
-67 |             type: 'position',
-68 |             id: '1',
-69 |             position: { x: 200, y: 200 },
-70 |           } as NodeChange]);
-71 |         }
-72 |       }}
-73 |     >
-74 |       {children}
-75 |     </div>
-76 |   );
-77 | 
-78 |   return {
-79 |     // default export 추가 (중요!)
-80 |     default: ReactFlowMock,
-81 |     // 필요한 다른 export들
-82 |     ReactFlow: ReactFlowMock,
-83 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => (
-84 |       <div data-testid="react-flow-provider">{children}</div>
-85 |     ),
-[TRUNCATED]
+9 | import { render, screen } from '@testing-library/react';
+10 | import '@testing-library/jest-dom/vitest';
+11 | import RootLayout from './layout';
+12 | import { metadata } from './metadata';
+13 | import { describe, it, expect, vi, beforeEach } from 'vitest';
+14 | 
+15 | // next/font 모듈 모킹
+16 | vi.mock('next/font/google', () => ({
+17 |   Geist: vi.fn().mockReturnValue({
+18 |     variable: 'mocked-geist-sans',
+19 |   }),
+20 |   Geist_Mono: vi.fn().mockReturnValue({
+21 |     variable: 'mocked-geist-mono',
+22 |   }),
+23 | }));
+24 | 
+25 | // ClientLayout 모킹
+26 | vi.mock('@/components/layout/ClientLayout', () => ({
+27 |   ClientLayout: ({ children }: { children: React.ReactNode }) => (
+28 |     <div data-testid="client-layout">{children}</div>
+29 |   ),
+30 | }));
+31 | 
+32 | describe('메타데이터 테스트', () => {
+33 |   it('기본 메타데이터가 올바르게 설정되어 있어야 합니다', () => {
+34 |     expect(metadata.title).toBeDefined();
+35 |     expect(metadata.description).toBeDefined();
+36 |   });
+37 | });
+38 | 
+39 | describe('RootLayout 컴포넌트 테스트', () => {
+40 |   beforeEach(() => {
+41 |     render(
+42 |       <RootLayout>
+43 |         <div data-testid="test-child">Test Child</div>
+44 |       </RootLayout>
+45 |     );
+46 |   });
+47 | 
+48 |   it('컴포넌트가 정의되어 있어야 합니다', () => {
+49 |     expect(RootLayout).toBeDefined();
+50 |   });
+51 | 
+52 |   it('자식 컴포넌트를 올바르게 렌더링해야 합니다', () => {
+53 |     const testChild = screen.getByTestId('test-child');
+54 |     expect(testChild).toBeInTheDocument();
+55 |     expect(testChild).toHaveTextContent('Test Child');
+56 |   });
+57 | 
+58 |   it('ClientLayout이 렌더링되어야 합니다', () => {
+59 |     const clientLayout = screen.getByTestId('client-layout');
+60 |     expect(clientLayout).toBeInTheDocument();
+61 |     expect(clientLayout).toContainElement(screen.getByTestId('test-child'));
+62 |   });
+63 | }); 
 ```
 
-src/app/board/page.tsx
+src/app/layout.tsx
 ```
 1 | /**
-2 |  * 파일명: page.tsx
-3 |  * 목적: 보드 페이지 컴포넌트
-4 |  * 역할: 보드 기능의 페이지 레벨 컴포넌트, 리팩토링된 Board 컴포넌트 사용
-5 |  * 작성일: 2025-03-05
+2 |  * 파일명: layout.tsx
+3 |  * 목적: 앱의 기본 레이아웃 구조 정의
+4 |  * 역할: 전체 페이지 구조와 공통 UI 요소 제공
+5 |  * 작성일: 2025-02-27
 6 |  * 수정일: 2025-03-28
 7 |  */
 8 | 
-9 | 'use client';
-10 | 
-11 | import { ReactFlowProvider } from '@xyflow/react';
-12 | import Board from '@/components/board/components/Board';
-13 | import { useAppStore } from '@/store/useAppStore';
-14 | 
-15 | // 기존 코드 보존을 위한 주석 처리된 함수들 (테스트에서 참조할 수 있음)
-16 | export const autoLayoutNodes = (nodes: any[]) => {
-17 |   return nodes.map((node: any, index: number) => ({
-18 |     ...node,
-19 |     position: {
-20 |       x: (index % 3) * 300 + 50, 
-21 |       y: Math.floor(index / 3) * 200 + 50
-22 |     }
-23 |   }));
-24 | };
-25 | 
-26 | // 보드 페이지 컴포넌트
-27 | export default function BoardPage() {
-28 |   const { selectCard } = useAppStore();
-29 |   
-30 |   return (
-31 |     <div className="w-full h-full relative">
-32 |       <ReactFlowProvider>
-33 |         <Board
-34 |           onSelectCard={selectCard}
-35 |           className="bg-background"
-36 |           showControls={true}
-37 |         />
-38 |       </ReactFlowProvider>
-39 |     </div>
-40 |   );
-41 | } 
+9 | import { ClientLayout } from "@/components/layout/ClientLayout";
+10 | import "@/app/globals.css";
+11 | import "@xyflow/react/dist/style.css";
+12 | 
+13 | export default function RootLayout({
+14 |   children,
+15 | }: {
+16 |   children: React.ReactNode;
+17 | }) {
+18 |   return (
+19 |     <html lang="ko">
+20 |       <body className="antialiased" suppressHydrationWarning>
+21 |         <ClientLayout>
+22 |           {children}
+23 |         </ClientLayout>
+24 |       </body>
+25 |     </html>
+26 |   );
+27 | }
 ```
 
-src/app/cards/page.test.tsx
-```
-1 | /**
-2 |  * @vitest-environment jsdom
-3 |  */
-4 | 
-5 | import { render, screen } from '@testing-library/react';
-6 | import CardsPage from './page';
-7 | import '@testing-library/jest-dom/vitest';
-8 | import React from 'react';
-9 | import { describe, it, expect, vi } from 'vitest';
-10 | 
-11 | // Next.js의 router 훅 모킹
-12 | vi.mock('next/navigation', () => ({
-13 |   useRouter: vi.fn(() => ({
-14 |     push: vi.fn(),
-15 |     replace: vi.fn(),
-16 |     prefetch: vi.fn(),
-17 |     pathname: '/cards',
-18 |   })),
-19 |   useSearchParams: vi.fn(() => ({
-20 |     get: vi.fn((key) => null),
-21 |     has: vi.fn(() => false),
-22 |     forEach: vi.fn(),
-23 |   })),
-24 | }));
-25 | 
-26 | // TagFilter 컴포넌트 모킹
-27 | vi.mock('@/components/cards/TagFilter', () => ({
-28 |   TagFilter: vi.fn(() => <div data-testid="tag-filter">태그 필터</div>)
-29 | }));
-30 | 
-31 | // React.Suspense 모킹
-32 | vi.mock('react', async () => {
-33 |   const originalReact = await vi.importActual('react');
-34 |   return {
-35 |     ...originalReact,
-36 |     Suspense: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => {
-37 |       return (
-38 |         <>
-39 |           <div data-testid="suspense-fallback">{fallback}</div>
-40 |           <div data-testid="suspense-children">{children}</div>
-41 |         </>
-42 |       );
-43 |     },
-44 |   };
-45 | });
-46 | 
-47 | // 테스트용 CardListSkeleton (page 모듈에서 가져오지 않고 테스트에서 직접 정의)
-48 | const CardListSkeleton = () => (
-49 |   <div data-testid="skeleton-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-50 |     {Array(6).fill(0).map((_, index) => (
-51 |       <div key={index} className="border rounded-md p-4 space-y-4">
-52 |         <div data-testid="skeleton" className="h-6 w-3/4" />
-53 |         <div data-testid="skeleton" className="h-24" />
-54 |         <div className="flex justify-between">
-55 |           <div data-testid="skeleton" className="h-4 w-1/4" />
-56 |           <div data-testid="skeleton" className="h-8 w-1/4" />
-57 |         </div>
-58 |       </div>
-59 |     ))}
-60 |   </div>
-61 | );
-62 | 
-63 | // Suspense 내부 컴포넌트 모킹
-64 | vi.mock('@/components/cards/CardList', () => {
-65 |   return {
-66 |     default: vi.fn(() => <div data-testid="card-list">카드 목록 컴포넌트</div>)
-67 |   };
-68 | });
-69 | 
-70 | // CreateCardButton 모킹을 CreateCardModal로 변경
-71 | vi.mock('@/components/cards/CreateCardModal', () => {
-72 |   return {
-73 |     default: vi.fn(() => <button data-testid="create-card-modal-button">새 카드 만들기</button>)
-74 |   };
-[TRUNCATED]
-```
-
-src/app/cards/page.tsx
-```
-1 | /**
-2 |  * 파일명: src/app/cards/page.tsx
-3 |  * 목적: 카드 목록을 표시하고 필터링 기능 제공
-4 |  * 역할: 카드 목록 페이지의 레이아웃과 컴포넌트 구성
-5 |  * 작성일: 2025-03-05
-6 |  * 수정일: 2025-04-08
-7 |  */
-8 | 
-9 | import { Metadata } from "next";
-10 | import { Suspense } from 'react';
-11 | import CardList from "@/components/cards/CardList";
-12 | import CreateCardModal from "@/components/cards/CreateCardModal";
-13 | import { TagFilter } from "@/components/cards/TagFilter";
-14 | import { Skeleton } from '@/components/ui/skeleton';
-15 | import { ChevronRight } from "lucide-react";
-16 | import Link from "next/link";
-17 | 
-18 | export const metadata: Metadata = {
-19 |   title: "카드 목록 | Backyard",
-20 |   description: "백야드 카드 목록 페이지입니다.",
-21 | };
-22 | 
-23 | // 카드 목록 로딩 스켈레톤
-24 | function CardListSkeleton() {
-25 |   return (
-26 |     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-27 |       {Array(6).fill(0).map((_, index) => (
-28 |         <div key={index} className="border rounded-md p-4 space-y-4">
-29 |           <Skeleton className="h-6 w-3/4" />
-30 |           <Skeleton className="h-24" />
-31 |           <div className="flex justify-between">
-32 |             <Skeleton className="h-4 w-1/4" />
-33 |             <Skeleton className="h-8 w-1/4" />
-34 |           </div>
-35 |         </div>
-36 |       ))}
-37 |     </div>
-38 |   );
-39 | }
-40 | 
-41 | export default function CardsPage() {
-42 |   return (
-43 |     <div className="container mx-auto py-8">
-44 |       {/* 페이지 헤더 */}
-45 |       <div className="mb-6">
-46 |         <div className="flex justify-between items-center mb-2">
-47 |           <div>
-48 |             {/* <div className="flex items-center text-sm text-muted-foreground mb-1">
-49 |               <Link href="/" className="hover:underline">홈</Link>
-50 |               <ChevronRight className="h-4 w-4 mx-1" />
-51 |               <span>카드 목록</span>
-52 |             </div> */}
-53 |             <h1 className="text-3xl font-bold">카드 목록</h1>
-54 |           </div>
-55 |           <CreateCardModal />
-56 |         </div>
-57 |         <p className="text-muted-foreground">
-58 |           카드를 생성하고 관리할 수 있습니다. 태그를 사용하여 카드를 필터링할 수 있습니다.
-59 |         </p>
-60 |       </div>
-61 | 
-62 |       {/* 메인 콘텐츠 */}
-63 |       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-64 |         {/* 사이드바 - 태그 필터 */}
-65 |         <div className="lg:col-span-1">
-66 |           <TagFilter />
-67 |         </div>
-68 | 
-69 |         {/* 카드 목록 */}
-70 |         <div className="lg:col-span-3">
-[TRUNCATED]
-```
-
-src/app/tags/page.test.tsx
-```
-1 | /// <reference types="vitest" />
-2 | import React from 'react';
-3 | import { render, screen, cleanup } from '@testing-library/react';
-4 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-5 | import TagsPage from './page';
-6 | import '@testing-library/jest-dom/vitest';
-7 | 
-8 | /**
-9 |  * 파일명: page.test.tsx
-10 |  * 목적: 태그 관리 페이지 테스트
-11 |  * 역할: 태그 페이지 렌더링 및 기능 검증
-12 |  * 작성일: 2025-03-05
-13 |  * 수정일: 2025-03-27
-14 |  */
-15 | 
-16 | // vi.hoisted를 사용하여 모킹 객체 생성
-17 | const mocks = vi.hoisted(() => ({
-18 |   findMany: vi.fn()
-19 | }));
-20 | 
-21 | // prisma 모킹
-22 | vi.mock('@/lib/prisma', () => ({
-23 |   default: {
-24 |     tag: {
-25 |       findMany: mocks.findMany
-26 |     }
-27 |   }
-28 | }));
-29 | 
-30 | // formatDate 모킹
-31 | vi.mock('@/lib/utils', () => ({
-32 |   formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
-33 |   cn: vi.fn((...args: any[]) => args.join(' '))
-34 | }));
-35 | 
-36 | // 컴포넌트 모킹 - 올바른 경로로 수정
-37 | vi.mock('@/components/tags/TagForm', () => ({
-38 |   default: () => <div data-testid="tag-form">태그 추가 폼</div>
-39 | }));
-40 | 
-41 | vi.mock('@/components/tags/TagList', () => ({
-42 |   default: ({ initialTags }: { initialTags: any[] }) => (
-43 |     <div data-testid="tag-list">
-44 |       태그 수: {initialTags.length}
-45 |     </div>
-46 |   )
-47 | }));
-48 | 
-49 | // Card 모킹
-50 | vi.mock('@/components/ui/card', () => ({
-51 |   Card: ({ children }: { children: React.ReactNode }) => <div data-slot="card" className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm ">{children}</div>,
-52 |   CardHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="card-header" className="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 ">{children}</div>,
-53 |   CardTitle: ({ children }: { children: React.ReactNode }) => <div data-slot="card-title" className="leading-none font-semibold ">{children}</div>,
-54 |   CardDescription: ({ children }: { children: React.ReactNode }) => <div data-slot="card-description" className="text-sm text-muted-foreground ">{children}</div>,
-55 |   CardContent: ({ children }: { children: React.ReactNode }) => <div data-slot="card-content" className="px-6 ">{children}</div>,
-56 |   CardFooter: ({ children }: { children: React.ReactNode }) => <div data-slot="card-footer" className="flex gap-3 px-6 pt-6 ">{children}</div>,
-57 | }));
-58 | 
-59 | // 템플릿 태그 데이터 - _count 속성 추가
-[TRUNCATED]
-```
-
-src/app/tags/page.tsx
+src/app/metadata.ts
 ```
 1 | import { Metadata } from "next";
-2 | import prisma from "@/lib/prisma";
-3 | import { formatDate } from "@/lib/utils";
-4 | import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-5 | import TagForm from "@/components/tags/TagForm";
-6 | import TagList from "@/components/tags/TagList";
-7 | import { Tag } from "@prisma/client";
-8 | 
-9 | export const metadata: Metadata = {
-10 |   title: "태그 관리 | Backyard",
-11 |   description: "태그를 생성하고 관리하는 페이지입니다.",
-12 | };
-13 | 
-14 | type TagWithCount = Tag & {
-15 |   _count: {
-16 |     cardTags: number;
-17 |   };
-18 | };
-19 | 
-20 | export default async function TagsPage() {
-21 |   let tags: TagWithCount[] = [];
-22 |   
-23 |   try {
-24 |     tags = await prisma.tag.findMany({
-25 |       orderBy: {
-26 |         name: 'asc'
-27 |       },
-28 |       include: {
-29 |         _count: {
-30 |           select: { cardTags: true }
-31 |         }
-32 |       }
-33 |     });
-34 |   } catch (error) {
-35 |     console.error("태그 조회 오류:", error);
-36 |     // 오류 발생 시 빈 배열 사용
-37 |   }
-38 | 
-39 |   const formattedTags = tags.map(tag => ({
-40 |     id: tag.id,
-41 |     name: tag.name,
-42 |     count: tag._count.cardTags,
-43 |     createdAt: formatDate(tag.createdAt)
-44 |   }));
-45 | 
-46 |   return (
-47 |     <div className="container mx-auto py-8">
-48 |       <h1 className="text-3xl font-bold mb-6">태그 관리</h1>
-49 |       
-50 |       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-51 |         <div className="md:col-span-1">
-52 |           <Card>
-53 |             <CardHeader>
-54 |               <CardTitle>새 태그 추가</CardTitle>
-55 |             </CardHeader>
-56 |             <CardContent>
-57 |               <TagForm />
-58 |             </CardContent>
-59 |           </Card>
-60 |         </div>
-61 |         
-62 |         <div className="md:col-span-2">
-63 |           <Card>
-64 |             <CardHeader>
-65 |               <CardTitle>태그 목록</CardTitle>
-66 |             </CardHeader>
-67 |             <CardContent>
-68 |               <TagList initialTags={formattedTags} />
-69 |             </CardContent>
-70 |           </Card>
-71 |         </div>
-72 |       </div>
-73 |     </div>
-74 |   );
-75 | } 
+2 | 
+3 | export const metadata: Metadata = {
+4 |   title: "Backyard - 모든 아이디어를 정리하는 공간",
+5 |   description: "효율적인 메모와 지식 관리를 위한 솔루션",
+6 |   icons: {
+7 |     icon: "/favicon.ico",
+8 |   },
+9 | }; 
 ```
 
-src/app/login/actions.ts
+src/app/not-found.test.tsx
 ```
 1 | /**
-2 |  * 파일명: actions.ts
-3 |  * 목적: 로그인 및 회원가입 서버 액션 제공
-4 |  * 역할: 사용자 인증 처리
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | 'use server'
-9 | 
-10 | import { createClient } from '@/utils/supabase/server'
-11 | import { redirect } from 'next/navigation'
-12 | 
-13 | export async function login(formData: FormData) {
-14 |   const email = formData.get('email') as string
-15 |   const password = formData.get('password') as string
-16 | 
-17 |   const supabase = await createClient()
-18 | 
-19 |   const { error } = await supabase.auth.signInWithPassword({
-20 |     email,
-21 |     password,
-22 |   })
-23 | 
-24 |   if (error) {
-25 |     console.error('로그인 오류:', error)
-26 |     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
-27 |   }
-28 | 
-29 |   return redirect('/')
-30 | }
-31 | 
-32 | export async function signup(formData: FormData) {
-33 |   const email = formData.get('email') as string
-34 |   const password = formData.get('password') as string
-35 | 
-36 |   const supabase = await createClient()
-37 | 
-38 |   const { error } = await supabase.auth.signUp({
-39 |     email,
-40 |     password,
-41 |     options: {
-42 |       emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
-43 |     },
-44 |   })
-45 | 
-46 |   if (error) {
-47 |     console.error('회원가입 오류:', error)
-48 |     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
-49 |   }
-50 | 
-51 |   // 회원가입 성공 메시지로 리다이렉션
-52 |   return redirect('/login?message=확인 이메일을 발송했습니다. 이메일을 확인해주세요.')
-53 | }
-54 | 
-55 | export async function signInWithGoogle() {
-56 |   // Supabase 클라이언트 생성
-57 |   const supabase = await createClient()
-58 |   
-59 |   // 현재 앱 도메인 (기본값 localhost:3000)
-60 |   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-61 |   
-62 |   // 콜백 URL 설정
-63 |   const redirectUrl = `${origin}/auth/callback`
-64 |   
-65 |   // Google OAuth 로그인 프로세스 시작
-66 |   const { data, error } = await supabase.auth.signInWithOAuth({
-67 |     provider: 'google',
-68 |     options: {
-69 |       redirectTo: redirectUrl,
-70 |       queryParams: {
-71 |         access_type: 'offline',
-72 |         prompt: 'consent',
-73 |       },
-74 |     },
-75 |   })
-76 | 
-77 |   if (error) {
-78 |     // 오류 발생 시 로그인 페이지로 리다이렉트
-79 |     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
-80 |   }
-81 | 
-82 |   // 구글 OAuth URL로 리다이렉션
-83 |   if (data?.url) {
-84 |     return redirect(data.url)
-85 |   }
-86 |   
-87 |   // URL이 없는 경우 홈으로 리다이렉션
-88 |   return redirect('/')
-89 | } 
-```
-
-src/app/login/page.test.tsx
-```
-1 | /**
-2 |  * 파일명: page.test.tsx
-3 |  * 목적: 로그인 페이지 컴포넌트 테스트
-4 |  * 역할: 로그인 페이지의 UI 및 기능을 테스트
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | /// <reference types="vitest" />
-9 | import React from 'react';
-10 | import { render, screen, fireEvent } from '@testing-library/react';
-11 | import { describe, it, expect, vi, beforeEach } from 'vitest';
-12 | import LoginPage from './page';
-13 | import '@testing-library/jest-dom/vitest';
-14 | 
-15 | // 서버 액션 모킹
-16 | const mockLogin = vi.fn();
-17 | const mockSignup = vi.fn();
-18 | const mockSignInWithGoogle = vi.fn();
-19 | 
-20 | vi.mock('./actions', () => ({
-21 |   login: vi.fn(() => mockLogin),
-22 |   signup: vi.fn(() => mockSignup),
-23 |   signInWithGoogle: vi.fn(() => mockSignInWithGoogle)
-24 | }));
-25 | 
-26 | // searchParams 모킹
-27 | const mockSearchParams = new Map();
-28 | 
-29 | vi.mock('next/navigation', () => ({
-30 |   useSearchParams: vi.fn(() => ({
-31 |     get: (key: string) => mockSearchParams.get(key)
-32 |   }))
-33 | }));
-34 | 
-35 | describe('LoginPage', () => {
-36 |   beforeEach(() => {
-37 |     vi.clearAllMocks();
-38 |     mockSearchParams.clear();
-39 |   });
-40 | 
-41 |   it('로그인 페이지가 올바르게 렌더링되어야 함', () => {
-42 |     render(<LoginPage />);
-43 |     
-44 |     // 페이지 제목이 존재하는지 확인
-45 |     expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument();
-46 |     
-47 |     // 폼 요소들이 존재하는지 확인
-48 |     expect(screen.getByLabelText('이메일')).toBeInTheDocument();
-49 |     expect(screen.getByLabelText('비밀번호')).toBeInTheDocument();
-50 |     
-51 |     // 버튼들이 존재하는지 확인
-52 |     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
-53 |     expect(screen.getByRole('button', { name: '회원가입' })).toBeInTheDocument();
-54 |     expect(screen.getByRole('button', { name: /Google로 계속하기/ })).toBeInTheDocument();
-55 |   });
-56 | 
-57 |   it('오류 메시지가 URL 파라미터로부터 표시되어야 함', () => {
-58 |     // 오류 메시지 파라미터 설정
-59 |     mockSearchParams.set('error', '로그인에 실패했습니다.');
-60 |     
-61 |     render(<LoginPage />);
-62 |     
-63 |     // 오류 메시지가 화면에 표시되는지 확인
-64 |     expect(screen.getByText('로그인에 실패했습니다.')).toBeInTheDocument();
-65 |   });
-66 | 
-67 |   it('성공 메시지가 URL 파라미터로부터 표시되어야 함', () => {
-68 |     // 성공 메시지 파라미터 설정
-69 |     mockSearchParams.set('message', '확인 이메일을 발송했습니다.');
-70 |     
-71 |     render(<LoginPage />);
-72 |     
-73 |     // 성공 메시지가 화면에 표시되는지 확인
-74 |     expect(screen.getByText('확인 이메일을 발송했습니다.')).toBeInTheDocument();
-75 |   });
-76 | 
-77 |   it('URL 인코딩된 메시지가 올바르게 디코딩되어야 함', () => {
-78 |     // 인코딩된 메시지 설정
-79 |     mockSearchParams.set('message', encodeURIComponent('특수 문자 메시지: @ # %'));
-80 |     
-81 |     render(<LoginPage />);
-82 |     
-83 |     // 디코딩된 메시지가 화면에 표시되는지 확인
-84 |     expect(screen.getByText('특수 문자 메시지: @ # %')).toBeInTheDocument();
-85 |   });
-[TRUNCATED]
-```
-
-src/app/login/page.tsx
-```
-1 | /**
-2 |  * 파일명: page.tsx
-3 |  * 목적: 로그인 페이지 제공
-4 |  * 역할: 사용자 로그인 및 회원가입 UI
-5 |  * 작성일: 2025-03-08
-6 |  * 수정일: 2025-03-27
-7 |  */
-8 | 
-9 | 'use client'
-10 | 
-11 | import { useEffect, useState } from 'react'
-12 | import { login, signup, signInWithGoogle } from './actions'
-13 | import { useSearchParams } from 'next/navigation'
-14 | import { cn } from '@/lib/utils'
-15 | 
-16 | export default function LoginPage() {
-17 |   const searchParams = useSearchParams()
-18 |   const [error, setError] = useState<string | null>(null)
-19 |   const [message, setMessage] = useState<string | null>(null)
-20 |   
-21 |   useEffect(() => {
-22 |     // URL 쿼리 파라미터에서 오류 및 성공 메시지 추출
-23 |     const error = searchParams.get('error')
-24 |     const message = searchParams.get('message')
-25 |     
-26 |     if (error) setError(decodeURIComponent(error))
-27 |     if (message) setMessage(decodeURIComponent(message))
-28 |   }, [searchParams])
-29 | 
-30 |   return (
-31 |     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-32 |       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
-33 |         <div className="text-center">
-34 |           <h1 className="text-2xl font-bold">로그인</h1>
-35 |           <p className="text-gray-600 mt-2">계정에 로그인하거나 새 계정을 만드세요</p>
-36 |         </div>
-37 |         
-38 |         {/* 오류 메시지 표시 */}
-39 |         {error && (
-40 |           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-41 |             {error}
-42 |           </div>
-43 |         )}
-44 |         
-45 |         {/* 성공 메시지 표시 */}
-46 |         {message && (
-47 |           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
-48 |             {message}
-49 |           </div>
-50 |         )}
-51 | 
-52 |         <div className="mt-8">
-53 |           <form className="space-y-6">
-54 |             <div>
-55 |               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-56 |                 이메일
-57 |               </label>
-58 |               <input
-59 |                 id="email"
-60 |                 name="email"
-61 |                 type="email"
-62 |                 autoComplete="email"
-63 |                 required
-64 |                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-65 |               />
-66 |             </div>
-67 |             <div>
-68 |               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-69 |                 비밀번호
-70 |               </label>
-71 |               <input
-[TRUNCATED]
-```
-
-src/app/test-db/page.test.tsx
-```
-1 | /**
-2 |  * 파일명: page.test.tsx
-3 |  * 목적: 데이터베이스 연결 테스트 페이지 컴포넌트 테스트
-4 |  * 역할: TestDatabasePage 컴포넌트의 다양한 상태 및 동작 검증
+2 |  * 파일명: not-found.test.tsx
+3 |  * 목적: NotFound 컴포넌트의 기능 검증
+4 |  * 역할: 404 페이지가 올바르게 렌더링되는지 확인
 5 |  * 작성일: 2025-04-01
 6 |  */
 7 | 
-8 | import { describe, it, expect, vi, beforeEach } from 'vitest';
-9 | import { render, screen } from '@testing-library/react';
-10 | import TestDatabasePage from './page';
+8 | import { render, screen } from '@testing-library/react';
+9 | import { expect, describe, it, vi } from 'vitest';
+10 | import NotFound from './not-found';
 11 | 
-12 | // Prisma 클라이언트 모킹
-13 | vi.mock('@/lib/prisma', () => ({
-14 |     default: {
-15 |         tag: {
-16 |             findMany: vi.fn(),
-17 |         },
-18 |         $disconnect: vi.fn(),
-19 |     },
-20 | }));
-21 | 
-22 | // console.error 모킹
-23 | vi.spyOn(console, 'error').mockImplementation(() => { });
-24 | 
-25 | describe('TestDatabasePage 컴포넌트', () => {
-26 |     let mockPrisma: any;
-27 | 
-28 |     beforeEach(async () => {
-29 |         vi.clearAllMocks();
-30 |         // 각 테스트 전에 모킹된 Prisma 인스턴스 가져오기
-31 |         mockPrisma = (await import('@/lib/prisma')).default;
-32 |     });
-33 | 
-34 |     it('태그 목록이 있을 때 올바르게 렌더링해야 함', async () => {
-35 |         // 태그 데이터 모킹
-36 |         const mockTags = [
-37 |             { id: 1, name: '리액트', _count: { cardTags: 5 } },
-38 |             { id: 2, name: '타입스크립트', _count: { cardTags: 3 } },
-39 |             { id: 3, name: '백엔드', _count: { cardTags: 2 } },
-40 |         ];
-41 | 
-42 |         // Prisma 응답 모킹
-43 |         (mockPrisma.tag.findMany as any).mockResolvedValueOnce(mockTags);
-44 | 
-45 |         // 컴포넌트 렌더링 (비동기 컴포넌트이므로 임시 변환 사용)
-46 |         const Component = await TestDatabasePage();
-47 |         render(Component);
-48 | 
-49 |         // 페이지 제목 확인
-50 |         expect(screen.getByText('데이터베이스 연결 테스트')).toBeInTheDocument();
-51 | 
-52 |         // 각 태그가 올바르게 표시되는지 확인
-53 |         expect(screen.getByText('리액트')).toBeInTheDocument();
-54 |         expect(screen.getByText('타입스크립트')).toBeInTheDocument();
-55 |         expect(screen.getByText('백엔드')).toBeInTheDocument();
-56 | 
-57 |         // 태그 개수가 올바르게 표시되는지 확인
-58 |         expect(screen.getByText('연결된 카드: 5개')).toBeInTheDocument();
-59 |         expect(screen.getByText('연결된 카드: 3개')).toBeInTheDocument();
-60 |         expect(screen.getByText('연결된 카드: 2개')).toBeInTheDocument();
-61 | 
-62 |         // 성공 메시지 확인
-63 |         expect(screen.getByText('이 페이지가 정상적으로 로드되었다면 Prisma와 Supabase 연결이 성공적으로 구성된 것입니다!')).toBeInTheDocument();
-64 | 
-65 |         // Prisma 호출 확인
-66 |         expect(mockPrisma.tag.findMany).toHaveBeenCalledTimes(1);
-67 |         expect(mockPrisma.tag.findMany).toHaveBeenCalledWith({
-68 |             include: {
-69 |                 _count: {
-70 |                     select: {
-71 |                         cardTags: true,
-72 |                     },
-73 |                 },
-74 |             },
-75 |         });
-76 |     });
-77 | 
-78 |     it('태그가 없을 때 적절한 메시지를 표시해야 함', async () => {
-79 |         // 빈 태그 목록 모킹
-80 |         (mockPrisma.tag.findMany as any).mockResolvedValueOnce([]);
-81 | 
-82 |         // 컴포넌트 렌더링
-83 |         const Component = await TestDatabasePage();
-84 |         render(Component);
-85 | 
-[TRUNCATED]
+12 | // Next.js Link 컴포넌트 모킹
+13 | vi.mock('next/link', () => ({
+14 |     default: ({ children, href }: { children: React.ReactNode, href: string }) => (
+15 |         <a href={href} data-testid="link">
+16 |             {children}
+17 |         </a>
+18 |     ),
+19 | }));
+20 | 
+21 | describe('NotFound 컴포넌트', () => {
+22 |     it('404 텍스트가 표시되어야 함', () => {
+23 |         render(<NotFound />);
+24 |         expect(screen.getByText('404')).toBeInTheDocument();
+25 |     });
+26 | 
+27 |     it('페이지를 찾을 수 없다는 메시지가 표시되어야 함', () => {
+28 |         render(<NotFound />);
+29 |         expect(screen.getByText('페이지를 찾을 수 없습니다')).toBeInTheDocument();
+30 |     });
+31 | 
+32 |     it('설명 텍스트가 표시되어야 함', () => {
+33 |         render(<NotFound />);
+34 |         expect(screen.getByText('요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.')).toBeInTheDocument();
+35 |     });
+36 | 
+37 |     it('홈으로 돌아가는 링크가 있어야 함', () => {
+38 |         render(<NotFound />);
+39 |         const link = screen.getByTestId('link');
+40 |         expect(link).toBeInTheDocument();
+41 |         expect(link).toHaveAttribute('href', '/');
+42 |         expect(link).toHaveTextContent('홈으로 돌아가기');
+43 |     });
+44 | }); 
 ```
 
-src/app/test-db/page.tsx
+src/app/not-found.tsx
 ```
-1 | import React from 'react';
-2 | import prisma from '@/lib/prisma';
-3 | import type { Tag } from '@prisma/client';
+1 | 'use client';
+2 | 
+3 | import Link from 'next/link';
 4 | 
-5 | // 태그와 연결된 카드 수를 포함하는 타입 정의
-6 | type TagWithCount = Tag & {
-7 |   _count: {
-8 |     cardTags: number;
-9 |   };
-10 | };
-11 | 
-12 | export default async function TestDatabasePage() {
-13 |   let tags: TagWithCount[] = [];
-14 |   let error: string | null = null;
-15 |   
-16 |   try {
-17 |     // Prisma를 사용하여 태그 목록을 가져옵니다
-18 |     tags = await prisma.tag.findMany({
-19 |       include: {
-20 |         _count: {
-21 |           select: {
-22 |             cardTags: true,
-23 |           },
-24 |         },
-25 |       },
-26 |     });
-27 |   } catch (e) {
-28 |     console.error('데이터베이스 연결 오류:', e);
-29 |     error = e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
-30 |   }
+5 | export default function NotFound() {
+6 |   return (
+7 |     <div className="flex flex-col items-center justify-center min-h-screen p-8">
+8 |       <div className="text-center">
+9 |         <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
+10 |         <h2 className="text-2xl font-semibold text-gray-700 mb-6">페이지를 찾을 수 없습니다</h2>
+11 |         <p className="text-gray-600 mb-8">
+12 |           요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
+13 |         </p>
+14 |         <Link
+15 |           href="/"
+16 |           className="px-6 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+17 |         >
+18 |           홈으로 돌아가기
+19 |         </Link>
+20 |       </div>
+21 |     </div>
+22 |   );
+23 | } 
+```
+
+src/app/page.test.tsx
+```
+1 | /**
+2 |  * 파일명: page.test.tsx
+3 |  * 목적: 홈 페이지 컴포넌트 테스트
+4 |  * 역할: 홈 페이지의 렌더링과 기능 검증
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-03-30
+7 |  */
+8 | 
+9 | import { render, screen } from '@testing-library/react';
+10 | import '@testing-library/jest-dom/vitest';
+11 | import Home from './page';
+12 | import { DashboardLayout } from '@/components/layout/DashboardLayout';
+13 | import { describe, it, expect, vi } from 'vitest';
+14 | import React from 'react';
+15 | 
+16 | // DashboardLayout 모킹
+17 | vi.mock('@/components/layout/DashboardLayout', () => ({
+18 |   DashboardLayout: vi.fn().mockImplementation(() => (
+19 |     <div data-testid="dashboard-layout">
+20 |       <h1>Backyard</h1>
+21 |       <p>아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구</p>
+22 |       <a href="/cards">카드 목록 보기</a>
+23 |     </div>
+24 |   )),
+25 | }));
+26 | 
+27 | describe('Home 페이지', () => {
+28 |   it('컴포넌트가 정의되어 있어야 합니다', () => {
+29 |     expect(typeof Home).toBe('function');
+30 |   });
 31 | 
-32 |   return (
-33 |     <div className="container mx-auto p-6">
-34 |       <h1 className="text-3xl font-bold mb-6">데이터베이스 연결 테스트</h1>
-35 |       
-36 |       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-37 |         <h2 className="text-2xl font-semibold mb-4">태그 목록</h2>
-38 |         
-39 |         {error ? (
-40 |           <div className="p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded">
-41 |             <p className="text-red-700 dark:text-red-400">
-42 |               데이터베이스 연결 오류: {error}
-43 |             </p>
-44 |             <p className="mt-2 text-sm text-red-600 dark:text-red-300">
-45 |               Vercel 환경 변수가 올바르게 설정되었는지 확인하세요.
-46 |             </p>
-47 |           </div>
-48 |         ) : tags.length === 0 ? (
-49 |           <p className="text-gray-500 dark:text-gray-400">등록된 태그가 없습니다.</p>
-50 |         ) : (
-51 |           <ul className="space-y-2">
-52 |             {tags.map((tag) => (
-53 |               <li 
-54 |                 key={tag.id}
-55 |                 className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded"
-56 |               >
-57 |                 <span className="font-medium">{tag.name}</span>
-58 |                 <span className="text-sm text-gray-500 dark:text-gray-400">
-59 |                   연결된 카드: {tag._count.cardTags}개
-60 |                 </span>
-61 |               </li>
-62 |             ))}
-63 |           </ul>
-64 |         )}
-65 |         
-66 |         <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded">
-67 |           <p className="text-green-700 dark:text-green-400">
-68 |             {!error 
-69 |               ? '이 페이지가 정상적으로 로드되었다면 Prisma와 Supabase 연결이 성공적으로 구성된 것입니다!' 
-[TRUNCATED]
+32 |   it('DashboardLayout을 렌더링해야 합니다', () => {
+33 |     render(<Home />);
+34 |     const dashboard = screen.getByTestId('dashboard-layout');
+35 |     expect(dashboard).toBeInTheDocument();
+36 |   });
+37 | 
+38 |   it('Backyard 제목이 렌더링되어야 합니다', () => {
+39 |     render(<Home />);
+40 |     const heading = screen.getByText('Backyard');
+41 |     expect(heading).toBeInTheDocument();
+42 |     expect(heading.tagName).toBe('H1');
+43 |   });
+44 |   
+45 |   it('설명 텍스트가 렌더링되어야 합니다', () => {
+46 |     render(<Home />);
+47 |     const description = screen.getByText('아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구');
+48 |     expect(description).toBeInTheDocument();
+49 |     expect(description.tagName).toBe('P');
+50 |   });
+51 |   
+52 |   it('카드 목록 보기 링크가 렌더링되어야 합니다', () => {
+53 |     render(<Home />);
+54 |     const link = screen.getByText('카드 목록 보기');
+55 |     expect(link).toBeInTheDocument();
+56 |     expect(link.tagName).toBe('A');
+57 |     expect(link).toHaveAttribute('href', '/cards');
+58 |   });
+59 | 
+60 |   it('DashboardLayout이 호출되어야 합니다', () => {
+61 |     render(<Home />);
+62 |     expect(DashboardLayout).toHaveBeenCalled();
+63 |   });
+64 | }); 
+```
+
+src/app/page.tsx
+```
+1 | import { DashboardLayout } from '@/components/layout/DashboardLayout';
+2 | 
+3 | export default function Home() {
+4 |   return <DashboardLayout />;
+5 | }
 ```
 
 src/components/auth/AuthForm.tsx
@@ -5054,500 +4195,6 @@ src/components/auth/UserProfile.tsx
 94 |   return (
 95 |     <DropdownMenu>
 [TRUNCATED]
-```
-
-src/components/board/DagreNodePositioning.test.tsx
-```
-1 | import React from 'react';
-2 | import { render } from '@testing-library/react';
-3 | import { ReactFlowProvider } from '@xyflow/react';
-4 | import DagreNodePositioning from './DagreNodePositioning';
-5 | import { vi } from 'vitest';
-6 | import { Edge } from '@xyflow/react';
-7 | 
-8 | // 단순 렌더링 테스트
-9 | describe('DagreNodePositioning', () => {
-10 |   it('컴포넌트가 오류 없이 렌더링되어야 합니다', () => {
-11 |     const dummyOptions = { rankdir: 'TB' as const };
-12 |     const dummySetNodes = vi.fn();
-13 |     const dummySetEdges = vi.fn();
-14 |     const dummySetViewIsFit = vi.fn();
-15 |     const dummyEdges: Edge[] = [];
-16 |     
-17 |     render(
-18 |       <ReactFlowProvider>
-19 |         <DagreNodePositioning
-20 |           Options={dummyOptions}
-21 |           Edges={dummyEdges}
-22 |           SetEdges={dummySetEdges}
-23 |           SetNodes={dummySetNodes}
-24 |           SetViewIsFit={dummySetViewIsFit}
-25 |         />
-26 |       </ReactFlowProvider>
-27 |     );
-28 |   });
-29 | }); 
-```
-
-src/components/board/DagreNodePositioning.tsx
-```
-1 | import React, { useState, useEffect } from 'react';
-2 | import { useReactFlow, Node, Edge, Position } from '@xyflow/react';
-3 | import dagre from 'dagre';
-4 | import defaultConfig from '../../config/cardBoardUiOptions.json';
-5 | 
-6 | interface DagreNodePositioningProps {
-7 |   Options: { rankdir: 'TB' | 'LR' | 'BT' | 'RL' };
-8 |   Edges: Edge[];
-9 |   SetEdges: (edges: Edge[]) => void;
-10 |   SetNodes: (nodes: Node[]) => void;
-11 |   SetViewIsFit: (value: boolean) => void;
-12 | }
-13 | 
-14 | // 기본 CardNode의 크기 - 설정 파일에서 일관되게 가져오기
-15 | const nodeWidth = defaultConfig.layout.nodeSize?.width || 130;
-16 | const nodeHeight = defaultConfig.layout.nodeSize?.height || 48;
-17 | 
-18 | const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
-19 |   const [nodesPositioned, setNodesPositioned] = useState(false);
-20 |   const { fitView, getNodes } = useReactFlow();
-21 |   
-22 |   // React Flow 인스턴스에서 노드 직접 가져오기
-23 |   const flattenedNodes = getNodes();
-24 | 
-25 |   useEffect(() => {
-26 |     // 노드가 존재하는지 확인
-27 |     if (flattenedNodes.length > 0) {
-28 |       const dagreGraph = new dagre.graphlib.Graph();
-29 |       dagreGraph.setDefaultEdgeLabel(() => ({}));
-30 |       dagreGraph.setGraph(Options);
-31 | 
-32 |       // 모든 노드를 dagre 그래프에 등록 (기본값 사용)
-33 |       flattenedNodes.forEach((node) => {
-34 |         // 실제 측정된 크기가 없으므로 기본값 사용
-35 |         dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-36 |       });
-37 | 
-38 |       // 엣지 등록
-39 |       Edges.forEach((edge) => {
-40 |         dagreGraph.setEdge(edge.source, edge.target);
-41 |       });
-42 | 
-43 |       // 레이아웃 계산
-44 |       dagre.layout(dagreGraph);
-45 | 
-46 |       // 각 노드의 위치를 업데이트
-47 |       const layoutedNodes = flattenedNodes.map((node) => {
-48 |         const nodeWithPosition = dagreGraph.node(node.id);
-49 |         if (!nodeWithPosition) {
-50 |           return node;
-51 |         }
-52 |         
-53 |         let updatedNode = {
-54 |           ...node,
-55 |           position: {
-56 |             x: nodeWithPosition.x - nodeWidth / 2,
-57 |             y: nodeWithPosition.y - nodeHeight / 2
-58 |           },
-59 |           data: { ...node.data }
-60 |         } as Node;
-61 | 
-62 |         // 레이아웃 방향에 따라 핸들 위치 지정
-63 |         if (Options.rankdir === 'TB' || Options.rankdir === 'BT') {
-64 |           updatedNode.targetPosition = Position.Top;
-65 |           updatedNode.sourcePosition = Position.Bottom;
-66 |         } else if (Options.rankdir === 'LR' || Options.rankdir === 'RL') {
-67 |           updatedNode.targetPosition = Position.Left;
-68 |           updatedNode.sourcePosition = Position.Right;
-69 |         }
-70 |         return updatedNode;
-71 |       });
-72 | 
-73 |       // 엣지 핸들 업데이트
-74 |       const layoutedEdges = Edges.map(edge => {
-75 |         const updatedEdge = { ...edge };
-76 |         
-77 |         // 방향에 따라 엣지 핸들 위치 설정
-78 |         if (Options.rankdir === 'TB' || Options.rankdir === 'BT') {
-[TRUNCATED]
-```
-
-src/components/board/DebugPanel.tsx
-```
-1 | import React, { useState, useEffect } from 'react';
-2 | import { useReactFlow, NodeChange, EdgeChange } from '@xyflow/react';
-3 | 
-4 | interface DebugPanelProps {
-5 |   nodeChanges?: NodeChange[];
-6 |   edgeChanges?: EdgeChange[];
-7 | }
-8 | 
-9 | const DebugPanel: React.FC<DebugPanelProps> = ({ nodeChanges, edgeChanges }) => {
-10 |   const [isOpen, setIsOpen] = useState(false);
-11 |   const { getViewport, getNodes } = useReactFlow();
-12 |   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
-13 |   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-14 |   const [logs, setLogs] = useState<Array<{ time: string; message: string }>>([]);
-15 | 
-16 |   // 뷰포트 업데이트
-17 |   useEffect(() => {
-18 |     const interval = setInterval(() => {
-19 |       const currentViewport = getViewport();
-20 |       setViewport(currentViewport);
-21 |     }, 100);
-22 | 
-23 |     return () => clearInterval(interval);
-24 |   }, [getViewport]);
-25 | 
-26 |   // 로그 추가 함수
-27 |   const addLog = (message: string) => {
-28 |     const time = new Date().toLocaleTimeString();
-29 |     setLogs(prev => [...prev.slice(-9), { time, message }]);
-30 |   };
-31 | 
-32 |   // 노드 변경 시 로그 추가
-33 |   useEffect(() => {
-34 |     if (nodeChanges && nodeChanges.length > 0) {
-35 |       const message = `노드 변경: ${nodeChanges.map(c => `${c.type} ${c.id}`).join(', ')}`;
-36 |       addLog(message);
-37 |     }
-38 |   }, [nodeChanges]);
-39 | 
-40 |   // 엣지 변경 시 로그 추가
-41 |   useEffect(() => {
-42 |     if (edgeChanges && edgeChanges.length > 0) {
-43 |       const message = `엣지 변경: ${edgeChanges.map(c => `${c.type} ${c.id}`).join(', ')}`;
-44 |       addLog(message);
-45 |     }
-46 |   }, [edgeChanges]);
-47 | 
-48 |   // 선택된 노드 정보
-49 |   const selectedNode = selectedNodeId 
-50 |     ? getNodes().find(node => node.id === selectedNodeId) 
-51 |     : null;
-52 | 
-53 |   return (
-54 |     <div className="fixed left-2 top-16 z-50">
-55 |       <button 
-56 |         onClick={() => setIsOpen(!isOpen)}
-57 |         className="mb-2 px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-58 |       >
-59 |         {isOpen ? '디버그 패널 닫기' : '디버그 패널 열기'}
-60 |       </button>
-61 |       
-62 |       {isOpen && (
-63 |         <div className="bg-white p-3 rounded shadow-lg border border-gray-200 w-64 max-h-[80vh] overflow-y-auto">
-64 |           <div className="mb-3">
-65 |             <h3 className="text-sm font-bold border-b pb-1 mb-2">뷰포트 정보</h3>
-66 |             <div className="text-xs">
-67 |               <div>X: {viewport.x.toFixed(2)}</div>
-68 |               <div>Y: {viewport.y.toFixed(2)}</div>
-69 |               <div>Zoom: {viewport.zoom.toFixed(2)}</div>
-[TRUNCATED]
-```
-
-src/components/board/LayoutControls.tsx
-```
-1 | import React from 'react';
-2 | import { Button } from '@/components/ui/button';
-3 | import {
-4 |   DropdownMenu,
-5 |   DropdownMenuContent,
-6 |   DropdownMenuItem,
-7 |   DropdownMenuLabel,
-8 |   DropdownMenuSeparator,
-9 |   DropdownMenuTrigger,
-10 | } from '@/components/ui/dropdown-menu';
-11 | import { Layout, LayoutGrid, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter } from 'lucide-react';
-12 | import { toast } from 'sonner';
-13 | 
-14 | interface LayoutControlsProps {
-15 |   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
-16 |   onAutoLayout: () => void;
-17 |   onSaveLayout: () => void;
-18 | }
-19 | 
-20 | export default function LayoutControls({ 
-21 |   onLayoutChange, 
-22 |   onAutoLayout, 
-23 |   onSaveLayout 
-24 | }: LayoutControlsProps) {
-25 |   return (
-26 |     <DropdownMenu>
-27 |       <DropdownMenuTrigger asChild>
-28 |         <Button variant="outline" size="icon">
-29 |           <Layout className="h-4 w-4" />
-30 |         </Button>
-31 |       </DropdownMenuTrigger>
-32 |       <DropdownMenuContent align="end" className="w-56">
-33 |         <DropdownMenuLabel>레이아웃 옵션</DropdownMenuLabel>
-34 |         <DropdownMenuSeparator />
-35 |         <DropdownMenuItem 
-36 |           onClick={() => onLayoutChange('horizontal')}
-37 |           className="flex items-center cursor-pointer"
-38 |         >
-39 |           <AlignHorizontalJustifyCenter className="mr-2 h-4 w-4" />
-40 |           <span>수평 레이아웃</span>
-41 |         </DropdownMenuItem>
-42 |         <DropdownMenuItem 
-43 |           onClick={() => onLayoutChange('vertical')}
-44 |           className="flex items-center cursor-pointer"
-45 |         >
-46 |           <AlignVerticalJustifyCenter className="mr-2 h-4 w-4" />
-47 |           <span>수직 레이아웃</span>
-48 |         </DropdownMenuItem>
-49 |         <DropdownMenuSeparator />
-50 |         <DropdownMenuItem 
-51 |           onClick={onAutoLayout}
-52 |           className="flex items-center cursor-pointer"
-53 |         >
-54 |           <LayoutGrid className="mr-2 h-4 w-4" />
-55 |           <span>자동 배치</span>
-56 |         </DropdownMenuItem>
-57 |         <DropdownMenuItem 
-58 |           onClick={onSaveLayout}
-59 |           className="flex items-center cursor-pointer"
-60 |         >
-61 |           <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-62 |             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-63 |             <polyline points="17 21 17 13 7 13 7 21" />
-64 |             <polyline points="7 3 7 8 15 8" />
-65 |           </svg>
-66 |           <span>레이아웃 저장</span>
-67 |         </DropdownMenuItem>
-68 |       </DropdownMenuContent>
-69 |     </DropdownMenu>
-70 |   );
-71 | } 
-```
-
-src/components/debug/DevTools.tsx
-```
-1 | import { useState } from 'react';
-2 | import { Panel } from '@xyflow/react';
-3 | import { ViewportLogger } from './ViewportLogger';
-4 | import { NodeInspector } from './NodeInspector';
-5 | import { ChangeLogger, useChangeLogger, type ChangeLoggerHandlers } from './ChangeLogger';
-6 | 
-7 | /**
-8 |  * React Flow 디버깅을 위한 DevTools 컴포넌트
-9 |  * 뷰포트 로거, 노드 인스펙터, 변경 로거를 포함합니다.
-10 |  */
-11 | export default function DevTools() {
-12 |   const [showViewport, setShowViewport] = useState(false);
-13 |   const [showNodeInspector, setShowNodeInspector] = useState(false);
-14 |   const [showChangeLogger, setShowChangeLogger] = useState(false);
-15 | 
-16 |   return (
-17 |     <Panel 
-18 |       position="top-left" 
-19 |       className="bg-card shadow p-3 rounded-md z-50"
-20 |     >
-21 |       <div className="flex flex-col gap-2">
-22 |         <div className="flex gap-2 justify-center items-center">
-23 |           <button
-24 |             onClick={() => setShowViewport(!showViewport)}
-25 |             className={`px-2 py-1 text-xs rounded ${
-26 |               showViewport ? 'bg-blue-500 text-white' : 'bg-gray-200'
-27 |             }`}
-28 |           >
-29 |             뷰포트 로거 {showViewport ? '숨기기' : '보기'}
-30 |           </button>
-31 |           <button
-32 |             onClick={() => setShowNodeInspector(!showNodeInspector)}
-33 |             className={`px-2 py-1 text-xs rounded ${
-34 |               showNodeInspector ? 'bg-blue-500 text-white' : 'bg-gray-200'
-35 |             }`}
-36 |           >
-37 |             노드 인스펙터 {showNodeInspector ? '숨기기' : '보기'}
-38 |           </button>
-39 |           <button
-40 |             onClick={() => setShowChangeLogger(!showChangeLogger)}
-41 |             className={`px-2 py-1 text-xs rounded ${
-42 |               showChangeLogger ? 'bg-blue-500 text-white' : 'bg-gray-200'
-43 |             }`}
-44 |           >
-45 |             변경 로거 {showChangeLogger ? '숨기기' : '보기'}
-46 |           </button>
-47 |         </div>
-48 |         
-49 |         {showViewport && <ViewportLogger />}
-50 |         {showNodeInspector && <NodeInspector />}
-51 |         {showChangeLogger && <ChangeLogger />}
-52 |       </div>
-53 |     </Panel>
-54 |   );
-55 | }
-56 | 
-57 | // 노드와 엣지 변경 감지를 위한 훅 익스포트
-58 | export const useChangeLoggerHooks = (): ChangeLoggerHandlers => {
-59 |   const [, , handlers] = useChangeLogger();
-60 |   return handlers;
-61 | } 
-```
-
-src/components/debug/InitDatabase.tsx
-```
-1 | /**
-2 |  * 파일명: InitDatabase.tsx
-3 |  * 목적: 개발 환경에서 데이터베이스 초기화
-4 |  * 역할: 개발 환경에서만 데이터베이스를 초기화하는 컴포넌트
-5 |  * 작성일: 2025-03-30
-6 |  */
-7 | 
-8 | 'use client';
-9 | 
-10 | import { useEffect } from 'react';
-11 | 
-12 | /**
-13 |  * InitDatabase: 개발 환경에서만 데이터베이스를 초기화하는 컴포넌트
-14 |  * @returns null - UI를 렌더링하지 않음
-15 |  */
-16 | export default function InitDatabase() {
-17 |   useEffect(() => {
-18 |     const initDatabase = async () => {
-19 |       if (process.env.NEXT_PUBLIC_ENABLE_DB_INIT !== 'true') {
-20 |         return;
-21 |       }
-22 | 
-23 |       try {
-24 |         const response = await fetch('/api/db-init');
-25 |         if (!response.ok) {
-26 |           throw new Error('Failed to initialize database');
-27 |         }
-28 |         console.log('Database initialized successfully');
-29 |       } catch (error) {
-30 |         console.error('Error initializing database:', error);
-31 |       }
-32 |     };
-33 | 
-34 |     initDatabase();
-35 |   }, []);
-36 | 
-37 |   return null;
-38 | } 
-```
-
-src/components/debug/NodeInspector.tsx
-```
-1 | import { useEffect, useState, useCallback } from 'react';
-2 | import { useReactFlow, Node, NodeProps, NodeToolbar, Position, useOnSelectionChange } from '@xyflow/react';
-3 | 
-4 | // 노드 데이터 타입 정의
-5 | interface NodeData {
-6 |   [key: string]: any;
-7 |   isInspected?: boolean;
-8 | }
-9 | 
-10 | /**
-11 |  * NodeInspector 컴포넌트는 React Flow의 노드를 검사할 수 있는 기능을 제공합니다.
-12 |  * 컴포넌트가 마운트되면 모든 노드의 정보가 노드 아래에 표시됩니다.
-13 |  */
-14 | export function NodeInspector() {
-15 |   const { getNodes, setNodes } = useReactFlow();
-16 |   // 노드 상태가 변경될 때마다 업데이트하기 위한 상태
-17 |   const [updateTrigger, setUpdateTrigger] = useState(0);
-18 | 
-19 |   // 노드 선택 변경을 감지하는 리스너 추가
-20 |   useOnSelectionChange({
-21 |     onChange: () => {
-22 |       // 선택 상태가 변경될 때마다 업데이트 트리거
-23 |       setUpdateTrigger(prev => prev + 1);
-24 |     },
-25 |   });
-26 | 
-27 |   // 마운트될 때와 노드 선택 상태가 변경될 때마다 모든 노드의 isInspected를 true로 설정
-28 |   useEffect(() => {
-29 |     // 모든 노드의 isInspected 속성 업데이트
-30 |     setNodes(nodes => 
-31 |       nodes.map(node => ({
-32 |         ...node,
-33 |         data: {
-34 |           ...node.data,
-35 |           isInspected: true
-36 |         }
-37 |       }))
-38 |     );
-39 | 
-40 |     // 언마운트될 때 모든 노드의 isInspected를 false로 설정
-41 |     return () => {
-42 |       setNodes(nodes => 
-43 |         nodes.map(node => ({
-44 |           ...node,
-45 |           data: {
-46 |             ...node.data,
-47 |             isInspected: false
-48 |           }
-49 |         }))
-50 |       );
-51 |     };
-52 |   }, [setNodes, updateTrigger]);
-53 | 
-54 |   // 노드 인스펙터 컴포넌트 주석 처리
-55 |   // return (
-56 |   //   <div className="bg-muted p-2 rounded border text-xs mt-2">
-57 |   //     <h3 className="font-bold mb-1 border-b pb-1">노드 인스펙터</h3>
-58 |   //     <div className="text-muted-foreground">
-59 |   //       각 노드 아래에 노드 정보가 실시간으로 표시됩니다.
-60 |   //     </div>
-61 |   //   </div>
-62 |   // );
-63 | }
-64 | 
-65 | /**
-66 |  * NodeInspect 컴포넌트는 각 노드에 추가되어 노드의 데이터를 표시합니다.
-67 |  * 실시간으로 노드 상태를 반영합니다.
-68 |  */
-69 | export function NodeInspect(props: NodeProps) {
-70 |   const { data, id, type } = props;
-71 |   const { getNode } = useReactFlow();
-72 |   // 실시간 상태 업데이트를 위한 상태
-73 |   const [nodeState, setNodeState] = useState({ selected: false });
-74 |   const [isVisible, setIsVisible] = useState(false);
-75 |   
-76 |   // 렌더링 전에 isVisible 상태를 설정
-77 |   useEffect(() => {
-78 |     setIsVisible(!!data?.isInspected);
-79 |   }, [data?.isInspected]);
-80 | 
-81 |   // 실시간 노드 상태 업데이트
-82 |   useEffect(() => {
-83 |     // 노드 상태 업데이트 함수
-84 |     const updateNodeState = () => {
-85 |       const currentNode = getNode(id);
-86 |       if (currentNode) {
-87 |         setNodeState({
-88 |           selected: !!currentNode.selected,
-[TRUNCATED]
-```
-
-src/components/debug/ViewportLogger.tsx
-```
-1 | import { useStore } from '@xyflow/react';
-2 | import { shallow } from 'zustand/shallow';
-3 | 
-4 | /**
-5 |  * ViewportLogger 컴포넌트는 현재 React Flow 뷰포트의 상태를 표시합니다.
-6 |  * x, y 위치와 줌 레벨을 실시간으로 보여줍니다.
-7 |  */
-8 | const selector = (state: any) => ({
-9 |   x: state.transform?.[0] || 0,
-10 |   y: state.transform?.[1] || 0,
-11 |   zoom: state.transform?.[2] || 1,
-12 | });
-13 | 
-14 | export function ViewportLogger() {
-15 |   const { x, y, zoom } = useStore(selector, shallow);
-16 | 
-17 |   return (
-18 |     <div className="bg-muted p-2 rounded border text-xs mt-2">
-19 |       <h3 className="font-bold mb-1 border-b pb-1">뷰포트 로거</h3>
-20 |       <div>
-21 |         <span>x: {x.toFixed(2)}</span>, <span>y: {y.toFixed(2)}</span>, <span>zoom: {zoom.toFixed(2)}</span>
-22 |       </div>
-23 |     </div>
-24 |   );
-25 | } 
 ```
 
 src/components/cards/CardList.test.tsx
@@ -6461,6 +5108,235 @@ src/components/cards/TagFilter.tsx
 [TRUNCATED]
 ```
 
+src/components/debug/DevTools.tsx
+```
+1 | import { useState } from 'react';
+2 | import { Panel } from '@xyflow/react';
+3 | import { ViewportLogger } from './ViewportLogger';
+4 | import { NodeInspector } from './NodeInspector';
+5 | import { ChangeLogger, useChangeLogger, type ChangeLoggerHandlers } from './ChangeLogger';
+6 | 
+7 | /**
+8 |  * React Flow 디버깅을 위한 DevTools 컴포넌트
+9 |  * 뷰포트 로거, 노드 인스펙터, 변경 로거를 포함합니다.
+10 |  */
+11 | export default function DevTools() {
+12 |   const [showViewport, setShowViewport] = useState(false);
+13 |   const [showNodeInspector, setShowNodeInspector] = useState(false);
+14 |   const [showChangeLogger, setShowChangeLogger] = useState(false);
+15 | 
+16 |   return (
+17 |     <Panel 
+18 |       position="top-left" 
+19 |       className="bg-card shadow p-3 rounded-md z-50"
+20 |     >
+21 |       <div className="flex flex-col gap-2">
+22 |         <div className="flex gap-2 justify-center items-center">
+23 |           <button
+24 |             onClick={() => setShowViewport(!showViewport)}
+25 |             className={`px-2 py-1 text-xs rounded ${
+26 |               showViewport ? 'bg-blue-500 text-white' : 'bg-gray-200'
+27 |             }`}
+28 |           >
+29 |             뷰포트 로거 {showViewport ? '숨기기' : '보기'}
+30 |           </button>
+31 |           <button
+32 |             onClick={() => setShowNodeInspector(!showNodeInspector)}
+33 |             className={`px-2 py-1 text-xs rounded ${
+34 |               showNodeInspector ? 'bg-blue-500 text-white' : 'bg-gray-200'
+35 |             }`}
+36 |           >
+37 |             노드 인스펙터 {showNodeInspector ? '숨기기' : '보기'}
+38 |           </button>
+39 |           <button
+40 |             onClick={() => setShowChangeLogger(!showChangeLogger)}
+41 |             className={`px-2 py-1 text-xs rounded ${
+42 |               showChangeLogger ? 'bg-blue-500 text-white' : 'bg-gray-200'
+43 |             }`}
+44 |           >
+45 |             변경 로거 {showChangeLogger ? '숨기기' : '보기'}
+46 |           </button>
+47 |         </div>
+48 |         
+49 |         {showViewport && <ViewportLogger />}
+50 |         {showNodeInspector && <NodeInspector />}
+51 |         {showChangeLogger && <ChangeLogger />}
+52 |       </div>
+53 |     </Panel>
+54 |   );
+55 | }
+56 | 
+57 | // 노드와 엣지 변경 감지를 위한 훅 익스포트
+58 | export const useChangeLoggerHooks = (): ChangeLoggerHandlers => {
+59 |   const [, , handlers] = useChangeLogger();
+60 |   return handlers;
+61 | } 
+```
+
+src/components/debug/InitDatabase.tsx
+```
+1 | /**
+2 |  * 파일명: InitDatabase.tsx
+3 |  * 목적: 개발 환경에서 데이터베이스 초기화
+4 |  * 역할: 개발 환경에서만 데이터베이스를 초기화하는 컴포넌트
+5 |  * 작성일: 2025-03-30
+6 |  */
+7 | 
+8 | 'use client';
+9 | 
+10 | import { useEffect } from 'react';
+11 | 
+12 | /**
+13 |  * InitDatabase: 개발 환경에서만 데이터베이스를 초기화하는 컴포넌트
+14 |  * @returns null - UI를 렌더링하지 않음
+15 |  */
+16 | export default function InitDatabase() {
+17 |   useEffect(() => {
+18 |     const initDatabase = async () => {
+19 |       if (process.env.NEXT_PUBLIC_ENABLE_DB_INIT !== 'true') {
+20 |         return;
+21 |       }
+22 | 
+23 |       try {
+24 |         const response = await fetch('/api/db-init');
+25 |         if (!response.ok) {
+26 |           throw new Error('Failed to initialize database');
+27 |         }
+28 |         console.log('Database initialized successfully');
+29 |       } catch (error) {
+30 |         console.error('Error initializing database:', error);
+31 |       }
+32 |     };
+33 | 
+34 |     initDatabase();
+35 |   }, []);
+36 | 
+37 |   return null;
+38 | } 
+```
+
+src/components/debug/NodeInspector.tsx
+```
+1 | import { useEffect, useState, useCallback } from 'react';
+2 | import { useReactFlow, Node, NodeProps, NodeToolbar, Position, useOnSelectionChange } from '@xyflow/react';
+3 | 
+4 | // 노드 데이터 타입 정의
+5 | interface NodeData {
+6 |   [key: string]: any;
+7 |   isInspected?: boolean;
+8 | }
+9 | 
+10 | /**
+11 |  * NodeInspector 컴포넌트는 React Flow의 노드를 검사할 수 있는 기능을 제공합니다.
+12 |  * 컴포넌트가 마운트되면 모든 노드의 정보가 노드 아래에 표시됩니다.
+13 |  */
+14 | export function NodeInspector() {
+15 |   const { getNodes, setNodes } = useReactFlow();
+16 |   // 노드 상태가 변경될 때마다 업데이트하기 위한 상태
+17 |   const [updateTrigger, setUpdateTrigger] = useState(0);
+18 | 
+19 |   // 노드 선택 변경을 감지하는 리스너 추가
+20 |   useOnSelectionChange({
+21 |     onChange: () => {
+22 |       // 선택 상태가 변경될 때마다 업데이트 트리거
+23 |       setUpdateTrigger(prev => prev + 1);
+24 |     },
+25 |   });
+26 | 
+27 |   // 마운트될 때와 노드 선택 상태가 변경될 때마다 모든 노드의 isInspected를 true로 설정
+28 |   useEffect(() => {
+29 |     // 모든 노드의 isInspected 속성 업데이트
+30 |     setNodes(nodes => 
+31 |       nodes.map(node => ({
+32 |         ...node,
+33 |         data: {
+34 |           ...node.data,
+35 |           isInspected: true
+36 |         }
+37 |       }))
+38 |     );
+39 | 
+40 |     // 언마운트될 때 모든 노드의 isInspected를 false로 설정
+41 |     return () => {
+42 |       setNodes(nodes => 
+43 |         nodes.map(node => ({
+44 |           ...node,
+45 |           data: {
+46 |             ...node.data,
+47 |             isInspected: false
+48 |           }
+49 |         }))
+50 |       );
+51 |     };
+52 |   }, [setNodes, updateTrigger]);
+53 | 
+54 |   // 노드 인스펙터 컴포넌트 주석 처리
+55 |   // return (
+56 |   //   <div className="bg-muted p-2 rounded border text-xs mt-2">
+57 |   //     <h3 className="font-bold mb-1 border-b pb-1">노드 인스펙터</h3>
+58 |   //     <div className="text-muted-foreground">
+59 |   //       각 노드 아래에 노드 정보가 실시간으로 표시됩니다.
+60 |   //     </div>
+61 |   //   </div>
+62 |   // );
+63 | }
+64 | 
+65 | /**
+66 |  * NodeInspect 컴포넌트는 각 노드에 추가되어 노드의 데이터를 표시합니다.
+67 |  * 실시간으로 노드 상태를 반영합니다.
+68 |  */
+69 | export function NodeInspect(props: NodeProps) {
+70 |   const { data, id, type } = props;
+71 |   const { getNode } = useReactFlow();
+72 |   // 실시간 상태 업데이트를 위한 상태
+73 |   const [nodeState, setNodeState] = useState({ selected: false });
+74 |   const [isVisible, setIsVisible] = useState(false);
+75 |   
+76 |   // 렌더링 전에 isVisible 상태를 설정
+77 |   useEffect(() => {
+78 |     setIsVisible(!!data?.isInspected);
+79 |   }, [data?.isInspected]);
+80 | 
+81 |   // 실시간 노드 상태 업데이트
+82 |   useEffect(() => {
+83 |     // 노드 상태 업데이트 함수
+84 |     const updateNodeState = () => {
+85 |       const currentNode = getNode(id);
+86 |       if (currentNode) {
+87 |         setNodeState({
+88 |           selected: !!currentNode.selected,
+[TRUNCATED]
+```
+
+src/components/debug/ViewportLogger.tsx
+```
+1 | import { useStore } from '@xyflow/react';
+2 | import { shallow } from 'zustand/shallow';
+3 | 
+4 | /**
+5 |  * ViewportLogger 컴포넌트는 현재 React Flow 뷰포트의 상태를 표시합니다.
+6 |  * x, y 위치와 줌 레벨을 실시간으로 보여줍니다.
+7 |  */
+8 | const selector = (state: any) => ({
+9 |   x: state.transform?.[0] || 0,
+10 |   y: state.transform?.[1] || 0,
+11 |   zoom: state.transform?.[2] || 1,
+12 | });
+13 | 
+14 | export function ViewportLogger() {
+15 |   const { x, y, zoom } = useStore(selector, shallow);
+16 | 
+17 |   return (
+18 |     <div className="bg-muted p-2 rounded border text-xs mt-2">
+19 |       <h3 className="font-bold mb-1 border-b pb-1">뷰포트 로거</h3>
+20 |       <div>
+21 |         <span>x: {x.toFixed(2)}</span>, <span>y: {y.toFixed(2)}</span>, <span>zoom: {zoom.toFixed(2)}</span>
+22 |       </div>
+23 |     </div>
+24 |   );
+25 | } 
+```
+
 src/components/editor/DocumentViewer.tsx
 ```
 1 | 'use client';
@@ -6697,6 +5573,271 @@ src/components/editor/TiptapViewer.tsx
 39 | } 
 ```
 
+src/components/ideamap/DagreNodePositioning.test.tsx
+```
+1 | import React from 'react';
+2 | import { render } from '@testing-library/react';
+3 | import { ReactFlowProvider } from '@xyflow/react';
+4 | import DagreNodePositioning from './DagreNodePositioning';
+5 | import { vi } from 'vitest';
+6 | import { Edge } from '@xyflow/react';
+7 | 
+8 | // 단순 렌더링 테스트
+9 | describe('DagreNodePositioning', () => {
+10 |   it('컴포넌트가 오류 없이 렌더링되어야 합니다', () => {
+11 |     const dummyOptions = { rankdir: 'TB' as const };
+12 |     const dummySetNodes = vi.fn();
+13 |     const dummySetEdges = vi.fn();
+14 |     const dummySetViewIsFit = vi.fn();
+15 |     const dummyEdges: Edge[] = [];
+16 |     
+17 |     render(
+18 |       <ReactFlowProvider>
+19 |         <DagreNodePositioning
+20 |           Options={dummyOptions}
+21 |           Edges={dummyEdges}
+22 |           SetEdges={dummySetEdges}
+23 |           SetNodes={dummySetNodes}
+24 |           SetViewIsFit={dummySetViewIsFit}
+25 |         />
+26 |       </ReactFlowProvider>
+27 |     );
+28 |   });
+29 | }); 
+```
+
+src/components/ideamap/DagreNodePositioning.tsx
+```
+1 | import React, { useState, useEffect } from 'react';
+2 | import { useReactFlow, Node, Edge, Position } from '@xyflow/react';
+3 | import dagre from 'dagre';
+4 | import defaultConfig from '../../config/uiOptions.json';
+5 | 
+6 | interface DagreNodePositioningProps {
+7 |   Options: { rankdir: 'TB' | 'LR' | 'BT' | 'RL' };
+8 |   Edges: Edge[];
+9 |   SetEdges: (edges: Edge[]) => void;
+10 |   SetNodes: (nodes: Node[]) => void;
+11 |   SetViewIsFit: (value: boolean) => void;
+12 | }
+13 | 
+14 | // 기본 CardNode의 크기 - 설정 파일에서 일관되게 가져오기
+15 | const nodeWidth = defaultConfig.layout.nodeSize?.width || 130;
+16 | const nodeHeight = defaultConfig.layout.nodeSize?.height || 48;
+17 | 
+18 | const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
+19 |   const [nodesPositioned, setNodesPositioned] = useState(false);
+20 |   const { fitView, getNodes } = useReactFlow();
+21 | 
+22 |   // React Flow 인스턴스에서 노드 직접 가져오기
+23 |   const flattenedNodes = getNodes();
+24 | 
+25 |   useEffect(() => {
+26 |     // 노드가 존재하는지 확인
+27 |     if (flattenedNodes.length > 0) {
+28 |       const dagreGraph = new dagre.graphlib.Graph();
+29 |       dagreGraph.setDefaultEdgeLabel(() => ({}));
+30 |       dagreGraph.setGraph(Options);
+31 | 
+32 |       // 모든 노드를 dagre 그래프에 등록 (기본값 사용)
+33 |       flattenedNodes.forEach((node) => {
+34 |         // 실제 측정된 크기가 없으므로 기본값 사용
+35 |         dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+36 |       });
+37 | 
+38 |       // 엣지 등록
+39 |       Edges.forEach((edge) => {
+40 |         dagreGraph.setEdge(edge.source, edge.target);
+41 |       });
+42 | 
+43 |       // 레이아웃 계산
+44 |       dagre.layout(dagreGraph);
+45 | 
+46 |       // 각 노드의 위치를 업데이트
+47 |       const layoutedNodes = flattenedNodes.map((node) => {
+48 |         const nodeWithPosition = dagreGraph.node(node.id);
+49 |         if (!nodeWithPosition) {
+50 |           return node;
+51 |         }
+52 | 
+53 |         let updatedNode = {
+54 |           ...node,
+55 |           position: {
+56 |             x: nodeWithPosition.x - nodeWidth / 2,
+57 |             y: nodeWithPosition.y - nodeHeight / 2
+58 |           },
+59 |           data: { ...node.data }
+60 |         } as Node;
+61 | 
+62 |         // 레이아웃 방향에 따라 핸들 위치 지정
+63 |         if (Options.rankdir === 'TB' || Options.rankdir === 'BT') {
+64 |           updatedNode.targetPosition = Position.Top;
+65 |           updatedNode.sourcePosition = Position.Bottom;
+66 |         } else if (Options.rankdir === 'LR' || Options.rankdir === 'RL') {
+67 |           updatedNode.targetPosition = Position.Left;
+68 |           updatedNode.sourcePosition = Position.Right;
+69 |         }
+70 |         return updatedNode;
+71 |       });
+72 | 
+73 |       // 엣지 핸들 업데이트
+74 |       const layoutedEdges = Edges.map(edge => {
+75 |         const updatedEdge = { ...edge };
+76 | 
+77 |         // 방향에 따라 엣지 핸들 위치 설정
+78 |         if (Options.rankdir === 'TB' || Options.rankdir === 'BT') {
+[TRUNCATED]
+```
+
+src/components/ideamap/DebugPanel.tsx
+```
+1 | import React, { useState, useEffect } from 'react';
+2 | import { useReactFlow, NodeChange, EdgeChange } from '@xyflow/react';
+3 | 
+4 | interface DebugPanelProps {
+5 |   nodeChanges?: NodeChange[];
+6 |   edgeChanges?: EdgeChange[];
+7 | }
+8 | 
+9 | const DebugPanel: React.FC<DebugPanelProps> = ({ nodeChanges, edgeChanges }) => {
+10 |   const [isOpen, setIsOpen] = useState(false);
+11 |   const { getViewport, getNodes } = useReactFlow();
+12 |   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+13 |   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+14 |   const [logs, setLogs] = useState<Array<{ time: string; message: string }>>([]);
+15 | 
+16 |   // 뷰포트 업데이트
+17 |   useEffect(() => {
+18 |     const interval = setInterval(() => {
+19 |       const currentViewport = getViewport();
+20 |       setViewport(currentViewport);
+21 |     }, 100);
+22 | 
+23 |     return () => clearInterval(interval);
+24 |   }, [getViewport]);
+25 | 
+26 |   // 로그 추가 함수
+27 |   const addLog = (message: string) => {
+28 |     const time = new Date().toLocaleTimeString();
+29 |     setLogs(prev => [...prev.slice(-9), { time, message }]);
+30 |   };
+31 | 
+32 |   // 노드 변경 시 로그 추가
+33 |   useEffect(() => {
+34 |     if (nodeChanges && nodeChanges.length > 0) {
+35 |       const message = `노드 변경: ${nodeChanges.map(c => `${c.type} ${c.id}`).join(', ')}`;
+36 |       addLog(message);
+37 |     }
+38 |   }, [nodeChanges]);
+39 | 
+40 |   // 엣지 변경 시 로그 추가
+41 |   useEffect(() => {
+42 |     if (edgeChanges && edgeChanges.length > 0) {
+43 |       const message = `엣지 변경: ${edgeChanges.map(c => `${c.type} ${c.id}`).join(', ')}`;
+44 |       addLog(message);
+45 |     }
+46 |   }, [edgeChanges]);
+47 | 
+48 |   // 선택된 노드 정보
+49 |   const selectedNode = selectedNodeId 
+50 |     ? getNodes().find(node => node.id === selectedNodeId) 
+51 |     : null;
+52 | 
+53 |   return (
+54 |     <div className="fixed left-2 top-16 z-50">
+55 |       <button 
+56 |         onClick={() => setIsOpen(!isOpen)}
+57 |         className="mb-2 px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+58 |       >
+59 |         {isOpen ? '디버그 패널 닫기' : '디버그 패널 열기'}
+60 |       </button>
+61 |       
+62 |       {isOpen && (
+63 |         <div className="bg-white p-3 rounded shadow-lg border border-gray-200 w-64 max-h-[80vh] overflow-y-auto">
+64 |           <div className="mb-3">
+65 |             <h3 className="text-sm font-bold border-b pb-1 mb-2">뷰포트 정보</h3>
+66 |             <div className="text-xs">
+67 |               <div>X: {viewport.x.toFixed(2)}</div>
+68 |               <div>Y: {viewport.y.toFixed(2)}</div>
+69 |               <div>Zoom: {viewport.zoom.toFixed(2)}</div>
+[TRUNCATED]
+```
+
+src/components/ideamap/LayoutControls.tsx
+```
+1 | import React from 'react';
+2 | import { Button } from '@/components/ui/button';
+3 | import {
+4 |   DropdownMenu,
+5 |   DropdownMenuContent,
+6 |   DropdownMenuItem,
+7 |   DropdownMenuLabel,
+8 |   DropdownMenuSeparator,
+9 |   DropdownMenuTrigger,
+10 | } from '@/components/ui/dropdown-menu';
+11 | import { Layout, LayoutGrid, AlignHorizontalJustifyCenter, AlignVerticalJustifyCenter } from 'lucide-react';
+12 | import { toast } from 'sonner';
+13 | 
+14 | interface LayoutControlsProps {
+15 |   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
+16 |   onAutoLayout: () => void;
+17 |   onSaveLayout: () => void;
+18 | }
+19 | 
+20 | export default function LayoutControls({ 
+21 |   onLayoutChange, 
+22 |   onAutoLayout, 
+23 |   onSaveLayout 
+24 | }: LayoutControlsProps) {
+25 |   return (
+26 |     <DropdownMenu>
+27 |       <DropdownMenuTrigger asChild>
+28 |         <Button variant="outline" size="icon">
+29 |           <Layout className="h-4 w-4" />
+30 |         </Button>
+31 |       </DropdownMenuTrigger>
+32 |       <DropdownMenuContent align="end" className="w-56">
+33 |         <DropdownMenuLabel>레이아웃 옵션</DropdownMenuLabel>
+34 |         <DropdownMenuSeparator />
+35 |         <DropdownMenuItem 
+36 |           onClick={() => onLayoutChange('horizontal')}
+37 |           className="flex items-center cursor-pointer"
+38 |         >
+39 |           <AlignHorizontalJustifyCenter className="mr-2 h-4 w-4" />
+40 |           <span>수평 레이아웃</span>
+41 |         </DropdownMenuItem>
+42 |         <DropdownMenuItem 
+43 |           onClick={() => onLayoutChange('vertical')}
+44 |           className="flex items-center cursor-pointer"
+45 |         >
+46 |           <AlignVerticalJustifyCenter className="mr-2 h-4 w-4" />
+47 |           <span>수직 레이아웃</span>
+48 |         </DropdownMenuItem>
+49 |         <DropdownMenuSeparator />
+50 |         <DropdownMenuItem 
+51 |           onClick={onAutoLayout}
+52 |           className="flex items-center cursor-pointer"
+53 |         >
+54 |           <LayoutGrid className="mr-2 h-4 w-4" />
+55 |           <span>자동 배치</span>
+56 |         </DropdownMenuItem>
+57 |         <DropdownMenuItem 
+58 |           onClick={onSaveLayout}
+59 |           className="flex items-center cursor-pointer"
+60 |         >
+61 |           <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+62 |             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+63 |             <polyline points="17 21 17 13 7 13 7 21" />
+64 |             <polyline points="7 3 7 8 15 8" />
+65 |           </svg>
+66 |           <span>레이아웃 저장</span>
+67 |         </DropdownMenuItem>
+68 |       </DropdownMenuContent>
+69 |     </DropdownMenu>
+70 |   );
+71 | } 
+```
+
 src/components/layout/ClientLayout.tsx
 ```
 1 | /**
@@ -6835,7 +5976,7 @@ src/components/layout/MainCanvas.test.tsx
 1 | /**
 2 |  * 파일명: MainCanvas.test.tsx
 3 |  * 목적: MainCanvas 컴포넌트 테스트
-4 |  * 역할: MainCanvas가 적절하게 렌더링되고 Board 컴포넌트에 올바른 props를 전달하는지 테스트
+4 |  * 역할: MainCanvas가 적절하게 렌더링되고 IdeaMap 컴포넌트에 올바른 props를 전달하는지 테스트
 5 |  * 작성일: 2025-03-28
 6 |  */
 7 | 
@@ -6856,34 +5997,34 @@ src/components/layout/MainCanvas.test.tsx
 22 |   ),
 23 | }));
 24 | 
-25 | vi.mock('@/components/board/components/Board', () => ({
+25 | vi.mock('@/components/ideamap/components/IdeaMap', () => ({
 26 |   default: ({ onSelectCard, className, showControls }: any) => (
-27 |     <div 
-28 |       data-testid="board-component"
+27 |     <div
+28 |       data-testid="ideamap-component"
 29 |       data-selectcard={!!onSelectCard}
 30 |       data-classname={className}
 31 |       data-showcontrols={showControls}
 32 |     >
-33 |       Board Component
+33 |       IdeaMap Component
 34 |     </div>
 35 |   ),
 36 | }));
 37 | 
 38 | describe('MainCanvas', () => {
-39 |   it('renders ReactFlowProvider and Board component with correct props', () => {
+39 |   it('renders ReactFlowProvider and IdeaMap component with correct props', () => {
 40 |     render(<MainCanvas />);
-41 |     
+41 | 
 42 |     // ReactFlowProvider가 렌더링되었는지 확인
 43 |     expect(screen.getByTestId('react-flow-provider')).toBeInTheDocument();
-44 |     
-45 |     // Board 컴포넌트가 렌더링되었는지 확인
-46 |     const boardComponent = screen.getByTestId('board-component');
-47 |     expect(boardComponent).toBeInTheDocument();
-48 |     
-49 |     // Board 컴포넌트에 올바른 props가 전달되었는지 확인
-50 |     expect(boardComponent.getAttribute('data-selectcard')).toBe('true');
-51 |     expect(boardComponent.getAttribute('data-classname')).toBe('bg-background');
-52 |     expect(boardComponent.getAttribute('data-showcontrols')).toBe('true');
+44 | 
+45 |     // IdeaMap 컴포넌트가 렌더링되었는지 확인
+46 |     const ideaMapComponent = screen.getByTestId('ideamap-component');
+47 |     expect(ideaMapComponent).toBeInTheDocument();
+48 | 
+49 |     // IdeaMap 컴포넌트에 올바른 props가 전달되었는지 확인
+50 |     expect(ideaMapComponent.getAttribute('data-selectcard')).toBe('true');
+51 |     expect(ideaMapComponent.getAttribute('data-classname')).toBe('bg-background');
+52 |     expect(ideaMapComponent.getAttribute('data-showcontrols')).toBe('true');
 53 |   });
 54 | }); 
 ```
@@ -6895,12 +6036,12 @@ src/components/layout/MainCanvas.tsx
 3 | import { useAppStore } from '@/store/useAppStore';
 4 | import { ReactFlowProvider } from '@xyflow/react';
 5 | import { Loader2 } from 'lucide-react';
-6 | import Board from '@/components/board/components/Board';
+6 | import Board from '@/components/ideamap/components/IdeaMap';
 7 | 
 8 | // 외부 내보내기 컴포넌트
 9 | export function MainCanvas() {
 10 |   const { selectCard } = useAppStore();
-11 |   
+11 | 
 12 |   return (
 13 |     <ReactFlowProvider>
 14 |       <div className="w-full h-full pt-14">
@@ -7025,7 +6166,7 @@ src/components/layout/MainToolbar.tsx
 13 | export function MainToolbar() {
 14 |   const {
 15 |     applyLayout,
-16 |     saveBoardLayout,
+16 |     saveBoardLayout: saveIdeaMapLayout,
 17 |     layoutDirection
 18 |   } = useAppStore();
 19 | 
@@ -7154,7 +6295,7 @@ src/components/layout/ProjectToolbar.test.tsx
 63 | });
 64 | 
 65 | // 모든 모킹은 import 문 전에
-66 | vi.mock('@/lib/board-constants', () => ({
+66 | vi.mock('@/lib/ideamap-constants', () => ({
 67 |     SNAP_GRID_OPTIONS: [
 68 |         { value: '0', label: 'Off' },
 69 |         { value: '15', label: '15px' }
@@ -7215,7 +6356,7 @@ src/components/layout/ProjectToolbar.tsx
 40 | import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 41 | import { toast } from 'sonner';
 42 | import { ConnectionLineType, MarkerType } from '@xyflow/react';
-43 | import { BoardSettings } from '@/lib/board-utils';
+43 | import { IdeaMapSettings } from '@/lib/ideamap-utils';
 44 | import {
 45 |   SNAP_GRID_OPTIONS,
 46 |   CONNECTION_TYPE_OPTIONS,
@@ -7224,59 +6365,59 @@ src/components/layout/ProjectToolbar.tsx
 49 |   MARKER_SIZE_OPTIONS,
 50 |   EDGE_COLOR_OPTIONS,
 51 |   EDGE_ANIMATION_OPTIONS
-52 | } from '@/lib/board-constants';
+52 | } from '@/lib/ideamap-constants';
 53 | import createLogger from '@/lib/logger';
-54 | 
-55 | // 모듈별 로거 생성
-56 | const logger = createLogger('ProjectToolbar');
-57 | 
-58 | export function ProjectToolbar() {
-59 |   // useAppStore에서 프로젝트 정보와 액션을 가져옴
-60 |   const {
-61 |     layoutDirection,
-62 |     setLayoutDirection,
-63 |     boardSettings,
-64 |     updateBoardSettings,
-65 |     saveBoardLayout,
-66 |     logoutAction,
-67 |     projects,
-68 |     activeProjectId,
-69 |     fetchProjects,
-70 |     createProject,
-71 |     setActiveProject
-72 |   } = useAppStore();
-73 | 
-74 |   // 활성 프로젝트 정보 가져오기
-75 |   const activeProject = useAppStore(selectActiveProject);
-76 | 
-77 |   // 프로젝트 이름과 작성자 정보 표시
-78 |   const displayProjectName = activeProject
-79 |     ? (activeProject.ownerNickname
-80 |       ? `${activeProject.name} - ${activeProject.ownerNickname}`
-81 |       : activeProject.name)
-82 |     : '프로젝트를 선택하세요';
-83 | 
-84 |   // 저장 핸들러
-85 |   const handleSaveLayout = useCallback(() => {
-86 |     // saveBoardLayout 액션을 호출하여 레이아웃 저장 처리
-87 |     saveBoardLayout();
-88 |   }, [saveBoardLayout]);
+54 | import {
+55 |   IDEAMAP_LAYOUT_STORAGE_KEY,
+56 |   IDEAMAP_EDGES_STORAGE_KEY,
+57 |   IDEAMAP_TRANSFORM_STORAGE_KEY
+58 | } from '@/lib/ideamap-constants';
+59 | 
+60 | // 모듈별 로거 생성
+61 | const logger = createLogger('ProjectToolbar');
+62 | 
+63 | export function ProjectToolbar() {
+64 |   // useAppStore에서 프로젝트 정보와 액션을 가져옴
+65 |   const {
+66 |     layoutDirection,
+67 |     setLayoutDirection,
+68 |     // rename board -> ideaMap
+69 |     ideaMapSettings,
+70 |     updateIdeaMapSettings,
+71 |     saveIdeaMapLayout,
+72 |     logoutAction,
+73 |     projects,
+74 |     activeProjectId,
+75 |     fetchProjects,
+76 |     createProject,
+77 |     setActiveProject
+78 |   } = useAppStore();
+79 | 
+80 |   // 활성 프로젝트 정보 가져오기
+81 |   const activeProject = useAppStore(selectActiveProject);
+82 | 
+83 |   // 프로젝트 이름과 작성자 정보 표시
+84 |   const displayProjectName = activeProject
+85 |     ? (activeProject.ownerNickname
+86 |       ? `${activeProject.name} - ${activeProject.ownerNickname}`
+87 |       : activeProject.name)
+88 |     : '프로젝트를 선택하세요';
 89 | 
-90 |   // 프로젝트 정보 표시 핸들러
-91 |   const handleShowProjectInfo = useCallback(() => {
-92 |     if (activeProject) {
-93 |       toast.info(`프로젝트 정보: ${activeProject.name} (ID: ${activeProject.id})`);
-94 |     } else {
-95 |       toast.info('선택된 프로젝트가 없습니다.');
-96 |     }
-97 |     // TODO: 프로젝트 정보 모달 표시
-98 |   }, [activeProject]);
-99 | 
-100 |   // 프로젝트 불러오기 핸들러
-101 |   const handleLoadProject = useCallback(() => {
-102 |     try {
-103 |       // API 호출을 통해 프로젝트 목록 가져오기 (아직 API 미구현)
-104 |       fetchProjects();
+90 |   // 저장 핸들러
+91 |   const handleSaveLayout = useCallback(() => {
+92 |     // saveIdeaMapLayout 액션을 호출하여 레이아웃 저장 처리
+93 |     saveIdeaMapLayout();
+94 |   }, [saveIdeaMapLayout]);
+95 | 
+96 |   // 프로젝트 정보 표시 핸들러
+97 |   const handleShowProjectInfo = useCallback(() => {
+98 |     if (activeProject) {
+99 |       toast.info(`프로젝트 정보: ${activeProject.name} (ID: ${activeProject.id})`);
+100 |     } else {
+101 |       toast.info('선택된 프로젝트가 없습니다.');
+102 |     }
+103 |     // TODO: 프로젝트 정보 모달 표시
+104 |   }, [activeProject]);
 [TRUNCATED]
 ```
 
@@ -7452,86 +6593,86 @@ src/components/layout/Sidebar.tsx
 2 | 
 3 | import { useEffect, useState, useRef, useMemo } from 'react';
 4 | import { useAppStore } from '@/store/useAppStore';
-5 | import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
-6 | import { Button } from '@/components/ui/button';
-7 | import { motion, AnimatePresence } from 'framer-motion';
-8 | import { formatDate } from '@/lib/utils';
-9 | import { Badge } from '@/components/ui/badge';
-10 | import { toast } from 'sonner';
-11 | import TiptapViewer from '@/components/editor/TiptapViewer';
-12 | import {
-13 |   Dialog,
-14 |   DialogContent,
-15 |   DialogHeader,
-16 |   DialogTitle,
-17 |   DialogDescription,
-18 |   DialogFooter,
-19 |   DialogTrigger,
-20 |   DialogClose,
-21 | } from '@/components/ui/dialog';
-22 | import { cn } from '@/lib/utils';
-23 | import { useResizable } from '@/hooks/useResizable';
-24 | import DocumentViewer from '@/components/editor/DocumentViewer';
-25 | import CardList from '@/components/cards/CardList';
-26 | import type { Card } from '@/types/card';
-27 | import { EditCardModal } from '@/components/cards/EditCardModal';
-28 | import { Portal } from '@/components/ui/portal';
-29 | import { useAuth } from '@/contexts/AuthContext';
-30 | import { useRouter } from 'next/navigation';
-31 | 
-32 | // 카드 인터페이스 정의
-33 | interface Tag {
-34 |   id: string;
-35 |   name: string;
-36 | }
-37 | 
-38 | interface CardTag {
-39 |   id: string;
-40 |   tag: Tag;
-41 | }
-42 | 
-43 | interface CardItem extends Card {
-44 |   cardTags?: CardTag[];
-45 |   // 엣지 정보를 통해 계층 구조 파악을 위한 필드
-46 |   parents?: string[];
-47 |   children?: string[];
-48 |   depth?: number;
-49 | }
-50 | 
-51 | interface SidebarProps {
-52 |   className?: string;
-53 | }
-54 | 
-55 | export function Sidebar({ className }: SidebarProps) {
-56 |   const router = useRouter();
-57 |   const {
-58 |     isSidebarOpen,
-59 |     setSidebarOpen,
-60 |     selectedCardId,
-61 |     selectedCardIds,
-62 |     selectCard,
-63 |     sidebarWidth,
-64 |     setSidebarWidth,
-65 |     reactFlowInstance,
-66 |     cards
-67 |   } = useAppStore();
-68 | 
-69 |   // 전역 상태의 cards를 CardItem 타입으로 캐스팅하여 사용
-70 |   const cardsWithType = cards as CardItem[];
-71 | 
-72 |   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
-73 |   const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);
-74 |   const [loading, setLoading] = useState(false);
-75 |   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-76 |   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
-77 |   const [isDeleting, setIsDeleting] = useState(false);
-78 |   // 카드 정보 로드 상태 - Hook 순서 문제 해결을 위해 여기로 이동
-79 |   const [selectedCardsInfo, setSelectedCardsInfo] = useState<Array<{ id: string, title: string, content: string }>>([]);
-80 |   const [hierarchyLoading, setHierarchyLoading] = useState(false);
-81 |   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-82 |   const [editingCardId, setEditingCardId] = useState<string | null>(null);
-83 | 
-84 |   // 제목 표시 부분의 ref 추가
+5 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+6 | import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
+7 | import { Button } from '@/components/ui/button';
+8 | import { motion, AnimatePresence } from 'framer-motion';
+9 | import { formatDate } from '@/lib/utils';
+10 | import { Badge } from '@/components/ui/badge';
+11 | import { toast } from 'sonner';
+12 | import TiptapViewer from '@/components/editor/TiptapViewer';
+13 | import {
+14 |   Dialog,
+15 |   DialogContent,
+16 |   DialogHeader,
+17 |   DialogTitle,
+18 |   DialogDescription,
+19 |   DialogFooter,
+20 |   DialogTrigger,
+21 |   DialogClose,
+22 | } from '@/components/ui/dialog';
+23 | import { cn } from '@/lib/utils';
+24 | import { useResizable } from '@/hooks/useResizable';
+25 | import DocumentViewer from '@/components/editor/DocumentViewer';
+26 | import CardList from '@/components/cards/CardList';
+27 | import type { Card } from '@/types/card';
+28 | import { EditCardModal } from '@/components/cards/EditCardModal';
+29 | import { Portal } from '@/components/ui/portal';
+30 | import { useAuth } from '@/contexts/AuthContext';
+31 | import { useRouter } from 'next/navigation';
+32 | 
+33 | // 카드 인터페이스 정의
+34 | interface Tag {
+35 |   id: string;
+36 |   name: string;
+37 | }
+38 | 
+39 | interface CardTag {
+40 |   id: string;
+41 |   tag: Tag;
+42 | }
+43 | 
+44 | interface CardItem extends Card {
+45 |   cardTags?: CardTag[];
+46 |   // 엣지 정보를 통해 계층 구조 파악을 위한 필드
+47 |   parents?: string[];
+48 |   children?: string[];
+49 |   depth?: number;
+50 | }
+51 | 
+52 | interface SidebarProps {
+53 |   className?: string;
+54 | }
+55 | 
+56 | export function Sidebar({ className }: SidebarProps) {
+57 |   const router = useRouter();
+58 |   const {
+59 |     isSidebarOpen,
+60 |     setSidebarOpen,
+61 |     selectedCardId,
+62 |     selectedCardIds,
+63 |     selectCard,
+64 |     sidebarWidth,
+65 |     setSidebarWidth,
+66 |     reactFlowInstance,
+67 |     cards
+68 |   } = useAppStore();
+69 | 
+70 |   // useIdeaMapStore에서 노드 데이터 가져오기
+71 |   const ideaMapNodes = useIdeaMapStore(state => state.nodes);
+72 | 
+73 |   // 전역 상태의 cards를 CardItem 타입으로 캐스팅하여 사용
+74 |   const cardsWithType = cards as CardItem[];
+75 | 
+76 |   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+77 |   const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);
+78 |   const [loading, setLoading] = useState(false);
+79 |   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+80 |   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+81 |   const [isDeleting, setIsDeleting] = useState(false);
+82 |   // 카드 정보 로드 상태 - Hook 순서 문제 해결을 위해 여기로 이동
+83 |   const [selectedCardsInfo, setSelectedCardsInfo] = useState<Array<{ id: string, title: string, content: string }>>([]);
+84 |   const [hierarchyLoading, setHierarchyLoading] = useState(false);
 [TRUNCATED]
 ```
 
@@ -7612,198 +6753,6 @@ src/components/layout/test-utils.ts
 73 |   vi.clearAllMocks();
 74 |   vi.resetModules();
 75 | }; 
-```
-
-src/components/settings/NodeSizeSettings.test.tsx
-```
-1 | /**
-2 |  * 파일명: NodeSizeSettings.test.tsx
-3 |  * 목적: NodeSizeSettings 컴포넌트 테스트
-4 |  * 역할: 노드 크기 설정 컴포넌트 검증
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | import React from 'react';
-9 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-10 | import { describe, test, expect, vi, beforeEach } from 'vitest';
-11 | import '@testing-library/jest-dom/vitest';
-12 | 
-13 | // ResizeObserver 모킹
-14 | global.ResizeObserver = vi.fn().mockImplementation(() => ({
-15 |   observe: vi.fn(),
-16 |   unobserve: vi.fn(),
-17 |   disconnect: vi.fn(),
-18 | }));
-19 | 
-20 | // updateNodeSize 모킹 함수
-21 | const updateNodeSizeMock = vi.fn();
-22 | const updateNodeInternalsMock = vi.fn();
-23 | 
-24 | // ReactFlow 모킹
-25 | vi.mock('@xyflow/react', () => {
-26 |   return {
-27 |     useReactFlow: () => ({
-28 |       getNodes: () => [{ id: 'node-1' }, { id: 'node-2' }],
-29 |     }),
-30 |     useUpdateNodeInternals: () => updateNodeInternalsMock,
-31 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-32 |   };
-33 | });
-34 | 
-35 | // ThemeContext 모킹
-36 | vi.mock('../../contexts/ThemeContext', () => {
-37 |   return {
-38 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-39 |     useTheme: () => ({
-40 |       theme: {
-41 |         node: {
-42 |           width: 220,
-43 |           height: 48,
-44 |           maxHeight: 180,
-45 |           backgroundColor: '#ffffff',
-46 |           borderColor: '#C1C1C1',
-47 |           borderWidth: 1,
-48 |           borderRadius: 8,
-49 |           selectedBorderColor: '#0071e3',
-50 |           font: {
-51 |             family: 'Pretendard, sans-serif',
-52 |             titleSize: 14,
-53 |             contentSize: 12,
-54 |             tagsSize: 10,
-55 |           }
-56 |         },
-57 |         edge: {
-58 |           color: '#C1C1C1',
-59 |           width: 1,
-60 |           selectedColor: '#0071e3',
-61 |           animated: false,
-62 |         },
-63 |         handle: {
-64 |           size: 8,
-65 |           backgroundColor: '#ffffff',
-66 |           borderColor: '#555555',
-67 |           borderWidth: 1,
-68 |         },
-69 |         layout: {
-70 |           spacing: {
-71 |             horizontal: 30,
-72 |             vertical: 30,
-73 |           },
-74 |           padding: 20,
-75 |         },
-76 |       },
-77 |       updateTheme: vi.fn(),
-78 |       updateNodeSize: updateNodeSizeMock,
-79 |     }),
-80 |   };
-81 | });
-82 | 
-83 | // UI 컴포넌트 모킹
-84 | vi.mock('../../components/ui/slider', () => ({
-85 |   Slider: ({ id, defaultValue, onValueChange }: any) => (
-86 |     <input
-87 |       type="range"
-88 |       min="0"
-89 |       max="500"
-90 |       data-testid={`slider-${id}`}
-91 |       defaultValue={defaultValue}
-92 |       onChange={(e) => onValueChange([parseInt(e.target.value)])}
-93 |     />
-94 |   ),
-95 | }));
-96 | 
-97 | vi.mock('../../components/ui/input', () => ({
-98 |   Input: (props: any) => <input data-testid={props.id || 'input'} {...props} />,
-99 | }));
-100 | 
-[TRUNCATED]
-```
-
-src/components/settings/NodeSizeSettings.tsx
-```
-1 | /**
-2 |  * 파일명: NodeSizeSettings.tsx
-3 |  * 목적: 노드 크기 설정 컴포넌트 제공
-4 |  * 역할: 사용자가 노드 크기를 조정할 수 있는 UI 제공
-5 |  * 작성일: 2025-03-27
-6 |  */
-7 | 
-8 | 'use client';
-9 | 
-10 | import { useState, useEffect } from 'react';
-11 | import { Slider } from "@/components/ui/slider";
-12 | import { Label } from "@/components/ui/label";
-13 | import { Input } from "@/components/ui/input";
-14 | import { Button } from "@/components/ui/button";
-15 | import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-16 | import { useTheme } from '@/contexts/ThemeContext';
-17 | import { useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
-18 | 
-19 | /**
-20 |  * NodeSizeSettings: 노드 크기 조정 컴포넌트
-21 |  * @returns 노드 크기 설정 UI 컴포넌트
-22 |  */
-23 | export function NodeSizeSettings() {
-24 |   const { theme, updateNodeSize } = useTheme();
-25 |   const { getNodes } = useReactFlow();
-26 |   const updateNodeInternals = useUpdateNodeInternals();
-27 |   
-28 |   const [width, setWidth] = useState(theme.node.width);
-29 |   const [height, setHeight] = useState(theme.node.height);
-30 |   const [maxHeight, setMaxHeight] = useState(theme.node.maxHeight);
-31 |   
-32 |   // 입력값이 변경될 때 로컬 상태 업데이트
-33 |   const handleWidthChange = (value: number | string) => {
-34 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-35 |     if (!isNaN(numValue) && numValue > 0) {
-36 |       setWidth(numValue);
-37 |     }
-38 |   };
-39 |   
-40 |   const handleHeightChange = (value: number | string) => {
-41 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-42 |     if (!isNaN(numValue) && numValue > 0) {
-43 |       setHeight(numValue);
-44 |     }
-45 |   };
-46 |   
-47 |   const handleMaxHeightChange = (value: number | string) => {
-48 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
-49 |     if (!isNaN(numValue) && numValue > 0) {
-50 |       setMaxHeight(numValue);
-51 |     }
-52 |   };
-53 |   
-54 |   // 테마에 변경사항 적용
-55 |   const applyChanges = () => {
-56 |     // 테마 업데이트
-57 |     updateNodeSize(width, height, maxHeight);
-58 |     
-59 |     // 모든 노드 업데이트 (내부 상태 갱신)
-60 |     setTimeout(() => {
-61 |       console.log('모든 노드 내부 상태 업데이트');
-62 |       getNodes().forEach(node => {
-63 |         updateNodeInternals(node.id);
-64 |       });
-65 |     }, 100);
-66 |   };
-67 |   
-68 |   // 설정 초기화
-69 |   const resetToDefaults = () => {
-70 |     // 기본값으로 되돌리기
-71 |     const defaultWidth = 130;
-72 |     const defaultHeight = 48;
-73 |     const defaultMaxHeight = 180;
-74 |     
-75 |     setWidth(defaultWidth);
-76 |     setHeight(defaultHeight);
-77 |     setMaxHeight(defaultMaxHeight);
-78 |     
-79 |     // 테마 업데이트
-80 |     updateNodeSize(defaultWidth, defaultHeight, defaultMaxHeight);
-81 |     
-82 |     // 모든 노드 업데이트
-[TRUNCATED]
 ```
 
 src/components/tags/TagForm.test.tsx
@@ -8434,6 +7383,198 @@ src/components/tags/test-utils.ts
 80 |  * @returns {Promise<void>} DOM 변경이 완료될 때까지 기다리는 Promise
 81 |  */
 82 | export const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 0)); 
+```
+
+src/components/settings/NodeSizeSettings.test.tsx
+```
+1 | /**
+2 |  * 파일명: NodeSizeSettings.test.tsx
+3 |  * 목적: NodeSizeSettings 컴포넌트 테스트
+4 |  * 역할: 노드 크기 설정 컴포넌트 검증
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | import React from 'react';
+9 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+10 | import { describe, test, expect, vi, beforeEach } from 'vitest';
+11 | import '@testing-library/jest-dom/vitest';
+12 | 
+13 | // ResizeObserver 모킹
+14 | global.ResizeObserver = vi.fn().mockImplementation(() => ({
+15 |   observe: vi.fn(),
+16 |   unobserve: vi.fn(),
+17 |   disconnect: vi.fn(),
+18 | }));
+19 | 
+20 | // updateNodeSize 모킹 함수
+21 | const updateNodeSizeMock = vi.fn();
+22 | const updateNodeInternalsMock = vi.fn();
+23 | 
+24 | // ReactFlow 모킹
+25 | vi.mock('@xyflow/react', () => {
+26 |   return {
+27 |     useReactFlow: () => ({
+28 |       getNodes: () => [{ id: 'node-1' }, { id: 'node-2' }],
+29 |     }),
+30 |     useUpdateNodeInternals: () => updateNodeInternalsMock,
+31 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+32 |   };
+33 | });
+34 | 
+35 | // ThemeContext 모킹
+36 | vi.mock('../../contexts/ThemeContext', () => {
+37 |   return {
+38 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+39 |     useTheme: () => ({
+40 |       theme: {
+41 |         node: {
+42 |           width: 220,
+43 |           height: 48,
+44 |           maxHeight: 180,
+45 |           backgroundColor: '#ffffff',
+46 |           borderColor: '#C1C1C1',
+47 |           borderWidth: 1,
+48 |           borderRadius: 8,
+49 |           selectedBorderColor: '#0071e3',
+50 |           font: {
+51 |             family: 'Pretendard, sans-serif',
+52 |             titleSize: 14,
+53 |             contentSize: 12,
+54 |             tagsSize: 10,
+55 |           }
+56 |         },
+57 |         edge: {
+58 |           color: '#C1C1C1',
+59 |           width: 1,
+60 |           selectedColor: '#0071e3',
+61 |           animated: false,
+62 |         },
+63 |         handle: {
+64 |           size: 8,
+65 |           backgroundColor: '#ffffff',
+66 |           borderColor: '#555555',
+67 |           borderWidth: 1,
+68 |         },
+69 |         layout: {
+70 |           spacing: {
+71 |             horizontal: 30,
+72 |             vertical: 30,
+73 |           },
+74 |           padding: 20,
+75 |         },
+76 |       },
+77 |       updateTheme: vi.fn(),
+78 |       updateNodeSize: updateNodeSizeMock,
+79 |     }),
+80 |   };
+81 | });
+82 | 
+83 | // UI 컴포넌트 모킹
+84 | vi.mock('../../components/ui/slider', () => ({
+85 |   Slider: ({ id, defaultValue, onValueChange }: any) => (
+86 |     <input
+87 |       type="range"
+88 |       min="0"
+89 |       max="500"
+90 |       data-testid={`slider-${id}`}
+91 |       defaultValue={defaultValue}
+92 |       onChange={(e) => onValueChange([parseInt(e.target.value)])}
+93 |     />
+94 |   ),
+95 | }));
+96 | 
+97 | vi.mock('../../components/ui/input', () => ({
+98 |   Input: (props: any) => <input data-testid={props.id || 'input'} {...props} />,
+99 | }));
+100 | 
+[TRUNCATED]
+```
+
+src/components/settings/NodeSizeSettings.tsx
+```
+1 | /**
+2 |  * 파일명: NodeSizeSettings.tsx
+3 |  * 목적: 노드 크기 설정 컴포넌트 제공
+4 |  * 역할: 사용자가 노드 크기를 조정할 수 있는 UI 제공
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | 'use client';
+9 | 
+10 | import { useState, useEffect } from 'react';
+11 | import { Slider } from "@/components/ui/slider";
+12 | import { Label } from "@/components/ui/label";
+13 | import { Input } from "@/components/ui/input";
+14 | import { Button } from "@/components/ui/button";
+15 | import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+16 | import { useTheme } from '@/contexts/ThemeContext';
+17 | import { useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
+18 | 
+19 | /**
+20 |  * NodeSizeSettings: 노드 크기 조정 컴포넌트
+21 |  * @returns 노드 크기 설정 UI 컴포넌트
+22 |  */
+23 | export function NodeSizeSettings() {
+24 |   const { theme, updateNodeSize } = useTheme();
+25 |   const { getNodes } = useReactFlow();
+26 |   const updateNodeInternals = useUpdateNodeInternals();
+27 |   
+28 |   const [width, setWidth] = useState(theme.node.width);
+29 |   const [height, setHeight] = useState(theme.node.height);
+30 |   const [maxHeight, setMaxHeight] = useState(theme.node.maxHeight);
+31 |   
+32 |   // 입력값이 변경될 때 로컬 상태 업데이트
+33 |   const handleWidthChange = (value: number | string) => {
+34 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+35 |     if (!isNaN(numValue) && numValue > 0) {
+36 |       setWidth(numValue);
+37 |     }
+38 |   };
+39 |   
+40 |   const handleHeightChange = (value: number | string) => {
+41 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+42 |     if (!isNaN(numValue) && numValue > 0) {
+43 |       setHeight(numValue);
+44 |     }
+45 |   };
+46 |   
+47 |   const handleMaxHeightChange = (value: number | string) => {
+48 |     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+49 |     if (!isNaN(numValue) && numValue > 0) {
+50 |       setMaxHeight(numValue);
+51 |     }
+52 |   };
+53 |   
+54 |   // 테마에 변경사항 적용
+55 |   const applyChanges = () => {
+56 |     // 테마 업데이트
+57 |     updateNodeSize(width, height, maxHeight);
+58 |     
+59 |     // 모든 노드 업데이트 (내부 상태 갱신)
+60 |     setTimeout(() => {
+61 |       console.log('모든 노드 내부 상태 업데이트');
+62 |       getNodes().forEach(node => {
+63 |         updateNodeInternals(node.id);
+64 |       });
+65 |     }, 100);
+66 |   };
+67 |   
+68 |   // 설정 초기화
+69 |   const resetToDefaults = () => {
+70 |     // 기본값으로 되돌리기
+71 |     const defaultWidth = 130;
+72 |     const defaultHeight = 48;
+73 |     const defaultMaxHeight = 180;
+74 |     
+75 |     setWidth(defaultWidth);
+76 |     setHeight(defaultHeight);
+77 |     setMaxHeight(defaultMaxHeight);
+78 |     
+79 |     // 테마 업데이트
+80 |     updateNodeSize(defaultWidth, defaultHeight, defaultMaxHeight);
+81 |     
+82 |     // 모든 노드 업데이트
+[TRUNCATED]
 ```
 
 src/components/ui/alert-dialog.tsx
@@ -9671,6 +8812,127 @@ src/components/ui/tooltip.tsx
 61 | export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 ```
 
+src/lib/supabase/client.ts
+```
+1 | /**
+2 |  * 파일명: src/lib/supabase/client.ts
+3 |  * 목적: 클라이언트 환경에서 Supabase 클라이언트 제공
+4 |  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
+5 |  * 작성일: 2025-04-09
+6 |  */
+7 | 
+8 | import { createBrowserClient } from '@supabase/ssr'
+9 | import { Database } from '@/types/supabase'
+10 | import createLogger from '../logger'
+11 | 
+12 | // 로거 생성
+13 | const logger = createLogger('SupabaseClient')
+14 | 
+15 | /**
+16 |  * createClient: 클라이언트 환경에서 Supabase 클라이언트 생성
+17 |  * @returns Supabase 클라이언트 인스턴스
+18 |  */
+19 | export function createClient() {
+20 |   try {
+21 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+22 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+23 |   
+24 |     if (!supabaseUrl || !supabaseKey) {
+25 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
+26 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
+27 |     }
+28 |   
+29 |     return createBrowserClient<Database>(
+30 |       supabaseUrl,
+31 |       supabaseKey,
+32 |       {
+33 |         auth: {
+34 |           flowType: 'pkce',
+35 |           persistSession: true,
+36 |           detectSessionInUrl: true
+37 |         }
+38 |       }
+39 |     )
+40 |   } catch (error) {
+41 |     logger.error('클라이언트 Supabase 클라이언트 생성 실패', error)
+42 |     throw error
+43 |   }
+44 | } 
+```
+
+src/lib/supabase/server.ts
+```
+1 | /**
+2 |  * 파일명: src/lib/supabase/server.ts
+3 |  * 목적: 서버 환경에서 Supabase 클라이언트 제공
+4 |  * 역할: 서버 컴포넌트, 서버 액션, 라우트 핸들러에서 Supabase에 접근할 때 사용
+5 |  * 작성일: 2025-04-09
+6 |  */
+7 | 
+8 | import { createServerClient, type CookieOptions } from '@supabase/ssr'
+9 | import { cookies } from 'next/headers'
+10 | import { Database } from '@/types/supabase'
+11 | import createLogger from '../logger'
+12 | 
+13 | // 로거 생성
+14 | const logger = createLogger('SupabaseServer')
+15 | 
+16 | /**
+17 |  * createClient: 서버 환경에서 Supabase 클라이언트 생성
+18 |  * @returns Supabase 클라이언트 인스턴스
+19 |  */
+20 | export async function createClient() {
+21 |   try {
+22 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+23 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+24 |   
+25 |     if (!supabaseUrl || !supabaseKey) {
+26 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
+27 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
+28 |     }
+29 |   
+30 |     return createServerClient<Database>(
+31 |       supabaseUrl,
+32 |       supabaseKey,
+33 |       {
+34 |         cookies: {
+35 |           async get(name: string) {
+36 |             const cookieStore = await cookies()
+37 |             return cookieStore.get(name)?.value
+38 |           },
+39 |           async set(name: string, value: string, options: CookieOptions) {
+40 |             try {
+41 |               const cookieStore = await cookies()
+42 |               // PKCE 인증 흐름을 위한 code_verifier 쿠키 처리
+43 |               if (name.includes('code_verifier')) {
+44 |                 logger.debug('서버: 코드 검증기 쿠키 설정:', name.substring(0, 12) + '...')
+45 |                 // 쿠키 수명을 10분으로 설정
+46 |                 options.maxAge = 60 * 10
+47 |               }
+48 |               
+49 |               cookieStore.set(name, value, options)
+50 |             } catch (error) {
+51 |               logger.error('서버: 쿠키 설정 중 오류:', error)
+52 |             }
+53 |           },
+54 |           async remove(name: string, options: CookieOptions) {
+55 |             try {
+56 |               const cookieStore = await cookies()
+57 |               cookieStore.delete({ name, ...options })
+58 |             } catch (error) {
+59 |               logger.error('서버: 쿠키 삭제 중 오류:', error)
+60 |             }
+61 |           },
+62 |         },
+63 |       }
+64 |     )
+65 |   } catch (error) {
+66 |     logger.error('서버 Supabase 클라이언트 생성 실패', error)
+67 |     throw error
+68 |   }
+69 | } 
+```
+
 src/tests/mocks/additional-mocks.ts
 ```
 1 | /**
@@ -10608,127 +9870,6 @@ src/tests/utils/react-flow-mock.ts
 80 | }; 
 ```
 
-src/lib/supabase/client.ts
-```
-1 | /**
-2 |  * 파일명: src/lib/supabase/client.ts
-3 |  * 목적: 클라이언트 환경에서 Supabase 클라이언트 제공
-4 |  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
-5 |  * 작성일: 2025-04-09
-6 |  */
-7 | 
-8 | import { createBrowserClient } from '@supabase/ssr'
-9 | import { Database } from '@/types/supabase'
-10 | import createLogger from '../logger'
-11 | 
-12 | // 로거 생성
-13 | const logger = createLogger('SupabaseClient')
-14 | 
-15 | /**
-16 |  * createClient: 클라이언트 환경에서 Supabase 클라이언트 생성
-17 |  * @returns Supabase 클라이언트 인스턴스
-18 |  */
-19 | export function createClient() {
-20 |   try {
-21 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-22 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-23 |   
-24 |     if (!supabaseUrl || !supabaseKey) {
-25 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
-26 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
-27 |     }
-28 |   
-29 |     return createBrowserClient<Database>(
-30 |       supabaseUrl,
-31 |       supabaseKey,
-32 |       {
-33 |         auth: {
-34 |           flowType: 'pkce',
-35 |           persistSession: true,
-36 |           detectSessionInUrl: true
-37 |         }
-38 |       }
-39 |     )
-40 |   } catch (error) {
-41 |     logger.error('클라이언트 Supabase 클라이언트 생성 실패', error)
-42 |     throw error
-43 |   }
-44 | } 
-```
-
-src/lib/supabase/server.ts
-```
-1 | /**
-2 |  * 파일명: src/lib/supabase/server.ts
-3 |  * 목적: 서버 환경에서 Supabase 클라이언트 제공
-4 |  * 역할: 서버 컴포넌트, 서버 액션, 라우트 핸들러에서 Supabase에 접근할 때 사용
-5 |  * 작성일: 2025-04-09
-6 |  */
-7 | 
-8 | import { createServerClient, type CookieOptions } from '@supabase/ssr'
-9 | import { cookies } from 'next/headers'
-10 | import { Database } from '@/types/supabase'
-11 | import createLogger from '../logger'
-12 | 
-13 | // 로거 생성
-14 | const logger = createLogger('SupabaseServer')
-15 | 
-16 | /**
-17 |  * createClient: 서버 환경에서 Supabase 클라이언트 생성
-18 |  * @returns Supabase 클라이언트 인스턴스
-19 |  */
-20 | export async function createClient() {
-21 |   try {
-22 |     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-23 |     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-24 |   
-25 |     if (!supabaseUrl || !supabaseKey) {
-26 |       logger.error('Supabase 환경 변수가 설정되지 않았습니다')
-27 |       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
-28 |     }
-29 |   
-30 |     return createServerClient<Database>(
-31 |       supabaseUrl,
-32 |       supabaseKey,
-33 |       {
-34 |         cookies: {
-35 |           async get(name: string) {
-36 |             const cookieStore = await cookies()
-37 |             return cookieStore.get(name)?.value
-38 |           },
-39 |           async set(name: string, value: string, options: CookieOptions) {
-40 |             try {
-41 |               const cookieStore = await cookies()
-42 |               // PKCE 인증 흐름을 위한 code_verifier 쿠키 처리
-43 |               if (name.includes('code_verifier')) {
-44 |                 logger.debug('서버: 코드 검증기 쿠키 설정:', name.substring(0, 12) + '...')
-45 |                 // 쿠키 수명을 10분으로 설정
-46 |                 options.maxAge = 60 * 10
-47 |               }
-48 |               
-49 |               cookieStore.set(name, value, options)
-50 |             } catch (error) {
-51 |               logger.error('서버: 쿠키 설정 중 오류:', error)
-52 |             }
-53 |           },
-54 |           async remove(name: string, options: CookieOptions) {
-55 |             try {
-56 |               const cookieStore = await cookies()
-57 |               cookieStore.delete({ name, ...options })
-58 |             } catch (error) {
-59 |               logger.error('서버: 쿠키 삭제 중 오류:', error)
-60 |             }
-61 |           },
-62 |         },
-63 |       }
-64 |     )
-65 |   } catch (error) {
-66 |     logger.error('서버 Supabase 클라이언트 생성 실패', error)
-67 |     throw error
-68 |   }
-69 | } 
-```
-
 src/utils/supabase/client.ts
 ```
 1 | /**
@@ -10890,6 +10031,2994 @@ src/utils/supabase/server.ts
 46 |     }
 47 |   )
 48 | } 
+```
+
+src/app/cards/page.test.tsx
+```
+1 | /**
+2 |  * @vitest-environment jsdom
+3 |  */
+4 | 
+5 | import { render, screen } from '@testing-library/react';
+6 | import CardsPage from './page';
+7 | import '@testing-library/jest-dom/vitest';
+8 | import React from 'react';
+9 | import { describe, it, expect, vi } from 'vitest';
+10 | 
+11 | // Next.js의 router 훅 모킹
+12 | vi.mock('next/navigation', () => ({
+13 |   useRouter: vi.fn(() => ({
+14 |     push: vi.fn(),
+15 |     replace: vi.fn(),
+16 |     prefetch: vi.fn(),
+17 |     pathname: '/cards',
+18 |   })),
+19 |   useSearchParams: vi.fn(() => ({
+20 |     get: vi.fn((key) => null),
+21 |     has: vi.fn(() => false),
+22 |     forEach: vi.fn(),
+23 |   })),
+24 | }));
+25 | 
+26 | // TagFilter 컴포넌트 모킹
+27 | vi.mock('@/components/cards/TagFilter', () => ({
+28 |   TagFilter: vi.fn(() => <div data-testid="tag-filter">태그 필터</div>)
+29 | }));
+30 | 
+31 | // React.Suspense 모킹
+32 | vi.mock('react', async () => {
+33 |   const originalReact = await vi.importActual('react');
+34 |   return {
+35 |     ...originalReact,
+36 |     Suspense: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => {
+37 |       return (
+38 |         <>
+39 |           <div data-testid="suspense-fallback">{fallback}</div>
+40 |           <div data-testid="suspense-children">{children}</div>
+41 |         </>
+42 |       );
+43 |     },
+44 |   };
+45 | });
+46 | 
+47 | // 테스트용 CardListSkeleton (page 모듈에서 가져오지 않고 테스트에서 직접 정의)
+48 | const CardListSkeleton = () => (
+49 |   <div data-testid="skeleton-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+50 |     {Array(6).fill(0).map((_, index) => (
+51 |       <div key={index} className="border rounded-md p-4 space-y-4">
+52 |         <div data-testid="skeleton" className="h-6 w-3/4" />
+53 |         <div data-testid="skeleton" className="h-24" />
+54 |         <div className="flex justify-between">
+55 |           <div data-testid="skeleton" className="h-4 w-1/4" />
+56 |           <div data-testid="skeleton" className="h-8 w-1/4" />
+57 |         </div>
+58 |       </div>
+59 |     ))}
+60 |   </div>
+61 | );
+62 | 
+63 | // Suspense 내부 컴포넌트 모킹
+64 | vi.mock('@/components/cards/CardList', () => {
+65 |   return {
+66 |     default: vi.fn(() => <div data-testid="card-list">카드 목록 컴포넌트</div>)
+67 |   };
+68 | });
+69 | 
+70 | // CreateCardButton 모킹을 CreateCardModal로 변경
+71 | vi.mock('@/components/cards/CreateCardModal', () => {
+72 |   return {
+73 |     default: vi.fn(() => <button data-testid="create-card-modal-button">새 카드 만들기</button>)
+74 |   };
+[TRUNCATED]
+```
+
+src/app/cards/page.tsx
+```
+1 | /**
+2 |  * 파일명: src/app/cards/page.tsx
+3 |  * 목적: 카드 목록을 표시하고 필터링 기능 제공
+4 |  * 역할: 카드 목록 페이지의 레이아웃과 컴포넌트 구성
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-04-08
+7 |  */
+8 | 
+9 | import { Metadata } from "next";
+10 | import { Suspense } from 'react';
+11 | import CardList from "@/components/cards/CardList";
+12 | import CreateCardModal from "@/components/cards/CreateCardModal";
+13 | import { TagFilter } from "@/components/cards/TagFilter";
+14 | import { Skeleton } from '@/components/ui/skeleton';
+15 | import { ChevronRight } from "lucide-react";
+16 | import Link from "next/link";
+17 | 
+18 | export const metadata: Metadata = {
+19 |   title: "카드 목록 | Backyard",
+20 |   description: "백야드 카드 목록 페이지입니다.",
+21 | };
+22 | 
+23 | // 카드 목록 로딩 스켈레톤
+24 | function CardListSkeleton() {
+25 |   return (
+26 |     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+27 |       {Array(6).fill(0).map((_, index) => (
+28 |         <div key={index} className="border rounded-md p-4 space-y-4">
+29 |           <Skeleton className="h-6 w-3/4" />
+30 |           <Skeleton className="h-24" />
+31 |           <div className="flex justify-between">
+32 |             <Skeleton className="h-4 w-1/4" />
+33 |             <Skeleton className="h-8 w-1/4" />
+34 |           </div>
+35 |         </div>
+36 |       ))}
+37 |     </div>
+38 |   );
+39 | }
+40 | 
+41 | export default function CardsPage() {
+42 |   return (
+43 |     <div className="container mx-auto py-8">
+44 |       {/* 페이지 헤더 */}
+45 |       <div className="mb-6">
+46 |         <div className="flex justify-between items-center mb-2">
+47 |           <div>
+48 |             {/* <div className="flex items-center text-sm text-muted-foreground mb-1">
+49 |               <Link href="/" className="hover:underline">홈</Link>
+50 |               <ChevronRight className="h-4 w-4 mx-1" />
+51 |               <span>카드 목록</span>
+52 |             </div> */}
+53 |             <h1 className="text-3xl font-bold">카드 목록</h1>
+54 |           </div>
+55 |           <CreateCardModal />
+56 |         </div>
+57 |         <p className="text-muted-foreground">
+58 |           카드를 생성하고 관리할 수 있습니다. 태그를 사용하여 카드를 필터링할 수 있습니다.
+59 |         </p>
+60 |       </div>
+61 | 
+62 |       {/* 메인 콘텐츠 */}
+63 |       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+64 |         {/* 사이드바 - 태그 필터 */}
+65 |         <div className="lg:col-span-1">
+66 |           <TagFilter />
+67 |         </div>
+68 | 
+69 |         {/* 카드 목록 */}
+70 |         <div className="lg:col-span-3">
+[TRUNCATED]
+```
+
+src/app/ideamap/page.test.tsx
+```
+1 | /**
+2 |  * 파일명: page.test.tsx
+3 |  * 목적: 아이디어맵 페이지 컴포넌트 테스트
+4 |  * 역할: IdeaMap 컴포넌트를 사용하는 페이지 컴포넌트 테스트
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-04-15
+7 |  */
+8 | 
+9 | import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+10 | import { describe, test, expect, vi, beforeEach } from 'vitest';
+11 | import IdeaMapPage from './page';
+12 | import { Node, Edge, NodeChange } from '@xyflow/react';
+13 | import '@testing-library/jest-dom/vitest';
+14 | import { autoLayoutNodes } from './page';
+15 | 
+16 | // LocalStorage 모킹
+17 | const localStorageMock = (() => {
+18 |   let store: Record<string, string> = {};
+19 |   return {
+20 |     getItem: vi.fn((key: string) => store[key] || null),
+21 |     setItem: vi.fn((key: string, value: string) => {
+22 |       store[key] = value.toString();
+23 |     }),
+24 |     clear: vi.fn(() => {
+25 |       store = {};
+26 |     }),
+27 |   };
+28 | })();
+29 | 
+30 | Object.defineProperty(window, 'localStorage', {
+31 |   value: localStorageMock,
+32 | });
+33 | 
+34 | // ResizeObserver 모킹 (ReactFlow에서 필요)
+35 | class ResizeObserverMock {
+36 |   observe = vi.fn();
+37 |   unobserve = vi.fn();
+38 |   disconnect = vi.fn();
+39 | }
+40 | 
+41 | global.ResizeObserver = ResizeObserverMock;
+42 | 
+43 | // React Flow의 applyNodeChanges 함수 결과를 모킹하기 위한 변수
+44 | let mockAppliedNodes: Node[] = [];
+45 | 
+46 | // ReactFlow 전체 모킹 - 테스트에서는 실제 렌더링 없이 모킹된 구성요소만 사용
+47 | const nodesMock: Node[] = [];
+48 | const edgesMock: Edge[] = [];
+49 | const setNodesMock = vi.fn();
+50 | const setEdgesMock = vi.fn();
+51 | const onNodesChangeMock = vi.fn();
+52 | const onEdgesChangeMock = vi.fn();
+53 | 
+54 | // viewportCenter 모킹 - getNewCardPosition에서 사용
+55 | const viewportCenterMock = { x: 500, y: 300 };
+56 | 
+57 | // ReactFlow의 ReactFlowProvider와 useReactFlow hook 모킹
+58 | vi.mock('@xyflow/react', () => {
+59 |   // ReactFlow 컴포넌트 모킹
+60 |   const ReactFlowMock = ({ children, onNodesChange }: { children?: React.ReactNode, onNodesChange?: (changes: NodeChange[]) => void }) => (
+61 |     <div
+62 |       data-testid="react-flow-mock"
+63 |       onClick={() => {
+64 |         // 노드 위치 변경 시뮬레이션
+65 |         if (onNodesChange) {
+66 |           onNodesChange([{
+67 |             type: 'position',
+68 |             id: '1',
+69 |             position: { x: 200, y: 200 },
+70 |           } as NodeChange]);
+71 |         }
+72 |       }}
+73 |     >
+74 |       {children}
+75 |     </div>
+76 |   );
+77 | 
+78 |   return {
+79 |     // default export 추가 (중요!)
+80 |     default: ReactFlowMock,
+81 |     // 필요한 다른 export들
+82 |     ReactFlow: ReactFlowMock,
+83 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => (
+84 |       <div data-testid="react-flow-provider">{children}</div>
+85 |     ),
+[TRUNCATED]
+```
+
+src/app/ideamap/page.tsx
+```
+1 | /**
+2 |  * 파일명: page.tsx
+3 |  * 목적: 아이디어맵 페이지 컴포넌트
+4 |  * 역할: 아이디어맵 기능의 페이지 레벨 컴포넌트, 리팩토링된 IdeaMap 컴포넌트 사용
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-04-15
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import { ReactFlowProvider } from '@xyflow/react';
+12 | import IdeaMap from '@/components/ideamap/components/IdeaMap';
+13 | import { useAppStore } from '@/store/useAppStore';
+14 | 
+15 | // 기존 코드 보존을 위한 주석 처리된 함수들 (테스트에서 참조할 수 있음)
+16 | export const autoLayoutNodes = (nodes: any[]) => {
+17 |   return nodes.map((node: any, index: number) => ({
+18 |     ...node,
+19 |     position: {
+20 |       x: (index % 3) * 300 + 50,
+21 |       y: Math.floor(index / 3) * 200 + 50
+22 |     }
+23 |   }));
+24 | };
+25 | 
+26 | // 아이디어맵 페이지 컴포넌트
+27 | export default function IdeaMapPage() {
+28 |   const { selectCard } = useAppStore();
+29 | 
+30 |   return (
+31 |     <div className="w-full h-full relative">
+32 |       <ReactFlowProvider>
+33 |         <IdeaMap
+34 |           onSelectCard={selectCard}
+35 |           className="bg-background"
+36 |           showControls={true}
+37 |         />
+38 |       </ReactFlowProvider>
+39 |     </div>
+40 |   );
+41 | } 
+```
+
+src/app/test-db/page.test.tsx
+```
+1 | /**
+2 |  * 파일명: page.test.tsx
+3 |  * 목적: 데이터베이스 연결 테스트 페이지 컴포넌트 테스트
+4 |  * 역할: TestDatabasePage 컴포넌트의 다양한 상태 및 동작 검증
+5 |  * 작성일: 2025-04-01
+6 |  */
+7 | 
+8 | import { describe, it, expect, vi, beforeEach } from 'vitest';
+9 | import { render, screen } from '@testing-library/react';
+10 | import TestDatabasePage from './page';
+11 | 
+12 | // Prisma 클라이언트 모킹
+13 | vi.mock('@/lib/prisma', () => ({
+14 |     default: {
+15 |         tag: {
+16 |             findMany: vi.fn(),
+17 |         },
+18 |         $disconnect: vi.fn(),
+19 |     },
+20 | }));
+21 | 
+22 | // console.error 모킹
+23 | vi.spyOn(console, 'error').mockImplementation(() => { });
+24 | 
+25 | describe('TestDatabasePage 컴포넌트', () => {
+26 |     let mockPrisma: any;
+27 | 
+28 |     beforeEach(async () => {
+29 |         vi.clearAllMocks();
+30 |         // 각 테스트 전에 모킹된 Prisma 인스턴스 가져오기
+31 |         mockPrisma = (await import('@/lib/prisma')).default;
+32 |     });
+33 | 
+34 |     it('태그 목록이 있을 때 올바르게 렌더링해야 함', async () => {
+35 |         // 태그 데이터 모킹
+36 |         const mockTags = [
+37 |             { id: 1, name: '리액트', _count: { cardTags: 5 } },
+38 |             { id: 2, name: '타입스크립트', _count: { cardTags: 3 } },
+39 |             { id: 3, name: '백엔드', _count: { cardTags: 2 } },
+40 |         ];
+41 | 
+42 |         // Prisma 응답 모킹
+43 |         (mockPrisma.tag.findMany as any).mockResolvedValueOnce(mockTags);
+44 | 
+45 |         // 컴포넌트 렌더링 (비동기 컴포넌트이므로 임시 변환 사용)
+46 |         const Component = await TestDatabasePage();
+47 |         render(Component);
+48 | 
+49 |         // 페이지 제목 확인
+50 |         expect(screen.getByText('데이터베이스 연결 테스트')).toBeInTheDocument();
+51 | 
+52 |         // 각 태그가 올바르게 표시되는지 확인
+53 |         expect(screen.getByText('리액트')).toBeInTheDocument();
+54 |         expect(screen.getByText('타입스크립트')).toBeInTheDocument();
+55 |         expect(screen.getByText('백엔드')).toBeInTheDocument();
+56 | 
+57 |         // 태그 개수가 올바르게 표시되는지 확인
+58 |         expect(screen.getByText('연결된 카드: 5개')).toBeInTheDocument();
+59 |         expect(screen.getByText('연결된 카드: 3개')).toBeInTheDocument();
+60 |         expect(screen.getByText('연결된 카드: 2개')).toBeInTheDocument();
+61 | 
+62 |         // 성공 메시지 확인
+63 |         expect(screen.getByText('이 페이지가 정상적으로 로드되었다면 Prisma와 Supabase 연결이 성공적으로 구성된 것입니다!')).toBeInTheDocument();
+64 | 
+65 |         // Prisma 호출 확인
+66 |         expect(mockPrisma.tag.findMany).toHaveBeenCalledTimes(1);
+67 |         expect(mockPrisma.tag.findMany).toHaveBeenCalledWith({
+68 |             include: {
+69 |                 _count: {
+70 |                     select: {
+71 |                         cardTags: true,
+72 |                     },
+73 |                 },
+74 |             },
+75 |         });
+76 |     });
+77 | 
+78 |     it('태그가 없을 때 적절한 메시지를 표시해야 함', async () => {
+79 |         // 빈 태그 목록 모킹
+80 |         (mockPrisma.tag.findMany as any).mockResolvedValueOnce([]);
+81 | 
+82 |         // 컴포넌트 렌더링
+83 |         const Component = await TestDatabasePage();
+84 |         render(Component);
+85 | 
+[TRUNCATED]
+```
+
+src/app/test-db/page.tsx
+```
+1 | import React from 'react';
+2 | import prisma from '@/lib/prisma';
+3 | import type { Tag } from '@prisma/client';
+4 | 
+5 | // 태그와 연결된 카드 수를 포함하는 타입 정의
+6 | type TagWithCount = Tag & {
+7 |   _count: {
+8 |     cardTags: number;
+9 |   };
+10 | };
+11 | 
+12 | export default async function TestDatabasePage() {
+13 |   let tags: TagWithCount[] = [];
+14 |   let error: string | null = null;
+15 |   
+16 |   try {
+17 |     // Prisma를 사용하여 태그 목록을 가져옵니다
+18 |     tags = await prisma.tag.findMany({
+19 |       include: {
+20 |         _count: {
+21 |           select: {
+22 |             cardTags: true,
+23 |           },
+24 |         },
+25 |       },
+26 |     });
+27 |   } catch (e) {
+28 |     console.error('데이터베이스 연결 오류:', e);
+29 |     error = e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
+30 |   }
+31 | 
+32 |   return (
+33 |     <div className="container mx-auto p-6">
+34 |       <h1 className="text-3xl font-bold mb-6">데이터베이스 연결 테스트</h1>
+35 |       
+36 |       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+37 |         <h2 className="text-2xl font-semibold mb-4">태그 목록</h2>
+38 |         
+39 |         {error ? (
+40 |           <div className="p-4 mb-4 bg-red-50 dark:bg-red-900/20 rounded">
+41 |             <p className="text-red-700 dark:text-red-400">
+42 |               데이터베이스 연결 오류: {error}
+43 |             </p>
+44 |             <p className="mt-2 text-sm text-red-600 dark:text-red-300">
+45 |               Vercel 환경 변수가 올바르게 설정되었는지 확인하세요.
+46 |             </p>
+47 |           </div>
+48 |         ) : tags.length === 0 ? (
+49 |           <p className="text-gray-500 dark:text-gray-400">등록된 태그가 없습니다.</p>
+50 |         ) : (
+51 |           <ul className="space-y-2">
+52 |             {tags.map((tag) => (
+53 |               <li 
+54 |                 key={tag.id}
+55 |                 className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded"
+56 |               >
+57 |                 <span className="font-medium">{tag.name}</span>
+58 |                 <span className="text-sm text-gray-500 dark:text-gray-400">
+59 |                   연결된 카드: {tag._count.cardTags}개
+60 |                 </span>
+61 |               </li>
+62 |             ))}
+63 |           </ul>
+64 |         )}
+65 |         
+66 |         <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded">
+67 |           <p className="text-green-700 dark:text-green-400">
+68 |             {!error 
+69 |               ? '이 페이지가 정상적으로 로드되었다면 Prisma와 Supabase 연결이 성공적으로 구성된 것입니다!' 
+[TRUNCATED]
+```
+
+src/app/tags/page.test.tsx
+```
+1 | /// <reference types="vitest" />
+2 | import React from 'react';
+3 | import { render, screen, cleanup } from '@testing-library/react';
+4 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+5 | import TagsPage from './page';
+6 | import '@testing-library/jest-dom/vitest';
+7 | 
+8 | /**
+9 |  * 파일명: page.test.tsx
+10 |  * 목적: 태그 관리 페이지 테스트
+11 |  * 역할: 태그 페이지 렌더링 및 기능 검증
+12 |  * 작성일: 2025-03-05
+13 |  * 수정일: 2025-03-27
+14 |  */
+15 | 
+16 | // vi.hoisted를 사용하여 모킹 객체 생성
+17 | const mocks = vi.hoisted(() => ({
+18 |   findMany: vi.fn()
+19 | }));
+20 | 
+21 | // prisma 모킹
+22 | vi.mock('@/lib/prisma', () => ({
+23 |   default: {
+24 |     tag: {
+25 |       findMany: mocks.findMany
+26 |     }
+27 |   }
+28 | }));
+29 | 
+30 | // formatDate 모킹
+31 | vi.mock('@/lib/utils', () => ({
+32 |   formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
+33 |   cn: vi.fn((...args: any[]) => args.join(' '))
+34 | }));
+35 | 
+36 | // 컴포넌트 모킹 - 올바른 경로로 수정
+37 | vi.mock('@/components/tags/TagForm', () => ({
+38 |   default: () => <div data-testid="tag-form">태그 추가 폼</div>
+39 | }));
+40 | 
+41 | vi.mock('@/components/tags/TagList', () => ({
+42 |   default: ({ initialTags }: { initialTags: any[] }) => (
+43 |     <div data-testid="tag-list">
+44 |       태그 수: {initialTags.length}
+45 |     </div>
+46 |   )
+47 | }));
+48 | 
+49 | // Card 모킹
+50 | vi.mock('@/components/ui/card', () => ({
+51 |   Card: ({ children }: { children: React.ReactNode }) => <div data-slot="card" className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm ">{children}</div>,
+52 |   CardHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="card-header" className="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 ">{children}</div>,
+53 |   CardTitle: ({ children }: { children: React.ReactNode }) => <div data-slot="card-title" className="leading-none font-semibold ">{children}</div>,
+54 |   CardDescription: ({ children }: { children: React.ReactNode }) => <div data-slot="card-description" className="text-sm text-muted-foreground ">{children}</div>,
+55 |   CardContent: ({ children }: { children: React.ReactNode }) => <div data-slot="card-content" className="px-6 ">{children}</div>,
+56 |   CardFooter: ({ children }: { children: React.ReactNode }) => <div data-slot="card-footer" className="flex gap-3 px-6 pt-6 ">{children}</div>,
+57 | }));
+58 | 
+59 | // 템플릿 태그 데이터 - _count 속성 추가
+[TRUNCATED]
+```
+
+src/app/tags/page.tsx
+```
+1 | import { Metadata } from "next";
+2 | import prisma from "@/lib/prisma";
+3 | import { formatDate } from "@/lib/utils";
+4 | import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+5 | import TagForm from "@/components/tags/TagForm";
+6 | import TagList from "@/components/tags/TagList";
+7 | import { Tag } from "@prisma/client";
+8 | 
+9 | export const metadata: Metadata = {
+10 |   title: "태그 관리 | Backyard",
+11 |   description: "태그를 생성하고 관리하는 페이지입니다.",
+12 | };
+13 | 
+14 | type TagWithCount = Tag & {
+15 |   _count: {
+16 |     cardTags: number;
+17 |   };
+18 | };
+19 | 
+20 | export default async function TagsPage() {
+21 |   let tags: TagWithCount[] = [];
+22 |   
+23 |   try {
+24 |     tags = await prisma.tag.findMany({
+25 |       orderBy: {
+26 |         name: 'asc'
+27 |       },
+28 |       include: {
+29 |         _count: {
+30 |           select: { cardTags: true }
+31 |         }
+32 |       }
+33 |     });
+34 |   } catch (error) {
+35 |     console.error("태그 조회 오류:", error);
+36 |     // 오류 발생 시 빈 배열 사용
+37 |   }
+38 | 
+39 |   const formattedTags = tags.map(tag => ({
+40 |     id: tag.id,
+41 |     name: tag.name,
+42 |     count: tag._count.cardTags,
+43 |     createdAt: formatDate(tag.createdAt)
+44 |   }));
+45 | 
+46 |   return (
+47 |     <div className="container mx-auto py-8">
+48 |       <h1 className="text-3xl font-bold mb-6">태그 관리</h1>
+49 |       
+50 |       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+51 |         <div className="md:col-span-1">
+52 |           <Card>
+53 |             <CardHeader>
+54 |               <CardTitle>새 태그 추가</CardTitle>
+55 |             </CardHeader>
+56 |             <CardContent>
+57 |               <TagForm />
+58 |             </CardContent>
+59 |           </Card>
+60 |         </div>
+61 |         
+62 |         <div className="md:col-span-2">
+63 |           <Card>
+64 |             <CardHeader>
+65 |               <CardTitle>태그 목록</CardTitle>
+66 |             </CardHeader>
+67 |             <CardContent>
+68 |               <TagList initialTags={formattedTags} />
+69 |             </CardContent>
+70 |           </Card>
+71 |         </div>
+72 |       </div>
+73 |     </div>
+74 |   );
+75 | } 
+```
+
+src/app/login/actions.ts
+```
+1 | /**
+2 |  * 파일명: actions.ts
+3 |  * 목적: 로그인 및 회원가입 서버 액션 제공
+4 |  * 역할: 사용자 인증 처리
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | 'use server'
+9 | 
+10 | import { createClient } from '@/utils/supabase/server'
+11 | import { redirect } from 'next/navigation'
+12 | 
+13 | export async function login(formData: FormData) {
+14 |   const email = formData.get('email') as string
+15 |   const password = formData.get('password') as string
+16 | 
+17 |   const supabase = await createClient()
+18 | 
+19 |   const { error } = await supabase.auth.signInWithPassword({
+20 |     email,
+21 |     password,
+22 |   })
+23 | 
+24 |   if (error) {
+25 |     console.error('로그인 오류:', error)
+26 |     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
+27 |   }
+28 | 
+29 |   return redirect('/')
+30 | }
+31 | 
+32 | export async function signup(formData: FormData) {
+33 |   const email = formData.get('email') as string
+34 |   const password = formData.get('password') as string
+35 | 
+36 |   const supabase = await createClient()
+37 | 
+38 |   const { error } = await supabase.auth.signUp({
+39 |     email,
+40 |     password,
+41 |     options: {
+42 |       emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
+43 |     },
+44 |   })
+45 | 
+46 |   if (error) {
+47 |     console.error('회원가입 오류:', error)
+48 |     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
+49 |   }
+50 | 
+51 |   // 회원가입 성공 메시지로 리다이렉션
+52 |   return redirect('/login?message=확인 이메일을 발송했습니다. 이메일을 확인해주세요.')
+53 | }
+54 | 
+55 | export async function signInWithGoogle() {
+56 |   // Supabase 클라이언트 생성
+57 |   const supabase = await createClient()
+58 |   
+59 |   // 현재 앱 도메인 (기본값 localhost:3000)
+60 |   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+61 |   
+62 |   // 콜백 URL 설정
+63 |   const redirectUrl = `${origin}/auth/callback`
+64 |   
+65 |   // Google OAuth 로그인 프로세스 시작
+66 |   const { data, error } = await supabase.auth.signInWithOAuth({
+67 |     provider: 'google',
+68 |     options: {
+69 |       redirectTo: redirectUrl,
+70 |       queryParams: {
+71 |         access_type: 'offline',
+72 |         prompt: 'consent',
+73 |       },
+74 |     },
+75 |   })
+76 | 
+77 |   if (error) {
+78 |     // 오류 발생 시 로그인 페이지로 리다이렉트
+79 |     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
+80 |   }
+81 | 
+82 |   // 구글 OAuth URL로 리다이렉션
+83 |   if (data?.url) {
+84 |     return redirect(data.url)
+85 |   }
+86 |   
+87 |   // URL이 없는 경우 홈으로 리다이렉션
+88 |   return redirect('/')
+89 | } 
+```
+
+src/app/login/page.test.tsx
+```
+1 | /**
+2 |  * 파일명: page.test.tsx
+3 |  * 목적: 로그인 페이지 컴포넌트 테스트
+4 |  * 역할: 로그인 페이지의 UI 및 기능을 테스트
+5 |  * 작성일: 2025-03-27
+6 |  */
+7 | 
+8 | /// <reference types="vitest" />
+9 | import React from 'react';
+10 | import { render, screen, fireEvent } from '@testing-library/react';
+11 | import { describe, it, expect, vi, beforeEach } from 'vitest';
+12 | import LoginPage from './page';
+13 | import '@testing-library/jest-dom/vitest';
+14 | 
+15 | // 서버 액션 모킹
+16 | const mockLogin = vi.fn();
+17 | const mockSignup = vi.fn();
+18 | const mockSignInWithGoogle = vi.fn();
+19 | 
+20 | vi.mock('./actions', () => ({
+21 |   login: vi.fn(() => mockLogin),
+22 |   signup: vi.fn(() => mockSignup),
+23 |   signInWithGoogle: vi.fn(() => mockSignInWithGoogle)
+24 | }));
+25 | 
+26 | // searchParams 모킹
+27 | const mockSearchParams = new Map();
+28 | 
+29 | vi.mock('next/navigation', () => ({
+30 |   useSearchParams: vi.fn(() => ({
+31 |     get: (key: string) => mockSearchParams.get(key)
+32 |   }))
+33 | }));
+34 | 
+35 | describe('LoginPage', () => {
+36 |   beforeEach(() => {
+37 |     vi.clearAllMocks();
+38 |     mockSearchParams.clear();
+39 |   });
+40 | 
+41 |   it('로그인 페이지가 올바르게 렌더링되어야 함', () => {
+42 |     render(<LoginPage />);
+43 |     
+44 |     // 페이지 제목이 존재하는지 확인
+45 |     expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument();
+46 |     
+47 |     // 폼 요소들이 존재하는지 확인
+48 |     expect(screen.getByLabelText('이메일')).toBeInTheDocument();
+49 |     expect(screen.getByLabelText('비밀번호')).toBeInTheDocument();
+50 |     
+51 |     // 버튼들이 존재하는지 확인
+52 |     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
+53 |     expect(screen.getByRole('button', { name: '회원가입' })).toBeInTheDocument();
+54 |     expect(screen.getByRole('button', { name: /Google로 계속하기/ })).toBeInTheDocument();
+55 |   });
+56 | 
+57 |   it('오류 메시지가 URL 파라미터로부터 표시되어야 함', () => {
+58 |     // 오류 메시지 파라미터 설정
+59 |     mockSearchParams.set('error', '로그인에 실패했습니다.');
+60 |     
+61 |     render(<LoginPage />);
+62 |     
+63 |     // 오류 메시지가 화면에 표시되는지 확인
+64 |     expect(screen.getByText('로그인에 실패했습니다.')).toBeInTheDocument();
+65 |   });
+66 | 
+67 |   it('성공 메시지가 URL 파라미터로부터 표시되어야 함', () => {
+68 |     // 성공 메시지 파라미터 설정
+69 |     mockSearchParams.set('message', '확인 이메일을 발송했습니다.');
+70 |     
+71 |     render(<LoginPage />);
+72 |     
+73 |     // 성공 메시지가 화면에 표시되는지 확인
+74 |     expect(screen.getByText('확인 이메일을 발송했습니다.')).toBeInTheDocument();
+75 |   });
+76 | 
+77 |   it('URL 인코딩된 메시지가 올바르게 디코딩되어야 함', () => {
+78 |     // 인코딩된 메시지 설정
+79 |     mockSearchParams.set('message', encodeURIComponent('특수 문자 메시지: @ # %'));
+80 |     
+81 |     render(<LoginPage />);
+82 |     
+83 |     // 디코딩된 메시지가 화면에 표시되는지 확인
+84 |     expect(screen.getByText('특수 문자 메시지: @ # %')).toBeInTheDocument();
+85 |   });
+[TRUNCATED]
+```
+
+src/app/login/page.tsx
+```
+1 | /**
+2 |  * 파일명: page.tsx
+3 |  * 목적: 로그인 페이지 제공
+4 |  * 역할: 사용자 로그인 및 회원가입 UI
+5 |  * 작성일: 2025-03-08
+6 |  * 수정일: 2025-03-27
+7 |  */
+8 | 
+9 | 'use client'
+10 | 
+11 | import { useEffect, useState } from 'react'
+12 | import { login, signup, signInWithGoogle } from './actions'
+13 | import { useSearchParams } from 'next/navigation'
+14 | import { cn } from '@/lib/utils'
+15 | 
+16 | export default function LoginPage() {
+17 |   const searchParams = useSearchParams()
+18 |   const [error, setError] = useState<string | null>(null)
+19 |   const [message, setMessage] = useState<string | null>(null)
+20 |   
+21 |   useEffect(() => {
+22 |     // URL 쿼리 파라미터에서 오류 및 성공 메시지 추출
+23 |     const error = searchParams.get('error')
+24 |     const message = searchParams.get('message')
+25 |     
+26 |     if (error) setError(decodeURIComponent(error))
+27 |     if (message) setMessage(decodeURIComponent(message))
+28 |   }, [searchParams])
+29 | 
+30 |   return (
+31 |     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+32 |       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
+33 |         <div className="text-center">
+34 |           <h1 className="text-2xl font-bold">로그인</h1>
+35 |           <p className="text-gray-600 mt-2">계정에 로그인하거나 새 계정을 만드세요</p>
+36 |         </div>
+37 |         
+38 |         {/* 오류 메시지 표시 */}
+39 |         {error && (
+40 |           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+41 |             {error}
+42 |           </div>
+43 |         )}
+44 |         
+45 |         {/* 성공 메시지 표시 */}
+46 |         {message && (
+47 |           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative">
+48 |             {message}
+49 |           </div>
+50 |         )}
+51 | 
+52 |         <div className="mt-8">
+53 |           <form className="space-y-6">
+54 |             <div>
+55 |               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+56 |                 이메일
+57 |               </label>
+58 |               <input
+59 |                 id="email"
+60 |                 name="email"
+61 |                 type="email"
+62 |                 autoComplete="email"
+63 |                 required
+64 |                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+65 |               />
+66 |             </div>
+67 |             <div>
+68 |               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+69 |                 비밀번호
+70 |               </label>
+71 |               <input
+[TRUNCATED]
+```
+
+src/components/ideamap/components/IdeaMap.test.tsx
+```
+1 | /**
+2 |  * 파일명: IdeaMap.test.tsx
+3 |  * 목적: IdeaMap 컴포넌트 테스트
+4 |  * 역할: IdeaMap 컴포넌트의 기능을 검증하는 테스트 코드 제공
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import React from 'react';
+10 | import { render, screen, fireEvent } from '@testing-library/react';
+11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
+12 | import '@testing-library/jest-dom';
+13 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+14 | import IdeaMap from './IdeaMap';
+15 | import { useNodeClickHandlers } from '../hooks/useNodes';
+16 | import { useEdges } from '../hooks/useEdges';
+17 | import { useIdeaMapUtils } from '../hooks/useIdeaMapUtils';
+18 | import { useAppStore } from '@/store/useAppStore';
+19 | import { useAuth } from '@/contexts/AuthContext';
+20 | import { toast } from 'sonner';
+21 | 
+22 | // React Flow 모킹
+23 | mockReactFlow();
+24 | 
+25 | // window 객체 모킹 - addEventListener 문제 해결
+26 | Object.defineProperty(global, 'window', {
+27 |   value: {
+28 |     ...global.window,
+29 |     addEventListener: vi.fn(),
+30 |     removeEventListener: vi.fn(),
+31 |   },
+32 |   writable: true,
+33 | });
+34 | 
+35 | // document.body 설정 - waitFor 문제 해결
+36 | document.body.innerHTML = '<div id="root"></div>';
+37 | 
+38 | // 모듈 모킹
+39 | vi.mock('@xyflow/react', async () => {
+40 |   const actual = await vi.importActual('@xyflow/react');
+41 |   return {
+42 |     ...actual,
+43 |     useReactFlow: vi.fn(() => ({
+44 |       screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
+45 |       fitView: vi.fn(),
+46 |       getNodes: vi.fn(() => []),
+47 |       getEdges: vi.fn(() => []),
+48 |       setNodes: vi.fn(),
+49 |       setEdges: vi.fn(),
+50 |     })),
+51 |     useUpdateNodeInternals: vi.fn(() => vi.fn()),
+52 |     Background: () => <div data-testid="react-flow-background" />,
+53 |     Controls: () => <div data-testid="react-flow-controls" />,
+54 |     Panel: ({ children, position }: any) => <div data-testid={`panel-${position}`}>{children}</div>,
+55 |     ReactFlow: ({ children, nodes, edges }: any) => (
+56 |       <div data-testid="react-flow-container">
+57 |         <div data-testid="react-flow-nodes">{JSON.stringify(nodes)}</div>
+58 |         <div data-testid="react-flow-edges">{JSON.stringify(edges)}</div>
+59 |         {children}
+60 |       </div>
+61 |     ),
+62 |   };
+63 | });
+64 | 
+65 | // IdeaMap 컴포넌트 자체 모킹으로 변경
+66 | vi.mock('./IdeaMap', () => ({
+67 |   default: ({ showControls }: { showControls?: boolean }) => {
+68 |     const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+69 | 
+70 |     const handleCreateCard = () => {
+71 |       setIsCreateModalOpen(true);
+72 |     };
+73 | 
+74 |     const handleCloseModal = () => {
+75 |       setIsCreateModalOpen(false);
+76 |     };
+77 | 
+[TRUNCATED]
+```
+
+src/components/ideamap/components/IdeaMap.tsx
+```
+1 | /**
+2 |  * 파일명: Board.tsx
+3 |  * 목적: 보드 메인 컨테이너 컴포넌트
+4 |  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+12 | import {
+13 |   useReactFlow,
+14 |   useUpdateNodeInternals,
+15 |   Position,
+16 |   Viewport,
+17 |   ViewportHelperFunctions
+18 | } from '@xyflow/react';
+19 | import { toast } from 'sonner';
+20 | import { useAuth } from '@/contexts/AuthContext';
+21 | import { useAppStore } from '@/store/useAppStore';
+22 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+23 | 
+24 | // 보드 관련 컴포넌트 임포트
+25 | import CreateCardModal from '@/components/cards/CreateCardModal';
+26 | import IdeaMapCanvas from './IdeaMapCanvas';
+27 | 
+28 | // 보드 관련 훅 임포트
+29 | import { useNodeClickHandlers } from '../hooks/useNodes';
+30 | import { useEdges } from '../hooks/useEdges';
+31 | import { useIdeaMapData } from '../hooks/useIdeaMapData';
+32 | import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+33 | import { useIdeaMapHandlers } from '../hooks/useIdeaMapHandlers';
+34 | 
+35 | // 타입 임포트
+36 | import { IdeaMapComponentProps, XYPosition } from '../types/ideamap-types';
+37 | import { Node, Edge } from '@xyflow/react';
+38 | import { NodeInspector } from '../nodes/NodeInspector';
+39 | import { Card } from '@/store/useAppStore';
+40 | 
+41 | /**
+42 |  * IdeaMap: 아이디어맵 메인 컨테이너 컴포넌트
+43 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
+44 |  * @param className 추가 CSS 클래스
+45 |  * @param showControls 컨트롤 표시 여부
+46 |  */
+47 | export default function IdeaMap({
+48 |   onSelectCard,
+49 |   className = "",
+50 |   showControls = true
+51 | }: IdeaMapComponentProps) {
+52 |   // 상태 관리
+53 |   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+54 | 
+55 |   // 엣지 드롭 관련 상태
+56 |   const [isEdgeDropModalOpen, setIsEdgeDropModalOpen] = useState(false);
+57 |   const [edgeDropPosition, setEdgeDropPosition] = useState<XYPosition | null>(null);
+58 |   const [edgeDropNodeId, setEdgeDropNodeId] = useState<string | null>(null);
+59 |   const [edgeDropHandleType, setEdgeDropHandleType] = useState<'source' | 'target' | null>(null);
+60 | 
+61 |   // 커넥팅 노드 관련 상태
+62 |   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+63 |   const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
+64 |   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
+65 | 
+66 |   // 뷰포트 변경 디바운스를 위한 타이머
+67 |   const viewportChangeTimer = useRef<NodeJS.Timeout | null>(null);
+68 | 
+69 |   // 인증 상태 가져오기
+70 |   const { user, isLoading: isAuthLoading } = useAuth();
+71 | 
+72 |   // 레퍼런스 및 기타 훅
+73 |   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+74 |   const reactFlowInstance = useReactFlow();
+75 |   const updateNodeInternals = useUpdateNodeInternals();
+76 | 
+77 |   // useAppStore에서 상태 가져오기
+[TRUNCATED]
+```
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx
+```
+1 | /**
+2 |  * 파일명: IdeaMapCanvas.test.tsx
+3 |  * 목적: IdeaMapCanvas 컴포넌트 테스트
+4 |  * 역할: IdeaMapCanvas 컴포넌트의 렌더링과 기능을 테스트
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import React from 'react';
+10 | import { render, screen, fireEvent } from '@testing-library/react';
+11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
+12 | import '@testing-library/jest-dom';
+13 | import { mockReactFlow, createTestNode, createTestEdge } from '@/tests/test-utils';
+14 | import IdeaMapCanvas from './IdeaMapCanvas';
+15 | import { MarkerType, ConnectionLineType } from '@xyflow/react';
+16 | import { ReactNode } from 'react';
+17 | import { Node, Edge, Connection, Viewport } from '@xyflow/react';
+18 | 
+19 | // React Flow 모킹
+20 | vi.mock('@xyflow/react', async () => {
+21 |   const actual = await vi.importActual('@xyflow/react');
+22 |   return {
+23 |     ...actual,
+24 |     Panel: ({
+25 |       children,
+26 |       className,
+27 |       position = 'top-right',
+28 |       ...props
+29 |     }: {
+30 |       children: ReactNode;
+31 |       className?: string;
+32 |       position?: string;
+33 |       [key: string]: any;
+34 |     }) => (
+35 |       <div data-testid={`panel-${position}`} className={className} {...props}>
+36 |         {children}
+37 |       </div>
+38 |     ),
+39 |     ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
+40 |       children?: ReactNode;
+41 |       onNodesChange?: (changes: any) => void;
+42 |       onEdgesChange?: (changes: any) => void;
+43 |       onConnect?: (connection: any) => void;
+44 |       onConnectStart?: (event: any, params: any) => void;
+45 |       onConnectEnd?: (event: any) => void;
+46 |       onNodeClick?: (event: any, node: any) => void;
+47 |       onPaneClick?: (event: any) => void;
+48 |       defaultEdgeOptions?: any;
+49 |       [key: string]: any;
+50 |     }) => (
+51 |       <div
+52 |         className="react-flow"
+53 |         data-testid="react-flow-container"
+54 |         onClick={(e) => onPaneClick?.(e)}
+55 |       >
+56 |         <div data-testid="react-flow-nodes">
+57 |           {props.nodes?.map((node: any) => (
+58 |             <div
+59 |               key={node.id}
+60 |               data-testid={`node-${node.id}`}
+61 |               onClick={(e) => onNodeClick?.(e, node)}
+62 |             >
+63 |               {JSON.stringify(node)}
+64 |             </div>
+65 |           ))}
+66 |         </div>
+67 |         <div data-testid="react-flow-edges">
+68 |           {JSON.stringify(props.edges)}
+69 |         </div>
+70 |         <div data-testid="default-edge-options">
+71 |           {JSON.stringify(defaultEdgeOptions)}
+72 |         </div>
+73 |         {children}
+74 |       </div>
+75 |     ),
+76 |     Background: () => <div data-testid="react-flow-background" />,
+77 |     Controls: () => <div data-testid="react-flow-controls" />,
+78 |     MarkerType: {
+79 |       ArrowClosed: 'arrowclosed'
+80 |     },
+[TRUNCATED]
+```
+
+src/components/ideamap/components/IdeaMapCanvas.tsx
+```
+1 | /**
+2 |  * 파일명: BoardCanvas.tsx
+3 |  * 목적: ReactFlow 캔버스 렌더링 컴포넌트
+4 |  * 역할: Board 컴포넌트에서 ReactFlow 캔버스 관련 로직을 분리하여 렌더링을 담당
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-03-30
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import React, { useMemo } from 'react';
+12 | import {
+13 |   ReactFlow,
+14 |   Controls,
+15 |   Background,
+16 |   ConnectionMode,
+17 |   Node,
+18 |   Edge,
+19 |   NodeChange,
+20 |   EdgeChange,
+21 |   Connection,
+22 |   OnConnectStartParams,
+23 |   OnConnectStart,
+24 |   OnConnectEnd,
+25 |   MarkerType,
+26 |   Viewport
+27 | } from '@xyflow/react';
+28 | import { IdeaMapSettings } from '@/lib/ideamap-utils';
+29 | // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
+30 | // import CardNode from '@/components/ideamap/nodes/CardNode';
+31 | // import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
+32 | // 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
+33 | import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
+34 | import NodeInspect from '@/components/ideamap/nodes/NodeInspect';
+35 | import { cn } from '@/lib/utils';
+36 | // 삭제 3/29
+37 | // import BoardControls from './BoardControls';
+38 | 
+39 | interface IdeaMapCanvasProps {
+40 |   /** ReactFlow 노드 배열 */
+41 |   nodes: Node[];
+42 |   /** ReactFlow 엣지 배열 */
+43 |   edges: Edge[];
+44 |   /** 노드 변경 핸들러 */
+45 |   onNodesChange: (changes: NodeChange[]) => void;
+46 |   /** 엣지 변경 핸들러 */
+47 |   onEdgesChange: (changes: EdgeChange[]) => void;
+48 |   /** 연결 생성 핸들러 */
+49 |   onConnect: (connection: Connection) => void;
+50 |   /** 연결 시작 핸들러 */
+51 |   onConnectStart: OnConnectStart;
+52 |   /** 연결 종료 핸들러 */
+53 |   onConnectEnd: OnConnectEnd;
+54 |   /** 노드 클릭 핸들러 */
+55 |   onNodeClick: (e: React.MouseEvent, node: Node) => void;
+56 |   /** 빈 공간 클릭 핸들러 */
+57 |   onPaneClick: (e: React.MouseEvent) => void;
+58 |   /** 레이아웃 방향 */
+59 |   layoutDirection: 'horizontal' | 'vertical';
+60 |   /** 아이디어맵 설정 */
+61 |   ideaMapSettings: IdeaMapSettings;
+62 |   /** 아이디어맵 설정 변경 핸들러 */
+63 |   onIdeaMapSettingsChange: (settings: IdeaMapSettings, isAuthenticated: boolean, userId?: string) => void;
+64 |   /** 레이아웃 변경 핸들러 */
+65 |   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
+66 |   /** 자동 레이아웃 적용 핸들러 */
+67 |   onAutoLayout: () => void;
+68 |   /** 레이아웃 저장 핸들러 */
+69 |   onSaveLayout: () => void;
+70 |   /** 카드 생성 버튼 클릭 핸들러 */
+71 |   onCreateCard: () => void;
+72 |   /** 컨트롤 표시 여부 */
+73 |   showControls?: boolean;
+74 |   /** 래퍼 ref */
+75 |   wrapperRef: React.RefObject<HTMLDivElement>;
+76 |   /** 추가 CSS 클래스 */
+77 |   className?: string;
+78 |   /** 사용자 인증 여부 */
+79 |   isAuthenticated: boolean;
+80 |   /** 사용자 ID */
+81 |   userId?: string;
+82 |   /** 드래그 오버 핸들러 (옵셔널) */
+83 |   onDragOver?: (event: React.DragEvent) => void;
+84 |   /** 드롭 핸들러 (옵셔널) */
+85 |   onDrop?: (event: React.DragEvent) => void;
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/test-utils.ts
+```
+1 | /**
+2 |  * 파일명: test-utils.ts
+3 |  * 목적: 보드 핸들러 테스트를 위한 유틸리티 함수 및 모킹 객체 제공
+4 |  * 역할: 테스트 설정, 정리, 모킹된 액션 제공
+5 |  * 작성일: 2025-04-01
+6 |  */
+7 | 
+8 | import { vi } from 'vitest';
+9 | import { Node, Edge, XYPosition } from '@xyflow/react';
+10 | import { create } from 'zustand';
+11 | import { ReactNode } from 'react';
+12 | import { renderHook } from '@testing-library/react';
+13 | 
+14 | // 카드 데이터 타입 정의
+15 | export interface CardData extends Record<string, unknown> {
+16 |   id: string;
+17 |   title: string;
+18 |   content: string;
+19 | }
+20 | 
+21 | // Zustand 스토어 타입 정의
+22 | interface AppStore {
+23 |   selectedCardIds: string[];
+24 |   selectCards: (cardIds: string[]) => void;
+25 | }
+26 | 
+27 | // 테스트 노드 데이터
+28 | const TEST_NODES: Node<CardData>[] = [
+29 |   {
+30 |     id: 'node1',
+31 |     position: { x: 0, y: 0 },
+32 |     data: { id: 'card1', title: '카드 1', content: '내용 1' },
+33 |     type: 'card',
+34 |   },
+35 |   {
+36 |     id: 'node2',
+37 |     position: { x: 100, y: 100 },
+38 |     data: { id: 'card2', title: '카드 2', content: '내용 2' },
+39 |     type: 'card',
+40 |   },
+41 | ];
+42 | 
+43 | // Zustand 스토어 모킹
+44 | export const mockStore = create<AppStore>((set) => ({
+45 |   selectedCardIds: [],
+46 |   selectCards: (cardIds: string[]) => {
+47 |     console.log('[AppStore] 카드 선택 변경:', cardIds);
+48 |     set({ selectedCardIds: cardIds });
+49 |   },
+50 | }));
+51 | 
+52 | // 모킹된 액션들
+53 | export const mockActions = {
+54 |   store: {
+55 |     saveLayout: vi.fn((nodesToSave?: Node<CardData>[]) => true),
+56 |     setNodes: vi.fn((updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void {}),
+57 |     fetchCards: vi.fn(async () => ({ nodes: TEST_NODES, edges: [] })),
+58 |   },
+59 |   selection: {
+60 |     handleSelectionChange: vi.fn(({ nodes }: { nodes: Node[]; edges: Edge[] }) => void {}),
+61 |   },
+62 | };
+63 | 
+64 | /**
+65 |  * createTestNodes: 테스트용 노드 생성
+66 |  * @returns {Node<CardData>[]} 테스트용 노드 배열
+67 |  */
+68 | export const createTestNodes = (): Node<CardData>[] => TEST_NODES;
+69 | 
+70 | /**
+71 |  * createReactFlowWrapper: ReactFlow 래퍼 요소 생성
+72 |  * @returns {React.RefObject<HTMLDivElement>} ReactFlow 래퍼 요소의 ref 객체
+73 |  */
+74 | export const createReactFlowWrapper = () => {
+75 |   const div = document.createElement('div');
+76 |   div.style.width = '800px';
+77 |   div.style.height = '600px';
+78 |   return {
+79 |     current: div,
+80 |   };
+81 | };
+82 | 
+83 | /**
+84 |  * createReactFlowInstance: ReactFlow 인스턴스 생성
+85 |  * @returns {Object} 모킹된 ReactFlow 인스턴스
+86 |  */
+87 | export const createReactFlowInstance = () => ({
+88 |   project: vi.fn((position: XYPosition) => position),
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useEdges.test.tsx
+```
+1 | /**
+2 |  * 파일명: useEdges.test.tsx
+3 |  * 목적: useEdges 커스텀 훅 테스트
+4 |  * 역할: 엣지 관련 훅이 useIdeaMapStore 액션을 올바르게 호출하는지 검증
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11 (리팩토링)
+7 |  */
+8 | 
+9 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+10 | import { renderHook, act } from '@testing-library/react';
+11 | import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
+12 | import { IdeaMapSettings } from '@/lib/ideamap-utils';
+13 | 
+14 | // 모든 모킹은 파일 최상단에 위치
+15 | vi.mock('sonner', () => ({
+16 |   toast: {
+17 |     success: vi.fn(),
+18 |     info: vi.fn(),
+19 |     error: vi.fn(),
+20 |   }
+21 | }));
+22 | 
+23 | // useIdeaMapStore 모킹
+24 | vi.mock('@/store/useIdeaMapStore', () => {
+25 |   const mockApplyEdgeChangesAction = vi.fn();
+26 |   const mockConnectNodesAction = vi.fn();
+27 |   const mockSaveEdgesAction = vi.fn().mockReturnValue(true);
+28 |   const mockUpdateAllEdgeStylesAction = vi.fn();
+29 |   const mockCreateEdgeOnDropAction = vi.fn();
+30 |   const mockSetEdges = vi.fn();
+31 | 
+32 |   const edges = [{
+33 |     id: 'edge-1',
+34 |     source: 'node-1',
+35 |     target: 'node-2',
+36 |     type: 'custom',
+37 |   }];
+38 | 
+39 |   return {
+40 |     useIdeaMapStore: (selector: ((state: any) => any) | undefined) => {
+41 |       if (typeof selector === 'function') {
+42 |         const state = {
+43 |           edges,
+44 |           setEdges: mockSetEdges,
+45 |           applyEdgeChangesAction: mockApplyEdgeChangesAction,
+46 |           connectNodesAction: mockConnectNodesAction,
+47 |           saveEdgesAction: mockSaveEdgesAction,
+48 |           updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+49 |           createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+50 |           hasUnsavedChanges: false
+51 |         };
+52 |         return selector(state);
+53 |       }
+54 |       return {
+55 |         edges,
+56 |         setEdges: mockSetEdges,
+57 |         applyEdgeChangesAction: mockApplyEdgeChangesAction,
+58 |         connectNodesAction: mockConnectNodesAction,
+59 |         saveEdgesAction: mockSaveEdgesAction,
+60 |         updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+61 |         createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+62 |         hasUnsavedChanges: false
+63 |       };
+64 |     }
+65 |   };
+66 | });
+67 | 
+68 | // React Flow 모킹
+69 | vi.mock('@xyflow/react', async () => {
+70 |   const actual = await vi.importActual('@xyflow/react');
+71 |   return {
+72 |     ...actual,
+73 |   };
+74 | });
+75 | 
+76 | // 테스트할 훅 임포트
+77 | import { useEdges } from './useEdges';
+78 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+79 | 
+80 | // 테스트용 보드 설정
+81 | const mockIdeaMapSettings: IdeaMapSettings = {
+82 |   snapToGrid: false,
+83 |   snapGrid: [15, 15],
+84 |   connectionLineType: ConnectionLineType.SmoothStep,
+85 |   markerEnd: MarkerType.Arrow as MarkerType, // 타입 캐스팅 추가
+86 |   strokeWidth: 2,
+87 |   markerSize: 20,
+88 |   edgeColor: '#C1C1C1',
+89 |   selectedEdgeColor: '#FF0072',
+90 |   animated: false,
+91 | };
+92 | 
+93 | // 테스트용 노드 데이터
+94 | const mockNodes: Node[] = [
+95 |   {
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useEdges.ts
+```
+1 | /**
+2 |  * 파일명: useEdges.ts
+3 |  * 목적: 엣지 관련 상태 및 로직 관리
+4 |  * 역할: useIdeaMapStore의 엣지 관련 액션들을 사용하는 래퍼 훅
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | import { useCallback } from 'react';
+10 | import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
+11 | import { IdeaMapSettings } from '@/lib/ideamap-utils';
+12 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+13 | 
+14 | /**
+15 |  * useEdges: useIdeaMapStore의 엣지 관련 액션들을 사용하는 래퍼 훅
+16 |  * @param ideaMapSettings 아이디어맵 설정 객체
+17 |  * @param nodes 노드 배열
+18 |  * @param initialEdges 초기 엣지 데이터 (옵션)
+19 |  * @returns 엣지 관련 상태 및 함수들
+20 |  */
+21 | export function useEdges({
+22 |   ideaMapSettings,
+23 |   nodes,
+24 |   initialEdges = []
+25 | }: {
+26 |   ideaMapSettings: IdeaMapSettings;
+27 |   nodes: Node[];
+28 |   initialEdges?: Edge[];
+29 | }) {
+30 |   // useIdeaMapStore에서 엣지 관련 상태 및 액션 가져오기
+31 |   const edges = useIdeaMapStore(state => state.edges);
+32 |   const setEdges = useIdeaMapStore(state => state.setEdges);
+33 |   const applyEdgeChangesAction = useIdeaMapStore(state => state.applyEdgeChangesAction);
+34 |   const connectNodesAction = useIdeaMapStore(state => state.connectNodesAction);
+35 |   const saveEdgesAction = useIdeaMapStore(state => state.saveEdgesAction);
+36 |   const updateAllEdgeStylesAction = useIdeaMapStore(state => state.updateAllEdgeStylesAction);
+37 |   const createEdgeOnDropAction = useIdeaMapStore(state => state.createEdgeOnDropAction);
+38 |   const hasUnsavedChanges = useIdeaMapStore(state => state.hasUnsavedChanges);
+39 | 
+40 |   // 엣지 변경 핸들러 (단순히 useIdeaMapStore 액션 호출)
+41 |   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+42 |     applyEdgeChangesAction(changes);
+43 |   }, [applyEdgeChangesAction]);
+44 | 
+45 |   // 노드 연결 핸들러 (단순히 useIdeaMapStore 액션 호출)
+46 |   const onConnect = useCallback((params: Connection) => {
+47 |     connectNodesAction(params);
+48 |   }, [connectNodesAction]);
+49 | 
+50 |   // 엣지 저장 함수 (단순히 useIdeaMapStore 액션 호출)
+51 |   const saveEdges = useCallback((edgesToSave?: Edge[]) => {
+52 |     // 특정 엣지 목록이 제공되면 먼저 상태 업데이트
+53 |     if (edgesToSave) {
+54 |       setEdges(edgesToSave);
+55 |     }
+56 |     return saveEdgesAction();
+57 |   }, [setEdges, saveEdgesAction]);
+58 | 
+59 |   // 엣지 스타일 업데이트 함수 (단순히 useIdeaMapStore 액션 호출)
+60 |   const updateEdgeStyles = useCallback(() => {
+61 |     updateAllEdgeStylesAction();
+62 |   }, [updateAllEdgeStylesAction]);
+63 | 
+64 |   // 엣지 생성 함수 (단순히 useIdeaMapStore 액션 호출)
+65 |   const createEdgeOnDrop = useCallback((sourceId: string, targetId: string) => {
+66 |     return createEdgeOnDropAction(sourceId, targetId);
+67 |   }, [createEdgeOnDropAction]);
+68 | 
+69 |   // 기존 API와 호환성을 위해 동일한 인터페이스 유지
+70 |   return {
+71 |     edges,
+72 |     setEdges,
+73 |     handleEdgesChange,
+74 |     onConnect,
+75 |     saveEdges,
+76 |     updateEdgeStyles,
+77 |     createEdgeOnDrop,
+78 |     hasUnsavedChanges
+79 |   };
+80 | } 
+```
+
+src/components/ideamap/hooks/useIdeaMapData.test.tsx
+```
+1 | /**
+2 |  * 파일명: useIdeaMapData.test.tsx
+3 |  * 목적: useIdeaMapData 훅의 기능 테스트
+4 |  * 역할: 아이디어맵 데이터 로딩 및 로딩 상태 관리 테스트
+5 |  * 작성일: 2023-04-10
+6 |  * 수정일: 2025-05-05
+7 |  */
+8 | 
+9 | import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
+10 | import { renderHook, act } from '@testing-library/react';
+11 | import { server } from '@/tests/msw/server';
+12 | import { http, HttpResponse } from 'msw';
+13 | import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
+14 | import { mockLocalStorage } from '@/tests/mocks/storage-mock';
+15 | import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+16 | 
+17 | // 모든 모킹은 파일 상단에 그룹화
+18 | // 외부 모듈부터 모킹 (호이스팅 고려)
+19 | // @xyflow/react 모킹
+20 | const mockFitView = vi.fn().mockResolvedValue(undefined);
+21 | const mockSetViewport = vi.fn().mockResolvedValue(undefined);
+22 | const mockGetZoom = vi.fn().mockReturnValue(1);
+23 | const mockGetViewport = vi.fn().mockReturnValue({ x: 0, y: 0, zoom: 1 });
+24 | 
+25 | vi.mock('@xyflow/react', async () => {
+26 |   const actual = await vi.importActual('@xyflow/react');
+27 |   return {
+28 |     ...actual,
+29 |     useReactFlow: () => ({
+30 |       fitView: mockFitView,
+31 |       setViewport: mockSetViewport,
+32 |       getZoom: mockGetZoom,
+33 |       getViewport: mockGetViewport
+34 |     })
+35 |   };
+36 | });
+37 | 
+38 | // loadIdeaMapData 모킹을 위한 함수
+39 | const mockLoadIdeaMapData = vi.fn().mockResolvedValue(undefined);
+40 | 
+41 | // 기본 상태 객체 정의 - IdeaMapState 인터페이스에 맞춰 모든 필수 속성 포함
+42 | const createMockState = (overrides = {}) => ({
+43 |   // 노드 관련
+44 |   nodes: [{
+45 |     id: 'node-1',
+46 |     position: { x: 0, y: 0 },
+47 |     data: {
+48 |       id: 'card-1',
+49 |       title: '카드 1',
+50 |       content: '카드 1 내용',
+51 |       tags: []
+52 |     }
+53 |   }],
+54 |   setNodes: vi.fn(),
+55 |   onNodesChange: vi.fn(),
+56 | 
+57 |   // 엣지 관련
+58 |   edges: [{ id: 'edge-1', source: 'node-1', target: 'node-2' }],
+59 |   setEdges: vi.fn(),
+60 |   onEdgesChange: vi.fn(),
+61 |   onConnect: vi.fn(),
+62 | 
+63 |   // 아이디어맵 설정
+64 |   ideaMapSettings: {
+65 |     layout: 'horizontal',
+66 |     strokeWidth: 2,
+67 |     animated: false,
+68 |     lineType: 'straight',
+69 |     nodePadding: 10,
+70 |     nodeSpacing: 20,
+71 |     applyForce: false,
+72 |     snapToGrid: false,
+73 |     snapGrid: [10, 10] as [number, number],
+74 |     connectionLineType: 'bezier' as ConnectionLineType,
+75 |     markerEnd: 'arrow' as MarkerType,
+76 |     zoomOnScroll: true,
+77 |     panOnScroll: false,
+78 |     fitView: true,
+79 |     markerSize: 8,
+80 |     edgeColor: '#555555',
+81 |     selectedEdgeColor: '#0096FF'
+82 |   },
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useIdeaMapData.ts
+```
+1 | /**
+2 |  * 파일명: useIdeaMapData.ts
+3 |  * 목적: 아이디어맵 데이터 로드 및 관리를 위한 커스텀 훅
+4 |  * 역할: useIdeaMapStore에서 아이디어맵 데이터와 로딩 상태를 가져오는 래퍼 훅
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-10
+7 |  */
+8 | 
+9 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+10 | import { Node, CardData } from '../types/ideamap-types';
+11 | import { Edge } from '@xyflow/react';
+12 | 
+13 | /**
+14 |  * useIdeaMapData: 아이디어맵 데이터 로드 및 관리를 위한 커스텀 훅
+15 |  * @param onSelectCard 노드 선택 시 호출될 콜백 함수
+16 |  * @returns 데이터 로드 상태 및 관련 함수
+17 |  */
+18 | export function useIdeaMapData(onSelectCard?: (cardId: string | null) => void) {
+19 |   // 아이디어맵 스토어에서 필요한 상태와 액션 가져오기
+20 |   const nodes = useIdeaMapStore(state => state.nodes);
+21 |   const edges = useIdeaMapStore(state => state.edges);
+22 |   const isIdeaMapLoading = useIdeaMapStore(state => state.isIdeaMapLoading);
+23 |   const ideaMapError = useIdeaMapStore(state => state.ideaMapError);
+24 |   const loadIdeaMapData = useIdeaMapStore(state => state.loadIdeaMapData);
+25 |   const loadedViewport = useIdeaMapStore(state => state.loadedViewport);
+26 |   const needsFitView = useIdeaMapStore(state => state.needsFitView);
+27 |   
+28 |   /**
+29 |    * 노드와 엣지 데이터 로드 함수 - 이제는 단순히 스토어 액션을 호출
+30 |    * 하위 호환성을 위해 함수 시그니처 유지
+31 |    */
+32 |   const loadNodesAndEdges = async (reactFlowInstance?: any) => {
+33 |     await loadIdeaMapData();
+34 |     return { nodes, edges };
+35 |   };
+36 |   
+37 |   // 이전과 동일한 인터페이스 유지
+38 |   return {
+39 |     nodes,
+40 |     edges,
+41 |     isLoading: isIdeaMapLoading,
+42 |     error: ideaMapError,
+43 |     loadNodesAndEdges,
+44 |     loadedViewport,
+45 |     needsFitView
+46 |   };
+47 | } 
+```
+
+src/components/ideamap/hooks/useIdeaMapHandlers.test.tsx
+```
+1 | /**
+2 |  * 파일명: useIdeaMapHandlers.test.tsx
+3 |  * 목적: 아이디어맵 핸들러 훅의 기능 테스트
+4 |  * 역할: 선택, 드래그 앤 드롭, 카드 생성 핸들러 테스트
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+10 | import { act } from '@testing-library/react';
+11 | import { renderHook } from '@testing-library/react';
+12 | import { Node, Edge } from '@xyflow/react';
+13 | import { useIdeaMapHandlers } from './useIdeaMapHandlers';
+14 | import { CardData } from '../types/ideamap-types';
+15 | import { useAppStore } from '@/store/useAppStore';
+16 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+17 | import {
+18 |   createTestNode,
+19 |   createDragEvent,
+20 |   createMouseEvent,
+21 |   mockReactFlow
+22 | } from '@/tests/test-utils';
+23 | 
+24 | // Zustand 스토어 모킹
+25 | const mockSelectCards = vi.fn();
+26 | vi.mock('@/store/useAppStore', () => ({
+27 |   useAppStore: vi.fn((selector) => {
+28 |     const state = {
+29 |       selectedCardIds: [],
+30 |       selectCards: mockSelectCards,
+31 |     };
+32 |     return selector ? selector(state) : state;
+33 |   }),
+34 | }));
+35 | 
+36 | // useIdeaMapStore 모킹
+37 | const mockAddNodeAtPosition = vi.fn().mockResolvedValue({ id: 'new-node', data: { title: '새 노드' } });
+38 | const mockAddCardAtCenterPosition = vi.fn().mockResolvedValue({ id: 'new-card', data: { title: '새 카드' } });
+39 | const mockCreateEdgeAndNodeOnDrop = vi.fn().mockResolvedValue({ id: 'edge-node', data: { title: '연결 노드' } });
+40 | 
+41 | vi.mock('@/store/useIdeaMapStore', () => ({
+42 |   useIdeaMapStore: vi.fn((selector) => {
+43 |     const state = {
+44 |       addNodeAtPosition: mockAddNodeAtPosition,
+45 |       addCardAtCenterPosition: mockAddCardAtCenterPosition,
+46 |       createEdgeAndNodeOnDrop: mockCreateEdgeAndNodeOnDrop,
+47 |     };
+48 |     return selector ? selector(state) : state;
+49 |   }),
+50 | }));
+51 | 
+52 | describe('useIdeaMapHandlers', () => {
+53 |   // 테스트 데이터 준비
+54 |   const testNodes = [
+55 |     createTestNode('card1'),
+56 |     createTestNode('card2'),
+57 |   ];
+58 | 
+59 |   // HTMLDivElement 생성
+60 |   const divElement = document.createElement('div');
+61 |   Object.defineProperties(divElement, {
+62 |     getBoundingClientRect: {
+63 |       value: () => ({
+64 |         left: 0,
+65 |         top: 0,
+66 |         right: 800,
+67 |         bottom: 600,
+68 |         width: 800,
+69 |         height: 600,
+70 |       }),
+71 |     },
+72 |   });
+73 | 
+74 |   const mockProps = {
+75 |     reactFlowWrapper: { current: divElement } as React.RefObject<HTMLDivElement>,
+76 |     reactFlowInstance: mockReactFlow,
+77 |     fetchCards: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
+78 |   };
+79 | 
+80 |   beforeEach(() => {
+81 |     vi.clearAllMocks();
+82 |     // setTimeout 모킹
+83 |     vi.useFakeTimers();
+84 |   });
+85 | 
+86 |   afterEach(() => {
+87 |     vi.useRealTimers();
+88 |   });
+89 | 
+90 |   describe('선택 핸들러', () => {
+91 |     it('노드가 선택되면 선택된 카드 ID를 업데이트한다', () => {
+92 |       const { result } = renderHook(() => useIdeaMapHandlers(mockProps));
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useIdeaMapHandlers.ts
+```
+1 | /**
+2 |  * 파일명: useBoardHandlers.ts
+3 |  * 목적: 보드 이벤트 핸들러 관련 로직 분리
+4 |  * 역할: 보드 드래그, 드롭, 선택 등 이벤트 처리 로직을 관리
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | import { useCallback } from 'react';
+10 | import { Node, Edge, XYPosition } from '@xyflow/react';
+11 | import { useAppStore } from '@/store/useAppStore';
+12 | import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+13 | import { CardData } from '../types/ideamap-types';
+14 | 
+15 | /**
+16 |  * useIdeaMapHandlers: 아이디어맵 이벤트 핸들러 관련 로직을 관리하는 훅
+17 |  * @param reactFlowWrapper ReactFlow 래퍼 참조
+18 |  * @param reactFlowInstance ReactFlow 인스턴스
+19 |  * @param fetchCards 카드 데이터를 다시 불러오는 함수
+20 |  * @returns 아이디어맵 이벤트 핸들러 함수들
+21 |  */
+22 | export function useIdeaMapHandlers({
+23 |   reactFlowWrapper,
+24 |   reactFlowInstance,
+25 |   fetchCards
+26 | }: {
+27 |   reactFlowWrapper: React.RefObject<HTMLDivElement>;
+28 |   reactFlowInstance: any;
+29 |   fetchCards: () => Promise<{ nodes: Node<CardData>[]; edges: Edge[] }>;
+30 | }) {
+31 |   // 전역 상태에서 선택된 카드 정보 및 액션 가져오기
+32 |   const { selectCards } = useAppStore();
+33 |   
+34 |   // 아이디어맵 스토어에서 노드 추가 관련 액션 가져오기
+35 |   const addNodeAtPosition = useIdeaMapStore(state => state.addNodeAtPosition);
+36 |   const addCardAtCenterPosition = useIdeaMapStore(state => state.addCardAtCenterPosition);
+37 |   const createEdgeAndNodeOnDrop = useIdeaMapStore(state => state.createEdgeAndNodeOnDrop);
+38 | 
+39 |   /**
+40 |    * ReactFlow 선택 변경 이벤트 핸들러
+41 |    * @param selection 현재 선택된 노드와 엣지 정보
+42 |    */
+43 |   const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
+44 |     console.log('[IdeaMapComponent] 선택 변경 감지:', { 
+45 |       선택된_노드_수: nodes.length,
+46 |       선택된_노드_ID: nodes.map(node => node.data.id)
+47 |     });
+48 | 
+49 |     // 선택된 노드 ID 배열 추출
+50 |     const selectedNodeIds = nodes.map(node => node.data.id);
+51 |     
+52 |     // 전역 상태 업데이트
+53 |     selectCards(selectedNodeIds);
+54 |   }, [selectCards]);
+55 | 
+56 |   /**
+57 |    * 드래그 오버 이벤트 핸들러
+58 |    * @param event 드래그 이벤트
+59 |    */
+60 |   const onDragOver = useCallback((event: React.DragEvent) => {
+61 |     event.preventDefault();
+62 |     event.dataTransfer.dropEffect = 'move';
+63 |   }, []);
+64 | 
+65 |   /**
+66 |    * 드롭 이벤트 핸들러
+67 |    * @param event 드롭 이벤트
+68 |    */
+69 |   const onDrop = useCallback((event: React.DragEvent) => {
+70 |     event.preventDefault();
+71 | 
+72 |     // React Flow 래퍼 요소가 없으면 중단
+73 |     if (!reactFlowWrapper.current || !reactFlowInstance) {
+74 |       return;
+75 |     }
+76 | 
+77 |     // 드래그된 데이터 확인
+78 |     const reactFlowData = event.dataTransfer.getData('application/reactflow');
+79 |     if (!reactFlowData) return;
+80 | 
+81 |     try {
+82 |       // 데이터 파싱
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useIdeaMapUtils.test.tsx
+```
+1 | /**
+2 |  * 파일명: useIdeaMapUtils.test.tsx
+3 |  * 목적: useIdeaMapUtils 훅을 테스트
+4 |  * 역할: 아이디어맵 유틸리티 함수 관련 기능을 검증
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import { renderHook, act } from '@testing-library/react';
+10 | import { vi, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+11 | import { toast } from 'sonner';
+12 | import { useIdeaMapUtils } from './useIdeaMapUtils';
+13 | import { IdeaMapSettings, saveIdeaMapSettingsToServer, loadIdeaMapSettingsFromServer } from '@/lib/ideamap-utils';
+14 | import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
+15 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+16 | import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
+17 | import { useAppStore } from '@/store/useAppStore';
+18 | import { IDEAMAP_TRANSFORM_KEY } from '@/lib/ideamap-constants';
+19 | import { server } from '@/tests/msw/server';
+20 | import { http, HttpResponse } from 'msw';
+21 | import { AppState } from '@/store/useAppStore';
+22 | 
+23 | // MSW 서버 설정
+24 | beforeAll(() => server.listen());
+25 | afterEach(() => server.resetHandlers());
+26 | afterAll(() => server.close());
+27 | 
+28 | // 기본 모의 엣지 배열 생성
+29 | const defaultMockEdges = [
+30 |   { id: 'edge-mock-1', source: 'node1', target: 'node2' },
+31 | ];
+32 | 
+33 | // 기본 모의 노드 배열 생성
+34 | const defaultLayoutedNodes = [
+35 |   { id: 'node1', position: { x: 0, y: 0 }, data: { title: '카드 1', content: '내용 1' } },
+36 |   { id: 'node2', position: { x: 100, y: 100 }, data: { title: '카드 2', content: '내용 2' } },
+37 | ];
+38 | 
+39 | // 모든 vi.mock 호출을 먼저 수행
+40 | vi.mock('@xyflow/react', async () => {
+41 |   const actual = await vi.importActual('@xyflow/react');
+42 |   return {
+43 |     ...actual,
+44 |     useReactFlow: () => ({
+45 |       ...mockReactFlow,
+46 |       getViewport: () => ({ x: 100, y: 200, zoom: 2 }),
+47 |     }),
+48 |     MarkerType: {
+49 |       ArrowClosed: 'arrowclosed',
+50 |     },
+51 |     ConnectionLineType: {
+52 |       Bezier: 'bezier',
+53 |       Step: 'step',
+54 |       SmoothStep: 'smoothstep',
+55 |       Straight: 'straight',
+56 |     }
+57 |   };
+58 | });
+59 | 
+60 | // Zustand 스토어 모킹
+61 | vi.mock('@/store/useAppStore', () => {
+62 |   const setIdeaMapSettingsMock = vi.fn();
+63 | 
+64 |   return {
+65 |     useAppStore: (selector: ((state: Partial<AppState>) => any) | undefined) => {
+66 |       if (typeof selector === 'function') {
+67 |         return selector({
+68 |           ideaMapSettings: {
+69 |             strokeWidth: 2,
+70 |             edgeColor: '#000000',
+71 |             selectedEdgeColor: '#ff0000',
+72 |             animated: false,
+73 |             markerEnd: 'arrowclosed' as MarkerType,
+74 |             connectionLineType: 'straight' as ConnectionLineType,
+75 |             snapToGrid: false,
+76 |             snapGrid: [20, 20] as [number, number],
+77 |             markerSize: 20,
+78 |           },
+79 |           setIdeaMapSettings: setIdeaMapSettingsMock,
+80 |         });
+81 |       }
+82 | 
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useIdeaMapUtils.ts
+```
+1 | /**
+2 |  * 파일명: useIdeaMapUtils.ts
+3 |  * 목적: 아이디어맵 유틸리티 함수 관련 로직 분리
+4 |  * 역할: 아이디어맵 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | import { useCallback, useRef } from 'react';
+9 | import { Node, Edge, useReactFlow, Viewport } from '@xyflow/react';
+10 | import { toast } from 'sonner';
+11 | import { useAppStore } from '@/store/useAppStore';
+12 | import {
+13 |   IdeaMapSettings,
+14 |   DEFAULT_IDEAMAP_SETTINGS,
+15 |   loadIdeaMapSettings,
+16 |   saveIdeaMapSettings,
+17 |   loadIdeaMapSettingsFromServer,
+18 |   saveIdeaMapSettingsToServer
+19 | } from '@/lib/ideamap-utils';
+20 | import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
+21 | import { IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+22 | import { CardData } from '../types/ideamap-types';
+23 | 
+24 | /**
+25 |  * useIdeaMapUtils: 아이디어맵 유틸리티 함수 관련 로직을 관리하는 훅
+26 |  * @param reactFlowWrapper ReactFlow 래퍼 참조
+27 |  * @param updateNodeInternals 노드 내부 업데이트 함수
+28 |  * @param saveLayout 레이아웃 저장 함수
+29 |  * @param saveEdges 엣지 저장 함수
+30 |  * @param nodes 현재 노드 배열
+31 |  * @param edges 현재 엣지 배열
+32 |  * @param setNodes 노드 상태 설정 함수
+33 |  * @param setEdges 엣지 상태 설정 함수
+34 |  * @returns 아이디어맵 유틸리티 함수들
+35 |  */
+36 | export function useIdeaMapUtils({
+37 |   reactFlowWrapper,
+38 |   updateNodeInternals,
+39 |   saveLayout,
+40 |   saveEdges,
+41 |   nodes,
+42 |   edges,
+43 |   setNodes,
+44 |   setEdges
+45 | }: {
+46 |   reactFlowWrapper: React.RefObject<HTMLDivElement | null>;
+47 |   updateNodeInternals: (nodeId: string) => void;
+48 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
+49 |   saveEdges: (edgesToSave?: Edge[]) => boolean;
+50 |   nodes: Node<CardData>[];
+51 |   edges: Edge[];
+52 |   setNodes: (updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void;
+53 |   setEdges: (updater: ((edges: Edge[]) => Edge[]) | Edge[]) => void;
+54 | }) {
+55 |   // 전역 상태에서 아이디어맵 설정 가져오기
+56 |   const { ideaMapSettings, setIdeaMapSettings } = useAppStore();
+57 |   
+58 |   // 저장되지 않은 변경사항 플래그
+59 |   const hasUnsavedChanges = useRef(false);
+60 |   
+61 |   // ReactFlow 인스턴스
+62 |   const reactFlowInstance = useReactFlow();
+63 | 
+64 |   /**
+65 |    * 인증 상태에 따라 서버에서 설정 불러오기
+66 |    * @param isAuthenticated 인증 여부
+67 |    * @param userId 사용자 ID
+68 |    */
+69 |   const loadIdeaMapSettingsFromServerIfAuthenticated = useCallback(async (
+70 |     isAuthenticated: boolean, 
+71 |     userId?: string
+72 |   ) => {
+73 |     if (isAuthenticated && userId) {
+74 |       try {
+75 |         const settings = await loadIdeaMapSettingsFromServer(userId);
+76 |         if (settings) {
+77 |           // 전역 상태 업데이트 (이것이 localStorage에도 저장됨)
+78 |           setIdeaMapSettings(settings);
+79 |           
+80 |           // 새 설정을 엣지에 적용
+81 |           const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
+82 |           setEdges(updatedEdges);
+83 |         }
+84 |       } catch (err) {
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useNodes.test.tsx
+```
+1 | /**
+2 |  * 파일명: useNodes.test.tsx
+3 |  * 목적: useNodeClickHandlers 커스텀 훅 테스트
+4 |  * 역할: 노드 클릭 핸들러 기능의 정상 작동 검증
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+10 | import { renderHook, act } from '@testing-library/react';
+11 | import { Node } from '@xyflow/react';
+12 | import { CardData } from '../types/board-types';
+13 | 
+14 | // 모든 모킹은 파일 상단에 배치 (호이스팅 문제 방지)
+15 | // React Flow 모킹
+16 | vi.mock('@/tests/utils/react-flow-mock', () => ({
+17 |   mockReactFlow: vi.fn()
+18 | }));
+19 | 
+20 | // useAppStore 모킹
+21 | const clearSelectedCardsMock = vi.fn();
+22 | const selectCardMock = vi.fn();
+23 | const toggleSelectedCardMock = vi.fn();
+24 | 
+25 | vi.mock('@/store/useAppStore', () => ({
+26 |   useAppStore: vi.fn(() => ({
+27 |     selectedCardIds: ['test-node-1'],
+28 |     toggleSelectedCard: toggleSelectedCardMock,
+29 |     selectCard: selectCardMock,
+30 |     clearSelectedCards: clearSelectedCardsMock,
+31 |   }))
+32 | }));
+33 | 
+34 | // 토스트 모킹
+35 | vi.mock('sonner', () => ({
+36 |   toast: {
+37 |     success: vi.fn(),
+38 |     info: vi.fn(),
+39 |     error: vi.fn()
+40 |   }
+41 | }));
+42 | 
+43 | // 실제 컴포넌트 및 유틸리티 임포트 (모킹 후 임포트)
+44 | import { useNodeClickHandlers } from './useNodes';
+45 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+46 | 
+47 | describe('useNodeClickHandlers', () => {
+48 |   // 테스트 전 전역 설정
+49 |   beforeAll(() => {
+50 |     mockReactFlow();
+51 |   });
+52 | 
+53 |   // 각 테스트 전 초기화
+54 |   beforeEach(() => {
+55 |     // 모든 모의 함수 초기화
+56 |     vi.clearAllMocks();
+57 |   });
+58 | 
+59 |   // 각 테스트 후 정리
+60 |   afterEach(() => {
+61 |     vi.resetAllMocks();
+62 |   });
+63 | 
+64 |   // 모든 테스트 후 정리
+65 |   afterAll(() => {
+66 |     vi.restoreAllMocks();
+67 |   });
+68 | 
+69 |   it('초기 상태가 올바르게 반환되어야 함', () => {
+70 |     const { result } = renderHook(() => useNodeClickHandlers({}));
+71 | 
+72 |     expect(typeof result.current.handleNodeClick).toBe('function');
+73 |     expect(typeof result.current.handlePaneClick).toBe('function');
+74 |   });
+75 | 
+76 |   it('노드 클릭 시 handleNodeClick이 selectCard를 호출해야 함', () => {
+77 |     const onSelectCardMock = vi.fn();
+78 |     const { result } = renderHook(() => useNodeClickHandlers({ onSelectCard: onSelectCardMock }));
+79 | 
+80 |     // 테스트 노드 - 아직 선택되지 않은 노드를 사용
+81 |     const testNode: Node<CardData> = {
+82 |       id: 'test-node-2', // 선택되지 않은 새 노드 ID
+83 |       type: 'default',
+84 |       position: { x: 100, y: 200 },
+85 |       data: {
+86 |         id: 'test-node-2',
+87 |         title: '테스트 노드 2',
+[TRUNCATED]
+```
+
+src/components/ideamap/hooks/useNodes.ts
+```
+1 | /**
+2 |  * 파일명: useNodes.ts
+3 |  * 목적: 노드 클릭 핸들러 로직 관리
+4 |  * 역할: 노드 클릭 및 패널 클릭 이벤트 핸들링 로직 캡슐화
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-11
+7 |  */
+8 | 
+9 | import { useCallback } from 'react';
+10 | import { toast } from 'sonner';
+11 | import { useAppStore } from '@/store/useAppStore';
+12 | import { 
+13 |   NodeMouseHandler,
+14 |   Node
+15 | } from '@xyflow/react';
+16 | import { CardData } from '../types/board-types';
+17 | 
+18 | /**
+19 |  * useNodeClickHandlers: 노드 클릭 관련 핸들러를 제공하는 훅
+20 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수 (옵션)
+21 |  * @param onNodeDoubleClick 노드 더블 클릭 시 호출될 콜백 함수 (옵션)
+22 |  * @returns 노드 클릭 관련 핸들러 함수들
+23 |  */
+24 | export function useNodeClickHandlers({
+25 |   onSelectCard,
+26 |   onNodeDoubleClick
+27 | }: {
+28 |   onSelectCard?: (cardId: string | null) => void;
+29 |   onNodeDoubleClick?: (node: Node<CardData>) => void;
+30 | }) {
+31 |   // 전역 상태에서 선택된 카드 정보 가져오기
+32 |   const { selectedCardIds, toggleSelectedCard, selectCard, clearSelectedCards } = useAppStore();
+33 |   
+34 |   /**
+35 |    * 노드 클릭 핸들러: 노드 선택 처리
+36 |    * @param event 마우스 이벤트
+37 |    * @param node 클릭된 노드
+38 |    */
+39 |   const handleNodeClick = useCallback<NodeMouseHandler>((event, node) => {
+40 |     // 이벤트 전파 방지는 항상 수행
+41 |     event.stopPropagation();
+42 | 
+43 |     // 노드가 undefined인 경우 처리
+44 |     if (!node) {
+45 |       console.warn('클릭된 노드가 undefined입니다.');
+46 |       return;
+47 |     }
+48 |     
+49 |     // 노드 타입 안전하게 변환
+50 |     const typedNode = node as Node<CardData>;
+51 |     
+52 |     // 더블 클릭 처리
+53 |     if (event.detail === 2 && onNodeDoubleClick) {
+54 |       onNodeDoubleClick(typedNode);
+55 |       return;
+56 |     }
+57 |     
+58 |     // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
+59 |     const isMultiSelectMode = event.ctrlKey || event.metaKey;
+60 |     
+61 |     // 노드 id 가져오기
+62 |     const nodeId = typedNode.id;
+63 |     
+64 |     // 기본 이벤트 관리
+65 |     event.stopPropagation();
+66 |     
+67 |     if (isMultiSelectMode) {
+68 |       // 다중 선택 모드: 선택된 카드 목록에 추가/제거
+69 |       console.log('다중 선택 모드로 노드 클릭:', nodeId);
+70 |       
+71 |       // 토스트 메시지 결정을 위해 현재 선택 상태 미리 확인
+72 |       const isCurrentlySelected = selectedCardIds.includes(nodeId);
+73 |       
+74 |       // 상태 업데이트
+75 |       toggleSelectedCard(nodeId);
+76 |       
+77 |       // 성공 메시지 표시 - 다중 선택 모드
+78 |       if (isCurrentlySelected) {
+79 |         toast.success(`'${typedNode.data.title}'가 선택에서 제거되었습니다.`);
+80 |       } else {
+81 |         toast.success(`'${typedNode.data.title}'가 선택에 추가되었습니다.`);
+82 |       }
+83 |     } else {
+84 |       // 단일 선택 모드: 하나만 선택
+[TRUNCATED]
+```
+
+src/components/ideamap/types/ideamap-types.ts
+```
+1 | /**
+2 |  * 파일명: ideamap-types.ts
+3 |  * 목적: IdeaMapComponent 및 관련 컴포넌트에서 사용되는 타입 정의
+4 |  * 역할: 타입 정의를 중앙화하여 코드 중복을 방지하고 타입 안정성 제공
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | import { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode } from '@xyflow/react';
+9 | 
+10 | /**
+11 |  * IdeaMapComponent의 Props 인터페이스
+12 |  * @interface IdeaMapComponentProps
+13 |  */
+14 | export interface IdeaMapComponentProps {
+15 |   /** 카드 선택 시 호출될 콜백 함수 */
+16 |   onSelectCard?: (cardId: string | null) => void;
+17 |   /** 컴포넌트에 적용할 추가 CSS 클래스 */
+18 |   className?: string;
+19 |   /** 컨트롤 표시 여부 */
+20 |   showControls?: boolean;
+21 | }
+22 | 
+23 | /**
+24 |  * 카드(노드) 데이터 인터페이스
+25 |  * @interface CardData
+26 |  */
+27 | export interface CardData {
+28 |   id: string;
+29 |   title: string;
+30 |   content: string | null;
+31 |   tags?: string[];
+32 |   cardTags?: Array<{tag: {name: string}}>;
+33 |   [key: string]: any;
+34 | }
+35 | 
+36 | /**
+37 |  * 아이디어맵 설정 인터페이스
+38 |  * @interface IdeaMapSettings
+39 |  */
+40 | export interface IdeaMapSettings {
+41 |   /** 엣지 색상 */
+42 |   edgeColor: string;
+43 |   /** 엣지 두께 */
+44 |   strokeWidth: number;
+45 |   /** 엣지 애니메이션 여부 */
+46 |   animated: boolean;
+47 |   /** 방향 표시 여부 */
+48 |   markerEnd: boolean;
+49 |   /** 연결선 타입 */
+50 |   connectionLineType: string;
+51 |   /** 그리드 스냅 여부 */
+52 |   snapToGrid: boolean;
+53 |   /** 그리드 크기 */
+54 |   snapGrid: [number, number];
+55 |   [key: string]: any;
+56 | }
+57 | 
+58 | /**
+59 |  * 아이디어맵 노드 타입
+60 |  * @type IdeaMapNode
+61 |  */
+62 | export type IdeaMapNode = Node<CardData>;
+63 | 
+64 | /**
+65 |  * 아이디어맵 엣지 타입
+66 |  * @type IdeaMapEdge
+67 |  */
+68 | export type IdeaMapEdge = Edge;
+69 | 
+70 | /**
+71 |  * 엣지 드롭 데이터 인터페이스
+72 |  * @interface EdgeDropData
+73 |  */
+74 | export interface EdgeDropData {
+75 |   position: XYPosition;
+76 |   connectingNodeId: string;
+77 |   handleType: 'source' | 'target';
+78 | }
+79 | 
+80 | // 타입 재내보내기 - isolatedModules 설정 때문에 'export type'을 사용
+81 | export type { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode }; 
+```
+
+src/components/ideamap/nodes/CardNode.test.tsx
+```
+1 | /**
+2 |  * 파일명: CardNode.test.tsx
+3 |  * 목적: CardNode 컴포넌트 테스트
+4 |  * 역할: 카드 노드 컴포넌트의 기능 테스트
+5 |  * 작성일: 2025-04-01
+6 |  */
+7 | 
+8 | import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+9 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+10 | import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
+11 | import { ThemeProvider } from '@/contexts/ThemeContext';
+12 | import { DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
+13 | 
+14 | // TiptapViewer 모킹
+15 | vi.mock('@/components/editor/TiptapViewer', () => ({
+16 |     default: ({ content }: { content: string }) => (
+17 |         <div data-testid="tiptap-viewer">{content}</div>
+18 |     )
+19 | }));
+20 | 
+21 | // EditCardModal 모킹
+22 | vi.mock('@/components/cards/EditCardModal', () => ({
+23 |     EditCardModal: vi.fn(({ onClose }) => (
+24 |         <div data-testid="edit-card-modal">
+25 |             <button onClick={onClose} data-testid="close-modal-button">닫기</button>
+26 |         </div>
+27 |     ))
+28 | }));
+29 | 
+30 | // ThemeContext 모킹
+31 | vi.mock('@/contexts/ThemeContext', () => ({
+32 |     useTheme: () => ({
+33 |         theme: {
+34 |             node: {
+35 |                 width: 200,
+36 |                 height: 30,
+37 |                 maxHeight: 200,
+38 |                 backgroundColor: '#ffffff',
+39 |                 borderWidth: 1,
+40 |                 borderColor: '#e2e8f0',
+41 |                 selectedBorderColor: '#3b82f6',
+42 |                 borderRadius: 6,
+43 |                 font: {
+44 |                     titleSize: 14,
+45 |                     contentSize: 12,
+46 |                     tagsSize: 10
+47 |                 }
+48 |             },
+49 |             handle: {
+50 |                 size: 8,
+51 |                 backgroundColor: '#ffffff',
+52 |                 borderColor: '#888888',
+53 |                 borderWidth: 1
+54 |             },
+55 |             edge: {
+56 |                 color: '#a1a1aa'
+57 |             }
+58 |         }
+59 |     }),
+60 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+61 | }));
+62 | 
+63 | // AppStore 모킹
+64 | vi.mock('@/store/useAppStore', () => ({
+65 |     useAppStore: vi.fn((selector) => selector({
+66 |         // 선택 관련 상태
+67 |         selectedCardIds: [],
+68 |         selectedCardId: null,
+69 |         expandedCardId: null,
+70 | 
+71 |         // 선택 관련 액션
+72 |         selectCard: vi.fn(),
+73 |         selectCards: vi.fn(),
+74 |         addSelectedCard: vi.fn(),
+75 |         removeSelectedCard: vi.fn(),
+76 |         toggleSelectedCard: vi.fn(),
+77 |         clearSelectedCards: vi.fn(),
+78 |         toggleExpandCard: vi.fn(),
+79 | 
+80 |         // 카드 데이터 상태
+81 |         cards: [],
+82 |         setCards: vi.fn(),
+83 |         updateCard: vi.fn(),
+84 | 
+85 |         // 사이드바 상태
+86 |         isSidebarOpen: false,
+87 |         setSidebarOpen: vi.fn(),
+88 |         toggleSidebar: vi.fn(),
+89 | 
+90 |         // 레이아웃 옵션
+91 |         layoutDirection: 'auto' as const,
+92 |         setLayoutDirection: vi.fn(),
+93 | 
+94 |         // 사이드바 너비
+95 |         sidebarWidth: 300,
+96 |         setSidebarWidth: vi.fn(),
+97 | 
+98 |         // 아이디어맵 설정
+[TRUNCATED]
+```
+
+src/components/ideamap/nodes/CardNode.tsx
+```
+1 | /**
+2 |  * 파일명: CardNode.tsx
+3 |  * 목적: 보드에 표시되는 카드 노드 컴포넌트
+4 |  * 역할: React Flow의 노드로 사용되는 카드 UI 컴포넌트
+5 |  * 작성일: 2025-03-05
+6 |  * 수정일: 2025-03-31
+7 |  */
+8 | 
+9 | import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+10 | import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals, Node as FlowNode } from '@xyflow/react';
+11 | import { Button } from "@/components/ui/button";
+12 | import Link from 'next/link';
+13 | import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
+14 | import TiptapViewer from '@/components/editor/TiptapViewer';
+15 | import { loadDefaultIdeaMapUIConfig } from '@/lib/ideamap-ui-config';
+16 | import { CSSProperties } from 'react';
+17 | import { useAppStore } from '@/store/useAppStore';
+18 | import { Card, CardContent } from '@/components/ui/card';
+19 | import { cn, hexToHsl, hslToHex } from '@/lib/utils';
+20 | import { createPortal } from 'react-dom';
+21 | import { EditCardModal } from '@/components/cards/EditCardModal';
+22 | import { useTheme } from '@/contexts/ThemeContext';
+23 | import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
+24 | 
+25 | // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
+26 | const COMPONENT_ID = 'CardNode_from_nodes_directory';
+27 | 
+28 | // 디버깅용 로그 - 순환 참조 방지를 위해 NODE_TYPES 접근 제거
+29 | console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/ideamap/nodes/CardNode`);
+30 | 
+31 | // 노드 데이터 타입 정의
+32 | export interface NodeData {
+33 |   id: string;
+34 |   title: string;
+35 |   content: string;
+36 |   type?: string;
+37 |   width?: number;
+38 |   height?: number;
+39 |   color?: string;
+40 |   backgroundColor?: string;
+41 |   tags?: string[];
+42 |   position?: {
+43 |     x: number;
+44 |     y: number;
+45 |   };
+46 |   // 추가 속성들
+47 |   [key: string]: any;
+48 | }
+49 | 
+50 | // Portal 컴포넌트 - 내부 정의
+51 | const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+52 |   const [mounted, setMounted] = useState(false);
+53 | 
+54 |   useEffect(() => {
+55 |     setMounted(true);
+56 |     return () => setMounted(false);
+57 |   }, []);
+58 | 
+59 |   return mounted ? createPortal(children, document.body) : null;
+60 | };
+61 | 
+62 | // 카드 노드 컴포넌트 정의
+63 | export default function CardNode({ data, isConnectable, selected, id }: NodeProps) {
+64 |   const [isHovered, setIsHovered] = useState(false);
+65 |   const { getNode, setNodes } = useReactFlow();
+66 |   const nodeRef = useRef<HTMLDivElement>(null);
+67 |   const updateNodeInternals = useUpdateNodeInternals();
+68 |   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+69 |   const [isActive, setIsActive] = useState(false);
+70 | 
+71 |   // ReactFlow 인스턴스 가져오기
+72 |   const reactFlowInstance = useReactFlow();
+73 | 
+74 |   // 컴포넌트 초기화 로그 - 상세 정보 추가
+[TRUNCATED]
+```
+
+src/components/ideamap/nodes/CustomEdge.test.tsx
+```
+1 | /**
+2 |  * 파일명: CustomEdge.test.tsx
+3 |  * 목적: CustomEdge 컴포넌트 테스트
+4 |  * 역할: 엣지 컴포넌트의 기능 테스트
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-01
+7 |  */
+8 | 
+9 | import { describe, it, expect, vi, beforeEach } from 'vitest';
+10 | import { render, screen } from '@testing-library/react';
+11 | import { ReactFlowProvider, EdgeProps, Position, ConnectionLineType } from '@xyflow/react';
+12 | import { ConnectionLineType as SystemConnectionLineType } from '@xyflow/system';
+13 | import type * as XyflowReact from '@xyflow/react';
+14 | 
+15 | // AppStore 모킹
+16 | vi.mock('@/store/useAppStore', () => ({
+17 |   useAppStore: () => ({
+18 |     boardSettings: {
+19 |       edgeColor: '#000000',
+20 |       selectedEdgeColor: '#ff0000',
+21 |       strokeWidth: 2,
+22 |       selectedStrokeWidth: 3,
+23 |       animated: false,
+24 |       markerEnd: true,
+25 |       connectionLineType: 'bezier'
+26 |     }
+27 |   })
+28 | }));
+29 | 
+30 | vi.mock('@xyflow/react', async (importOriginal) => {
+31 |   const actual = (await importOriginal()) as typeof XyflowReact;
+32 |   const getBezierPathMock = vi.fn().mockReturnValue(['M0 0 C100 0 100 100 200 100']);
+33 |   const getStraightPathMock = vi.fn().mockReturnValue(['M0 0 L200 100']);
+34 |   const getSmoothStepPathMock = vi.fn().mockReturnValue(['M0 0 Q100 0 100 50 Q100 100 200 100']);
+35 | 
+36 |   return {
+37 |     ...actual,
+38 |     getBezierPath: getBezierPathMock,
+39 |     getStraightPath: getStraightPathMock,
+40 |     getSmoothStepPath: getSmoothStepPathMock,
+41 |     useStore: vi.fn(() => ({
+42 |       selectedEdgeColor: '#ff0000',
+43 |     })),
+44 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+45 |     BaseEdge: ({ path, markerEnd, style, className, 'data-selected': selected, 'data-component-id': componentId }: any) => (
+46 |       <g data-testid="base-edge" className={className} style={style} data-selected={selected} data-component-id={componentId}>
+47 |         <path data-testid="edge-path" d={path} markerEnd={markerEnd} />
+48 |       </g>
+49 |     ),
+50 |   };
+51 | });
+52 | 
+53 | // CustomEdge 컴포넌트 임포트
+54 | import CustomEdge from './CustomEdge';
+55 | 
+56 | describe('CustomEdge', () => {
+57 |   const mockEdgeProps: Partial<EdgeProps> = {
+58 |     id: 'test-edge-id',
+59 |     source: 'source-node',
+60 |     target: 'target-node',
+61 |     sourceX: 100,
+62 |     sourceY: 100,
+63 |     targetX: 200,
+64 |     targetY: 200,
+65 |     sourcePosition: Position.Right,
+66 |     targetPosition: Position.Left,
+67 |     style: { strokeWidth: 2, stroke: '#000000' },
+68 |     markerEnd: 'test-marker',
+69 |     selected: false
+70 |   };
+71 | 
+72 |   let getBezierPathMock: ReturnType<typeof vi.fn>;
+73 |   let getStraightPathMock: ReturnType<typeof vi.fn>;
+74 |   let getSmoothStepPathMock: ReturnType<typeof vi.fn>;
+75 | 
+76 |   beforeEach(async () => {
+77 |     const xyflow = vi.mocked(await import('@xyflow/react'));
+78 |     getBezierPathMock = xyflow.getBezierPath;
+79 |     getStraightPathMock = xyflow.getStraightPath;
+[TRUNCATED]
+```
+
+src/components/ideamap/nodes/CustomEdge.tsx
+```
+1 | /**
+2 |  * 파일명: CustomEdge.tsx
+3 |  * 목적: React Flow에서 사용할 커스텀 엣지 컴포넌트
+4 |  * 역할: 노드 간 연결선을 시각화하는 컴포넌트
+5 |  * 작성일: 2025-03-08
+6 |  * 수정일: 2025-03-31
+7 |  */
+8 | 
+9 | import React, { useMemo, useEffect } from 'react';
+10 | import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
+11 | import { loadBoardSettings } from '@/lib/ideamap-utils';
+12 | import { useAppStore } from '@/store/useAppStore';
+13 | import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
+14 | 
+15 | // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
+16 | const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
+17 | 
+18 | // 디버깅용 로그 - 순환 참조 방지를 위해 EDGE_TYPES 접근 제거
+19 | console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge`);
+20 | 
+21 | // 확장된 엣지 Props 인터페이스
+22 | interface CustomEdgeProps extends EdgeProps {
+23 |   type?: string;
+24 |   animated?: boolean;
+25 |   data?: {
+26 |     edgeType?: ConnectionLineType;
+27 |     settings?: any;
+28 |   };
+29 | }
+30 | 
+31 | /**
+32 |  * 커스텀 엣지 컴포넌트
+33 |  * - ReactFlow의 기본 동작을 최대한 활용하고, 최소한의 조정만 적용
+34 |  */
+35 | // 컴포넌트 사용 시점 디버깅
+36 | console.log('[CustomEdge] 컴포넌트 정의 전: 함수 형태의 컴포넌트 생성');
+37 | 
+38 | function CustomEdge({
+39 |   id,
+40 |   source,
+41 |   target,
+42 |   sourceX,
+43 |   sourceY,
+44 |   targetX,
+45 |   targetY,
+46 |   sourcePosition,
+47 |   targetPosition,
+48 |   style = {},
+49 |   markerEnd,
+50 |   selected,
+51 |   type,
+52 |   animated,
+53 |   data,
+54 |   ...restProps
+55 | }: CustomEdgeProps) {
+56 |   // 컴포넌트 초기화 로그 - 상세 정보 추가 (타입 검증은 유지)
+57 |   // console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
+58 |   //   id: id,
+59 |   //   source: source,
+60 |   //   target: target,
+61 |   //   type: type,
+62 |   //   expectedType: EDGE_TYPES_KEYS.custom,
+63 |   //   isTypeValid: type === EDGE_TYPES_KEYS.custom,
+64 |   //   componentId: COMPONENT_ID
+65 |   // });
+66 | 
+67 |   // Zustand 스토어에서 boardSettings 가져오기
+68 |   const { boardSettings } = useAppStore();
+69 | 
+70 |   // 글로벌 설정과 로컬 설정 결합
+71 |   const effectiveSettings = useMemo(() => {
+72 |     // 로컬 설정이 있으면 우선적으로 사용, 없으면 글로벌 설정 사용
+73 |     const localSettings = data?.settings;
+74 |     return localSettings ? { ...boardSettings, ...localSettings } : boardSettings;
+75 |   }, [boardSettings, data?.settings]);
+76 | 
+77 |   // 엣지 연결 좌표 계산 (useMemo로 최적화)
+78 |   const edgeParams = useMemo(() => ({
+79 |     sourceX,
+80 |     sourceY,
+81 |     sourcePosition,
+82 |     targetX,
+83 |     targetY,
+84 |     targetPosition,
+85 |   }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
+86 | 
+[TRUNCATED]
+```
+
+src/components/ideamap/nodes/NodeInspect.tsx
+```
+1 | /**
+2 |  * 파일명: NodeInspect.tsx
+3 |  * 목적: React Flow 노드 검사 컴포넌트
+4 |  * 역할: 노드 정보를 표시해주는 디버깅용 컴포넌트
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | import { useEffect, useState } from 'react';
+9 | import { useReactFlow, NodeProps, NodeToolbar, Position } from '@xyflow/react';
+10 | 
+11 | /**
+12 |  * NodeInspect 컴포넌트는 각 노드에 추가되어 노드의 데이터를 표시합니다.
+13 |  * 실시간으로 노드 상태를 반영합니다.
+14 |  */
+15 | export default function NodeInspect(props: NodeProps) {
+16 |   const { data, id, type } = props;
+17 |   const { getNode } = useReactFlow();
+18 |   // 실시간 상태 업데이트를 위한 상태
+19 |   const [nodeState, setNodeState] = useState({ selected: false });
+20 |   const [isVisible, setIsVisible] = useState(false);
+21 |   
+22 |   // 렌더링 전에 isVisible 상태를 설정
+23 |   useEffect(() => {
+24 |     setIsVisible(!!data?.isInspected);
+25 |   }, [data?.isInspected]);
+26 | 
+27 |   // 실시간 노드 상태 업데이트
+28 |   useEffect(() => {
+29 |     // 노드 상태 업데이트 함수
+30 |     const updateNodeState = () => {
+31 |       const currentNode = getNode(id);
+32 |       if (currentNode) {
+33 |         setNodeState({
+34 |           selected: !!currentNode.selected,
+35 |         });
+36 |       }
+37 |     };
+38 | 
+39 |     // 초기 상태 설정
+40 |     updateNodeState();
+41 | 
+42 |     // 주기적으로 노드 상태 업데이트 (실시간성 보장)
+43 |     const intervalId = setInterval(updateNodeState, 100);
+44 | 
+45 |     return () => {
+46 |       clearInterval(intervalId);
+47 |     };
+48 |   }, [id, getNode]);
+49 | 
+50 |   // 핸들 위치 정보
+51 |   const handleInfo = {
+52 |     leftTop: { position: Position.Left, top: '0%' },
+53 |     leftBottom: { position: Position.Left, top: '100%' },
+54 |     rightTop: { position: Position.Right, top: '0%' },
+55 |     rightBottom: { position: Position.Right, top: '100%' },
+56 |   };
+57 | 
+58 |   if (!isVisible) return null;
+59 | 
+60 |   return (
+61 |     <NodeToolbar 
+62 |       position={Position.Bottom}
+63 |       className="nodrag bg-card shadow-md rounded p-2 text-xs max-w-xs" 
+64 |       isVisible={true}
+65 |     >
+66 |       <div className="space-y-1">
+67 |         <div><span className="font-medium">제목:</span> {data?.title || data?.label || '제목 없음'}</div>
+68 |         <div><span className="font-medium">ID:</span> {id}</div>
+69 |         <div><span className="font-medium">타입:</span> {type || '기본'}</div>
+70 |         <div><span className="font-medium">선택됨:</span> {nodeState.selected ? '예' : '아니오'}</div>
+71 |       </div>
+72 |     </NodeToolbar>
+73 |   );
+74 | } 
+```
+
+src/components/ideamap/nodes/NodeInspector.tsx
+```
+1 | /**
+2 |  * 파일명: NodeInspector.tsx
+3 |  * 목적: 노드 상세 정보를 모달로 표시하는 컴포넌트
+4 |  * 역할: 선택된 노드의 정보를 검사하고 표시
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-04-15
+7 |  */
+8 | 
+9 | import { useEffect } from 'react';
+10 | import { Node } from '@xyflow/react';
+11 | import { Modal } from '@/components/ui/modal';
+12 | import { Badge } from '@/components/ui/badge';
+13 | import TiptapViewer from '@/components/editor/TiptapViewer';
+14 | import { useNodeStore } from '@/store/useNodeStore';
+15 | 
+16 | interface NodeInspectorProps {
+17 |   nodes: Node[];
+18 | }
+19 | 
+20 | /**
+21 |  * NodeInspector: 노드의 상세 정보를 모달로 표시하는 컴포넌트
+22 |  * @param {NodeInspectorProps} props - 컴포넌트 속성
+23 |  * @returns {JSX.Element} 노드 인스펙터 컴포넌트
+24 |  */
+25 | export function NodeInspector({ nodes }: NodeInspectorProps) {
+26 |   const { inspectorOpen, inspectedNode, setInspectorOpen, setInspectedNode } = useNodeStore();
+27 | 
+28 |   // 모달이 닫힐 때 inspectedNode 초기화
+29 |   const handleCloseModal = () => {
+30 |     setInspectorOpen(false);
+31 |   };
+32 | 
+33 |   // 노드 정보가 없거나 모달이 닫혀있으면 열린 상태로 렌더링하지만 보이지 않게 함
+34 |   const shouldShowContent = inspectorOpen && inspectedNode;
+35 | 
+36 |   return (
+37 |     <Modal.Root open={Boolean(shouldShowContent)} onOpenChange={handleCloseModal}>
+38 |       <Modal.Content>
+39 |         {shouldShowContent && (
+40 |           <>
+41 |             <Modal.Title>
+42 |               {inspectedNode.data?.title || '제목 없음'}
+43 |             </Modal.Title>
+44 | 
+45 |             <div className="py-4">
+46 |               {/* 노드 ID 정보 */}
+47 |               <div className="mb-4">
+48 |                 <h3 className="text-sm font-semibold mb-1">ID</h3>
+49 |                 <code className="bg-muted p-1 rounded text-xs">{inspectedNode.id}</code>
+50 |               </div>
+51 | 
+52 |               {/* 노드 내용 */}
+53 |               {inspectedNode.data?.content && (
+54 |                 <div className="mb-4">
+55 |                   <h3 className="text-sm font-semibold mb-1">내용</h3>
+56 |                   <div className="bg-muted p-2 rounded">
+57 |                     <TiptapViewer content={inspectedNode.data.content} />
+58 |                   </div>
+59 |                 </div>
+60 |               )}
+61 | 
+62 |               {/* 노드 태그 */}
+63 |               {inspectedNode.data?.tags && inspectedNode.data.tags.length > 0 && (
+64 |                 <div className="mb-4">
+65 |                   <h3 className="text-sm font-semibold mb-1">태그</h3>
+66 |                   <div className="flex flex-wrap gap-1">
+67 |                     {inspectedNode.data.tags.map((tag: string) => (
+68 |                       <Badge key={tag} data-testid="node-tag">{tag}</Badge>
+69 |                     ))}
+70 |                   </div>
+71 |                 </div>
+72 |               )}
+73 | 
+74 |               {/* 노드 위치 정보 */}
+75 |               <div className="mb-4">
+76 |                 <h3 className="text-sm font-semibold mb-1">위치</h3>
+[TRUNCATED]
+```
+
+src/components/ideamap/utils/ideamap-constants.ts
+```
+1 | /**
+2 |  * 파일명: constants.ts
+3 |  * 목적: 보드 컴포넌트 관련 상수 정의
+4 |  * 역할: 보드 컴포넌트에서 사용되는 모든 상수값 제공
+5 |  * 작성일: 2025-03-28
+6 |  * 수정일: 2025-03-30
+7 |  */
+8 | 
+9 | import { ConnectionLineType, Position } from '@xyflow/react';
+10 | 
+11 | // 레이아웃 방향
+12 | export const LAYOUT_DIRECTION = {
+13 |   HORIZONTAL: 'LR',
+14 |   VERTICAL: 'TB'
+15 | };
+16 | 
+17 | // 노드 타입
+18 | export const NODE_TYPES = {
+19 |   CARD: 'card'
+20 | };
+21 | 
+22 | // 엣지 타입
+23 | export const EDGE_TYPES = {
+24 |   CUSTOM: 'custom'
+25 | };
+26 | 
+27 | // 핸들 위치 정보
+28 | export const HANDLE_POSITIONS = {
+29 |   TOP: Position.Top,
+30 |   RIGHT: Position.Right,
+31 |   BOTTOM: Position.Bottom,
+32 |   LEFT: Position.Left
+33 | };
+34 | 
+35 | // 연결선 타입
+36 | export const CONNECTION_LINE_TYPES = {
+37 |   BEZIER: ConnectionLineType.Bezier,
+38 |   STEP: ConnectionLineType.Step,
+39 |   SMOOTHSTEP: ConnectionLineType.SmoothStep,
+40 |   STRAIGHT: ConnectionLineType.Straight
+41 | };
+42 | 
+43 | // 기본 노드 크기
+44 | export const DEFAULT_NODE_DIMENSIONS = {
+45 |   WIDTH: 300,
+46 |   MIN_HEIGHT: 100
+47 | };
+48 | 
+49 | // 자동 저장 딜레이 (밀리초)
+50 | export const AUTO_SAVE_DELAY = 1000;
+51 | 
+52 | // 노드 기본 간격 값
+53 | export const NODE_SPACING = {
+54 |   HORIZONTAL: 100,
+55 |   VERTICAL: 80
+56 | };
+57 | 
+58 | // 새 노드 기본 데이터
+59 | export const DEFAULT_NEW_CARD = {
+60 |   title: '새 카드',
+61 |   content: '',
+62 |   tags: []
+63 | };
+64 | 
+65 | // 보드 줌 설정
+66 | export const ZOOM_SETTINGS = {
+67 |   MIN: 0.5,
+68 |   MAX: 2,
+69 |   STEP: 0.1
+70 | };
+71 | 
+72 | // 툴팁 표시 지연 (밀리초)
+73 | export const TOOLTIP_DELAY = 500; 
+```
+
+src/components/ideamap/utils/ideamap-graphUtils.ts
+```
+1 | /**
+2 |  * 파일명: graphUtils.ts
+3 |  * 목적: 그래프 관련 순수 함수 모음
+4 |  * 역할: 노드, 엣지 처리를 위한 순수 유틸리티 함수 제공
+5 |  * 작성일: 2025-03-28
+6 |  */
+7 | 
+8 | import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';
+9 | import { IdeaMapSettings } from '@/lib/ideamap-utils';
+10 | import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+11 | 
+12 | /**
+13 |  * 레이아웃을 로컬 스토리지에 저장
+14 |  * @param nodes 저장할 노드 배열
+15 |  * @returns 성공 여부
+16 |  */
+17 | export const saveLayout = (nodes: Node[]): boolean => {
+18 |   try {
+19 |     // 노드 ID와 위치만 저장
+20 |     const nodePositions = nodes.reduce((acc: Record<string, { position: XYPosition }>, node: Node) => {
+21 |       acc[node.id] = { position: node.position };
+22 |       return acc;
+23 |     }, {});
+24 |     
+25 |     localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(nodePositions));
+26 |     return true;
+27 |   } catch (err) {
+28 |     console.error('레이아웃 저장 실패:', err);
+29 |     return false;
+30 |   }
+31 | };
+32 | 
+33 | /**
+34 |  * 엣지를 로컬 스토리지에 저장
+35 |  * @param edges 저장할 엣지 배열
+36 |  * @returns 성공 여부
+37 |  */
+38 | export const saveEdges = (edges: Edge[]): boolean => {
+39 |   try {
+40 |     localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
+41 |     return true;
+42 |   } catch (err) {
+43 |     console.error('엣지 저장 실패:', err);
+44 |     return false;
+45 |   }
+46 | };
+47 | 
+48 | /**
+49 |  * 모든 레이아웃 데이터 저장 (노드와 엣지)
+50 |  * @param nodes 저장할 노드 배열
+51 |  * @param edges 저장할 엣지 배열
+52 |  * @returns 성공 여부
+53 |  */
+54 | export const saveAllLayoutData = (nodes: Node[], edges: Edge[]): boolean => {
+55 |   const layoutSaved = saveLayout(nodes);
+56 |   const edgesSaved = saveEdges(edges);
+57 |   
+58 |   return layoutSaved && edgesSaved;
+59 | };
+60 | 
+61 | /**
+62 |  * 삭제된 노드를 로컬 스토리지에서 제거
+63 |  * @param deletedNodeIds 삭제된 노드 ID 배열
+64 |  */
+65 | export const removeDeletedNodesFromStorage = (deletedNodeIds: string[]): void => {
+66 |   try {
+67 |     // 노드 위치 정보 처리
+68 |     const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
+69 |     if (savedPositionsStr) {
+70 |       const savedPositions = JSON.parse(savedPositionsStr);
+71 |       
+72 |       // 삭제된 노드 ID를 제외한 새 위치 정보 객체 생성
+73 |       const updatedPositions = Object.fromEntries(
+74 |         Object.entries(savedPositions).filter(([id]) => !deletedNodeIds.includes(id))
+75 |       );
+76 |       
+77 |       // 업데이트된 위치 정보 저장
+78 |       localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(updatedPositions));
+79 |       
+80 |       // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
+[TRUNCATED]
+```
+
+src/tests/msw/handlers/logs.ts
+```
+1 | /**
+2 |  * 파일명: logs.ts
+3 |  * 목적: 로그 뷰어 테스트를 위한 목업 데이터
+4 |  * 역할: 테스트에서 사용할 로그 데이터 제공
+5 |  * 작성일: 2025-04-01
+6 |  */
+7 | 
+8 | export interface Log {
+9 |   timestamp: string
+10 |   module: string
+11 |   level: string
+12 |   message: string
+13 |   sessionId: string
+14 |   data?: Record<string, unknown>
+15 | }
+16 | 
+17 | export const mockModules = ['auth', 'database', 'api', 'system'] as const
+18 | 
+19 | export const mockSessionIds = [
+20 |   'sess_123456',
+21 |   'sess_789012',
+22 |   'sess_345678',
+23 |   'sess_901234'
+24 | ]
+25 | 
+26 | export const mockLogs: Log[] = [
+27 |   {
+28 |     timestamp: '2024-03-31T10:00:00Z',
+29 |     module: 'auth',
+30 |     level: 'info',
+31 |     message: '사용자 로그인 성공',
+32 |     sessionId: 'sess_123456',
+33 |     data: {
+34 |       userId: 'user_123',
+35 |       loginMethod: 'password'
+36 |     }
+37 |   },
+38 |   {
+39 |     timestamp: '2024-03-31T10:01:00Z',
+40 |     module: 'database',
+41 |     level: 'error',
+42 |     message: '데이터베이스 연결 실패',
+43 |     sessionId: 'sess_789012',
+44 |     data: {
+45 |       errorCode: 'DB_001',
+46 |       retryCount: 3
+47 |     }
+48 |   },
+49 |   {
+50 |     timestamp: '2024-03-31T10:02:00Z',
+51 |     module: 'api',
+52 |     level: 'warn',
+53 |     message: 'API 응답 지연',
+54 |     sessionId: 'sess_345678',
+55 |     data: {
+56 |       endpoint: '/api/users',
+57 |       responseTime: 5000
+58 |     }
+59 |   },
+60 |   {
+61 |     timestamp: '2024-03-31T10:03:00Z',
+62 |     module: 'system',
+63 |     level: 'debug',
+64 |     message: '시스템 상태 점검',
+65 |     sessionId: 'sess_901234',
+66 |     data: {
+67 |       cpuUsage: 45,
+68 |       memoryUsage: 60
+69 |     }
+70 |   }
+71 | ] 
 ```
 
 src/app/admin/logs/LogViewerPageMock.tsx
@@ -11215,97 +13344,6 @@ src/app/admin/logs/test-utils.ts
 41 | } 
 ```
 
-src/app/api/board-settings/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import { z } from 'zod';
-3 | import prisma from '@/lib/prisma';
-4 | 
-5 | // 보드 설정 스키마
-6 | const boardSettingsSchema = z.object({
-7 |   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
-8 |   settings: z.object({
-9 |     snapToGrid: z.boolean(),
-10 |     snapGrid: z.tuple([z.number(), z.number()]),
-11 |     connectionLineType: z.string(),
-12 |     markerEnd: z.string().nullable(),
-13 |     strokeWidth: z.number(),
-14 |     markerSize: z.number(),
-15 |     edgeColor: z.string(),
-16 |     selectedEdgeColor: z.string(),
-17 |     animated: z.boolean()
-18 |   })
-19 | });
-20 | 
-21 | // 부분 업데이트용 보드 설정 스키마 (더 유연한 검사)
-22 | const partialBoardSettingsSchema = z.object({
-23 |   userId: z.string(), // UUID 검사 제거하여 더 유연하게 함
-24 |   settings: z.object({
-25 |     snapToGrid: z.boolean().optional(),
-26 |     snapGrid: z.tuple([z.number(), z.number()]).optional(),
-27 |     connectionLineType: z.string().optional(),
-28 |     markerEnd: z.union([z.string(), z.null()]).optional(), // 문자열 또는 null 허용
-29 |     strokeWidth: z.number().optional(),
-30 |     markerSize: z.number().optional(),
-31 |     edgeColor: z.string().optional(),
-32 |     selectedEdgeColor: z.string().optional(),
-33 |     animated: z.boolean().optional()
-34 |   }).partial()
-35 | });
-36 | 
-37 | // 보드 설정 저장 API
-38 | export async function POST(request: NextRequest) {
-39 |   try {
-40 |     const body = await request.json();
-41 |     const { userId, settings } = boardSettingsSchema.parse(body);
-42 | 
-43 |     // 기존 설정이 있는지 확인
-44 |     const existingSettings = await prisma.boardSettings.findUnique({
-45 |       where: { userId }
-46 |     });
-47 | 
-48 |     // 설정 업데이트 또는 생성
-49 |     if (existingSettings) {
-50 |       await prisma.boardSettings.update({
-51 |         where: { userId },
-52 |         data: {
-53 |           settings: settings
-54 |         }
-55 |       });
-56 |     } else {
-57 |       await prisma.boardSettings.create({
-58 |         data: {
-59 |           userId,
-60 |           settings
-61 |         }
-62 |       });
-63 |     }
-64 | 
-65 |     return NextResponse.json({ success: true }, { status: 200 });
-66 |   } catch (error) {
-67 |     console.error('보드 설정 저장 실패:', error);
-68 |     return NextResponse.json({ error: '보드 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
-69 |   }
-70 | }
-71 | 
-72 | // 보드 설정 업데이트 API
-73 | export async function PUT(request: NextRequest) {
-74 |   try {
-75 |     const body = await request.json();
-76 |     const { userId, settings } = boardSettingsSchema.parse(body);
-77 | 
-78 |     // 기존 설정이 있는지 확인
-79 |     const existingSettings = await prisma.boardSettings.findUnique({
-80 |       where: { userId }
-81 |     });
-82 | 
-83 |     // 설정 업데이트 또는 생성
-84 |     if (existingSettings) {
-85 |       await prisma.boardSettings.update({
-86 |         where: { userId },
-[TRUNCATED]
-```
-
 src/app/api/cards/route.ts
 ```
 1 | import { NextRequest, NextResponse } from 'next/server';
@@ -11473,6 +13511,97 @@ src/app/api/health-check/route.ts
 33 |     );
 34 |   }
 35 | } 
+```
+
+src/app/api/ideamap-settings/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import { z } from 'zod';
+3 | import prisma from '@/lib/prisma';
+4 | 
+5 | // 아이디어맵 설정 스키마
+6 | const ideaMapSettingsSchema = z.object({
+7 |   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
+8 |   settings: z.object({
+9 |     snapToGrid: z.boolean(),
+10 |     snapGrid: z.tuple([z.number(), z.number()]),
+11 |     connectionLineType: z.string(),
+12 |     markerEnd: z.string().nullable(),
+13 |     strokeWidth: z.number(),
+14 |     markerSize: z.number(),
+15 |     edgeColor: z.string(),
+16 |     selectedEdgeColor: z.string(),
+17 |     animated: z.boolean()
+18 |   })
+19 | });
+20 | 
+21 | // 부분 업데이트용 아이디어맵 설정 스키마 (더 유연한 검사)
+22 | const partialIdeaMapSettingsSchema = z.object({
+23 |   userId: z.string(), // UUID 검사 제거하여 더 유연하게 함
+24 |   settings: z.object({
+25 |     snapToGrid: z.boolean().optional(),
+26 |     snapGrid: z.tuple([z.number(), z.number()]).optional(),
+27 |     connectionLineType: z.string().optional(),
+28 |     markerEnd: z.union([z.string(), z.null()]).optional(), // 문자열 또는 null 허용
+29 |     strokeWidth: z.number().optional(),
+30 |     markerSize: z.number().optional(),
+31 |     edgeColor: z.string().optional(),
+32 |     selectedEdgeColor: z.string().optional(),
+33 |     animated: z.boolean().optional()
+34 |   }).partial()
+35 | });
+36 | 
+37 | // 아이디어맵 설정 저장 API
+38 | export async function POST(request: NextRequest) {
+39 |   try {
+40 |     const body = await request.json();
+41 |     const { userId, settings } = ideaMapSettingsSchema.parse(body);
+42 | 
+43 |     // 기존 설정이 있는지 확인
+44 |     const existingSettings = await prisma.boardSettings.findUnique({
+45 |       where: { userId }
+46 |     });
+47 | 
+48 |     // 설정 업데이트 또는 생성
+49 |     if (existingSettings) {
+50 |       await prisma.boardSettings.update({
+51 |         where: { userId },
+52 |         data: {
+53 |           settings: settings
+54 |         }
+55 |       });
+56 |     } else {
+57 |       await prisma.boardSettings.create({
+58 |         data: {
+59 |           userId,
+60 |           settings
+61 |         }
+62 |       });
+63 |     }
+64 | 
+65 |     return NextResponse.json({ success: true }, { status: 200 });
+66 |   } catch (error) {
+67 |     console.error('아이디어맵 설정 저장 실패:', error);
+68 |     return NextResponse.json({ error: '아이디어맵 설정을 저장하는 데 실패했습니다.' }, { status: 500 });
+69 |   }
+70 | }
+71 | 
+72 | // 아이디어맵 설정 업데이트 API
+73 | export async function PUT(request: NextRequest) {
+74 |   try {
+75 |     const body = await request.json();
+76 |     const { userId, settings } = ideaMapSettingsSchema.parse(body);
+77 | 
+78 |     // 기존 설정이 있는지 확인
+79 |     const existingSettings = await prisma.boardSettings.findUnique({
+80 |       where: { userId }
+81 |     });
+82 | 
+83 |     // 설정 업데이트 또는 생성
+84 |     if (existingSettings) {
+85 |       await prisma.boardSettings.update({
+86 |         where: { userId },
+[TRUNCATED]
 ```
 
 src/app/api/logs/route.ts
@@ -11657,171 +13786,6 @@ src/app/api/tags/route.ts
 93 |     if (!name || typeof name !== 'string' || name.trim() === '') {
 94 |       return NextResponse.json(
 95 |         { error: '유효한 태그 이름이 필요합니다' },
-[TRUNCATED]
-```
-
-src/app/auth/error/page.test.tsx
-```
-1 | /**
-2 |  * 파일명: src/app/auth/error/page.test.tsx
-3 |  * 목적: 인증 오류 페이지의 기능 테스트
-4 |  * 역할: 인증 과정에서 발생하는 오류 메시지가 올바르게 표시되는지 검증
-5 |  * 작성일: 2025-03-27
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | import { describe, expect, it, vi, beforeEach } from 'vitest';
-10 | import { render, screen } from '@testing-library/react';
-11 | import { userEvent } from '@testing-library/user-event';
-12 | import ErrorPage from './page';
-13 | 
-14 | // 모킹 설정
-15 | const mockPush = vi.fn();
-16 | const mockGet = vi.fn();
-17 | 
-18 | vi.mock('next/navigation', () => ({
-19 |   useSearchParams: () => ({
-20 |     get: mockGet
-21 |   }),
-22 |   useRouter: () => ({
-23 |     push: mockPush
-24 |   })
-25 | }));
-26 | 
-27 | describe('ErrorPage', () => {
-28 |   beforeEach(() => {
-29 |     vi.clearAllMocks();
-30 |     mockGet.mockImplementation((param: string) => {
-31 |       if (param === 'error') return 'default';
-32 |       if (param === 'error_description') return '';
-33 |       return null;
-34 |     });
-35 |     vi.spyOn(console, 'error').mockImplementation(() => {});
-36 |   });
-37 | 
-38 |   it('기본 오류 메시지를 올바르게 표시해야 합니다', () => {
-39 |     render(<ErrorPage />);
-40 |     
-41 |     expect(screen.getByRole('heading', { name: '인증 오류' })).toBeInTheDocument();
-42 |     expect(screen.getByText('인증 과정에서 오류가 발생했습니다.')).toBeInTheDocument();
-43 |   });
-44 | 
-45 |   it('특정 오류 유형에 대한 메시지를 올바르게 표시해야 합니다', () => {
-46 |     mockGet.mockImplementation((param: string) => {
-47 |       if (param === 'error') return 'invalid_callback';
-48 |       if (param === 'error_description') return '';
-49 |       return null;
-50 |     });
-51 | 
-52 |     render(<ErrorPage />);
-53 |     
-54 |     expect(screen.getByText('유효하지 않은 인증 콜백입니다.')).toBeInTheDocument();
-55 |   });
-56 | 
-57 |   it('오류 설명이 있을 경우 함께 표시해야 합니다', () => {
-58 |     mockGet.mockImplementation((param: string) => {
-59 |       if (param === 'error') return 'verification_failed';
-60 |       if (param === 'error_description') return '이메일 주소가 확인되지 않았습니다.';
-61 |       return null;
-62 |     });
-63 | 
-64 |     render(<ErrorPage />);
-65 |     
-66 |     expect(screen.getByText('이메일 인증에 실패했습니다.')).toBeInTheDocument();
-67 |     expect(screen.getByText('이메일 주소가 확인되지 않았습니다.')).toBeInTheDocument();
-68 |   });
-69 | 
-70 |   it('알 수 없는 오류 유형에 대해 기본 메시지를 표시해야 합니다', () => {
-71 |     mockGet.mockImplementation((param: string) => {
-72 |       if (param === 'error') return 'unknown_error';
-73 |       return null;
-74 |     });
-75 | 
-76 |     render(<ErrorPage />);
-77 |     
-78 |     expect(screen.getByText('인증 과정에서 오류가 발생했습니다.')).toBeInTheDocument();
-79 |   });
-80 | 
-81 |   it('로그인 페이지로 돌아가기 링크가 올바르게 작동해야 합니다', async () => {
-82 |     render(<ErrorPage />);
-83 |     
-[TRUNCATED]
-```
-
-src/app/auth/error/page.tsx
-```
-1 | /**
-2 |  * 파일명: src/app/auth/error/page.tsx
-3 |  * 목적: 인증 과정에서 발생한 오류 표시
-4 |  * 역할: 사용자에게 인증 오류 메시지를 보여주고 후속 조치 안내
-5 |  * 작성일: 2025-03-26
-6 |  * 수정일: 2025-03-27
-7 |  */
-8 | 
-9 | 'use client';
-10 | 
-11 | import { useEffect, useState } from 'react'
-12 | import { useSearchParams } from 'next/navigation'
-13 | import Link from 'next/link'
-14 | 
-15 | // 오류 메시지 매핑
-16 | const ERROR_MESSAGES: Record<string, string> = {
-17 |   invalid_callback: '유효하지 않은 인증 콜백입니다.',
-18 |   verification_failed: '이메일 인증에 실패했습니다.',
-19 |   exchange_error: '인증 토큰 교환 중 오류가 발생했습니다.',
-20 |   no_code: '인증 코드가 없습니다.',
-21 |   no_session: '세션을 생성할 수 없습니다.',
-22 |   default: '인증 과정에서 오류가 발생했습니다.'
-23 | }
-24 | 
-25 | export default function AuthErrorPage() {
-26 |   const searchParams = useSearchParams()
-27 |   const [error, setError] = useState<string>('default')
-28 |   const [description, setDescription] = useState<string>('')
-29 | 
-30 |   useEffect(() => {
-31 |     // URL 파라미터에서 오류 정보 추출
-32 |     const errorParam = searchParams.get('error') || 'default'
-33 |     const errorDescription = searchParams.get('error_description') || ''
-34 |     
-35 |     setError(errorParam)
-36 |     setDescription(errorDescription)
-37 |     
-38 |     // 오류 로깅
-39 |     console.error('인증 오류:', { 
-40 |       error: errorParam, 
-41 |       description: errorDescription 
-42 |     })
-43 |   }, [searchParams])
-44 | 
-45 |   return (
-46 |     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-47 |       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
-48 |         <div className="text-center">
-49 |           <h1 className="text-2xl font-bold text-red-600 mb-2">인증 오류</h1>
-50 |           <p className="text-gray-700 mb-4">
-51 |             {ERROR_MESSAGES[error] || ERROR_MESSAGES.default}
-52 |           </p>
-53 |           
-54 |           {description && (
-55 |             <p className="text-sm text-gray-500 mb-6 p-3 bg-gray-50 rounded">
-56 |               {description}
-57 |             </p>
-58 |           )}
-59 |           
-60 |           <div className="flex flex-col space-y-3">
-61 |             <Link 
-62 |               href="/login" 
-63 |               className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-64 |             >
-65 |               로그인 페이지로 돌아가기
-66 |             </Link>
-67 |             
-68 |             <Link 
-69 |               href="/" 
-70 |               className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors"
-71 |             >
-72 |               홈으로 돌아가기
 [TRUNCATED]
 ```
 
@@ -12038,6 +14002,171 @@ src/app/auth/callback/route.ts
 53 |     )
 54 |   }
 55 | } 
+```
+
+src/app/auth/error/page.test.tsx
+```
+1 | /**
+2 |  * 파일명: src/app/auth/error/page.test.tsx
+3 |  * 목적: 인증 오류 페이지의 기능 테스트
+4 |  * 역할: 인증 과정에서 발생하는 오류 메시지가 올바르게 표시되는지 검증
+5 |  * 작성일: 2025-03-27
+6 |  * 수정일: 2025-03-30
+7 |  */
+8 | 
+9 | import { describe, expect, it, vi, beforeEach } from 'vitest';
+10 | import { render, screen } from '@testing-library/react';
+11 | import { userEvent } from '@testing-library/user-event';
+12 | import ErrorPage from './page';
+13 | 
+14 | // 모킹 설정
+15 | const mockPush = vi.fn();
+16 | const mockGet = vi.fn();
+17 | 
+18 | vi.mock('next/navigation', () => ({
+19 |   useSearchParams: () => ({
+20 |     get: mockGet
+21 |   }),
+22 |   useRouter: () => ({
+23 |     push: mockPush
+24 |   })
+25 | }));
+26 | 
+27 | describe('ErrorPage', () => {
+28 |   beforeEach(() => {
+29 |     vi.clearAllMocks();
+30 |     mockGet.mockImplementation((param: string) => {
+31 |       if (param === 'error') return 'default';
+32 |       if (param === 'error_description') return '';
+33 |       return null;
+34 |     });
+35 |     vi.spyOn(console, 'error').mockImplementation(() => {});
+36 |   });
+37 | 
+38 |   it('기본 오류 메시지를 올바르게 표시해야 합니다', () => {
+39 |     render(<ErrorPage />);
+40 |     
+41 |     expect(screen.getByRole('heading', { name: '인증 오류' })).toBeInTheDocument();
+42 |     expect(screen.getByText('인증 과정에서 오류가 발생했습니다.')).toBeInTheDocument();
+43 |   });
+44 | 
+45 |   it('특정 오류 유형에 대한 메시지를 올바르게 표시해야 합니다', () => {
+46 |     mockGet.mockImplementation((param: string) => {
+47 |       if (param === 'error') return 'invalid_callback';
+48 |       if (param === 'error_description') return '';
+49 |       return null;
+50 |     });
+51 | 
+52 |     render(<ErrorPage />);
+53 |     
+54 |     expect(screen.getByText('유효하지 않은 인증 콜백입니다.')).toBeInTheDocument();
+55 |   });
+56 | 
+57 |   it('오류 설명이 있을 경우 함께 표시해야 합니다', () => {
+58 |     mockGet.mockImplementation((param: string) => {
+59 |       if (param === 'error') return 'verification_failed';
+60 |       if (param === 'error_description') return '이메일 주소가 확인되지 않았습니다.';
+61 |       return null;
+62 |     });
+63 | 
+64 |     render(<ErrorPage />);
+65 |     
+66 |     expect(screen.getByText('이메일 인증에 실패했습니다.')).toBeInTheDocument();
+67 |     expect(screen.getByText('이메일 주소가 확인되지 않았습니다.')).toBeInTheDocument();
+68 |   });
+69 | 
+70 |   it('알 수 없는 오류 유형에 대해 기본 메시지를 표시해야 합니다', () => {
+71 |     mockGet.mockImplementation((param: string) => {
+72 |       if (param === 'error') return 'unknown_error';
+73 |       return null;
+74 |     });
+75 | 
+76 |     render(<ErrorPage />);
+77 |     
+78 |     expect(screen.getByText('인증 과정에서 오류가 발생했습니다.')).toBeInTheDocument();
+79 |   });
+80 | 
+81 |   it('로그인 페이지로 돌아가기 링크가 올바르게 작동해야 합니다', async () => {
+82 |     render(<ErrorPage />);
+83 |     
+[TRUNCATED]
+```
+
+src/app/auth/error/page.tsx
+```
+1 | /**
+2 |  * 파일명: src/app/auth/error/page.tsx
+3 |  * 목적: 인증 과정에서 발생한 오류 표시
+4 |  * 역할: 사용자에게 인증 오류 메시지를 보여주고 후속 조치 안내
+5 |  * 작성일: 2025-03-26
+6 |  * 수정일: 2025-03-27
+7 |  */
+8 | 
+9 | 'use client';
+10 | 
+11 | import { useEffect, useState } from 'react'
+12 | import { useSearchParams } from 'next/navigation'
+13 | import Link from 'next/link'
+14 | 
+15 | // 오류 메시지 매핑
+16 | const ERROR_MESSAGES: Record<string, string> = {
+17 |   invalid_callback: '유효하지 않은 인증 콜백입니다.',
+18 |   verification_failed: '이메일 인증에 실패했습니다.',
+19 |   exchange_error: '인증 토큰 교환 중 오류가 발생했습니다.',
+20 |   no_code: '인증 코드가 없습니다.',
+21 |   no_session: '세션을 생성할 수 없습니다.',
+22 |   default: '인증 과정에서 오류가 발생했습니다.'
+23 | }
+24 | 
+25 | export default function AuthErrorPage() {
+26 |   const searchParams = useSearchParams()
+27 |   const [error, setError] = useState<string>('default')
+28 |   const [description, setDescription] = useState<string>('')
+29 | 
+30 |   useEffect(() => {
+31 |     // URL 파라미터에서 오류 정보 추출
+32 |     const errorParam = searchParams.get('error') || 'default'
+33 |     const errorDescription = searchParams.get('error_description') || ''
+34 |     
+35 |     setError(errorParam)
+36 |     setDescription(errorDescription)
+37 |     
+38 |     // 오류 로깅
+39 |     console.error('인증 오류:', { 
+40 |       error: errorParam, 
+41 |       description: errorDescription 
+42 |     })
+43 |   }, [searchParams])
+44 | 
+45 |   return (
+46 |     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+47 |       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
+48 |         <div className="text-center">
+49 |           <h1 className="text-2xl font-bold text-red-600 mb-2">인증 오류</h1>
+50 |           <p className="text-gray-700 mb-4">
+51 |             {ERROR_MESSAGES[error] || ERROR_MESSAGES.default}
+52 |           </p>
+53 |           
+54 |           {description && (
+55 |             <p className="text-sm text-gray-500 mb-6 p-3 bg-gray-50 rounded">
+56 |               {description}
+57 |             </p>
+58 |           )}
+59 |           
+60 |           <div className="flex flex-col space-y-3">
+61 |             <Link 
+62 |               href="/login" 
+63 |               className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+64 |             >
+65 |               로그인 페이지로 돌아가기
+66 |             </Link>
+67 |             
+68 |             <Link 
+69 |               href="/" 
+70 |               className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors"
+71 |             >
+72 |               홈으로 돌아가기
+[TRUNCATED]
 ```
 
 src/app/auth/login/page.test.tsx
@@ -12361,345 +14490,6 @@ src/app/auth/test/page.tsx
 78 |     </div>
 79 |   );
 80 | } 
-```
-
-src/components/board/components/Board.test.tsx
-```
-1 | /**
-2 |  * 파일명: Board.test.tsx
-3 |  * 목적: Board 컴포넌트 테스트
-4 |  * 역할: Board 컴포넌트의 기능을 검증하는 테스트 코드 제공
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import React from 'react';
-10 | import { render, screen, fireEvent } from '@testing-library/react';
-11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
-12 | import '@testing-library/jest-dom';
-13 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-14 | import Board from './Board';
-15 | import { useNodeClickHandlers } from '../hooks/useNodes';
-16 | import { useEdges } from '../hooks/useEdges';
-17 | import { useBoardUtils } from '../hooks/useBoardUtils';
-18 | import { useAppStore } from '@/store/useAppStore';
-19 | import { useAuth } from '@/contexts/AuthContext';
-20 | import { toast } from 'sonner';
-21 | 
-22 | // React Flow 모킹
-23 | mockReactFlow();
-24 | 
-25 | // window 객체 모킹 - addEventListener 문제 해결
-26 | Object.defineProperty(global, 'window', {
-27 |   value: {
-28 |     ...global.window,
-29 |     addEventListener: vi.fn(),
-30 |     removeEventListener: vi.fn(),
-31 |   },
-32 |   writable: true,
-33 | });
-34 | 
-35 | // document.body 설정 - waitFor 문제 해결
-36 | document.body.innerHTML = '<div id="root"></div>';
-37 | 
-38 | // 모듈 모킹
-39 | vi.mock('@xyflow/react', async () => {
-40 |   const actual = await vi.importActual('@xyflow/react');
-41 |   return {
-42 |     ...actual,
-43 |     useReactFlow: vi.fn(() => ({
-44 |       screenToFlowPosition: vi.fn(({ x, y }) => ({ x, y })),
-45 |       fitView: vi.fn(),
-46 |       getNodes: vi.fn(() => []),
-47 |       getEdges: vi.fn(() => []),
-48 |       setNodes: vi.fn(),
-49 |       setEdges: vi.fn(),
-50 |     })),
-51 |     useUpdateNodeInternals: vi.fn(() => vi.fn()),
-52 |     Background: () => <div data-testid="react-flow-background" />,
-53 |     Controls: () => <div data-testid="react-flow-controls" />,
-54 |     Panel: ({ children, position }: any) => <div data-testid={`panel-${position}`}>{children}</div>,
-55 |     ReactFlow: ({ children, nodes, edges }: any) => (
-56 |       <div data-testid="react-flow-container">
-57 |         <div data-testid="react-flow-nodes">{JSON.stringify(nodes)}</div>
-58 |         <div data-testid="react-flow-edges">{JSON.stringify(edges)}</div>
-59 |         {children}
-60 |       </div>
-61 |     ),
-62 |   };
-63 | });
-64 | 
-65 | // Board 컴포넌트 자체 모킹으로 변경
-66 | vi.mock('./Board', () => ({
-67 |   default: ({ showControls }: { showControls?: boolean }) => {
-68 |     const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-69 | 
-70 |     const handleCreateCard = () => {
-71 |       setIsCreateModalOpen(true);
-72 |     };
-73 | 
-74 |     const handleCloseModal = () => {
-75 |       setIsCreateModalOpen(false);
-76 |     };
-77 | 
-[TRUNCATED]
-```
-
-src/components/board/components/Board.tsx
-```
-1 | /**
-2 |  * 파일명: Board.tsx
-3 |  * 목적: 보드 메인 컨테이너 컴포넌트
-4 |  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11
-7 |  */
-8 | 
-9 | 'use client';
-10 | 
-11 | import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-12 | import {
-13 |   useReactFlow,
-14 |   useUpdateNodeInternals,
-15 |   Position,
-16 |   Viewport,
-17 |   ViewportHelperFunctions
-18 | } from '@xyflow/react';
-19 | import { toast } from 'sonner';
-20 | import { useAuth } from '@/contexts/AuthContext';
-21 | import { useAppStore } from '@/store/useAppStore';
-22 | import { useBoardStore } from '@/store/useBoardStore';
-23 | 
-24 | // 보드 관련 컴포넌트 임포트
-25 | import CreateCardModal from '@/components/cards/CreateCardModal';
-26 | import BoardCanvas from './BoardCanvas';
-27 | 
-28 | // 보드 관련 훅 임포트
-29 | import { useNodeClickHandlers } from '../hooks/useNodes';
-30 | import { useEdges } from '../hooks/useEdges';
-31 | import { useBoardData } from '../hooks/useBoardData';
-32 | import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
-33 | import { useBoardHandlers } from '../hooks/useBoardHandlers';
-34 | 
-35 | // 타입 임포트
-36 | import { BoardComponentProps, XYPosition } from '../types/board-types';
-37 | import { Node, Edge } from '@xyflow/react';
-38 | import { NodeInspector } from '../nodes/NodeInspector';
-39 | import { Card } from '@/store/useAppStore';
-40 | 
-41 | /**
-42 |  * Board: 보드 메인 컨테이너 컴포넌트
-43 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
-44 |  * @param className 추가 CSS 클래스
-45 |  * @param showControls 컨트롤 표시 여부
-46 |  */
-47 | export default function Board({
-48 |   onSelectCard,
-49 |   className = "",
-50 |   showControls = true
-51 | }: BoardComponentProps) {
-52 |   // 상태 관리
-53 |   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-54 | 
-55 |   // 엣지 드롭 관련 상태
-56 |   const [isEdgeDropModalOpen, setIsEdgeDropModalOpen] = useState(false);
-57 |   const [edgeDropPosition, setEdgeDropPosition] = useState<XYPosition | null>(null);
-58 |   const [edgeDropNodeId, setEdgeDropNodeId] = useState<string | null>(null);
-59 |   const [edgeDropHandleType, setEdgeDropHandleType] = useState<'source' | 'target' | null>(null);
-60 | 
-61 |   // 커넥팅 노드 관련 상태
-62 |   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
-63 |   const [connectingHandleType, setConnectingHandleType] = useState<'source' | 'target' | null>(null);
-64 |   const [connectingHandlePosition, setConnectingHandlePosition] = useState<Position | null>(null);
-65 | 
-66 |   // 뷰포트 변경 디바운스를 위한 타이머
-67 |   const viewportChangeTimer = useRef<NodeJS.Timeout | null>(null);
-68 | 
-69 |   // 인증 상태 가져오기
-70 |   const { user, isLoading: isAuthLoading } = useAuth();
-71 | 
-72 |   // 레퍼런스 및 기타 훅
-73 |   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-74 |   const reactFlowInstance = useReactFlow();
-75 |   const updateNodeInternals = useUpdateNodeInternals();
-76 | 
-77 |   // useAppStore에서 상태 가져오기
-[TRUNCATED]
-```
-
-src/components/board/components/BoardCanvas.test.tsx
-```
-1 | /**
-2 |  * 파일명: BoardCanvas.test.tsx
-3 |  * 목적: BoardCanvas 컴포넌트 테스트
-4 |  * 역할: BoardCanvas 컴포넌트의 렌더링과 기능을 테스트
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import React from 'react';
-10 | import { render, screen, fireEvent } from '@testing-library/react';
-11 | import { vi, describe, it, expect, beforeEach } from 'vitest';
-12 | import '@testing-library/jest-dom';
-13 | import { mockReactFlow, createTestNode, createTestEdge } from '@/tests/test-utils';
-14 | import BoardCanvas from './BoardCanvas';
-15 | import { MarkerType, ConnectionLineType } from '@xyflow/react';
-16 | import { ReactNode } from 'react';
-17 | import { Node, Edge, Connection, Viewport } from '@xyflow/react';
-18 | 
-19 | // React Flow 모킹
-20 | vi.mock('@xyflow/react', async () => {
-21 |   const actual = await vi.importActual('@xyflow/react');
-22 |   return {
-23 |     ...actual,
-24 |     Panel: ({
-25 |       children,
-26 |       className,
-27 |       position = 'top-right',
-28 |       ...props
-29 |     }: {
-30 |       children: ReactNode;
-31 |       className?: string;
-32 |       position?: string;
-33 |       [key: string]: any;
-34 |     }) => (
-35 |       <div data-testid={`panel-${position}`} className={className} {...props}>
-36 |         {children}
-37 |       </div>
-38 |     ),
-39 |     ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
-40 |       children?: ReactNode;
-41 |       onNodesChange?: (changes: any) => void;
-42 |       onEdgesChange?: (changes: any) => void;
-43 |       onConnect?: (connection: any) => void;
-44 |       onConnectStart?: (event: any, params: any) => void;
-45 |       onConnectEnd?: (event: any) => void;
-46 |       onNodeClick?: (event: any, node: any) => void;
-47 |       onPaneClick?: (event: any) => void;
-48 |       defaultEdgeOptions?: any;
-49 |       [key: string]: any;
-50 |     }) => (
-51 |       <div
-52 |         className="react-flow"
-53 |         data-testid="react-flow-container"
-54 |         onClick={(e) => onPaneClick?.(e)}
-55 |       >
-56 |         <div data-testid="react-flow-nodes">
-57 |           {props.nodes?.map((node: any) => (
-58 |             <div
-59 |               key={node.id}
-60 |               data-testid={`node-${node.id}`}
-61 |               onClick={(e) => onNodeClick?.(e, node)}
-62 |             >
-63 |               {JSON.stringify(node)}
-64 |             </div>
-65 |           ))}
-66 |         </div>
-67 |         <div data-testid="react-flow-edges">
-68 |           {JSON.stringify(props.edges)}
-69 |         </div>
-70 |         <div data-testid="default-edge-options">
-71 |           {JSON.stringify(defaultEdgeOptions)}
-72 |         </div>
-73 |         {children}
-74 |       </div>
-75 |     ),
-76 |     Background: () => <div data-testid="react-flow-background" />,
-77 |     Controls: () => <div data-testid="react-flow-controls" />,
-78 |     MarkerType: {
-79 |       ArrowClosed: 'arrowclosed'
-80 |     },
-[TRUNCATED]
-```
-
-src/components/board/components/BoardCanvas.tsx
-```
-1 | /**
-2 |  * 파일명: BoardCanvas.tsx
-3 |  * 목적: ReactFlow 캔버스 렌더링 컴포넌트
-4 |  * 역할: Board 컴포넌트에서 ReactFlow 캔버스 관련 로직을 분리하여 렌더링을 담당
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | 'use client';
-10 | 
-11 | import React, { useMemo } from 'react';
-12 | import {
-13 |   ReactFlow,
-14 |   Controls,
-15 |   Background,
-16 |   ConnectionMode,
-17 |   Node,
-18 |   Edge,
-19 |   NodeChange,
-20 |   EdgeChange,
-21 |   Connection,
-22 |   OnConnectStartParams,
-23 |   OnConnectStart,
-24 |   OnConnectEnd,
-25 |   MarkerType,
-26 |   Viewport
-27 | } from '@xyflow/react';
-28 | import { BoardSettings } from '@/lib/board-utils';
-29 | // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
-30 | // import CardNode from '@/components/board/nodes/CardNode';
-31 | // import CustomEdge from '@/components/board/nodes/CustomEdge';
-32 | // 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
-33 | import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
-34 | import NodeInspect from '@/components/board/nodes/NodeInspect';
-35 | import { cn } from '@/lib/utils';
-36 | // 삭제 3/29
-37 | // import BoardControls from './BoardControls';
-38 | 
-39 | interface BoardCanvasProps {
-40 |   /** ReactFlow 노드 배열 */
-41 |   nodes: Node[];
-42 |   /** ReactFlow 엣지 배열 */
-43 |   edges: Edge[];
-44 |   /** 노드 변경 핸들러 */
-45 |   onNodesChange: (changes: NodeChange[]) => void;
-46 |   /** 엣지 변경 핸들러 */
-47 |   onEdgesChange: (changes: EdgeChange[]) => void;
-48 |   /** 연결 생성 핸들러 */
-49 |   onConnect: (connection: Connection) => void;
-50 |   /** 연결 시작 핸들러 */
-51 |   onConnectStart: OnConnectStart;
-52 |   /** 연결 종료 핸들러 */
-53 |   onConnectEnd: OnConnectEnd;
-54 |   /** 노드 클릭 핸들러 */
-55 |   onNodeClick: (e: React.MouseEvent, node: Node) => void;
-56 |   /** 빈 공간 클릭 핸들러 */
-57 |   onPaneClick: (e: React.MouseEvent) => void;
-58 |   /** 레이아웃 방향 */
-59 |   layoutDirection: 'horizontal' | 'vertical';
-60 |   /** 보드 설정 */
-61 |   boardSettings: BoardSettings;
-62 |   /** 보드 설정 변경 핸들러 */
-63 |   onBoardSettingsChange: (settings: BoardSettings, isAuthenticated: boolean, userId?: string) => void;
-64 |   /** 레이아웃 변경 핸들러 */
-65 |   onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
-66 |   /** 자동 레이아웃 적용 핸들러 */
-67 |   onAutoLayout: () => void;
-68 |   /** 레이아웃 저장 핸들러 */
-69 |   onSaveLayout: () => void;
-70 |   /** 카드 생성 버튼 클릭 핸들러 */
-71 |   onCreateCard: () => void;
-72 |   /** 컨트롤 표시 여부 */
-73 |   showControls?: boolean;
-74 |   /** 래퍼 ref */
-75 |   wrapperRef: React.RefObject<HTMLDivElement>;
-76 |   /** 추가 CSS 클래스 */
-77 |   className?: string;
-78 |   /** 사용자 인증 여부 */
-79 |   isAuthenticated: boolean;
-80 |   /** 사용자 ID */
-81 |   userId?: string;
-82 |   /** 드래그 오버 핸들러 (옵셔널) */
-83 |   onDragOver?: (event: React.DragEvent) => void;
-84 |   /** 드롭 핸들러 (옵셔널) */
-85 |   onDrop?: (event: React.DragEvent) => void;
-[TRUNCATED]
 ```
 
 src/app/cards/[id]/DeleteButton.test.tsx
@@ -13065,1805 +14855,6 @@ src/app/cards/[id]/page.tsx
 [TRUNCATED]
 ```
 
-src/components/board/hooks/test-utils.ts
-```
-1 | /**
-2 |  * 파일명: test-utils.ts
-3 |  * 목적: 보드 핸들러 테스트를 위한 유틸리티 함수 및 모킹 객체 제공
-4 |  * 역할: 테스트 설정, 정리, 모킹된 액션 제공
-5 |  * 작성일: 2025-04-01
-6 |  */
-7 | 
-8 | import { vi } from 'vitest';
-9 | import { Node, Edge, XYPosition } from '@xyflow/react';
-10 | import { create } from 'zustand';
-11 | import { ReactNode } from 'react';
-12 | import { renderHook } from '@testing-library/react';
-13 | 
-14 | // 카드 데이터 타입 정의
-15 | export interface CardData extends Record<string, unknown> {
-16 |   id: string;
-17 |   title: string;
-18 |   content: string;
-19 | }
-20 | 
-21 | // Zustand 스토어 타입 정의
-22 | interface AppStore {
-23 |   selectedCardIds: string[];
-24 |   selectCards: (cardIds: string[]) => void;
-25 | }
-26 | 
-27 | // 테스트 노드 데이터
-28 | const TEST_NODES: Node<CardData>[] = [
-29 |   {
-30 |     id: 'node1',
-31 |     position: { x: 0, y: 0 },
-32 |     data: { id: 'card1', title: '카드 1', content: '내용 1' },
-33 |     type: 'card',
-34 |   },
-35 |   {
-36 |     id: 'node2',
-37 |     position: { x: 100, y: 100 },
-38 |     data: { id: 'card2', title: '카드 2', content: '내용 2' },
-39 |     type: 'card',
-40 |   },
-41 | ];
-42 | 
-43 | // Zustand 스토어 모킹
-44 | export const mockStore = create<AppStore>((set) => ({
-45 |   selectedCardIds: [],
-46 |   selectCards: (cardIds: string[]) => {
-47 |     console.log('[AppStore] 카드 선택 변경:', cardIds);
-48 |     set({ selectedCardIds: cardIds });
-49 |   },
-50 | }));
-51 | 
-52 | // 모킹된 액션들
-53 | export const mockActions = {
-54 |   store: {
-55 |     saveLayout: vi.fn((nodesToSave?: Node<CardData>[]) => true),
-56 |     setNodes: vi.fn((updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void {}),
-57 |     fetchCards: vi.fn(async () => ({ nodes: TEST_NODES, edges: [] })),
-58 |   },
-59 |   selection: {
-60 |     handleSelectionChange: vi.fn(({ nodes }: { nodes: Node[]; edges: Edge[] }) => void {}),
-61 |   },
-62 | };
-63 | 
-64 | /**
-65 |  * createTestNodes: 테스트용 노드 생성
-66 |  * @returns {Node<CardData>[]} 테스트용 노드 배열
-67 |  */
-68 | export const createTestNodes = (): Node<CardData>[] => TEST_NODES;
-69 | 
-70 | /**
-71 |  * createReactFlowWrapper: ReactFlow 래퍼 요소 생성
-72 |  * @returns {React.RefObject<HTMLDivElement>} ReactFlow 래퍼 요소의 ref 객체
-73 |  */
-74 | export const createReactFlowWrapper = () => {
-75 |   const div = document.createElement('div');
-76 |   div.style.width = '800px';
-77 |   div.style.height = '600px';
-78 |   return {
-79 |     current: div,
-80 |   };
-81 | };
-82 | 
-83 | /**
-84 |  * createReactFlowInstance: ReactFlow 인스턴스 생성
-85 |  * @returns {Object} 모킹된 ReactFlow 인스턴스
-86 |  */
-87 | export const createReactFlowInstance = () => ({
-88 |   project: vi.fn((position: XYPosition) => position),
-[TRUNCATED]
-```
-
-src/components/board/hooks/useBoardData.test.tsx
-```
-1 | /**
-2 |  * 파일명: useBoardData.test.tsx
-3 |  * 목적: useBoardData 훅의 기능 테스트
-4 |  * 역할: 보드 데이터 로딩 및 ReactFlow 메서드 호출 검증
-5 |  * 작성일: 2023-04-10
-6 |  */
-7 | 
-8 | import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
-9 | import { renderHook, act } from '@testing-library/react';
-10 | import { server } from '@/tests/msw/server';
-11 | import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
-12 | import { mockLocalStorage } from '@/tests/mocks/storage-mock';
-13 | import { STORAGE_KEY, EDGES_STORAGE_KEY, TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
-14 | 
-15 | // 모든 모킹은 파일 상단에 그룹화
-16 | // 외부 모듈부터 모킹 (호이스팅 고려)
-17 | // @xyflow/react 모킹
-18 | const mockFitView = vi.fn().mockResolvedValue(undefined);
-19 | const mockSetViewport = vi.fn().mockResolvedValue(undefined);
-20 | const mockGetZoom = vi.fn().mockReturnValue(1);
-21 | const mockGetViewport = vi.fn().mockReturnValue({ x: 0, y: 0, zoom: 1 });
-22 | 
-23 | vi.mock('@xyflow/react', async () => {
-24 |   const actual = await vi.importActual('@xyflow/react');
-25 |   return {
-26 |     ...actual,
-27 |     useReactFlow: () => ({
-28 |       fitView: mockFitView,
-29 |       setViewport: mockSetViewport,
-30 |       getZoom: mockGetZoom,
-31 |       getViewport: mockGetViewport
-32 |     })
-33 |   };
-34 | });
-35 | 
-36 | // loadBoardData 모킹을 위한 함수
-37 | const mockLoadBoardData = vi.fn().mockResolvedValue(undefined);
-38 | 
-39 | // 기본 상태 객체 정의 - BoardState 인터페이스에 맞춰 모든 필수 속성 포함
-40 | const createMockState = (overrides = {}) => ({
-41 |   // 노드 관련
-42 |   nodes: [{
-43 |     id: 'node-1',
-44 |     position: { x: 0, y: 0 },
-45 |     data: {
-46 |       id: 'card-1',
-47 |       title: '카드 1',
-48 |       content: '카드 1 내용',
-49 |       tags: []
-50 |     }
-51 |   }],
-52 |   setNodes: vi.fn(),
-53 |   onNodesChange: vi.fn(),
-54 | 
-55 |   // 엣지 관련
-56 |   edges: [{ id: 'edge-1', source: 'node-1', target: 'node-2' }],
-57 |   setEdges: vi.fn(),
-58 |   onEdgesChange: vi.fn(),
-59 |   onConnect: vi.fn(),
-60 | 
-61 |   // 보드 설정
-62 |   boardSettings: {
-63 |     layout: 'horizontal',
-64 |     strokeWidth: 2,
-65 |     animated: false,
-66 |     lineType: 'straight',
-67 |     nodePadding: 10,
-68 |     nodeSpacing: 20,
-69 |     applyForce: false,
-70 |     snapToGrid: false,
-71 |     snapGrid: [10, 10] as [number, number],
-72 |     connectionLineType: 'bezier' as ConnectionLineType,
-73 |     markerEnd: 'arrow' as MarkerType,
-74 |     zoomOnScroll: true,
-75 |     panOnScroll: false,
-76 |     fitView: true,
-77 |     markerSize: 8,
-78 |     edgeColor: '#555555',
-79 |     selectedEdgeColor: '#0096FF'
-80 |   },
-81 |   setBoardSettings: vi.fn(),
-82 |   updateBoardSettings: vi.fn(),
-83 | 
-84 |   // 레이아웃
-85 |   applyLayout: vi.fn(),
-[TRUNCATED]
-```
-
-src/components/board/hooks/useBoardData.ts
-```
-1 | /**
-2 |  * 파일명: useBoardData.ts
-3 |  * 목적: 보드 데이터 로드 및 관리를 위한 커스텀 훅
-4 |  * 역할: useBoardStore에서 보드 데이터와 로딩 상태를 가져오는 래퍼 훅
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-10
-7 |  */
-8 | 
-9 | import { useBoardStore } from '@/store/useBoardStore';
-10 | import { Node, CardData } from '../types/board-types';
-11 | import { Edge } from '@xyflow/react';
-12 | 
-13 | /**
-14 |  * useBoardData: 보드 데이터 로드 및 관리를 위한 커스텀 훅
-15 |  * @param onSelectCard 노드 선택 시 호출될 콜백 함수
-16 |  * @returns 데이터 로드 상태 및 관련 함수
-17 |  */
-18 | export function useBoardData(onSelectCard?: (cardId: string | null) => void) {
-19 |   // 보드 스토어에서 필요한 상태와 액션 가져오기
-20 |   const nodes = useBoardStore(state => state.nodes);
-21 |   const edges = useBoardStore(state => state.edges);
-22 |   const isBoardLoading = useBoardStore(state => state.isBoardLoading);
-23 |   const boardError = useBoardStore(state => state.boardError);
-24 |   const loadBoardData = useBoardStore(state => state.loadBoardData);
-25 |   const loadedViewport = useBoardStore(state => state.loadedViewport);
-26 |   const needsFitView = useBoardStore(state => state.needsFitView);
-27 |   
-28 |   /**
-29 |    * 노드와 엣지 데이터 로드 함수 - 이제는 단순히 스토어 액션을 호출
-30 |    * 하위 호환성을 위해 함수 시그니처 유지
-31 |    */
-32 |   const loadNodesAndEdges = async (reactFlowInstance?: any) => {
-33 |     await loadBoardData();
-34 |     return { nodes, edges };
-35 |   };
-36 |   
-37 |   // 이전과 동일한 인터페이스 유지
-38 |   return {
-39 |     nodes,
-40 |     edges,
-41 |     isLoading: isBoardLoading,
-42 |     error: boardError,
-43 |     loadNodesAndEdges,
-44 |     loadedViewport,
-45 |     needsFitView
-46 |   };
-47 | } 
-```
-
-src/components/board/hooks/useBoardHandlers.test.tsx
-```
-1 | /**
-2 |  * 파일명: useBoardHandlers.test.tsx
-3 |  * 목적: 보드 핸들러 훅의 기능 테스트
-4 |  * 역할: 선택, 드래그 앤 드롭, 카드 생성 핸들러 테스트
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11
-7 |  */
-8 | 
-9 | import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-10 | import { act } from '@testing-library/react';
-11 | import { renderHook } from '@testing-library/react';
-12 | import { Node, Edge } from '@xyflow/react';
-13 | import { useBoardHandlers } from './useBoardHandlers';
-14 | import { CardData } from '../types/board-types';
-15 | import { useAppStore } from '@/store/useAppStore';
-16 | import { useBoardStore } from '@/store/useBoardStore';
-17 | import {
-18 |   createTestNode,
-19 |   createDragEvent,
-20 |   createMouseEvent,
-21 |   mockReactFlow
-22 | } from '@/tests/test-utils';
-23 | 
-24 | // Zustand 스토어 모킹
-25 | const mockSelectCards = vi.fn();
-26 | vi.mock('@/store/useAppStore', () => ({
-27 |   useAppStore: vi.fn((selector) => {
-28 |     const state = {
-29 |       selectedCardIds: [],
-30 |       selectCards: mockSelectCards,
-31 |     };
-32 |     return selector ? selector(state) : state;
-33 |   }),
-34 | }));
-35 | 
-36 | // useBoardStore 모킹
-37 | const mockAddNodeAtPosition = vi.fn().mockResolvedValue({ id: 'new-node', data: { title: '새 노드' } });
-38 | const mockAddCardAtCenterPosition = vi.fn().mockResolvedValue({ id: 'new-card', data: { title: '새 카드' } });
-39 | const mockCreateEdgeAndNodeOnDrop = vi.fn().mockResolvedValue({ id: 'edge-node', data: { title: '연결 노드' } });
-40 | 
-41 | vi.mock('@/store/useBoardStore', () => ({
-42 |   useBoardStore: vi.fn((selector) => {
-43 |     const state = {
-44 |       addNodeAtPosition: mockAddNodeAtPosition,
-45 |       addCardAtCenterPosition: mockAddCardAtCenterPosition,
-46 |       createEdgeAndNodeOnDrop: mockCreateEdgeAndNodeOnDrop,
-47 |     };
-48 |     return selector ? selector(state) : state;
-49 |   }),
-50 | }));
-51 | 
-52 | describe('useBoardHandlers', () => {
-53 |   // 테스트 데이터 준비
-54 |   const testNodes = [
-55 |     createTestNode('card1'),
-56 |     createTestNode('card2'),
-57 |   ];
-58 | 
-59 |   // HTMLDivElement 생성
-60 |   const divElement = document.createElement('div');
-61 |   Object.defineProperties(divElement, {
-62 |     getBoundingClientRect: {
-63 |       value: () => ({
-64 |         left: 0,
-65 |         top: 0,
-66 |         right: 800,
-67 |         bottom: 600,
-68 |         width: 800,
-69 |         height: 600,
-70 |       }),
-71 |     },
-72 |   });
-73 | 
-74 |   const mockProps = {
-75 |     reactFlowWrapper: { current: divElement } as React.RefObject<HTMLDivElement>,
-76 |     reactFlowInstance: mockReactFlow,
-77 |     fetchCards: vi.fn().mockResolvedValue({ nodes: [], edges: [] }),
-78 |   };
-79 | 
-80 |   beforeEach(() => {
-81 |     vi.clearAllMocks();
-82 |     // setTimeout 모킹
-83 |     vi.useFakeTimers();
-84 |   });
-85 | 
-86 |   afterEach(() => {
-87 |     vi.useRealTimers();
-88 |   });
-89 | 
-90 |   describe('선택 핸들러', () => {
-91 |     it('노드가 선택되면 선택된 카드 ID를 업데이트한다', () => {
-92 |       const { result } = renderHook(() => useBoardHandlers(mockProps));
-[TRUNCATED]
-```
-
-src/components/board/hooks/useBoardHandlers.ts
-```
-1 | /**
-2 |  * 파일명: useBoardHandlers.ts
-3 |  * 목적: 보드 이벤트 핸들러 관련 로직 분리
-4 |  * 역할: 보드 드래그, 드롭, 선택 등 이벤트 처리 로직을 관리
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11
-7 |  */
-8 | 
-9 | import { useCallback } from 'react';
-10 | import { Node, Edge, XYPosition } from '@xyflow/react';
-11 | import { useAppStore } from '@/store/useAppStore';
-12 | import { useBoardStore } from '@/store/useBoardStore';
-13 | import { CardData } from '../types/board-types';
-14 | 
-15 | /**
-16 |  * useBoardHandlers: 보드 이벤트 핸들러 관련 로직을 관리하는 훅
-17 |  * @param reactFlowWrapper ReactFlow 래퍼 참조
-18 |  * @param reactFlowInstance ReactFlow 인스턴스
-19 |  * @param fetchCards 카드 데이터를 다시 불러오는 함수
-20 |  * @returns 보드 이벤트 핸들러 함수들
-21 |  */
-22 | export function useBoardHandlers({
-23 |   reactFlowWrapper,
-24 |   reactFlowInstance,
-25 |   fetchCards
-26 | }: {
-27 |   reactFlowWrapper: React.RefObject<HTMLDivElement>;
-28 |   reactFlowInstance: any;
-29 |   fetchCards: () => Promise<{ nodes: Node<CardData>[]; edges: Edge[] }>;
-30 | }) {
-31 |   // 전역 상태에서 선택된 카드 정보 및 액션 가져오기
-32 |   const { selectCards } = useAppStore();
-33 |   
-34 |   // 보드 스토어에서 노드 추가 관련 액션 가져오기
-35 |   const addNodeAtPosition = useBoardStore(state => state.addNodeAtPosition);
-36 |   const addCardAtCenterPosition = useBoardStore(state => state.addCardAtCenterPosition);
-37 |   const createEdgeAndNodeOnDrop = useBoardStore(state => state.createEdgeAndNodeOnDrop);
-38 | 
-39 |   /**
-40 |    * ReactFlow 선택 변경 이벤트 핸들러
-41 |    * @param selection 현재 선택된 노드와 엣지 정보
-42 |    */
-43 |   const handleSelectionChange = useCallback(({ nodes }: { nodes: Node<CardData>[]; edges: Edge[] }) => {
-44 |     console.log('[BoardComponent] 선택 변경 감지:', { 
-45 |       선택된_노드_수: nodes.length,
-46 |       선택된_노드_ID: nodes.map(node => node.data.id)
-47 |     });
-48 | 
-49 |     // 선택된 노드 ID 배열 추출
-50 |     const selectedNodeIds = nodes.map(node => node.data.id);
-51 |     
-52 |     // 전역 상태 업데이트
-53 |     selectCards(selectedNodeIds);
-54 |   }, [selectCards]);
-55 | 
-56 |   /**
-57 |    * 드래그 오버 이벤트 핸들러
-58 |    * @param event 드래그 이벤트
-59 |    */
-60 |   const onDragOver = useCallback((event: React.DragEvent) => {
-61 |     event.preventDefault();
-62 |     event.dataTransfer.dropEffect = 'move';
-63 |   }, []);
-64 | 
-65 |   /**
-66 |    * 드롭 이벤트 핸들러
-67 |    * @param event 드롭 이벤트
-68 |    */
-69 |   const onDrop = useCallback((event: React.DragEvent) => {
-70 |     event.preventDefault();
-71 | 
-72 |     // React Flow 래퍼 요소가 없으면 중단
-73 |     if (!reactFlowWrapper.current || !reactFlowInstance) {
-74 |       return;
-75 |     }
-76 | 
-77 |     // 드래그된 데이터 확인
-78 |     const reactFlowData = event.dataTransfer.getData('application/reactflow');
-79 |     if (!reactFlowData) return;
-80 | 
-81 |     try {
-82 |       // 데이터 파싱
-[TRUNCATED]
-```
-
-src/components/board/hooks/useBoardUtils.test.tsx
-```
-1 | /**
-2 |  * 파일명: useBoardUtils.test.tsx
-3 |  * 목적: useBoardUtils 훅을 테스트
-4 |  * 역할: 보드 유틸리티 함수 관련 로직 테스트
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import { renderHook, act } from '@testing-library/react';
-10 | import { vi, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
-11 | import { toast } from 'sonner';
-12 | import { useBoardUtils } from './useBoardUtils';
-13 | import { BoardSettings, saveBoardSettingsToServer, loadBoardSettingsFromServer } from '@/lib/board-utils';
-14 | import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
-15 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-16 | import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
-17 | import { useAppStore } from '@/store/useAppStore';
-18 | import { TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
-19 | import { server } from '@/tests/msw/server';
-20 | import { http, HttpResponse } from 'msw';
-21 | import { AppState } from '@/store/useAppStore';
-22 | 
-23 | // MSW 서버 설정
-24 | beforeAll(() => server.listen());
-25 | afterEach(() => server.resetHandlers());
-26 | afterAll(() => server.close());
-27 | 
-28 | // 기본 모의 엣지 배열 생성
-29 | const defaultMockEdges = [
-30 |   { id: 'edge-mock-1', source: 'node1', target: 'node2' },
-31 | ];
-32 | 
-33 | // 기본 모의 노드 배열 생성
-34 | const defaultLayoutedNodes = [
-35 |   { id: 'node1', position: { x: 0, y: 0 }, data: { title: '카드 1', content: '내용 1' } },
-36 |   { id: 'node2', position: { x: 100, y: 100 }, data: { title: '카드 2', content: '내용 2' } },
-37 | ];
-38 | 
-39 | // 모든 vi.mock 호출을 먼저 수행
-40 | vi.mock('@xyflow/react', async () => {
-41 |   const actual = await vi.importActual('@xyflow/react');
-42 |   return {
-43 |     ...actual,
-44 |     useReactFlow: () => ({
-45 |       ...mockReactFlow,
-46 |       getViewport: () => ({ x: 100, y: 200, zoom: 2 }),
-47 |     }),
-48 |     MarkerType: {
-49 |       ArrowClosed: 'arrowclosed',
-50 |     },
-51 |     ConnectionLineType: {
-52 |       Bezier: 'bezier',
-53 |       Step: 'step',
-54 |       SmoothStep: 'smoothstep',
-55 |       Straight: 'straight',
-56 |     }
-57 |   };
-58 | });
-59 | 
-60 | // Zustand 스토어 모킹
-61 | vi.mock('@/store/useAppStore', () => {
-62 |   const setBoardSettingsMock = vi.fn();
-63 | 
-64 |   return {
-65 |     useAppStore: (selector: ((state: Partial<AppState>) => any) | undefined) => {
-66 |       if (typeof selector === 'function') {
-67 |         return selector({
-68 |           boardSettings: {
-69 |             strokeWidth: 2,
-70 |             edgeColor: '#000000',
-71 |             selectedEdgeColor: '#ff0000',
-72 |             animated: false,
-73 |             markerEnd: 'arrowclosed' as MarkerType,
-74 |             connectionLineType: 'straight' as ConnectionLineType,
-75 |             snapToGrid: false,
-76 |             snapGrid: [20, 20] as [number, number],
-77 |             markerSize: 20,
-78 |           },
-79 |           setBoardSettings: setBoardSettingsMock,
-80 |         });
-81 |       }
-82 | 
-[TRUNCATED]
-```
-
-src/components/board/hooks/useBoardUtils.ts
-```
-1 | /**
-2 |  * 파일명: useBoardUtils.ts
-3 |  * 목적: 보드 유틸리티 함수 관련 로직 분리
-4 |  * 역할: 보드 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { useCallback, useRef } from 'react';
-9 | import { Node, Edge, useReactFlow, Viewport } from '@xyflow/react';
-10 | import { toast } from 'sonner';
-11 | import { useAppStore } from '@/store/useAppStore';
-12 | import { 
-13 |   BoardSettings, 
-14 |   saveBoardSettings, 
-15 |   applyEdgeSettings, 
-16 |   saveBoardSettingsToServer, 
-17 |   loadBoardSettingsFromServer 
-18 | } from '@/lib/board-utils';
-19 | import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
-20 | import { TRANSFORM_STORAGE_KEY } from '@/lib/board-constants';
-21 | import { CardData } from '../types/board-types';
-22 | 
-23 | /**
-24 |  * useBoardUtils: 보드 유틸리티 함수 관련 로직을 관리하는 훅
-25 |  * @param reactFlowWrapper ReactFlow 래퍼 참조
-26 |  * @param updateNodeInternals 노드 내부 업데이트 함수
-27 |  * @param saveLayout 레이아웃 저장 함수
-28 |  * @param saveEdges 엣지 저장 함수
-29 |  * @param nodes 현재 노드 배열
-30 |  * @param edges 현재 엣지 배열
-31 |  * @param setNodes 노드 상태 설정 함수
-32 |  * @param setEdges 엣지 상태 설정 함수
-33 |  * @returns 보드 유틸리티 함수들
-34 |  */
-35 | export function useBoardUtils({
-36 |   reactFlowWrapper,
-37 |   updateNodeInternals,
-38 |   saveLayout,
-39 |   saveEdges,
-40 |   nodes,
-41 |   edges,
-42 |   setNodes,
-43 |   setEdges
-44 | }: {
-45 |   reactFlowWrapper: React.RefObject<HTMLDivElement | null>;
-46 |   updateNodeInternals: (nodeId: string) => void;
-47 |   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
-48 |   saveEdges: (edgesToSave?: Edge[]) => boolean;
-49 |   nodes: Node<CardData>[];
-50 |   edges: Edge[];
-51 |   setNodes: (updater: ((nodes: Node<CardData>[]) => Node<CardData>[]) | Node<CardData>[]) => void;
-52 |   setEdges: (updater: ((edges: Edge[]) => Edge[]) | Edge[]) => void;
-53 | }) {
-54 |   // 전역 상태에서 보드 설정 가져오기
-55 |   const { boardSettings, setBoardSettings } = useAppStore();
-56 |   
-57 |   // 저장되지 않은 변경사항 플래그
-58 |   const hasUnsavedChanges = useRef(false);
-59 |   
-60 |   // ReactFlow 인스턴스
-61 |   const reactFlowInstance = useReactFlow();
-62 | 
-63 |   /**
-64 |    * 인증 상태에 따라 서버에서 설정 불러오기
-65 |    * @param isAuthenticated 인증 여부
-66 |    * @param userId 사용자 ID
-67 |    */
-68 |   const loadBoardSettingsFromServerIfAuthenticated = useCallback(async (
-69 |     isAuthenticated: boolean, 
-70 |     userId?: string
-71 |   ) => {
-72 |     if (isAuthenticated && userId) {
-73 |       try {
-74 |         const settings = await loadBoardSettingsFromServer(userId);
-75 |         if (settings) {
-76 |           // 전역 상태 업데이트 (이것이 localStorage에도 저장됨)
-77 |           setBoardSettings(settings);
-78 |           
-79 |           // 새 설정을 엣지에 적용
-80 |           const updatedEdges = applyEdgeSettings(edges, settings);
-81 |           setEdges(updatedEdges);
-82 |         }
-83 |       } catch (err) {
-84 |         console.error('서버에서 보드 설정 불러오기 실패:', err);
-85 |       }
-86 |     }
-[TRUNCATED]
-```
-
-src/components/board/hooks/useEdges.test.tsx
-```
-1 | /**
-2 |  * 파일명: useEdges.test.tsx
-3 |  * 목적: useEdges 커스텀 훅 테스트
-4 |  * 역할: 엣지 관련 훅이 useBoardStore 액션을 올바르게 호출하는지 검증
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11 (리팩토링)
-7 |  */
-8 | 
-9 | import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-10 | import { renderHook, act } from '@testing-library/react';
-11 | import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
-12 | import { BoardSettings } from '@/lib/board-utils';
-13 | 
-14 | // 모든 모킹은 파일 최상단에 위치
-15 | vi.mock('sonner', () => ({
-16 |   toast: {
-17 |     success: vi.fn(),
-18 |     info: vi.fn(),
-19 |     error: vi.fn(),
-20 |   }
-21 | }));
-22 | 
-23 | // useBoardStore 모킹
-24 | vi.mock('@/store/useBoardStore', () => {
-25 |   const mockApplyEdgeChangesAction = vi.fn();
-26 |   const mockConnectNodesAction = vi.fn();
-27 |   const mockSaveEdgesAction = vi.fn().mockReturnValue(true);
-28 |   const mockUpdateAllEdgeStylesAction = vi.fn();
-29 |   const mockCreateEdgeOnDropAction = vi.fn();
-30 |   const mockSetEdges = vi.fn();
-31 | 
-32 |   const edges = [{
-33 |     id: 'edge-1',
-34 |     source: 'node-1',
-35 |     target: 'node-2',
-36 |     type: 'custom',
-37 |   }];
-38 | 
-39 |   return {
-40 |     useBoardStore: (selector: ((state: any) => any) | undefined) => {
-41 |       if (typeof selector === 'function') {
-42 |         const state = {
-43 |           edges,
-44 |           setEdges: mockSetEdges,
-45 |           applyEdgeChangesAction: mockApplyEdgeChangesAction,
-46 |           connectNodesAction: mockConnectNodesAction,
-47 |           saveEdgesAction: mockSaveEdgesAction,
-48 |           updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
-49 |           createEdgeOnDropAction: mockCreateEdgeOnDropAction,
-50 |           hasUnsavedChanges: false
-51 |         };
-52 |         return selector(state);
-53 |       }
-54 |       return {
-55 |         edges,
-56 |         setEdges: mockSetEdges,
-57 |         applyEdgeChangesAction: mockApplyEdgeChangesAction,
-58 |         connectNodesAction: mockConnectNodesAction,
-59 |         saveEdgesAction: mockSaveEdgesAction,
-60 |         updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
-61 |         createEdgeOnDropAction: mockCreateEdgeOnDropAction,
-62 |         hasUnsavedChanges: false
-63 |       };
-64 |     }
-65 |   };
-66 | });
-67 | 
-68 | // React Flow 모킹
-69 | vi.mock('@xyflow/react', async () => {
-70 |   const actual = await vi.importActual('@xyflow/react');
-71 |   return {
-72 |     ...actual,
-73 |   };
-74 | });
-75 | 
-76 | // 테스트할 훅 임포트
-77 | import { useEdges } from './useEdges';
-78 | import { useBoardStore } from '@/store/useBoardStore';
-79 | 
-80 | // 테스트용 보드 설정
-81 | const mockBoardSettings: BoardSettings = {
-82 |   snapToGrid: false,
-83 |   snapGrid: [15, 15],
-84 |   connectionLineType: ConnectionLineType.SmoothStep,
-85 |   markerEnd: MarkerType.Arrow as MarkerType, // 타입 캐스팅 추가
-86 |   strokeWidth: 2,
-87 |   markerSize: 20,
-88 |   edgeColor: '#C1C1C1',
-89 |   selectedEdgeColor: '#FF0072',
-90 |   animated: false,
-91 | };
-92 | 
-93 | // 테스트용 노드 데이터
-94 | const mockNodes: Node[] = [
-95 |   {
-[TRUNCATED]
-```
-
-src/components/board/hooks/useEdges.ts
-```
-1 | /**
-2 |  * 파일명: useEdges.ts
-3 |  * 목적: 엣지 관련 상태 및 로직 관리
-4 |  * 역할: useBoardStore의 엣지 관련 액션들을 사용하는 래퍼 훅
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11
-7 |  */
-8 | 
-9 | import { useCallback } from 'react';
-10 | import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
-11 | import { BoardSettings } from '@/lib/board-utils';
-12 | import { useBoardStore } from '@/store/useBoardStore';
-13 | 
-14 | /**
-15 |  * useEdges: useBoardStore의 엣지 관련 액션들을 사용하는 래퍼 훅
-16 |  * @param boardSettings 보드 설정 객체
-17 |  * @param nodes 노드 배열
-18 |  * @param initialEdges 초기 엣지 데이터 (옵션)
-19 |  * @returns 엣지 관련 상태 및 함수들
-20 |  */
-21 | export function useEdges({
-22 |   boardSettings,
-23 |   nodes,
-24 |   initialEdges = []
-25 | }: {
-26 |   boardSettings: BoardSettings;
-27 |   nodes: Node[];
-28 |   initialEdges?: Edge[];
-29 | }) {
-30 |   // useBoardStore에서 엣지 관련 상태 및 액션 가져오기
-31 |   const edges = useBoardStore(state => state.edges);
-32 |   const setEdges = useBoardStore(state => state.setEdges);
-33 |   const applyEdgeChangesAction = useBoardStore(state => state.applyEdgeChangesAction);
-34 |   const connectNodesAction = useBoardStore(state => state.connectNodesAction);
-35 |   const saveEdgesAction = useBoardStore(state => state.saveEdgesAction);
-36 |   const updateAllEdgeStylesAction = useBoardStore(state => state.updateAllEdgeStylesAction);
-37 |   const createEdgeOnDropAction = useBoardStore(state => state.createEdgeOnDropAction);
-38 |   const hasUnsavedChanges = useBoardStore(state => state.hasUnsavedChanges);
-39 | 
-40 |   // 엣지 변경 핸들러 (단순히 useBoardStore 액션 호출)
-41 |   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
-42 |     applyEdgeChangesAction(changes);
-43 |   }, [applyEdgeChangesAction]);
-44 | 
-45 |   // 노드 연결 핸들러 (단순히 useBoardStore 액션 호출)
-46 |   const onConnect = useCallback((params: Connection) => {
-47 |     connectNodesAction(params);
-48 |   }, [connectNodesAction]);
-49 | 
-50 |   // 엣지 저장 함수 (단순히 useBoardStore 액션 호출)
-51 |   const saveEdges = useCallback((edgesToSave?: Edge[]) => {
-52 |     // 특정 엣지 목록이 제공되면 먼저 상태 업데이트
-53 |     if (edgesToSave) {
-54 |       setEdges(edgesToSave);
-55 |     }
-56 |     return saveEdgesAction();
-57 |   }, [setEdges, saveEdgesAction]);
-58 | 
-59 |   // 엣지 스타일 업데이트 함수 (단순히 useBoardStore 액션 호출)
-60 |   const updateEdgeStyles = useCallback(() => {
-61 |     updateAllEdgeStylesAction();
-62 |   }, [updateAllEdgeStylesAction]);
-63 | 
-64 |   // 엣지 생성 함수 (단순히 useBoardStore 액션 호출)
-65 |   const createEdgeOnDrop = useCallback((sourceId: string, targetId: string) => {
-66 |     return createEdgeOnDropAction(sourceId, targetId);
-67 |   }, [createEdgeOnDropAction]);
-68 | 
-69 |   // 기존 API와 호환성을 위해 동일한 인터페이스 유지
-70 |   return {
-71 |     edges,
-72 |     setEdges,
-73 |     handleEdgesChange,
-74 |     onConnect,
-75 |     saveEdges,
-76 |     updateEdgeStyles,
-77 |     createEdgeOnDrop,
-78 |     hasUnsavedChanges
-79 |   };
-80 | } 
-```
-
-src/components/board/hooks/useNodes.test.tsx
-```
-1 | /**
-2 |  * 파일명: useNodes.test.tsx
-3 |  * 목적: useNodeClickHandlers 커스텀 훅 테스트
-4 |  * 역할: 노드 클릭 핸들러 기능의 정상 작동 검증
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11
-7 |  */
-8 | 
-9 | import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
-10 | import { renderHook, act } from '@testing-library/react';
-11 | import { Node } from '@xyflow/react';
-12 | import { CardData } from '../types/board-types';
-13 | 
-14 | // 모든 모킹은 파일 상단에 배치 (호이스팅 문제 방지)
-15 | // React Flow 모킹
-16 | vi.mock('@/tests/utils/react-flow-mock', () => ({
-17 |   mockReactFlow: vi.fn()
-18 | }));
-19 | 
-20 | // useAppStore 모킹
-21 | const clearSelectedCardsMock = vi.fn();
-22 | const selectCardMock = vi.fn();
-23 | const toggleSelectedCardMock = vi.fn();
-24 | 
-25 | vi.mock('@/store/useAppStore', () => ({
-26 |   useAppStore: vi.fn(() => ({
-27 |     selectedCardIds: ['test-node-1'],
-28 |     toggleSelectedCard: toggleSelectedCardMock,
-29 |     selectCard: selectCardMock,
-30 |     clearSelectedCards: clearSelectedCardsMock,
-31 |   }))
-32 | }));
-33 | 
-34 | // 토스트 모킹
-35 | vi.mock('sonner', () => ({
-36 |   toast: {
-37 |     success: vi.fn(),
-38 |     info: vi.fn(),
-39 |     error: vi.fn()
-40 |   }
-41 | }));
-42 | 
-43 | // 실제 컴포넌트 및 유틸리티 임포트 (모킹 후 임포트)
-44 | import { useNodeClickHandlers } from './useNodes';
-45 | import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-46 | 
-47 | describe('useNodeClickHandlers', () => {
-48 |   // 테스트 전 전역 설정
-49 |   beforeAll(() => {
-50 |     mockReactFlow();
-51 |   });
-52 | 
-53 |   // 각 테스트 전 초기화
-54 |   beforeEach(() => {
-55 |     // 모든 모의 함수 초기화
-56 |     vi.clearAllMocks();
-57 |   });
-58 | 
-59 |   // 각 테스트 후 정리
-60 |   afterEach(() => {
-61 |     vi.resetAllMocks();
-62 |   });
-63 | 
-64 |   // 모든 테스트 후 정리
-65 |   afterAll(() => {
-66 |     vi.restoreAllMocks();
-67 |   });
-68 | 
-69 |   it('초기 상태가 올바르게 반환되어야 함', () => {
-70 |     const { result } = renderHook(() => useNodeClickHandlers({}));
-71 | 
-72 |     expect(typeof result.current.handleNodeClick).toBe('function');
-73 |     expect(typeof result.current.handlePaneClick).toBe('function');
-74 |   });
-75 | 
-76 |   it('노드 클릭 시 handleNodeClick이 selectCard를 호출해야 함', () => {
-77 |     const onSelectCardMock = vi.fn();
-78 |     const { result } = renderHook(() => useNodeClickHandlers({ onSelectCard: onSelectCardMock }));
-79 | 
-80 |     // 테스트 노드 - 아직 선택되지 않은 노드를 사용
-81 |     const testNode: Node<CardData> = {
-82 |       id: 'test-node-2', // 선택되지 않은 새 노드 ID
-83 |       type: 'default',
-84 |       position: { x: 100, y: 200 },
-85 |       data: {
-86 |         id: 'test-node-2',
-87 |         title: '테스트 노드 2',
-[TRUNCATED]
-```
-
-src/components/board/hooks/useNodes.ts
-```
-1 | /**
-2 |  * 파일명: useNodes.ts
-3 |  * 목적: 노드 클릭 핸들러 로직 관리
-4 |  * 역할: 노드 클릭 및 패널 클릭 이벤트 핸들링 로직 캡슐화
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-11
-7 |  */
-8 | 
-9 | import { useCallback } from 'react';
-10 | import { toast } from 'sonner';
-11 | import { useAppStore } from '@/store/useAppStore';
-12 | import { 
-13 |   NodeMouseHandler,
-14 |   Node
-15 | } from '@xyflow/react';
-16 | import { CardData } from '../types/board-types';
-17 | 
-18 | /**
-19 |  * useNodeClickHandlers: 노드 클릭 관련 핸들러를 제공하는 훅
-20 |  * @param onSelectCard 카드 선택 시 호출될 콜백 함수 (옵션)
-21 |  * @param onNodeDoubleClick 노드 더블 클릭 시 호출될 콜백 함수 (옵션)
-22 |  * @returns 노드 클릭 관련 핸들러 함수들
-23 |  */
-24 | export function useNodeClickHandlers({
-25 |   onSelectCard,
-26 |   onNodeDoubleClick
-27 | }: {
-28 |   onSelectCard?: (cardId: string | null) => void;
-29 |   onNodeDoubleClick?: (node: Node<CardData>) => void;
-30 | }) {
-31 |   // 전역 상태에서 선택된 카드 정보 가져오기
-32 |   const { selectedCardIds, toggleSelectedCard, selectCard, clearSelectedCards } = useAppStore();
-33 |   
-34 |   /**
-35 |    * 노드 클릭 핸들러: 노드 선택 처리
-36 |    * @param event 마우스 이벤트
-37 |    * @param node 클릭된 노드
-38 |    */
-39 |   const handleNodeClick = useCallback<NodeMouseHandler>((event, node) => {
-40 |     // 이벤트 전파 방지는 항상 수행
-41 |     event.stopPropagation();
-42 | 
-43 |     // 노드가 undefined인 경우 처리
-44 |     if (!node) {
-45 |       console.warn('클릭된 노드가 undefined입니다.');
-46 |       return;
-47 |     }
-48 |     
-49 |     // 노드 타입 안전하게 변환
-50 |     const typedNode = node as Node<CardData>;
-51 |     
-52 |     // 더블 클릭 처리
-53 |     if (event.detail === 2 && onNodeDoubleClick) {
-54 |       onNodeDoubleClick(typedNode);
-55 |       return;
-56 |     }
-57 |     
-58 |     // 다중 선택 모드 (Ctrl/Cmd 키 누른 상태)
-59 |     const isMultiSelectMode = event.ctrlKey || event.metaKey;
-60 |     
-61 |     // 노드 id 가져오기
-62 |     const nodeId = typedNode.id;
-63 |     
-64 |     // 기본 이벤트 관리
-65 |     event.stopPropagation();
-66 |     
-67 |     if (isMultiSelectMode) {
-68 |       // 다중 선택 모드: 선택된 카드 목록에 추가/제거
-69 |       console.log('다중 선택 모드로 노드 클릭:', nodeId);
-70 |       
-71 |       // 토스트 메시지 결정을 위해 현재 선택 상태 미리 확인
-72 |       const isCurrentlySelected = selectedCardIds.includes(nodeId);
-73 |       
-74 |       // 상태 업데이트
-75 |       toggleSelectedCard(nodeId);
-76 |       
-77 |       // 성공 메시지 표시 - 다중 선택 모드
-78 |       if (isCurrentlySelected) {
-79 |         toast.success(`'${typedNode.data.title}'가 선택에서 제거되었습니다.`);
-80 |       } else {
-81 |         toast.success(`'${typedNode.data.title}'가 선택에 추가되었습니다.`);
-82 |       }
-83 |     } else {
-84 |       // 단일 선택 모드: 하나만 선택
-[TRUNCATED]
-```
-
-src/components/board/nodes/CardNode.test.tsx
-```
-1 | /**
-2 |  * 파일명: CardNode.test.tsx
-3 |  * 목적: CardNode 컴포넌트 테스트
-4 |  * 역할: 카드 노드 컴포넌트의 기능 테스트
-5 |  * 작성일: 2025-04-01
-6 |  */
-7 | 
-8 | import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-9 | import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-10 | import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
-11 | import { ThemeProvider } from '@/contexts/ThemeContext';
-12 | import { DEFAULT_BOARD_SETTINGS } from '@/lib/board-utils';
-13 | 
-14 | // TiptapViewer 모킹
-15 | vi.mock('@/components/editor/TiptapViewer', () => ({
-16 |     default: ({ content }: { content: string }) => (
-17 |         <div data-testid="tiptap-viewer">{content}</div>
-18 |     )
-19 | }));
-20 | 
-21 | // EditCardModal 모킹
-22 | vi.mock('@/components/cards/EditCardModal', () => ({
-23 |     EditCardModal: vi.fn(({ onClose }) => (
-24 |         <div data-testid="edit-card-modal">
-25 |             <button onClick={onClose} data-testid="close-modal-button">닫기</button>
-26 |         </div>
-27 |     ))
-28 | }));
-29 | 
-30 | // ThemeContext 모킹
-31 | vi.mock('@/contexts/ThemeContext', () => ({
-32 |     useTheme: () => ({
-33 |         theme: {
-34 |             node: {
-35 |                 width: 200,
-36 |                 height: 30,
-37 |                 maxHeight: 200,
-38 |                 backgroundColor: '#ffffff',
-39 |                 borderWidth: 1,
-40 |                 borderColor: '#e2e8f0',
-41 |                 selectedBorderColor: '#3b82f6',
-42 |                 borderRadius: 6,
-43 |                 font: {
-44 |                     titleSize: 14,
-45 |                     contentSize: 12,
-46 |                     tagsSize: 10
-47 |                 }
-48 |             },
-49 |             handle: {
-50 |                 size: 8,
-51 |                 backgroundColor: '#ffffff',
-52 |                 borderColor: '#888888',
-53 |                 borderWidth: 1
-54 |             },
-55 |             edge: {
-56 |                 color: '#a1a1aa'
-57 |             }
-58 |         }
-59 |     }),
-60 |     ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-61 | }));
-62 | 
-63 | // AppStore 모킹
-64 | vi.mock('@/store/useAppStore', () => ({
-65 |     useAppStore: vi.fn((selector) => selector({
-66 |         // 선택 관련 상태
-67 |         selectedCardIds: [],
-68 |         selectedCardId: null,
-69 |         expandedCardId: null,
-70 | 
-71 |         // 선택 관련 액션
-72 |         selectCard: vi.fn(),
-73 |         selectCards: vi.fn(),
-74 |         addSelectedCard: vi.fn(),
-75 |         removeSelectedCard: vi.fn(),
-76 |         toggleSelectedCard: vi.fn(),
-77 |         clearSelectedCards: vi.fn(),
-78 |         toggleExpandCard: vi.fn(),
-79 | 
-80 |         // 카드 데이터 상태
-81 |         cards: [],
-82 |         setCards: vi.fn(),
-83 |         updateCard: vi.fn(),
-84 | 
-85 |         // 사이드바 상태
-86 |         isSidebarOpen: false,
-87 |         setSidebarOpen: vi.fn(),
-88 |         toggleSidebar: vi.fn(),
-89 | 
-90 |         // 레이아웃 옵션
-91 |         layoutDirection: 'auto' as const,
-92 |         setLayoutDirection: vi.fn(),
-93 | 
-94 |         // 사이드바 너비
-95 |         sidebarWidth: 300,
-96 |         setSidebarWidth: vi.fn(),
-97 | 
-98 |         // 보드 설정
-[TRUNCATED]
-```
-
-src/components/board/nodes/CardNode.tsx
-```
-1 | /**
-2 |  * 파일명: CardNode.tsx
-3 |  * 목적: 보드에 표시되는 카드 노드 컴포넌트
-4 |  * 역할: React Flow의 노드로 사용되는 카드 UI 컴포넌트
-5 |  * 작성일: 2025-03-05
-6 |  * 수정일: 2025-03-31
-7 |  */
-8 | 
-9 | import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-10 | import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals, Node as FlowNode } from '@xyflow/react';
-11 | import { Button } from "@/components/ui/button";
-12 | import Link from 'next/link';
-13 | import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
-14 | import TiptapViewer from '@/components/editor/TiptapViewer';
-15 | import { loadDefaultBoardUIConfig } from '@/lib/board-ui-config';
-16 | import { CSSProperties } from 'react';
-17 | import { useAppStore } from '@/store/useAppStore';
-18 | import { Card, CardContent } from '@/components/ui/card';
-19 | import { cn, hexToHsl, hslToHex } from '@/lib/utils';
-20 | import { createPortal } from 'react-dom';
-21 | import { EditCardModal } from '@/components/cards/EditCardModal';
-22 | import { useTheme } from '@/contexts/ThemeContext';
-23 | import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
-24 | 
-25 | // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
-26 | const COMPONENT_ID = 'CardNode_from_nodes_directory';
-27 | 
-28 | // 디버깅용 로그 - 순환 참조 방지를 위해 NODE_TYPES 접근 제거
-29 | console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CardNode`);
-30 | 
-31 | // 노드 데이터 타입 정의
-32 | export interface NodeData {
-33 |   id: string;
-34 |   title: string;
-35 |   content: string;
-36 |   type?: string;
-37 |   width?: number;
-38 |   height?: number;
-39 |   color?: string;
-40 |   backgroundColor?: string;
-41 |   tags?: string[];
-42 |   position?: {
-43 |     x: number;
-44 |     y: number;
-45 |   };
-46 |   // 추가 속성들
-47 |   [key: string]: any;
-48 | }
-49 | 
-50 | // Portal 컴포넌트 - 내부 정의
-51 | const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-52 |   const [mounted, setMounted] = useState(false);
-53 | 
-54 |   useEffect(() => {
-55 |     setMounted(true);
-56 |     return () => setMounted(false);
-57 |   }, []);
-58 | 
-59 |   return mounted ? createPortal(children, document.body) : null;
-60 | };
-61 | 
-62 | // 카드 노드 컴포넌트 정의
-63 | export default function CardNode({ data, isConnectable, selected, id }: NodeProps) {
-64 |   const [isHovered, setIsHovered] = useState(false);
-65 |   const { getNode, setNodes } = useReactFlow();
-66 |   const nodeRef = useRef<HTMLDivElement>(null);
-67 |   const updateNodeInternals = useUpdateNodeInternals();
-68 |   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-69 |   const [isActive, setIsActive] = useState(false);
-70 | 
-71 |   // ReactFlow 인스턴스 가져오기
-72 |   const reactFlowInstance = useReactFlow();
-73 | 
-74 |   // 컴포넌트 초기화 로그 - 상세 정보 추가
-[TRUNCATED]
-```
-
-src/components/board/nodes/CustomEdge.test.tsx
-```
-1 | /**
-2 |  * 파일명: CustomEdge.test.tsx
-3 |  * 목적: CustomEdge 컴포넌트 테스트
-4 |  * 역할: 엣지 컴포넌트의 기능 테스트
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-04-01
-7 |  */
-8 | 
-9 | import { describe, it, expect, vi, beforeEach } from 'vitest';
-10 | import { render, screen } from '@testing-library/react';
-11 | import { ReactFlowProvider, EdgeProps, Position, ConnectionLineType } from '@xyflow/react';
-12 | import { ConnectionLineType as SystemConnectionLineType } from '@xyflow/system';
-13 | import type * as XyflowReact from '@xyflow/react';
-14 | 
-15 | // AppStore 모킹
-16 | vi.mock('@/store/useAppStore', () => ({
-17 |   useAppStore: () => ({
-18 |     boardSettings: {
-19 |       edgeColor: '#000000',
-20 |       selectedEdgeColor: '#ff0000',
-21 |       strokeWidth: 2,
-22 |       selectedStrokeWidth: 3,
-23 |       animated: false,
-24 |       markerEnd: true,
-25 |       connectionLineType: 'bezier'
-26 |     }
-27 |   })
-28 | }));
-29 | 
-30 | vi.mock('@xyflow/react', async (importOriginal) => {
-31 |   const actual = (await importOriginal()) as typeof XyflowReact;
-32 |   const getBezierPathMock = vi.fn().mockReturnValue(['M0 0 C100 0 100 100 200 100']);
-33 |   const getStraightPathMock = vi.fn().mockReturnValue(['M0 0 L200 100']);
-34 |   const getSmoothStepPathMock = vi.fn().mockReturnValue(['M0 0 Q100 0 100 50 Q100 100 200 100']);
-35 | 
-36 |   return {
-37 |     ...actual,
-38 |     getBezierPath: getBezierPathMock,
-39 |     getStraightPath: getStraightPathMock,
-40 |     getSmoothStepPath: getSmoothStepPathMock,
-41 |     useStore: vi.fn(() => ({
-42 |       selectedEdgeColor: '#ff0000',
-43 |     })),
-44 |     ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-45 |     BaseEdge: ({ path, markerEnd, style, className, 'data-selected': selected, 'data-component-id': componentId }: any) => (
-46 |       <g data-testid="base-edge" className={className} style={style} data-selected={selected} data-component-id={componentId}>
-47 |         <path data-testid="edge-path" d={path} markerEnd={markerEnd} />
-48 |       </g>
-49 |     ),
-50 |   };
-51 | });
-52 | 
-53 | // CustomEdge 컴포넌트 임포트
-54 | import CustomEdge from './CustomEdge';
-55 | 
-56 | describe('CustomEdge', () => {
-57 |   const mockEdgeProps: Partial<EdgeProps> = {
-58 |     id: 'test-edge-id',
-59 |     source: 'source-node',
-60 |     target: 'target-node',
-61 |     sourceX: 100,
-62 |     sourceY: 100,
-63 |     targetX: 200,
-64 |     targetY: 200,
-65 |     sourcePosition: Position.Right,
-66 |     targetPosition: Position.Left,
-67 |     style: { strokeWidth: 2, stroke: '#000000' },
-68 |     markerEnd: 'test-marker',
-69 |     selected: false
-70 |   };
-71 | 
-72 |   let getBezierPathMock: ReturnType<typeof vi.fn>;
-73 |   let getStraightPathMock: ReturnType<typeof vi.fn>;
-74 |   let getSmoothStepPathMock: ReturnType<typeof vi.fn>;
-75 | 
-76 |   beforeEach(async () => {
-77 |     const xyflow = vi.mocked(await import('@xyflow/react'));
-78 |     getBezierPathMock = xyflow.getBezierPath;
-79 |     getStraightPathMock = xyflow.getStraightPath;
-[TRUNCATED]
-```
-
-src/components/board/nodes/CustomEdge.tsx
-```
-1 | /**
-2 |  * 파일명: CustomEdge.tsx
-3 |  * 목적: React Flow에서 사용할 커스텀 엣지 컴포넌트
-4 |  * 역할: 노드 간 연결선을 시각화하는 컴포넌트
-5 |  * 작성일: 2025-03-08
-6 |  * 수정일: 2025-03-31
-7 |  */
-8 | 
-9 | import React, { useMemo, useEffect } from 'react';
-10 | import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
-11 | import { loadBoardSettings } from '@/lib/board-utils';
-12 | import { useAppStore } from '@/store/useAppStore';
-13 | import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
-14 | 
-15 | // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
-16 | const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
-17 | 
-18 | // 디버깅용 로그 - 순환 참조 방지를 위해 EDGE_TYPES 접근 제거
-19 | console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge`);
-20 | 
-21 | // 확장된 엣지 Props 인터페이스
-22 | interface CustomEdgeProps extends EdgeProps {
-23 |   type?: string;
-24 |   animated?: boolean;
-25 |   data?: {
-26 |     edgeType?: ConnectionLineType;
-27 |     settings?: any;
-28 |   };
-29 | }
-30 | 
-31 | /**
-32 |  * 커스텀 엣지 컴포넌트
-33 |  * - ReactFlow의 기본 동작을 최대한 활용하고, 최소한의 조정만 적용
-34 |  */
-35 | // 컴포넌트 사용 시점 디버깅
-36 | console.log('[CustomEdge] 컴포넌트 정의 전: 함수 형태의 컴포넌트 생성');
-37 | 
-38 | function CustomEdge({
-39 |   id,
-40 |   source,
-41 |   target,
-42 |   sourceX,
-43 |   sourceY,
-44 |   targetX,
-45 |   targetY,
-46 |   sourcePosition,
-47 |   targetPosition,
-48 |   style = {},
-49 |   markerEnd,
-50 |   selected,
-51 |   type,
-52 |   animated,
-53 |   data,
-54 |   ...restProps
-55 | }: CustomEdgeProps) {
-56 |   // 컴포넌트 초기화 로그 - 상세 정보 추가 (타입 검증은 유지)
-57 |   // console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
-58 |   //   id: id,
-59 |   //   source: source,
-60 |   //   target: target,
-61 |   //   type: type,
-62 |   //   expectedType: EDGE_TYPES_KEYS.custom,
-63 |   //   isTypeValid: type === EDGE_TYPES_KEYS.custom,
-64 |   //   componentId: COMPONENT_ID
-65 |   // });
-66 | 
-67 |   // Zustand 스토어에서 boardSettings 가져오기
-68 |   const { boardSettings } = useAppStore();
-69 | 
-70 |   // 글로벌 설정과 로컬 설정 결합
-71 |   const effectiveSettings = useMemo(() => {
-72 |     // 로컬 설정이 있으면 우선적으로 사용, 없으면 글로벌 설정 사용
-73 |     const localSettings = data?.settings;
-74 |     return localSettings ? { ...boardSettings, ...localSettings } : boardSettings;
-75 |   }, [boardSettings, data?.settings]);
-76 | 
-77 |   // 엣지 연결 좌표 계산 (useMemo로 최적화)
-78 |   const edgeParams = useMemo(() => ({
-79 |     sourceX,
-80 |     sourceY,
-81 |     sourcePosition,
-82 |     targetX,
-83 |     targetY,
-84 |     targetPosition,
-85 |   }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
-86 | 
-[TRUNCATED]
-```
-
-src/components/board/nodes/NodeInspect.tsx
-```
-1 | /**
-2 |  * 파일명: NodeInspect.tsx
-3 |  * 목적: React Flow 노드 검사 컴포넌트
-4 |  * 역할: 노드 정보를 표시해주는 디버깅용 컴포넌트
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { useEffect, useState } from 'react';
-9 | import { useReactFlow, NodeProps, NodeToolbar, Position } from '@xyflow/react';
-10 | 
-11 | /**
-12 |  * NodeInspect 컴포넌트는 각 노드에 추가되어 노드의 데이터를 표시합니다.
-13 |  * 실시간으로 노드 상태를 반영합니다.
-14 |  */
-15 | export default function NodeInspect(props: NodeProps) {
-16 |   const { data, id, type } = props;
-17 |   const { getNode } = useReactFlow();
-18 |   // 실시간 상태 업데이트를 위한 상태
-19 |   const [nodeState, setNodeState] = useState({ selected: false });
-20 |   const [isVisible, setIsVisible] = useState(false);
-21 |   
-22 |   // 렌더링 전에 isVisible 상태를 설정
-23 |   useEffect(() => {
-24 |     setIsVisible(!!data?.isInspected);
-25 |   }, [data?.isInspected]);
-26 | 
-27 |   // 실시간 노드 상태 업데이트
-28 |   useEffect(() => {
-29 |     // 노드 상태 업데이트 함수
-30 |     const updateNodeState = () => {
-31 |       const currentNode = getNode(id);
-32 |       if (currentNode) {
-33 |         setNodeState({
-34 |           selected: !!currentNode.selected,
-35 |         });
-36 |       }
-37 |     };
-38 | 
-39 |     // 초기 상태 설정
-40 |     updateNodeState();
-41 | 
-42 |     // 주기적으로 노드 상태 업데이트 (실시간성 보장)
-43 |     const intervalId = setInterval(updateNodeState, 100);
-44 | 
-45 |     return () => {
-46 |       clearInterval(intervalId);
-47 |     };
-48 |   }, [id, getNode]);
-49 | 
-50 |   // 핸들 위치 정보
-51 |   const handleInfo = {
-52 |     leftTop: { position: Position.Left, top: '0%' },
-53 |     leftBottom: { position: Position.Left, top: '100%' },
-54 |     rightTop: { position: Position.Right, top: '0%' },
-55 |     rightBottom: { position: Position.Right, top: '100%' },
-56 |   };
-57 | 
-58 |   if (!isVisible) return null;
-59 | 
-60 |   return (
-61 |     <NodeToolbar 
-62 |       position={Position.Bottom}
-63 |       className="nodrag bg-card shadow-md rounded p-2 text-xs max-w-xs" 
-64 |       isVisible={true}
-65 |     >
-66 |       <div className="space-y-1">
-67 |         <div><span className="font-medium">제목:</span> {data?.title || data?.label || '제목 없음'}</div>
-68 |         <div><span className="font-medium">ID:</span> {id}</div>
-69 |         <div><span className="font-medium">타입:</span> {type || '기본'}</div>
-70 |         <div><span className="font-medium">선택됨:</span> {nodeState.selected ? '예' : '아니오'}</div>
-71 |       </div>
-72 |     </NodeToolbar>
-73 |   );
-74 | } 
-```
-
-src/components/board/nodes/NodeInspector.tsx
-```
-1 | /**
-2 |  * 파일명: NodeInspector.tsx
-3 |  * 목적: 노드 상세 정보를 모달로 표시하는 컴포넌트
-4 |  * 역할: 선택된 노드의 정보를 검사하고 표시
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { useEffect } from 'react';
-9 | import { Node } from '@xyflow/react';
-10 | import { Modal } from '@/components/ui/modal';
-11 | import { Badge } from '@/components/ui/badge';
-12 | import TiptapViewer from '@/components/editor/TiptapViewer';
-13 | import { useNodeStore } from '@/store/useNodeStore';
-14 | 
-15 | interface NodeInspectorProps {
-16 |   nodes: Node[];
-17 | }
-18 | 
-19 | /**
-20 |  * NodeInspector: 노드의 상세 정보를 모달로 표시하는 컴포넌트
-21 |  * @param {NodeInspectorProps} props - 컴포넌트 속성
-22 |  * @returns {JSX.Element} 노드 인스펙터 컴포넌트
-23 |  */
-24 | export function NodeInspector({ nodes }: NodeInspectorProps) {
-25 |   const { inspectorOpen, inspectedNode, setInspectorOpen, setInspectedNode } = useNodeStore();
-26 | 
-27 |   // 모달이 닫힐 때 inspectedNode 초기화
-28 |   const handleCloseModal = () => {
-29 |     setInspectorOpen(false);
-30 |   };
-31 | 
-32 |   // 노드 정보가 없거나 모달이 닫혀있으면 열린 상태로 렌더링하지만 보이지 않게 함
-33 |   const shouldShowContent = inspectorOpen && inspectedNode;
-34 | 
-35 |   return (
-36 |     <Modal.Root open={Boolean(shouldShowContent)} onOpenChange={handleCloseModal}>
-37 |       <Modal.Content>
-38 |         {shouldShowContent && (
-39 |           <>
-40 |             <Modal.Title>
-41 |               {inspectedNode.data?.title || '제목 없음'}
-42 |             </Modal.Title>
-43 |             
-44 |             <div className="py-4">
-45 |               {/* 노드 ID 정보 */}
-46 |               <div className="mb-4">
-47 |                 <h3 className="text-sm font-semibold mb-1">ID</h3>
-48 |                 <code className="bg-muted p-1 rounded text-xs">{inspectedNode.id}</code>
-49 |               </div>
-50 |               
-51 |               {/* 노드 내용 */}
-52 |               {inspectedNode.data?.content && (
-53 |                 <div className="mb-4">
-54 |                   <h3 className="text-sm font-semibold mb-1">내용</h3>
-55 |                   <div className="bg-muted p-2 rounded">
-56 |                     <TiptapViewer content={inspectedNode.data.content} />
-57 |                   </div>
-58 |                 </div>
-59 |               )}
-60 |               
-61 |               {/* 노드 태그 */}
-62 |               {inspectedNode.data?.tags && inspectedNode.data.tags.length > 0 && (
-63 |                 <div className="mb-4">
-64 |                   <h3 className="text-sm font-semibold mb-1">태그</h3>
-65 |                   <div className="flex flex-wrap gap-1">
-66 |                     {inspectedNode.data.tags.map((tag: string) => (
-67 |                       <Badge key={tag} data-testid="node-tag">{tag}</Badge>
-68 |                     ))}
-69 |                   </div>
-70 |                 </div>
-71 |               )}
-72 |               
-73 |               {/* 노드 위치 정보 */}
-74 |               <div className="mb-4">
-75 |                 <h3 className="text-sm font-semibold mb-1">위치</h3>
-[TRUNCATED]
-```
-
-src/components/board/types/board-types.ts
-```
-1 | /**
-2 |  * 파일명: board-types.ts
-3 |  * 목적: BoardComponent 및 관련 컴포넌트에서 사용되는 타입 정의
-4 |  * 역할: 타입 정의를 중앙화하여 코드 중복을 방지하고 타입 안정성 제공
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode } from '@xyflow/react';
-9 | 
-10 | /**
-11 |  * BoardComponent의 Props 인터페이스
-12 |  * @interface BoardComponentProps
-13 |  */
-14 | export interface BoardComponentProps {
-15 |   /** 카드 선택 시 호출될 콜백 함수 */
-16 |   onSelectCard?: (cardId: string | null) => void;
-17 |   /** 컴포넌트에 적용할 추가 CSS 클래스 */
-18 |   className?: string;
-19 |   /** 컨트롤 표시 여부 */
-20 |   showControls?: boolean;
-21 | }
-22 | 
-23 | /**
-24 |  * 카드(노드) 데이터 인터페이스
-25 |  * @interface CardData
-26 |  */
-27 | export interface CardData {
-28 |   id: string;
-29 |   title: string;
-30 |   content: string | null;
-31 |   tags?: string[];
-32 |   cardTags?: Array<{tag: {name: string}}>;
-33 |   [key: string]: any;
-34 | }
-35 | 
-36 | /**
-37 |  * 보드 설정 인터페이스
-38 |  * @interface BoardSettings
-39 |  */
-40 | export interface BoardSettings {
-41 |   /** 엣지 색상 */
-42 |   edgeColor: string;
-43 |   /** 엣지 두께 */
-44 |   strokeWidth: number;
-45 |   /** 엣지 애니메이션 여부 */
-46 |   animated: boolean;
-47 |   /** 방향 표시 여부 */
-48 |   markerEnd: boolean;
-49 |   /** 연결선 타입 */
-50 |   connectionLineType: string;
-51 |   /** 그리드 스냅 여부 */
-52 |   snapToGrid: boolean;
-53 |   /** 그리드 크기 */
-54 |   snapGrid: [number, number];
-55 |   [key: string]: any;
-56 | }
-57 | 
-58 | /**
-59 |  * 보드 노드 타입
-60 |  * @type BoardNode
-61 |  */
-62 | export type BoardNode = Node<CardData>;
-63 | 
-64 | /**
-65 |  * 보드 엣지 타입
-66 |  * @type BoardEdge
-67 |  */
-68 | export type BoardEdge = Edge;
-69 | 
-70 | /**
-71 |  * 엣지 드롭 데이터 인터페이스
-72 |  * @interface EdgeDropData
-73 |  */
-74 | export interface EdgeDropData {
-75 |   position: XYPosition;
-76 |   connectingNodeId: string;
-77 |   handleType: 'source' | 'target';
-78 | }
-79 | 
-80 | // 타입 재내보내기 - isolatedModules 설정 때문에 'export type'을 사용
-81 | export type { Node, Edge, Connection, XYPosition, NodeChange, EdgeChange, Position, ConnectionMode }; 
-```
-
-src/components/board/utils/constants.ts
-```
-1 | /**
-2 |  * 파일명: constants.ts
-3 |  * 목적: 보드 컴포넌트 관련 상수 정의
-4 |  * 역할: 보드 컴포넌트에서 사용되는 모든 상수값 제공
-5 |  * 작성일: 2025-03-28
-6 |  * 수정일: 2025-03-30
-7 |  */
-8 | 
-9 | import { ConnectionLineType, Position } from '@xyflow/react';
-10 | 
-11 | // 레이아웃 방향
-12 | export const LAYOUT_DIRECTION = {
-13 |   HORIZONTAL: 'LR',
-14 |   VERTICAL: 'TB'
-15 | };
-16 | 
-17 | // 노드 타입
-18 | export const NODE_TYPES = {
-19 |   CARD: 'card'
-20 | };
-21 | 
-22 | // 엣지 타입
-23 | export const EDGE_TYPES = {
-24 |   CUSTOM: 'custom'
-25 | };
-26 | 
-27 | // 핸들 위치 정보
-28 | export const HANDLE_POSITIONS = {
-29 |   TOP: Position.Top,
-30 |   RIGHT: Position.Right,
-31 |   BOTTOM: Position.Bottom,
-32 |   LEFT: Position.Left
-33 | };
-34 | 
-35 | // 연결선 타입
-36 | export const CONNECTION_LINE_TYPES = {
-37 |   BEZIER: ConnectionLineType.Bezier,
-38 |   STEP: ConnectionLineType.Step,
-39 |   SMOOTHSTEP: ConnectionLineType.SmoothStep,
-40 |   STRAIGHT: ConnectionLineType.Straight
-41 | };
-42 | 
-43 | // 기본 노드 크기
-44 | export const DEFAULT_NODE_DIMENSIONS = {
-45 |   WIDTH: 300,
-46 |   MIN_HEIGHT: 100
-47 | };
-48 | 
-49 | // 자동 저장 딜레이 (밀리초)
-50 | export const AUTO_SAVE_DELAY = 1000;
-51 | 
-52 | // 노드 기본 간격 값
-53 | export const NODE_SPACING = {
-54 |   HORIZONTAL: 100,
-55 |   VERTICAL: 80
-56 | };
-57 | 
-58 | // 새 노드 기본 데이터
-59 | export const DEFAULT_NEW_CARD = {
-60 |   title: '새 카드',
-61 |   content: '',
-62 |   tags: []
-63 | };
-64 | 
-65 | // 보드 줌 설정
-66 | export const ZOOM_SETTINGS = {
-67 |   MIN: 0.5,
-68 |   MAX: 2,
-69 |   STEP: 0.1
-70 | };
-71 | 
-72 | // 툴팁 표시 지연 (밀리초)
-73 | export const TOOLTIP_DELAY = 500; 
-```
-
-src/components/board/utils/graphUtils.ts
-```
-1 | /**
-2 |  * 파일명: graphUtils.ts
-3 |  * 목적: 그래프 관련 순수 함수 모음
-4 |  * 역할: 노드, 엣지 처리를 위한 순수 유틸리티 함수 제공
-5 |  * 작성일: 2025-03-28
-6 |  */
-7 | 
-8 | import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';
-9 | import { BoardSettings } from '@/lib/board-utils';
-10 | import { STORAGE_KEY, EDGES_STORAGE_KEY } from '@/lib/board-constants';
-11 | 
-12 | /**
-13 |  * 레이아웃을 로컬 스토리지에 저장
-14 |  * @param nodes 저장할 노드 배열
-15 |  * @returns 성공 여부
-16 |  */
-17 | export const saveLayout = (nodes: Node[]): boolean => {
-18 |   try {
-19 |     // 노드 ID와 위치만 저장
-20 |     const nodePositions = nodes.reduce((acc: Record<string, { position: XYPosition }>, node: Node) => {
-21 |       acc[node.id] = { position: node.position };
-22 |       return acc;
-23 |     }, {});
-24 |     
-25 |     localStorage.setItem(STORAGE_KEY, JSON.stringify(nodePositions));
-26 |     return true;
-27 |   } catch (err) {
-28 |     console.error('레이아웃 저장 실패:', err);
-29 |     return false;
-30 |   }
-31 | };
-32 | 
-33 | /**
-34 |  * 엣지를 로컬 스토리지에 저장
-35 |  * @param edges 저장할 엣지 배열
-36 |  * @returns 성공 여부
-37 |  */
-38 | export const saveEdges = (edges: Edge[]): boolean => {
-39 |   try {
-40 |     localStorage.setItem(EDGES_STORAGE_KEY, JSON.stringify(edges));
-41 |     return true;
-42 |   } catch (err) {
-43 |     console.error('엣지 저장 실패:', err);
-44 |     return false;
-45 |   }
-46 | };
-47 | 
-48 | /**
-49 |  * 모든 레이아웃 데이터 저장 (노드와 엣지)
-50 |  * @param nodes 저장할 노드 배열
-51 |  * @param edges 저장할 엣지 배열
-52 |  * @returns 성공 여부
-53 |  */
-54 | export const saveAllLayoutData = (nodes: Node[], edges: Edge[]): boolean => {
-55 |   const layoutSaved = saveLayout(nodes);
-56 |   const edgesSaved = saveEdges(edges);
-57 |   
-58 |   return layoutSaved && edgesSaved;
-59 | };
-60 | 
-61 | /**
-62 |  * 삭제된 노드를 로컬 스토리지에서 제거
-63 |  * @param deletedNodeIds 삭제된 노드 ID 배열
-64 |  */
-65 | export const removeDeletedNodesFromStorage = (deletedNodeIds: string[]): void => {
-66 |   try {
-67 |     // 노드 위치 정보 처리
-68 |     const savedPositionsStr = localStorage.getItem(STORAGE_KEY);
-69 |     if (savedPositionsStr) {
-70 |       const savedPositions = JSON.parse(savedPositionsStr);
-71 |       
-72 |       // 삭제된 노드 ID를 제외한 새 위치 정보 객체 생성
-73 |       const updatedPositions = Object.fromEntries(
-74 |         Object.entries(savedPositions).filter(([id]) => !deletedNodeIds.includes(id))
-75 |       );
-76 |       
-77 |       // 업데이트된 위치 정보 저장
-78 |       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPositions));
-79 |       
-80 |       // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
-81 |       const savedEdgesStr = localStorage.getItem(EDGES_STORAGE_KEY);
-[TRUNCATED]
-```
-
-src/tests/msw/handlers/logs.ts
-```
-1 | /**
-2 |  * 파일명: logs.ts
-3 |  * 목적: 로그 뷰어 테스트를 위한 목업 데이터
-4 |  * 역할: 테스트에서 사용할 로그 데이터 제공
-5 |  * 작성일: 2025-04-01
-6 |  */
-7 | 
-8 | export interface Log {
-9 |   timestamp: string
-10 |   module: string
-11 |   level: string
-12 |   message: string
-13 |   sessionId: string
-14 |   data?: Record<string, unknown>
-15 | }
-16 | 
-17 | export const mockModules = ['auth', 'database', 'api', 'system'] as const
-18 | 
-19 | export const mockSessionIds = [
-20 |   'sess_123456',
-21 |   'sess_789012',
-22 |   'sess_345678',
-23 |   'sess_901234'
-24 | ]
-25 | 
-26 | export const mockLogs: Log[] = [
-27 |   {
-28 |     timestamp: '2024-03-31T10:00:00Z',
-29 |     module: 'auth',
-30 |     level: 'info',
-31 |     message: '사용자 로그인 성공',
-32 |     sessionId: 'sess_123456',
-33 |     data: {
-34 |       userId: 'user_123',
-35 |       loginMethod: 'password'
-36 |     }
-37 |   },
-38 |   {
-39 |     timestamp: '2024-03-31T10:01:00Z',
-40 |     module: 'database',
-41 |     level: 'error',
-42 |     message: '데이터베이스 연결 실패',
-43 |     sessionId: 'sess_789012',
-44 |     data: {
-45 |       errorCode: 'DB_001',
-46 |       retryCount: 3
-47 |     }
-48 |   },
-49 |   {
-50 |     timestamp: '2024-03-31T10:02:00Z',
-51 |     module: 'api',
-52 |     level: 'warn',
-53 |     message: 'API 응답 지연',
-54 |     sessionId: 'sess_345678',
-55 |     data: {
-56 |       endpoint: '/api/users',
-57 |       responseTime: 5000
-58 |     }
-59 |   },
-60 |   {
-61 |     timestamp: '2024-03-31T10:03:00Z',
-62 |     module: 'system',
-63 |     level: 'debug',
-64 |     message: '시스템 상태 점검',
-65 |     sessionId: 'sess_901234',
-66 |     data: {
-67 |       cpuUsage: 45,
-68 |       memoryUsage: 60
-69 |     }
-70 |   }
-71 | ] 
-```
-
 src/app/api/auth/status/route.ts
 ```
 1 | /**
@@ -15010,89 +15001,6 @@ src/app/api/cards/[id]/route.ts
 [TRUNCATED]
 ```
 
-src/app/api/logs/view/route.ts
-```
-1 | /**
-2 |  * 파일명: route.ts
-3 |  * 목적: 저장된 로그를 확인할 수 있는 API 엔드포인트
-4 |  * 역할: 서버에 저장된 로그를 조회하고 필터링하여 제공
-5 |  * 작성일: 2025-03-27
-6 |  * 수정일: 2025-04-09
-7 |  */
-8 | 
-9 | import { NextRequest, NextResponse } from 'next/server';
-10 | import fs from 'fs';
-11 | import path from 'path';
-12 | import { createClient } from '@/lib/supabase/server';
-13 | 
-14 | // 로그 파일 경로
-15 | const LOG_DIR = process.env.LOG_DIR || 'logs';
-16 | const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
-17 | 
-18 | /**
-19 |  * 로그 조회 API 핸들러
-20 |  */
-21 | export async function GET(request: NextRequest) {
-22 |   try {
-23 |     // 인증 확인 (관리자만 접근 가능하도록 설정)
-24 |     const supabase = await createClient();
-25 |     const { data: sessionData } = await supabase.auth.getSession();
-26 |     
-27 |     // 개발 환경이 아니고 인증되지 않은 경우 접근 거부
-28 |     if (process.env.NODE_ENV !== 'development' && !sessionData.session) {
-29 |       return NextResponse.json(
-30 |         { error: '인증이 필요합니다.' },
-31 |         { status: 401 }
-32 |       );
-33 |     }
-34 |     
-35 |     // 로그 파일이 존재하지 않는 경우
-36 |     if (!fs.existsSync(LOG_FILE)) {
-37 |       return NextResponse.json(
-38 |         { error: '로그 파일이 존재하지 않습니다.' },
-39 |         { status: 404 }
-40 |       );
-41 |     }
-42 |     
-43 |     // 로그 파일 읽기
-44 |     const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
-45 |     const logs = JSON.parse(fileContent);
-46 |     
-47 |     // URL 파라미터로 필터링
-48 |     const searchParams = request.nextUrl.searchParams;
-49 |     const module = searchParams.get('module');
-50 |     const level = searchParams.get('level');
-51 |     const limit = parseInt(searchParams.get('limit') || '100', 10);
-52 |     const sessionId = searchParams.get('sessionId');
-53 |     
-54 |     // 필터링 적용
-55 |     let filteredLogs = logs;
-56 |     
-57 |     if (module) {
-58 |       filteredLogs = filteredLogs.filter((log: any) => log.module === module);
-59 |     }
-60 |     
-61 |     if (level) {
-62 |       filteredLogs = filteredLogs.filter((log: any) => log.level === level);
-63 |     }
-64 |     
-65 |     if (sessionId) {
-66 |       filteredLogs = filteredLogs.filter((log: any) => log.sessionId === sessionId);
-67 |     }
-68 |     
-69 |     // 최근 로그 순으로 정렬
-70 |     filteredLogs.sort((a: any, b: any) => {
-71 |       const dateA = new Date(a.timestamp).getTime();
-72 |       const dateB = new Date(b.timestamp).getTime();
-73 |       return dateB - dateA;
-74 |     });
-75 |     
-76 |     // 로그 개수 제한
-77 |     filteredLogs = filteredLogs.slice(0, limit);
-78 |     
-[TRUNCATED]
-```
-
 src/app/api/tags/[id]/route.ts
 ```
 1 | import { NextRequest, NextResponse } from 'next/server';
@@ -15194,6 +15102,89 @@ src/app/api/tags/[id]/route.ts
 97 |       { status: 500 }
 98 |     );
 99 |   }
+[TRUNCATED]
+```
+
+src/app/api/logs/view/route.ts
+```
+1 | /**
+2 |  * 파일명: route.ts
+3 |  * 목적: 저장된 로그를 확인할 수 있는 API 엔드포인트
+4 |  * 역할: 서버에 저장된 로그를 조회하고 필터링하여 제공
+5 |  * 작성일: 2025-03-27
+6 |  * 수정일: 2025-04-09
+7 |  */
+8 | 
+9 | import { NextRequest, NextResponse } from 'next/server';
+10 | import fs from 'fs';
+11 | import path from 'path';
+12 | import { createClient } from '@/lib/supabase/server';
+13 | 
+14 | // 로그 파일 경로
+15 | const LOG_DIR = process.env.LOG_DIR || 'logs';
+16 | const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
+17 | 
+18 | /**
+19 |  * 로그 조회 API 핸들러
+20 |  */
+21 | export async function GET(request: NextRequest) {
+22 |   try {
+23 |     // 인증 확인 (관리자만 접근 가능하도록 설정)
+24 |     const supabase = await createClient();
+25 |     const { data: sessionData } = await supabase.auth.getSession();
+26 |     
+27 |     // 개발 환경이 아니고 인증되지 않은 경우 접근 거부
+28 |     if (process.env.NODE_ENV !== 'development' && !sessionData.session) {
+29 |       return NextResponse.json(
+30 |         { error: '인증이 필요합니다.' },
+31 |         { status: 401 }
+32 |       );
+33 |     }
+34 |     
+35 |     // 로그 파일이 존재하지 않는 경우
+36 |     if (!fs.existsSync(LOG_FILE)) {
+37 |       return NextResponse.json(
+38 |         { error: '로그 파일이 존재하지 않습니다.' },
+39 |         { status: 404 }
+40 |       );
+41 |     }
+42 |     
+43 |     // 로그 파일 읽기
+44 |     const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
+45 |     const logs = JSON.parse(fileContent);
+46 |     
+47 |     // URL 파라미터로 필터링
+48 |     const searchParams = request.nextUrl.searchParams;
+49 |     const module = searchParams.get('module');
+50 |     const level = searchParams.get('level');
+51 |     const limit = parseInt(searchParams.get('limit') || '100', 10);
+52 |     const sessionId = searchParams.get('sessionId');
+53 |     
+54 |     // 필터링 적용
+55 |     let filteredLogs = logs;
+56 |     
+57 |     if (module) {
+58 |       filteredLogs = filteredLogs.filter((log: any) => log.module === module);
+59 |     }
+60 |     
+61 |     if (level) {
+62 |       filteredLogs = filteredLogs.filter((log: any) => log.level === level);
+63 |     }
+64 |     
+65 |     if (sessionId) {
+66 |       filteredLogs = filteredLogs.filter((log: any) => log.sessionId === sessionId);
+67 |     }
+68 |     
+69 |     // 최근 로그 순으로 정렬
+70 |     filteredLogs.sort((a: any, b: any) => {
+71 |       const dateA = new Date(a.timestamp).getTime();
+72 |       const dateB = new Date(b.timestamp).getTime();
+73 |       return dateB - dateA;
+74 |     });
+75 |     
+76 |     // 로그 개수 제한
+77 |     filteredLogs = filteredLogs.slice(0, limit);
+78 |     
 [TRUNCATED]
 ```
 
@@ -15324,47 +15315,6 @@ src/app/api/user/register/route.ts
 63 |     );
 64 |   }
 65 | } 
-```
-
-src/app/api/users/first/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | import prisma from '@/lib/prisma';
-3 | 
-4 | /**
-5 |  * 첫 번째 사용자를 가져오는 API 엔드포인트
-6 |  */
-7 | export async function GET(request: NextRequest) {
-8 |   try {
-9 |     // 첫 번째 사용자를 가져옴 (가장 먼저 생성된 사용자)
-10 |     const firstUser = await prisma.user.findFirst({
-11 |       orderBy: {
-12 |         createdAt: 'asc'
-13 |       },
-14 |       select: {
-15 |         id: true,
-16 |         name: true,
-17 |         email: true
-18 |       }
-19 |     });
-20 |     
-21 |     if (!firstUser) {
-22 |       return NextResponse.json(
-23 |         { error: '사용자를 찾을 수 없습니다.' },
-24 |         { status: 404 }
-25 |       );
-26 |     }
-27 |     
-28 |     return NextResponse.json(firstUser);
-29 |   } catch (error) {
-30 |     console.error('사용자 조회 오류:', error);
-31 |     
-32 |     return NextResponse.json(
-33 |       { error: '사용자 조회 중 오류가 발생했습니다.' },
-34 |       { status: 500 }
-35 |     );
-36 |   }
-37 | } 
 ```
 
 src/app/cards/[id]/edit/EditCardPageMock.tsx
@@ -15735,4 +15685,45 @@ src/app/cards/[id]/edit/test-utils.ts
 86 |  * waitForDomChanges: 비동기 작업의 안전한 완료를 위한 도우미 함수
 87 |  */
 88 | export const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 50)); 
+```
+
+src/app/api/users/first/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | import prisma from '@/lib/prisma';
+3 | 
+4 | /**
+5 |  * 첫 번째 사용자를 가져오는 API 엔드포인트
+6 |  */
+7 | export async function GET(request: NextRequest) {
+8 |   try {
+9 |     // 첫 번째 사용자를 가져옴 (가장 먼저 생성된 사용자)
+10 |     const firstUser = await prisma.user.findFirst({
+11 |       orderBy: {
+12 |         createdAt: 'asc'
+13 |       },
+14 |       select: {
+15 |         id: true,
+16 |         name: true,
+17 |         email: true
+18 |       }
+19 |     });
+20 |     
+21 |     if (!firstUser) {
+22 |       return NextResponse.json(
+23 |         { error: '사용자를 찾을 수 없습니다.' },
+24 |         { status: 404 }
+25 |       );
+26 |     }
+27 |     
+28 |     return NextResponse.json(firstUser);
+29 |   } catch (error) {
+30 |     console.error('사용자 조회 오류:', error);
+31 |     
+32 |     return NextResponse.json(
+33 |       { error: '사용자 조회 중 오류가 발생했습니다.' },
+34 |       { status: 500 }
+35 |     );
+36 |   }
+37 | } 
 ```
