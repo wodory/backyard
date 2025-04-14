@@ -4,6 +4,7 @@
  * 역할: 다양한 인증 상태 및 스토리지 검사 기능 제공
  * 작성일: 2025-03-27
  * 수정일: 2025-03-30
+ * 수정일: 2023-10-31 : NextAuth signOut을 Supabase signOut으로 대체
  */
 
 'use client';
@@ -11,7 +12,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
+import { signOut } from '@/lib/auth';
 import { useState } from 'react';
 
 export default function AuthTestPage() {
@@ -22,8 +24,13 @@ export default function AuthTestPage() {
     signIn('google');
   };
 
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      alert('로그아웃 성공');
+    } catch (e) {
+      console.error('로그아웃 오류:', e);
+    }
   };
 
   const runAllTests = async () => {
@@ -49,7 +56,7 @@ export default function AuthTestPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">인증 테스트 페이지</h1>
-      
+
       <div className="flex gap-4 mb-8">
         <Button onClick={handleLogout}>로그아웃 테스트</Button>
         <Button onClick={runAllTests} disabled={loading}>
@@ -61,7 +68,7 @@ export default function AuthTestPage() {
         <TabsList>
           <TabsTrigger value="session">세션 정보</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="session">
           <Card>
             <CardHeader>

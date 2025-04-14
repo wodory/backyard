@@ -4,11 +4,13 @@
  * 역할: 로그인, 회원가입, 세션 관리 등 인증 관련 유틸리티 함수 제공
  * 작성일: 2025-03-08
  * 수정일: 2025-04-09
+ * 수정일: 2023-10-31 : Supabase 로그아웃 함수 개선 및 쿠키 삭제 기능 추가
  */
 
 'use client';
 
 import { User } from '@supabase/supabase-js';
+import { deleteCookie } from 'cookies-next';
 import createLogger from './logger';
 import { base64UrlEncode, stringToArrayBuffer } from './base64';
 import { isClient } from './environment';
@@ -259,9 +261,10 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; url?: stri
 };
 
 // 로그아웃 함수
-export async function signOut() {
+export async function signOut(): Promise<void> {
   try {
     logger.info('로그아웃 시작');
+    console.log('[인증 상태] 로그아웃 시작');
     
     // 로컬 스토리지에서 인증 데이터 제거
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -270,15 +273,26 @@ export async function signOut() {
     localStorage.removeItem(STORAGE_KEYS.PROVIDER);
     
     // Supabase 로그아웃
-    const client = getAuthClient();
-    const { error } = await client.auth.signOut();
+    const supabase = getAuthClient();
+    const { error } = await supabase.auth.signOut();
     if (error) {
-      throw error; // Supabase 오류 다시 던지기
+      logger.error('로그아웃 실패:', error);
+      console.log('[인증 상태] 로그아웃 실패:', error.message);
+      throw error;
     }
     
-    logger.info('로그아웃 완료 (Supabase 호출)');
+    // 세션 초기화 트리거
+    supabase.auth.getSession();
+    
+    // Supabase 쿠키 삭제
+    deleteCookie('sb-access-token');
+    deleteCookie('sb-refresh-token');
+    
+    logger.info('로그아웃 완료 (Supabase 세션 종료 및 쿠키 삭제)');
+    console.log('[인증 상태] 로그아웃 완료');
   } catch (error) {
     logger.error('로그아웃 중 오류 발생:', error);
+    console.log('[인증 상태] 로그아웃 중 오류 발생:', error);
     throw error;
   }
 }
@@ -291,12 +305,16 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
     // 사용자 정보 가져오기 실패 시 로그 기록
     if (error) {
       logger.error('사용자 정보 가져오기 실패:', error);
+      console.log('[인증 상태] 로그인 실패 또는 미로그인 상태');
       return null;
     }
     // 사용자 정보가 없으면 null 반환. 이 케이스가 언제 발생할까? 
     if (!user) {
+      console.log('[인증 상태] 로그인되지 않음 (사용자 정보 없음)');
       return null;
     }
+    
+    console.log('[인증 상태] 로그인됨', { userId: user.id, email: user.email });
     
     // DB에서 추가 사용자 정보 가져오기
     try {
@@ -313,6 +331,7 @@ export async function getCurrentUser(): Promise<ExtendedUser | null> {
     return user;
   } catch (error) {
     logger.error('사용자 정보 조회 중 오류:', error);
+    console.log('[인증 상태] 오류로 인해 로그인 상태 확인 불가');
     return null;
   }
 }

@@ -4,6 +4,7 @@
  * 역할: 앱 전역 상태 관리 로직 테스트
  * 작성일: 2025-03-30
  * 수정일: 2025-04-09
+ * 수정일: 2023-10-31 : NextAuth signOut을 Supabase signOut으로 대체
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
@@ -18,7 +19,7 @@ import * as layoutUtils from '@/lib/layout-utils';
 import * as graphUtils from '@/components/ideamap/utils/ideamap-graphUtils';
 import { Node, Edge } from '@xyflow/react';
 import { waitFor } from '@testing-library/react';
-import { signOut } from "next-auth/react";
+import * as authLib from '@/lib/auth';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock'; // ReactFlow 모킹 유틸리티 가져오기
 
 // React Flow를 위한 브라우저 환경 모킹 초기화
@@ -74,8 +75,8 @@ vi.mock('@/components/ideamap/utils/ideamap-graphUtils', () => ({
   saveAllLayoutData: vi.fn().mockResolvedValue(undefined)
 }));
 
-// next-auth/react 모킹
-vi.mock("next-auth/react", () => ({
+// next-auth/react 모킹 제거하고 lib/auth 모킹 추가
+vi.mock('@/lib/auth', () => ({
   signOut: vi.fn().mockResolvedValue(undefined)
 }));
 
@@ -589,7 +590,7 @@ describe('useAppStore', () => {
         await logoutAction();
       });
 
-      expect(signOut).toHaveBeenCalledWith({ redirect: false });
+      expect(authLib.signOut).toHaveBeenCalledWith();
       const state = useAppStore.getState();
       expect(state.selectedCardIds).toEqual([]);
       expect(state.selectedCardId).toBeNull();
@@ -602,7 +603,7 @@ describe('useAppStore', () => {
 
     it('logoutAction 액션이 signOut 실패 시 에러 상태를 설정하고 토스트를 표시해야 함', async () => {
         const signOutError = new Error('Sign out failed');
-        (signOut as any).mockRejectedValue(signOutError);
+        (authLib.signOut as any).mockRejectedValue(signOutError);
 
         // Set some initial state
         act(() => {

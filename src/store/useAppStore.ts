@@ -12,7 +12,7 @@ import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
 import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
 import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
-import { signOut } from "next-auth/react"
+import { signOut, getCurrentUser } from "@/lib/auth"
 
 // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
 export interface Card {
@@ -458,7 +458,7 @@ export const useAppStore = create<AppState>()(
       logoutAction: async () => {
         set({ isLoading: true, error: null });
         try {
-          await signOut({ redirect: false }); // Call next-auth signOut, prevent default redirect
+          await signOut(); // Call Supabase signOut
 
           // Clear application-specific state
           set({
@@ -477,8 +477,11 @@ export const useAppStore = create<AppState>()(
           });
 
           toast.success('로그아웃 되었습니다.');
-          // Optional: Trigger navigation after state reset
-          // Router.push('/login'); // Or use hook equivalent
+          // 로그인 페이지로 리다이렉션
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            console.log('[AppStore] 로그아웃 상태에서 로그인 페이지로 리다이렉션');
+            window.location.href = '/login';
+          }
 
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -682,16 +685,39 @@ export const useAppStore = create<AppState>()(
       // Hydration 완료 후 실행할 로직
       onRehydrateStorage: (state) => {
         console.log("Hydration finished for app-storage");
-        // return (state, error) => {
-        //   if (error) {
-        //     console.error("An error happened during hydration", error);
-        //     toast.error('앱 상태 로딩 중 오류 발생');
-        //   } else {
-        //     console.log("Hydration finished for app-storage");
-        //     // 복원 후 초기 로직 (예: 서버에서 최신 설정 가져오기)
-        //     // useAppStore.getState().fetchInitialSettings?.(); // 예시: 초기 데이터 로딩 액션 호출
-        //   }
-        // }
+        
+        // 앱 시작 시 로그인 상태 확인
+        (async () => {
+          try {
+            const currentUser = await getCurrentUser();
+            if (currentUser) {
+              console.log('[AppStore] 앱 초기화: 로그인 상태입니다.', { 
+                userId: currentUser.id,
+                email: currentUser.email 
+              });
+            } else {
+              console.log('[AppStore] 앱 초기화: 로그아웃 상태입니다.');
+              // 로그아웃 상태면 여기서 로그인 페이지로 리다이렉션을 추가할 수 있음
+              if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                console.log('[AppStore] 로그아웃 상태에서 로그인 페이지로 리다이렉션');
+                window.location.href = '/login';
+              }
+            }
+          } catch (error) {
+            console.error('[AppStore] 로그인 상태 확인 중 오류 발생:', error);
+          }
+        })();
+        
+        return (state, error) => {
+          if (error) {
+            console.error("An error happened during hydration", error);
+            toast.error('앱 상태 로딩 중 오류 발생');
+          } else {
+            console.log("Hydration completed for app-storage");
+            // 복원 후 초기 로직 (예: 서버에서 최신 설정 가져오기)
+            // useAppStore.getState().fetchInitialSettings?.(); // 예시: 초기 데이터 로딩 액션 호출
+          }
+        }
       },
     }
   )

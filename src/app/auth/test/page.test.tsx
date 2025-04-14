@@ -4,12 +4,14 @@
  * 역할: 로그인, 로그아웃, 스토리지 테스트 등의 기능을 검증
  * 작성일: 2025-03-27
  * 수정일: 2025-04-03
+ * 수정일: 2023-10-31 : NextAuth signOut을 Supabase signOut으로 대체
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import AuthTestPage from './page';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
+import * as authModule from '@/lib/auth';
 
 // 테스트 타임아웃 설정
 const TEST_TIMEOUT = 20000;
@@ -17,7 +19,6 @@ const TEST_TIMEOUT = 20000;
 // 모듈 모킹
 vi.mock('next-auth/react', () => ({
   signIn: vi.fn(),
-  signOut: vi.fn(),
   useSession: vi.fn()
 }));
 
@@ -32,7 +33,7 @@ vi.mock('@/lib/auth', () => ({
     aud: 'authenticated',
     role: ''
   }),
-  signOut: vi.fn()
+  signOut: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('@/lib/auth-storage', () => {
@@ -121,7 +122,7 @@ describe('AuthTestPage', () => {
     expect(signIn).toHaveBeenCalledTimes(1);
   });
 
-  it('로그아웃 버튼 클릭 시 signOut이 호출되어야 합니다', () => {
+  it('로그아웃 버튼 클릭 시 signOut이 호출되어야 합니다', async () => {
     // 인증된 상태 모킹
     vi.mocked(useSession).mockReturnValue({
       data: {
@@ -135,13 +136,20 @@ describe('AuthTestPage', () => {
       update: vi.fn()
     });
 
+    // window.alert 모킹
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => { });
+
     render(<AuthTestPage />);
 
     const logoutButton = screen.getByText('로그아웃 테스트');
     fireEvent.click(logoutButton);
 
-    expect(signOut).toHaveBeenCalled();
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(authModule.signOut).toHaveBeenCalled();
+    expect(authModule.signOut).toHaveBeenCalledTimes(1);
+
+    // 비동기 알림이 표시되는지 확인
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(alertMock).toHaveBeenCalledWith('로그아웃 성공');
   });
 
   it('모든 테스트 실행 버튼 클릭 시 API가 호출되어야 합니다', () => {
