@@ -3,7 +3,7 @@
  * 목적: 인증 관련 비즈니스 로직 분리
  * 역할: OAuth 콜백 처리와 인증 데이터 관리 서비스 제공
  * 작성일: 2025-03-30
- * 수정일: 2025-04-09
+ * 수정일: 2025-04-14 : saveAuthData 함수 간소화 - @supabase/ssr의 쿠키 기반 세션 관리와 호환되도록 수정
  */
 
 import { getAuthClient, STORAGE_KEYS } from '@/lib/auth';
@@ -119,6 +119,7 @@ export class AuthService {
    * 인증 데이터 저장
    * @param result 인증 결과
    * @returns 저장 성공 여부
+   * @deprecated @supabase/ssr은 쿠키 기반으로 세션을 자동 관리하므로 이 함수는 더 이상 필요하지 않습니다.
    */
   static saveAuthData(result: AuthResult): boolean {
     if (result.status !== 'success') {
@@ -127,34 +128,12 @@ export class AuthService {
     }
     
     try {
-      logger.info('인증 데이터 저장 시작');
-      
-      // 토큰 저장
-      if (result.accessToken) {
-        localStorage.setItem('access_token', result.accessToken);
-        logger.debug('액세스 토큰 저장됨');
-      }
-      
-      if (result.refreshToken) {
-        localStorage.setItem('refresh_token', result.refreshToken);
-        logger.debug('리프레시 토큰 저장됨');
-      }
-      
-      // 사용자 정보 저장
-      if (result.userId) {
-        localStorage.setItem('user_id', result.userId);
-        logger.debug('사용자 ID 저장됨');
-      }
-      
-      if (result.provider) {
-        localStorage.setItem('provider', result.provider);
-        logger.debug('인증 제공자 정보 저장됨');
-      }
-      
-      logger.info('인증 데이터 저장 완료');
+      // @supabase/ssr이 쿠키를 통해 세션을 자동으로 관리하므로,
+      // 여기서 localStorage에 수동으로 토큰을 저장할 필요가 없습니다.
+      logger.info('인증 성공, @supabase/ssr이 세션을 관리합니다');
       return true;
     } catch (error) {
-      logger.error('인증 데이터 저장 실패', error);
+      logger.error('인증 데이터 처리 중 오류', error);
       return false;
     }
   }

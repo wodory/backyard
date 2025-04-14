@@ -5,12 +5,12 @@
  * 작성일: 2025-03-08
  * 수정일: 2025-04-09
  * 수정일: 2023-10-31 : Supabase 로그아웃 함수 개선 및 쿠키 삭제 기능 추가
+ * 수정일: 2024-05-08 : signOut 함수 간소화 - @supabase/ssr 기반 세션 관리와 호환되도록 개선
  */
 
 'use client';
 
 import { User } from '@supabase/supabase-js';
-import { deleteCookie } from 'cookies-next';
 import createLogger from './logger';
 import { base64UrlEncode, stringToArrayBuffer } from './base64';
 import { isClient } from './environment';
@@ -266,13 +266,7 @@ export async function signOut(): Promise<void> {
     logger.info('로그아웃 시작');
     console.log('[인증 상태] 로그아웃 시작');
     
-    // 로컬 스토리지에서 인증 데이터 제거
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER_ID);
-    localStorage.removeItem(STORAGE_KEYS.PROVIDER);
-    
-    // Supabase 로그아웃
+    // Supabase 로그아웃 - @supabase/ssr 미들웨어가 자동으로 쿠키를 관리합니다
     const supabase = getAuthClient();
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -281,14 +275,12 @@ export async function signOut(): Promise<void> {
       throw error;
     }
     
-    // 세션 초기화 트리거
-    supabase.auth.getSession();
+    // sessionStorage의 code_verifier 제거
+    if (isClient()) {
+      sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
+    }
     
-    // Supabase 쿠키 삭제
-    deleteCookie('sb-access-token');
-    deleteCookie('sb-refresh-token');
-    
-    logger.info('로그아웃 완료 (Supabase 세션 종료 및 쿠키 삭제)');
+    logger.info('로그아웃 완료 (Supabase 세션 종료)');
     console.log('[인증 상태] 로그아웃 완료');
   } catch (error) {
     logger.error('로그아웃 중 오류 발생:', error);

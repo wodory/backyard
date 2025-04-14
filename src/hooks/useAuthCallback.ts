@@ -4,6 +4,7 @@
  * 역할: OAuth 콜백 처리 로직을 분리하여 재사용 가능한 훅으로 제공
  * 작성일: 2025-04-10
  * 수정일: 2025-04-10 : 리다이렉션 처리 로직 추가
+ * 수정일: 2024-05-08 : AuthService.saveAuthData 호출 제거 - @supabase/ssr 세션 관리 활용
  */
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import type { AuthResult } from '@/services/auth-service';
 
 const logger = createLogger('useAuthCallback');
 
-type ProcessingState = '초기화 중' | '인증 코드 처리 중' | '오류 발생' | '인증 데이터 저장 중' | '완료, 리디렉션 중' | '예외 발생';
+type ProcessingState = '초기화 중' | '인증 코드 처리 중' | '오류 발생' | '완료, 리디렉션 중' | '예외 발생';
 
 interface UseAuthCallbackReturn {
   processingState: ProcessingState;
@@ -53,15 +54,9 @@ export function useAuthCallback(): UseAuthCallbackReturn {
           return;
         }
 
-        // 인증 성공, 데이터 저장
-        setProcessingState('인증 데이터 저장 중');
-        const saveSuccess = AuthService.saveAuthData(authResult);
-
-        if (!saveSuccess) {
-          logger.warn('인증 데이터 저장 실패');
-          setError('인증 데이터를 저장하지 못했습니다');
-        }
-
+        // 인증 성공
+        logger.info('인증 성공, @supabase/ssr이 세션을 자동으로 관리합니다');
+        
         setProcessingState('완료, 리디렉션 중');
         // 홈페이지로 리디렉션
         logger.info('인증 완료, 홈페이지로 리디렉션');
