@@ -5,8 +5,10 @@
  * 작성일: 2025-03-27
  */
 
-import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { type EmailOtpType } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   try {

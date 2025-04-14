@@ -38,8 +38,6 @@
     "test:browser": "vitest --workspace=vitest.workspace.ts"
   },
   "dependencies": {
-    "@auth/core": "^0.38.0",
-    "@auth/prisma-adapter": "^2.8.0",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -53,7 +51,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.3",
-    "@tanstack/react-query": "^5.73.3",
+    "@tanstack/react-query": "^5.74.0",
     "@tiptap/core": "^2.11.5",
     "@tiptap/extension-bold": "^2.11.5",
     "@tiptap/extension-bullet-list": "^2.11.5",
@@ -96,7 +94,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.0.9",
-    "@tanstack/react-query-devtools": "^5.73.3",
+    "@tanstack/react-query-devtools": "^5.74.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",

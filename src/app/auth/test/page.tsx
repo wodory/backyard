@@ -3,9 +3,7 @@
  * 목적: 인증 기능 테스트 페이지
  * 역할: 다양한 인증 상태 및 스토리지 검사 기능 제공
  * 작성일: 2025-03-27
- * 수정일: 2025-03-30
- * 수정일: 2023-10-31 : NextAuth signOut을 Supabase signOut으로 대체
- * 수정일: 2023-11-01 : NextAuth useSession을 Supabase Auth로 완전히 대체
+ * 수정일: 2025-04-14 : NextAuth signIn 제거 및 Supabase 인증 방식으로 완전히 전환
  */
 
 'use client';
@@ -13,8 +11,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { signIn } from 'next-auth/react';
-import { signOut, getCurrentUser, ExtendedUser } from '@/lib/auth';
+import { signOut, getCurrentUser, ExtendedUser, signInWithGoogle } from '@/lib/auth';
 import { useState, useEffect } from 'react';
 
 export default function AuthTestPage() {
@@ -36,8 +33,18 @@ export default function AuthTestPage() {
     fetchUser();
   }, []);
 
-  const handleGoogleLogin = () => {
-    signIn('google');
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithGoogle();
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        console.error('로그인 URL 생성 실패:', result.error);
+        alert('로그인 처리 중 오류가 발생했습니다.');
+      }
+    } catch (e) {
+      console.error('로그인 오류:', e);
+    }
   };
 
   const handleLogout = async () => {

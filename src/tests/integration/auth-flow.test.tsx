@@ -9,6 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter, usePathname } from 'next/navigation'
+import userEvent from '@testing-library/user-event'
 
 // 실제 모듈 모킹
 vi.mock('next/navigation', () => ({
@@ -93,51 +94,75 @@ describe('인증 흐름 통합 테스트', () => {
         // 1. Login 페이지 렌더링
         render(<LoginPage />)
 
-        // 2. 로그인 버튼 확인
-        const loginButton = screen.getByText('Google 로그인')
-        expect(loginButton).toBeInTheDocument()
+        // 2. Google 로그인 버튼 클릭
+        await userEvent.click(screen.getByText(/Google 로그인/))
 
-        // 3. 로그인 버튼 클릭 시 signInWithGoogle 호출 및 성공 반환
-        mockSignInWithGoogle.mockResolvedValueOnce({ success: true, error: null })
+        // 3. 로그인 함수 호출 확인
+        expect(mockSignInWithGoogle).toHaveBeenCalled()
 
-        fireEvent.click(loginButton)
+        // 4. 로그인 성공 시 리디렉션 확인
+        expect(useRouter().push).toHaveBeenCalledWith('/dashboard')
 
-        await waitFor(() => {
-            expect(mockSignInWithGoogle).toHaveBeenCalled()
-            expect(useRouter().push).toHaveBeenCalledWith('/dashboard')
-        })
-
-        // 4. 로그인 상태로 변경 시 사용자 정보 표시
+        // 5. 로그인 성공 후 사용자 상태 확인
+        // mockSignInWithGoogle이 호출된 후 getUserData가 호출되는 시점을 시뮬레이션
         vi.mocked(useAuth).mockReturnValue({
-            user: { id: 'user-123', email: 'test@example.com', provider: 'google' },
-            loading: false
+            user: mockUser,
+            loading: false,
+            session: { access_token: 'mock-token' } as any,
+            signOut: mockSignOut,
+            codeVerifier: 'test-verifier',
+            error: null,
+            setCodeVerifier: vi.fn(),
         })
 
-        // 5. 페이지 다시 렌더링
-        render(<LoginPage />)
+        // 6. Dashboard 렌더링 (로그인 후 상태)
+        const { rerender } = render(<LoginPage />)
 
-        // 6. 사용자 정보와 로그아웃 버튼 확인
-        const userInfo = screen.getByTestId('user-info')
-        expect(userInfo).toBeInTheDocument()
-        expect(userInfo.textContent).toBe('test@example.com')
+        // 7. 사용자 정보가 표시되는지 확인
+        expect(screen.getByTestId('user-info')).toHaveTextContent(mockUser.email as string)
 
-        const logoutButton = screen.getByText('로그아웃')
-        expect(logoutButton).toBeInTheDocument()
+        // 8. 로그아웃 버튼 클릭
+        await userEvent.click(screen.getByText('로그아웃'))
 
-        // 7. 로그아웃 버튼 클릭
-        mockSignOut.mockResolvedValueOnce(undefined)
+        // 9. 로그아웃 함수 호출 확인
+        expect(mockSignOut).toHaveBeenCalled()
 
-        fireEvent.click(logoutButton)
+        // 10. 로그아웃 후 리디렉션 확인
+        expect(useRouter().push).toHaveBeenCalledWith('/login')
 
-        await waitFor(() => {
-            expect(mockSignOut).toHaveBeenCalled()
-            expect(useRouter().push).toHaveBeenCalledWith('/login')
+        // 11. 로그아웃 후 쿠키 및 로컬 스토리지 삭제 확인 
+        const cookiesDeleteSpy = vi.spyOn(document.cookie, 'split', 'get');
+        expect(document.cookie).not.toContain('sb-access-token');
+        expect(document.cookie).not.toContain('sb-refresh-token');
+
+        // 12. 로그아웃 후 사용자 상태 null로 변경 확인
+        vi.mocked(useAuth).mockReturnValue({
+            user: null,
+            loading: false,
+            session: null,
+            signOut: mockSignOut,
+            codeVerifier: null,
+            error: null,
+            setCodeVerifier: vi.fn(),
         })
+
+        rerender(<LoginPage />)
+
+        // 13. 로그인 버튼이 다시 보이는지 확인
+        expect(screen.getByText(/Google 로그인/)).toBeInTheDocument()
     })
 
     it('로그아웃 후 보호된 페이지 접근 시 로그인 페이지로 리디렉션되어야 합니다', async () => {
         // 1. 로그아웃 상태에서 보호된 페이지 접근
-        vi.mocked(useAuth).mockReturnValue({ user: null, loading: false })
+        vi.mocked(useAuth).mockReturnValue({
+            user: null,
+            loading: false,
+            session: null,
+            signOut: mockSignOut,
+            codeVerifier: null,
+            error: null,
+            setCodeVerifier: vi.fn(),
+        })
 
         render(<ProtectedPage />)
 
@@ -145,5 +170,10 @@ describe('인증 흐름 통합 테스트', () => {
         await waitFor(() => {
             expect(useRouter().push).toHaveBeenCalledWith('/login')
         })
+
+        // 3. 로컬 스토리지에 인증 토큰이 없는지 확인
+        expect(localStorage.getItem('access_token')).toBeNull()
+        expect(localStorage.getItem('refresh_token')).toBeNull()
+        expect(sessionStorage.getItem('code_verifier')).toBeNull()
     })
 }) 

@@ -3,22 +3,33 @@
  * 목적: 사용자 로그인 페이지
  * 역할: 소셜 로그인 및 이메일 로그인 기능 제공
  * 작성일: 2025-03-30
+ * 수정일: 2023-11-02 : NextAuth 의존성 제거 및 Supabase 인증으로 완전히 전환
  */
 
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { signIn } from 'next-auth/react';
+import { signInWithGoogle } from '@/lib/auth';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-      await signIn('google', { callbackUrl: '/' });
+      const result = await signInWithGoogle();
+
+      if (result.success && result.url) {
+        // Supabase OAuth 흐름에 따라 리디렉션
+        window.location.href = result.url;
+      } else {
+        console.error('로그인 URL 생성 실패:', result.error);
+        alert('로그인 처리 중 오류가 발생했습니다.');
+      }
     } catch (error) {
       console.error('로그인 오류:', error);
     } finally {

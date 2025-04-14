@@ -5,7 +5,7 @@
  * 작성일: 2025-03-27
  */
 
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
