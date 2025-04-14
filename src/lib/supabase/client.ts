@@ -3,6 +3,7 @@
  * 목적: 클라이언트 환경에서 Supabase 클라이언트 제공
  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
  * 작성일: 2025-04-09
+ * 수정일: 2024-05-08 : auth 옵션 블럭 제거하여 @supabase/ssr 표준 준수
  */
 
 import { createBrowserClient } from '@supabase/ssr'
@@ -26,16 +27,10 @@ export function createClient() {
       throw new Error('Supabase 환경 변수가 설정되지 않았습니다')
     }
   
+    // auth 옵션 없이 호출하여 미들웨어 기반 세션 관리 사용
     return createBrowserClient<Database>(
       supabaseUrl,
-      supabaseKey,
-      {
-        auth: {
-          flowType: 'pkce',
-          persistSession: true,
-          detectSessionInUrl: true
-        }
-      }
+      supabaseKey
     )
   } catch (error) {
     logger.error('클라이언트 Supabase 클라이언트 생성 실패', error)
