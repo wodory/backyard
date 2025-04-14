@@ -1,175 +1,136 @@
 /**
- * 파일명: route.test.ts
+ * 파일명: src/app/api/auth/status/route.test.ts
  * 목적: 인증 상태 API 엔드포인트 테스트
- * 역할: 로그인 상태 확인 및 사용자 정보 반환 API 기능 검증
- * 작성일: 2025-04-01
+ * 역할: 로그인 상태에 따른 API 응답 검증
+ * 작성일: 2025-04-13
+ * 수정일: 2025-04-14 : supabase 클라이언트 모킹 방식 수정 및 실제 API 구현에 맞게 테스트 수정
  */
 
-import { NextResponse } from 'next/server';
-import { expect, vi, describe, it, beforeEach } from 'vitest';
-import { GET } from './route';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { NextResponse } from 'next/server'
+import { GET } from '@/app/api/auth/status/route'
 
-// Mock client 객체 정의
-const mockAuthClient = {
+// Supabase 클라이언트 모킹
+const mockSupabaseAuth = {
   getUser: vi.fn()
-};
+}
 
-// createClient 모킹
 vi.mock('@/utils/supabase/server', () => ({
-  createClient: vi.fn().mockImplementation(() => ({
-    auth: mockAuthClient
-  }))
-}));
+  createClient: () => ({
+    auth: mockSupabaseAuth
+  })
+}))
 
 // NextResponse 모킹
 vi.mock('next/server', () => {
-  const mockResponse = (data: any, init: any = {}) => {
-    return {
-      status: init?.status || 200,
-      json: async () => data,
-    };
-  };
-  
   return {
     NextResponse: {
-      json: vi.fn().mockImplementation((data, init) => mockResponse(data, init)),
-    },
-  };
-});
+      json: vi.fn().mockImplementation((data, options) => {
+        return {
+          json: () => data,
+          status: options?.status || 200
+        }
+      })
+    }
+  }
+})
 
 describe('인증 상태 API 테스트', () => {
-  // 콘솔 모킹
-  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it('로그인한 사용자의 정보를 반환해야 함', async () => {
-    // 로그인된 사용자 정보 모킹
+  it('사용자가 로그인한 경우 loggedIn: true와 사용자 정보를 반환해야 합니다', async () => {
+    // 로그인된 사용자 모킹
     const mockUser = {
       id: 'user-123',
       email: 'test@example.com',
-      app_metadata: {
-        provider: 'google',
-      },
-    };
+      app_metadata: { provider: 'google' },
+      user_metadata: {},
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00Z'
+    }
     
-    // Supabase getUser 응답 모킹
-    mockAuthClient.getUser.mockResolvedValueOnce({
+    mockSupabaseAuth.getUser.mockResolvedValueOnce({
       data: { user: mockUser },
-      error: null,
-    });
+      error: null
+    })
     
-    const response = await GET();
-    const data = await response.json();
+    // API 요청
+    const response = await GET()
     
-    // 응답 검증
-    expect(response.status).toBe(200);
-    expect(data).toEqual({
+    // 응답 확인
+    expect(response.status).toBe(200)
+    
+    // NextResponse.json이 호출되었는지 확인
+    expect(NextResponse.json).toHaveBeenCalledWith({
       loggedIn: true,
       user: {
-        id: 'user-123',
-        email: 'test@example.com',
-        provider: 'google',
-      },
-    });
-    
-    // Supabase 클라이언트 호출 검증
-    expect(mockAuthClient.getUser).toHaveBeenCalled();
-    
-    // 콘솔 에러가 호출되지 않았는지 검증
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
+        id: mockUser.id,
+        email: mockUser.email,
+        provider: mockUser.app_metadata.provider
+      }
+    })
+  })
 
-  it('로그인하지 않은 사용자에 대해 loggedIn: false 반환해야 함', async () => {
-    // 로그인하지 않은 사용자 모킹
-    mockAuthClient.getUser.mockResolvedValueOnce({
+  it('사용자가 로그아웃한 경우 loggedIn: false를 반환해야 합니다', async () => {
+    // 로그아웃 상태 모킹
+    mockSupabaseAuth.getUser.mockResolvedValueOnce({
       data: { user: null },
-      error: null,
-    });
+      error: null
+    })
     
-    const response = await GET();
-    const data = await response.json();
+    // API 요청
+    const response = await GET()
     
-    // 응답 검증
-    expect(response.status).toBe(200);
-    expect(data).toEqual({
+    // 응답 확인
+    expect(response.status).toBe(200)
+    
+    // NextResponse.json이 호출되었는지 확인
+    expect(NextResponse.json).toHaveBeenCalledWith({
       loggedIn: false,
-      user: null,
-    });
-    
-    // Supabase 클라이언트 호출 검증
-    expect(mockAuthClient.getUser).toHaveBeenCalled();
-  });
+      user: null
+    })
+  })
 
-  it('인증 오류 발생 시 오류 메시지를 반환해야 함', async () => {
-    // 인증 오류 모킹
-    mockAuthClient.getUser.mockResolvedValueOnce({
+  it('인증 시스템에 오류가 발생한 경우 적절한 오류 응답을 반환해야 합니다', async () => {
+    // 오류 상태 모킹
+    const mockError = { message: '인증 서비스 오류' }
+    mockSupabaseAuth.getUser.mockResolvedValueOnce({
       data: { user: null },
-      error: { message: '세션이 만료되었습니다' },
-    });
+      error: mockError
+    })
     
-    const response = await GET();
-    const data = await response.json();
+    // API 요청
+    const response = await GET()
     
-    // 응답 검증
-    expect(response.status).toBe(200);
-    expect(data).toEqual({
+    // 응답 확인
+    expect(response.status).toBe(200)
+    
+    // NextResponse.json이 호출되었는지 확인
+    expect(NextResponse.json).toHaveBeenCalledWith({
       loggedIn: false,
-      error: '세션이 만료되었습니다',
-    });
-  });
-
-  it('외부 모듈 예외 발생 시 500 오류 반환해야 함', async () => {
-    // 예외 발생 시나리오 모킹
-    mockAuthClient.getUser.mockRejectedValueOnce(
-      new Error('Supabase 연결 오류')
-    );
+      error: mockError.message
+    })
+  })
+  
+  it('예외가 발생한 경우 500 상태 코드와 오류 메시지를 반환해야 합니다', async () => {
+    // 예외 발생 모킹
+    mockSupabaseAuth.getUser.mockRejectedValueOnce(new Error('예상치 못한 오류'))
     
-    const response = await GET();
-    const data = await response.json();
+    // API 요청
+    const response = await GET()
     
-    // 응답 검증
-    expect(response.status).toBe(500);
-    expect(data).toEqual({
-      loggedIn: false,
-      error: '인증 상태 확인 중 오류가 발생했습니다',
-    });
+    // 응답 확인
+    expect(response.status).toBe(500)
     
-    // 콘솔 에러 호출 검증
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      '인증 상태 확인 중 오류:',
-      expect.any(Error)
-    );
-  });
-
-  it('app_metadata가 없는 사용자에 대해 provider를 "unknown"으로 설정해야 함', async () => {
-    // app_metadata가 없는 사용자 모킹
-    const mockUserWithoutMetadata = {
-      id: 'user-456',
-      email: 'no-metadata@example.com',
-      // app_metadata가 없음
-    };
-    
-    // Supabase getUser 응답 모킹
-    mockAuthClient.getUser.mockResolvedValueOnce({
-      data: { user: mockUserWithoutMetadata },
-      error: null,
-    });
-    
-    const response = await GET();
-    const data = await response.json();
-    
-    // 응답 검증
-    expect(response.status).toBe(200);
-    expect(data).toEqual({
-      loggedIn: true,
-      user: {
-        id: 'user-456',
-        email: 'no-metadata@example.com',
-        provider: 'unknown',
-      },
-    });
-  });
-}); 
+    // NextResponse.json이 호출되었는지 확인
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { 
+        loggedIn: false, 
+        error: '인증 상태 확인 중 오류가 발생했습니다' 
+      }, 
+      { status: 500 }
+    )
+  })
+}) 

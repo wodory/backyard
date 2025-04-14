@@ -5,6 +5,7 @@
  * 작성일: 2025-03-27
  * 수정일: 2025-03-30
  * 수정일: 2023-10-31 : NextAuth signOut을 Supabase signOut으로 대체
+ * 수정일: 2023-11-01 : NextAuth useSession을 Supabase Auth로 완전히 대체
  */
 
 'use client';
@@ -12,13 +13,28 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { signIn, useSession } from 'next-auth/react';
-import { signOut } from '@/lib/auth';
-import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { signOut, getCurrentUser, ExtendedUser } from '@/lib/auth';
+import { useState, useEffect } from 'react';
 
 export default function AuthTestPage() {
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (e) {
+        console.error('사용자 정보 로드 오류:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleGoogleLogin = () => {
     signIn('google');
@@ -27,6 +43,7 @@ export default function AuthTestPage() {
   const handleLogout = async () => {
     try {
       await signOut();
+      setUser(null);
       alert('로그아웃 성공');
     } catch (e) {
       console.error('로그아웃 오류:', e);
@@ -44,7 +61,16 @@ export default function AuthTestPage() {
     }
   };
 
-  if (!session) {
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">인증 테스트 페이지</h1>
+        <p>로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-8">인증 테스트 페이지</h1>
@@ -76,7 +102,7 @@ export default function AuthTestPage() {
             </CardHeader>
             <CardContent>
               <pre className="bg-gray-100 p-4 rounded-md overflow-auto">
-                {JSON.stringify(session, null, 2)}
+                {JSON.stringify(user, null, 2)}
               </pre>
             </CardContent>
           </Card>

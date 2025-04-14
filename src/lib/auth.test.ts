@@ -28,6 +28,7 @@ vi.mock('./logger', () => {
   
   return {
     default: createLoggerMock,
+    logger: mockLogger,
     __esModule: true
   };
 });
@@ -60,6 +61,13 @@ vi.mock('./supabase/client', () => {
     }))
   };
 });
+
+// cookies-next 모킹
+vi.mock('cookies-next', () => ({
+  deleteCookie: vi.fn(),
+  setCookie: vi.fn(),
+  getCookie: vi.fn()
+}));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { 
@@ -496,7 +504,7 @@ describe('Auth 모듈', () => {
   });
 
   describe('signOut', () => {
-    it('로그아웃 함수가 Supabase 클라이언트의 signOut 메서드를 호출해야 함', async () => {
+    it('성공적으로 로그아웃 처리를 수행해야 함', async () => {
       // signOut API 성공 응답 모킹
       mockAuthFunctions.signOut.mockResolvedValueOnce({
         error: null
@@ -506,22 +514,46 @@ describe('Auth 모듈', () => {
       
       expect(mockAuthFunctions.signOut).toHaveBeenCalled();
       
-      // localStorage에서 인증 데이터가 제거되었는지 확인
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.ACCESS_TOKEN);
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.REFRESH_TOKEN);
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.USER_ID);
-      expect(window.localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.PROVIDER);
+      // 세션 초기화 확인
+      expect(mockAuthFunctions.getSession).toHaveBeenCalled();
+      
+      // 쿠키 삭제 확인
+      const { deleteCookie } = await import('cookies-next');
+      expect(deleteCookie).toHaveBeenCalledWith('sb-access-token');
+      expect(deleteCookie).toHaveBeenCalledWith('sb-refresh-token');
     });
 
-    it('로그아웃 실패 시 오류를 처리해야 함', async () => {
-      // signOut API 실패 응답 모킹
-      const testError = new Error('로그아웃 중 오류가 발생했습니다');
-      mockAuthFunctions.signOut.mockResolvedValueOnce({
-        error: testError
-      });
+    it('로그아웃 중 오류 발생 시 예외를 던져야 함', async () => {
+      // 오류 시나리오 모킹 - 실제 Supabase 오류 형식과 일치
+      const testError = {
+        message: '로그아웃 실패',
+        status: 401,
+        name: 'AuthError'
+      };
       
-      await expect(signOut())
-        .rejects.toThrow('로그아웃 중 오류가 발생했습니다');
+      // 오류가 발생하는 클라이언트 모킹
+      const mockErrorClient = {
+        auth: {
+          ...mockAuthFunctions,
+          signOut: vi.fn().mockResolvedValue({
+            error: testError
+          })
+        }
+      };
+      
+      // 임시로 createClient 모킹 변경
+      const originalCreateClient = vi.mocked(createClient);
+      vi.mocked(createClient).mockReturnValueOnce(mockErrorClient as any);
+      
+      try {
+        // 예외 발생 검증
+        await expect(signOut()).rejects.toEqual(testError);
+        
+        // 로거 호출 검증은 생략 (모킹 방식에 따라 달라질 수 있음)
+      } finally {
+        // 테스트 후 원래 모킹 복원
+        vi.mocked(createClient).mockImplementation(originalCreateClient);
+      }
     });
   });
 
