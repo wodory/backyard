@@ -4,7 +4,7 @@
 
 **사전 조건:**
 *   사용자는 v0.dev 웹사이트에서 생성된 로그인 컴포넌트 관련 파일들(tsx, css 등)을 `./note/landing-page` 디렉토리 안에 다운로드했습니다.
-*   `shadcn` CLI가 프로젝트에 설정되어 있습니다.
+*   `shadcn. ` CLI가 프로젝트에 설정되어 있습니다.
 *   프로젝트 구조는 제공된 `landing-page` 이미지와 유사합니다.
 *   Supabase 인증을 위한 서버 액션 (`src/app/login/actions.ts`)이 존재해야 합니다.
 

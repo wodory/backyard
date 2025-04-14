@@ -3,12 +3,16 @@
  * 목적: 사용자 로그인 UI 컴포넌트 제공
  * 역할: 이메일/비밀번호 로그인 및 Google 소셜 로그인 폼 제공
  * 작성일: 2024-06-28
+ * 수정일: 2024-05-30 : 서버 액션 및 상태 관리 연동 추가
  */
 
 "use client"
 
+import React, { useState, useEffect } from 'react'
 import Link from "next/link"
 import { ArrowRight, Mail, Lock } from "lucide-react"
+import { login, signInWithGoogle } from '@/app/login/actions' // 서버 액션 import
+import { useSearchParams } from 'next/navigation' // 에러/메시지 표시 위해 추가
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +21,51 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator"
 
 export default function LoginForm() {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isEmailPending, setIsEmailPending] = useState(false); // 이메일 로그인 로딩
+    const [isGooglePending, setIsGooglePending] = useState(false); // Google 로그인 로딩
+    const searchParams = useSearchParams();
+    const [error, setError] = useState<string | null>(null);
+    const [message, setMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        const messageParam = searchParams.get('message');
+        if (errorParam) setError(decodeURIComponent(errorParam));
+        if (messageParam) setMessage(decodeURIComponent(messageParam));
+    }, [searchParams]);
+
+    const handleEmailLogin = async (event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        setError(null);
+        setMessage(null);
+        setIsEmailPending(true);
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('password', password);
+        try {
+            await login(formData);
+        } catch (err) {
+            console.error("Login action failed:", err);
+            setError("로그인 처리 중 오류가 발생했습니다.");
+        } finally {
+            setIsEmailPending(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setError(null);
+        setMessage(null);
+        setIsGooglePending(true);
+        try {
+            await signInWithGoogle();
+        } catch (err) {
+            console.error("Google Sign in action failed:", err);
+            setError("Google 로그인 처리 중 오류가 발생했습니다.");
+        }
+    };
+
     return (
         <div className="w-full max-w-md p-6 md:p-12">
             <div className="mb-4 text-center">
@@ -30,24 +79,55 @@ export default function LoginForm() {
                     <CardTitle className="text-2xl font-bold">로그인</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-0">
+                    {/* 오류 메시지 표시 */}
+                    {error && (
+                        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+                            {error}
+                        </div>
+                    )}
+                    {/* 성공 메시지 표시 */}
+                    {message && (
+                        <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">
+                            {message}
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="login-email">이메일</Label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input id="login-email" type="email" placeholder="example@email.com" className="pl-10" />
+                            <Input
+                                id="login-email"
+                                type="email"
+                                placeholder="example@email.com"
+                                className="pl-10"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                disabled={isEmailPending || isGooglePending}
+                            />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="login-password">비밀번호</Label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input id="login-password" type="password" className="pl-10" />
+                            <Input
+                                id="login-password"
+                                type="password"
+                                className="pl-10"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={isEmailPending || isGooglePending}
+                            />
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
-                    <Button className="w-full bg-primary/90 hover:bg-primary text-base transition-all duration-200">
-                        로그인
+                    <Button
+                        className="w-full bg-primary/90 hover:bg-primary text-base transition-all duration-200"
+                        onClick={handleEmailLogin}
+                        disabled={isEmailPending || isGooglePending}
+                    >
+                        {isEmailPending ? '로그인 중...' : '로그인'}
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
 
@@ -57,7 +137,12 @@ export default function LoginForm() {
                         <Separator className="flex-1" />
                     </div>
 
-                    <Button variant="outline" className="w-full border-gray-300 font-medium">
+                    <Button
+                        variant="outline"
+                        className="w-full border-gray-300 font-medium"
+                        onClick={handleGoogleLogin}
+                        disabled={isEmailPending || isGooglePending}
+                    >
                         <svg
                             className="mr-2 h-4 w-4"
                             xmlns="http://www.w3.org/2000/svg"
@@ -82,7 +167,7 @@ export default function LoginForm() {
                                 d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
                             />
                         </svg>
-                        Google로 로그인하기
+                        {isGooglePending ? '진행 중...' : 'Google로 로그인하기'}
                     </Button>
 
                     <div className="text-center text-sm">
