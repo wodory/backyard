@@ -4,6 +4,7 @@
  * 역할: 인증 상태, code_verifier 등의 인증 관련 데이터를 전역적으로 관리
  * 작성일: 2025-03-08
  * 수정일: 2025-04-09
+ * 수정일: 2024-05-08 : localStorage 관련 코드 제거 - @supabase/ssr의 쿠키 기반 세션 관리와 호환되도록 수정
  */
 
 'use client';
@@ -65,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [codeVerifier, setCodeVerifier] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [authError, setAuthError] = useState<Error | null>(null);
-  const [recoveryAttempts, setRecoveryAttempts] = useState(0);
 
   // Supabase 인스턴스 접근
   let supabase: SupabaseClient<Database>;
@@ -84,63 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }}>{children}</AuthContext.Provider>;
   }
 
-  // 세션 복구 시도 함수
-  const attemptSessionRecovery = useCallback(async () => {
-    if (recoveryAttempts >= 3) {
-      logger.warn('최대 복구 시도 횟수 초과, 세션 복구 중단');
-      return false;
-    }
-
-    try {
-      logger.info('세션 복구 시도', { 시도횟수: recoveryAttempts + 1 });
-      setRecoveryAttempts(prev => prev + 1);
-
-      // 1. 리프레시 토큰으로 복구 시도
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-      if (refreshToken) {
-        logger.info('리프레시 토큰으로 세션 복구 시도');
-
-        try {
-          const { data, error } = await supabase.auth.refreshSession({
-            refresh_token: refreshToken
-          });
-
-          if (error) {
-            logger.error('리프레시 토큰으로 세션 복구 실패', error);
-          } else if (data?.session) {
-            logger.info('리프레시 토큰으로 세션 복구 성공');
-            setSession(data.session);
-            setUser(data.session.user);
-            return true;
-          }
-        } catch (refreshError) {
-          logger.error('리프레시 토큰 사용 중 오류', refreshError);
-        }
-      }
-
-      // 2. 로컬 스토리지의 Supabase 내장 세션 확인
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          logger.error('내장 세션 확인 실패', error);
-        } else if (data?.session) {
-          logger.info('내장 세션으로 복구 성공');
-          setSession(data.session);
-          setUser(data.session.user);
-          return true;
-        }
-      } catch (sessionError) {
-        logger.error('내장 세션 확인 중 오류', sessionError);
-      }
-
-      logger.warn('세션 복구 실패');
-      return false;
-    } catch (error) {
-      logger.error('세션 복구 프로세스 오류', error);
-      return false;
-    }
-  }, [recoveryAttempts]);
-
   useEffect(() => {
     // 이미 초기화되었으면 다시 실행하지 않음
     if (isInitialized) {
@@ -151,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         logger.info('인증 컨텍스트 초기화 시작');
 
-        // code_verifier 복원 시도 (여러 스토리지 확인)
+        // code_verifier 복원 시도 (세션 스토리지에서만 확인)
         const storedVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
 
         if (storedVerifier) {
@@ -171,28 +114,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (error) {
             logger.error('세션 가져오기 실패', error);
             setAuthError(new Error(error.message));
-
-            // 세션 복구 시도
-            const recovered = await attemptSessionRecovery();
-            if (!recovered) {
-              // 복구 실패 시 새로운 세션을 위한 준비
-              logger.info('세션 복구 실패, 로그인 준비 상태로 전환');
-            }
           } else if (data.session) {
             setSession(data.session);
             setUser(data.session.user);
-
-            // 세션 토큰 저장
-            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.session.access_token);
-            if (data.session.refresh_token) {
-              localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.session.refresh_token);
-            }
-            if (data.session.user?.id) {
-              localStorage.setItem(STORAGE_KEYS.USER_ID, data.session.user.id);
-            }
-            if (data.session.user?.app_metadata?.provider) {
-              localStorage.setItem(STORAGE_KEYS.PROVIDER, data.session.user.app_metadata.provider);
-            }
 
             logger.info('현재 세션 복원 성공', {
               user_id: data.session.user?.id?.substring(0, 8) + '...',
@@ -229,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     initializeAuth();
-  }, [attemptSessionRecovery]);
+  }, []);
 
   // Supabase 세션 상태 변경 감지
   useEffect(() => {
@@ -246,18 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(newSession.user);
           setSession(newSession);
 
-          // 세션 토큰 저장
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newSession.access_token);
-          if (newSession.refresh_token) {
-            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newSession.refresh_token);
-          }
-          if (newSession.user?.id) {
-            localStorage.setItem(STORAGE_KEYS.USER_ID, newSession.user.id);
-          }
-          if (newSession.user?.app_metadata?.provider) {
-            localStorage.setItem(STORAGE_KEYS.PROVIDER, newSession.user.app_metadata.provider);
-          }
-
           // 로그인 시 사용자 정보 출력 (디버깅용)
           console.log('=== 로그인 성공: 사용자 정보 ===');
           console.log('ID:', newSession.user?.id);
@@ -273,22 +185,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setSession(null);
 
-          // 인증 데이터 제거
-          localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.USER_ID);
-          localStorage.removeItem(STORAGE_KEYS.PROVIDER);
+          // code_verifier 제거 (세션 스토리지만 사용)
           sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
         } else if (event === 'TOKEN_REFRESHED' && newSession) {
           logger.info('토큰 갱신 이벤트 발생');
           setUser(newSession.user);
           setSession(newSession);
-
-          // 새로운 토큰 저장
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newSession.access_token);
-          if (newSession.refresh_token) {
-            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newSession.refresh_token);
-          }
         }
       });
 
@@ -315,11 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
 
-      // 인증 데이터 제거
-      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER_ID);
-      localStorage.removeItem(STORAGE_KEYS.PROVIDER);
+      // code_verifier 제거 (세션 스토리지만 사용)
       sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
 
       logger.info('로그아웃 성공');
