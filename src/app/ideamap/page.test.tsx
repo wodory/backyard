@@ -4,9 +4,10 @@
  * 역할: IdeaMap 컴포넌트를 사용하는 페이지 컴포넌트 테스트
  * 작성일: 2025-03-05
  * 수정일: 2025-04-15
+ * 수정일: 2025-04-25 : 사용하지 않는 import 및 변수 제거
  */
 
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Node, Edge, NodeChange } from '@xyflow/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
@@ -51,9 +52,6 @@ const setNodesMock = vi.fn();
 const setEdgesMock = vi.fn();
 const onNodesChangeMock = vi.fn();
 const onEdgesChangeMock = vi.fn();
-
-// viewportCenter 모킹 - getNewCardPosition에서 사용
-const viewportCenterMock = { x: 500, y: 300 };
 
 // ReactFlow의 ReactFlowProvider와 useReactFlow hook 모킹
 vi.mock('@xyflow/react', () => {
@@ -119,7 +117,7 @@ vi.mock('@xyflow/react', () => {
       fitView: vi.fn(),
     }),
     useUpdateNodeInternals: () => vi.fn(),
-    applyNodeChanges: vi.fn((changes, nodes) => {
+    applyNodeChanges: vi.fn(() => {
       // 변경사항 적용 결과 모킹
       mockAppliedNodes = [
         { id: '1', position: { x: 200, y: 200 } },
@@ -246,12 +244,6 @@ vi.mock('./page', async (importOriginal) => {
     })
   };
 });
-
-// 테스트 전체에서 사용할 카드 데이터
-const mockCardData = [
-  { id: 1, title: '테스트 카드 1', content: '내용 1', cardTags: [] },
-  { id: 2, title: '테스트 카드 2', content: '내용 2', cardTags: [] }
-];
 
 // 필요한 모의 설정 추가
 vi.mock('@/components/ideamap/components/IdeaMap', () => ({

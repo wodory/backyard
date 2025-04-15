@@ -7,7 +7,6 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import ErrorPage from './page';
@@ -33,12 +32,12 @@ describe('ErrorPage', () => {
       if (param === 'error_description') return '';
       return null;
     });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   it('기본 오류 메시지를 올바르게 표시해야 합니다', () => {
     render(<ErrorPage />);
-    
+
     expect(screen.getByRole('heading', { name: '인증 오류' })).toBeInTheDocument();
     expect(screen.getByText('인증 과정에서 오류가 발생했습니다.')).toBeInTheDocument();
   });
@@ -51,7 +50,7 @@ describe('ErrorPage', () => {
     });
 
     render(<ErrorPage />);
-    
+
     expect(screen.getByText('유효하지 않은 인증 콜백입니다.')).toBeInTheDocument();
   });
 
@@ -63,7 +62,7 @@ describe('ErrorPage', () => {
     });
 
     render(<ErrorPage />);
-    
+
     expect(screen.getByText('이메일 인증에 실패했습니다.')).toBeInTheDocument();
     expect(screen.getByText('이메일 주소가 확인되지 않았습니다.')).toBeInTheDocument();
   });
@@ -75,20 +74,20 @@ describe('ErrorPage', () => {
     });
 
     render(<ErrorPage />);
-    
+
     expect(screen.getByText('인증 과정에서 오류가 발생했습니다.')).toBeInTheDocument();
   });
 
   it('로그인 페이지로 돌아가기 링크가 올바르게 작동해야 합니다', async () => {
     render(<ErrorPage />);
-    
+
     const loginLink = screen.getByRole('link', { name: '로그인 페이지로 돌아가기' });
     expect(loginLink).toHaveAttribute('href', '/login');
   });
 
   it('홈으로 돌아가기 링크가 올바르게 작동해야 합니다', async () => {
     render(<ErrorPage />);
-    
+
     const homeLink = screen.getByRole('link', { name: '홈으로 돌아가기' });
     expect(homeLink).toHaveAttribute('href', '/');
   });

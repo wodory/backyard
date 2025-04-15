@@ -5,12 +5,13 @@
  * 작성일: 2025-02-15
  * 수정일: 2025-03-27
  * 수정일: 2024-05-16 : Triple-slash 참조 제거 및 import 문으로 변경
+ * 수정일: 2025-04-27 : 사용되지 않는 import 제거
  */
 
 import React from 'react';
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
 import LoginPage from './page';

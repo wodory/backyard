@@ -89,8 +89,9 @@ export async function pollUntil<T>(
       if (result) {
         return result;
       }
-    } catch (_) {
+    } catch (error) {
       // 조건이 충족되지 않음, 계속 진행
+      console.error('폴링 오류:', error);
     }
     
     // 테스트 환경에 따라 지연 방법 선택
@@ -119,7 +120,8 @@ export async function expectEventually(
       try {
         await assertion();
         return true;
-      } catch (_) {
+      } catch (error) {
+        console.error('비동기 단언 오류:', error);
         return false;
       }
     },

@@ -8,9 +8,6 @@
 
 import { Suspense } from 'react';
 
-import Link from "next/link";
-
-import { ChevronRight } from "lucide-react";
 import { Metadata } from "next";
 
 import CardList from "@/components/cards/CardList";

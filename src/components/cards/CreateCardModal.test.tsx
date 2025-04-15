@@ -3,6 +3,7 @@
  * 목적: CreateCardModal 컴포넌트의 기능 테스트
  * 역할: 카드 생성 모달의 동작, 입력 유효성 검사, API 호출, 태그 관리 등을 테스트
  * 작성일: 2025-04-08
+ * 수정일: 2025-04-25 : lint 오류 수정 - 사용되지 않는 import 및 변수 제거
  */
 
 import { useState } from 'react';
@@ -11,16 +12,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { act } from 'react-dom/test-utils';
-import { toast } from 'sonner';
 import { vi } from 'vitest';
-
-
 
 import { useAppStore } from '@/store/useAppStore';
 import { server } from '@/tests/msw/server';
 
 import CreateCardModal from './CreateCardModal';
-
 
 // useRouter 모킹
 const mockRouter = {
@@ -67,12 +64,6 @@ vi.mock('sonner', () => {
         }
     };
 });
-
-// 먼저 기본적으로 /api/users/first 호출에 대한 응답을 모킹합니다
-const mockUserResponse = {
-    id: 'user-id',
-    name: 'Test User'
-};
 
 // window.location.reload 모킹
 const mockReload = vi.fn();
@@ -587,7 +578,7 @@ describe('CreateCardModal 컴포넌트', () => {
         // 테스트용 커스텀 컴포넌트 생성
         const MockCompositionComponent = () => {
             const [tagInput, setTagInput] = useState('한글태그');
-            const [tags, setTags] = useState<string[]>([]);
+            const [tags] = useState<string[]>([]);
 
             return (
                 <div>

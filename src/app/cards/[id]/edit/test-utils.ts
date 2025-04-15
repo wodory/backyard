@@ -30,7 +30,7 @@ export interface MockApiResponse {
 
 // 모킹된 액션들
 export const mockActions = {
-  getCard: vi.fn().mockImplementation((id: string): Promise<MockApiResponse> => {
+  getCard: vi.fn().mockImplementation((): Promise<MockApiResponse> => {
     return Promise.resolve({
       ok: true,
       status: 200,

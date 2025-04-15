@@ -1,3 +1,10 @@
+/**
+ * 파일명: ./src/app/api/user/[id]/route.ts
+ * 목적: 사용자 정보 조회 API 엔드포인트
+ * 역할: 사용자 ID로 사용자 정보를 조회하고 응답을 반환
+ * 작성일: 2024-05-29
+ */
+
 import { NextResponse } from 'next/server';
 
 import prisma from '@/lib/prisma';
@@ -32,7 +39,7 @@ export async function GET(
       }
       
       return NextResponse.json({ user });
-    } catch (dbError: any) {
+    } catch (dbError: Error | unknown) {
       console.error('DB 조회 오류:', dbError);
       
       // DB 오류가 발생하면 더미 사용자 데이터 반환
@@ -47,10 +54,11 @@ export async function GET(
         }
       });
     }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('사용자 조회 API 오류:', error);
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
     return NextResponse.json(
-      { error: `사용자 조회 실패: ${error.message}` },
+      { error: `사용자 조회 실패: ${errorMessage}` },
       { status: 500 }
     );
   }

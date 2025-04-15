@@ -31,7 +31,8 @@ vi.mock('@/lib/prisma', () => ({
 
 // formatDate 모킹
 vi.mock('@/lib/utils', () => ({
-  formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  formatDate: vi.fn((_: string | Date) => '2023년 1월 1일'),
   cn: vi.fn((...args: any[]) => args.join(' '))
 }));
 

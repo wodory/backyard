@@ -1,11 +1,16 @@
+/**
+ * 파일명: ./src/components/cards/CreateCardModal.tsx
+ * 목적: 새로운 카드 생성을 위한 모달 컴포넌트
+ * 역할: 카드 작성 양식을 제공하고 카드 생성 기능 수행
+ * 작성일: 2025-03-05
+ * 수정일: 2025-04-25 : lint 오류 수정 - 사용되지 않는 import 및 변수 제거
+ */
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 
-import { XYPosition } from "@xyflow/react";
-import { X, Loader2 } from "lucide-react";
-import { PlusCircle } from "lucide-react";
-import { toast } from "sonner";
+import { X, Loader2, PlusCircle } from "lucide-react";
 
 import TiptapEditor from "@/components/editor/TiptapEditor";
 import { Badge } from "@/components/ui/badge";
@@ -25,16 +30,12 @@ import { DEFAULT_USER_ID } from "@/lib/constants";
 import { useAppStore } from "@/store/useAppStore";
 import { CreateCardInput, Card } from "@/types/card";
 
-
 // 컴포넌트에 props 타입 정의
 interface CreateCardModalProps {
   onCardCreated?: (cardData: Card) => void;
   autoOpen?: boolean; // 자동으로 모달을 열지 여부
   onClose?: () => void; // 모달이 닫힐 때 콜백
   customTrigger?: React.ReactNode; // 커스텀 트리거 버튼
-  position?: XYPosition;
-  connectingNodeId?: string;
-  handleType?: 'source' | 'target';
 }
 
 export default function CreateCardModal({
@@ -42,9 +43,6 @@ export default function CreateCardModal({
   autoOpen = false,
   onClose,
   customTrigger,
-  position,
-  connectingNodeId,
-  handleType,
 }: CreateCardModalProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");

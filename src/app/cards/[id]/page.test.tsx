@@ -35,7 +35,7 @@ vi.mock('@/lib/prisma', () => {
 
 // formatDate 모킹
 vi.mock('@/lib/utils', () => ({
-  formatDate: vi.fn((date: string | Date) => '2023년 1월 1일'),
+  formatDate: vi.fn(() => '2023년 1월 1일'),
   cn: vi.fn((...args: any[]) => args.join(' '))
 }));
 

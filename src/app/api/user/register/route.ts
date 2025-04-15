@@ -1,3 +1,10 @@
+/**
+ * 파일명: ./src/app/api/user/register/route.ts
+ * 목적: 사용자 등록 API 엔드포인트
+ * 역할: 새로운 사용자를 등록하거나 기존 사용자를 확인하는 API
+ * 작성일: 2024-05-29
+ */
+
 import { NextResponse } from 'next/server';
 
 import prisma from '@/lib/prisma';
@@ -39,7 +46,7 @@ export async function POST(request: Request) {
       console.log('새 사용자 생성됨:', newUser.email);
       
       return NextResponse.json({ message: '사용자 등록 성공', user: newUser });
-    } catch (dbError: any) {
+    } catch (dbError: Error | unknown) {
       console.error('데이터베이스 오류:', dbError);
       
       // 데이터베이스 연결 오류 시 더미 데이터 반환
@@ -56,10 +63,11 @@ export async function POST(request: Request) {
         user: dummyUser 
       });
     }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('사용자 등록 오류:', error);
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
     return NextResponse.json(
-      { error: `사용자 등록 실패: ${error.message}` },
+      { error: `사용자 등록 실패: ${errorMessage}` },
       { status: 500 }
     );
   }

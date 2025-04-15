@@ -10,15 +10,12 @@
 
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { signInWithGoogle } from '@/lib/auth';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     try {

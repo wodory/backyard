@@ -2,14 +2,13 @@
  * @vitest-environment jsdom
  */
 
-import { render, screen } from '@testing-library/react';
-
-import CardsPage from './page';
-
-import '@testing-library/jest-dom/vitest';
 import React from 'react';
 
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+
+import CardsPage from './page';
 
 // Next.js의 router 훅 모킹
 vi.mock('next/navigation', () => ({
@@ -20,7 +19,7 @@ vi.mock('next/navigation', () => ({
     pathname: '/cards',
   })),
   useSearchParams: vi.fn(() => ({
-    get: vi.fn((key) => null),
+    get: vi.fn(() => null),
     has: vi.fn(() => false),
     forEach: vi.fn(),
   })),

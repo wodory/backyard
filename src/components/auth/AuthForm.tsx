@@ -35,13 +35,13 @@ export default function AuthForm() {
     try {
       if (mode === 'login') {
         const { session } = await signIn(email, password);
-        
+
         // 추가: 쿠키를 여기서도 직접 설정 (보완책)
         if (session) {
           // 현재 호스트 가져오기
           const host = window.location.hostname;
           const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-          
+
           // 도메인 설정 (로컬호스트가 아닌 경우에만)
           let domain = undefined;
           if (!isLocalhost) {
@@ -54,7 +54,7 @@ export default function AuthForm() {
               domain = host;
             }
           }
-          
+
           // cookies-next 라이브러리 사용
           setCookie('sb-access-token', session.access_token, {
             maxAge: 60 * 60 * 24 * 7, // 7일
@@ -63,7 +63,7 @@ export default function AuthForm() {
             secure: window.location.protocol === 'https:',
             sameSite: 'lax'
           });
-          
+
           if (session.refresh_token) {
             setCookie('sb-refresh-token', session.refresh_token, {
               maxAge: 60 * 60 * 24 * 30, // 30일
@@ -73,24 +73,25 @@ export default function AuthForm() {
               sameSite: 'lax'
             });
           }
-          
+
           console.log('AuthForm: 쿠키에 인증 정보 저장됨', {
             호스트: host,
             도메인설정: domain || '없음'
           });
         }
-        
+
         toast.success('로그인 성공!');
       } else {
         await signUp(email, password, name);
         toast.success('회원가입 성공! 이메일을 확인해주세요.');
       }
-      
+
       // 성공 후 리디렉션 또는 상태 업데이트
       window.location.href = '/';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('인증 오류:', error);
-      toast.error(error.message || '인증 중 오류가 발생했습니다.');
+      const errorMessage = error instanceof Error ? error.message : '인증 중 오류가 발생했습니다.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -98,26 +99,27 @@ export default function AuthForm() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    
+
     console.log('[AuthForm][1] Google 로그인 버튼 클릭됨', {
       환경: process.env.NODE_ENV,
       타임스탬프: new Date().toISOString(),
       window_location: typeof window !== 'undefined' ? window.location.href : '알 수 없음'
     });
-    
+
     try {
       console.log('[AuthForm][2] signInWithGoogle 함수 호출 시작');
       await signInWithGoogle();
       console.log('[AuthForm][3] signInWithGoogle 함수 호출 성공 - 리디렉션 대기 중...');
       // 리디렉션은 Google OAuth 콜백 처리에서 이루어집니다.
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[AuthForm][오류] Google 로그인 오류:', {
-        에러메시지: error.message,
-        스택: error.stack,
+        에러메시지: error instanceof Error ? error.message : '알 수 없는 오류',
+        스택: error instanceof Error ? error.stack : '',
         타입: typeof error,
         객체: error
       });
-      toast.error(error.message || 'Google 로그인 중 오류가 발생했습니다.');
+      const errorMessage = error instanceof Error ? error.message : 'Google 로그인 중 오류가 발생했습니다.';
+      toast.error(errorMessage);
       setIsGoogleLoading(false);
     }
   };
@@ -183,8 +185,8 @@ export default function AuthForm() {
           {isLoading
             ? '처리 중...'
             : mode === 'login'
-            ? '로그인'
-            : '회원가입'}
+              ? '로그인'
+              : '회원가입'}
         </Button>
 
         <div className="relative my-4">

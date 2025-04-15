@@ -4,12 +4,11 @@
  * 역할: API의 응답과 오류 처리 검증
  * 작성일: 2025-03-27
  * 수정일: 2025-04-01
+ * 수정일: 2024-05-29 : 린터 오류 수정(사용하지 않는 변수 제거)
  * @vitest-environment node
  */
 
-import { NextResponse } from 'next/server';
-
-import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 import { POST } from './route';
 

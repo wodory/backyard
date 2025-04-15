@@ -4,15 +4,16 @@
  * 역할: 페이지 로딩, 네비게이션, API 요청, 에러 처리 등의 기능 검증
  * 작성일: 2025-03-27
  * 수정일: 2025-04-03
+ * 수정일: 2025-05-19 : 린터 오류 수정 (import 순서 변경)
  */
 
-import { describe, test, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { act } from 'react-dom/test-utils';
+import { describe, test, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 
 /**
  * 참고: Next.js 공식 문서에 따르면, async/await를 사용하는 Client Components는

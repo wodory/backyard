@@ -3,12 +3,11 @@
  * 목적: 사용자 정보 조회 API 엔드포인트 테스트
  * 역할: API의 응답과 오류 처리 검증
  * 작성일: 2025-03-27
+ * 수정일: 2024-05-29 : 린터 오류 수정(사용하지 않는 변수 제거)
  * @vitest-environment node
  */
 
-import { NextResponse } from 'next/server';
-
-import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 import { GET } from './route';
 
@@ -135,7 +134,6 @@ describe('User API [id]', () => {
     it('예외 발생 시 500 에러를 반환한다', async () => {
       // 예외 발생 시뮬레이션
       const error = new Error('예상치 못한 오류');
-      const mockParams = { id: 'test-user-id' };
       
       // params를 사용할 때 오류 발생 시뮬레이션
       const mockParamsWithError = {

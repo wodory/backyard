@@ -4,18 +4,19 @@
  * 역할: 아이디어맵 기능의 페이지 레벨 컴포넌트, 리팩토링된 IdeaMap 컴포넌트 사용
  * 작성일: 2025-03-05
  * 수정일: 2025-04-15
+ * 수정일: 2025-04-27 : any 타입을 Node 타입으로 변경
  */
 
 'use client';
 
-import { ReactFlowProvider } from '@xyflow/react';
+import { Node, ReactFlowProvider } from '@xyflow/react';
 
 import IdeaMap from '@/components/ideamap/components/IdeaMap';
 import { useAppStore } from '@/store/useAppStore';
 
 // 기존 코드 보존을 위한 주석 처리된 함수들 (테스트에서 참조할 수 있음)
-export const autoLayoutNodes = (nodes: any[]) => {
-  return nodes.map((node: any, index: number) => ({
+export const autoLayoutNodes = (nodes: Node[]) => {
+  return nodes.map((node: Node, index: number) => ({
     ...node,
     position: {
       x: (index % 3) * 300 + 50,

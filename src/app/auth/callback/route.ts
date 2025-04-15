@@ -5,10 +5,7 @@
  * 작성일: 2025-03-27
  */
 
-import { redirect } from 'next/navigation'
 import { NextRequest, NextResponse } from 'next/server'
-
-import { type EmailOtpType } from '@supabase/supabase-js'
 
 import { createClient } from '@/lib/supabase/server'
 
@@ -48,7 +45,7 @@ export async function GET(request: NextRequest) {
     // 인증 성공 시 리다이렉트
     console.log('인증 성공, 리다이렉트:', next)
     return NextResponse.redirect(new URL(next, request.url))
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('인증 콜백 처리 중 예외 발생:', error)
     const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
     

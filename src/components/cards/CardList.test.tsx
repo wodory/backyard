@@ -1,15 +1,21 @@
+/**
+ * 파일명: ./src/components/cards/CardList.test.tsx
+ * 목적: 카드 목록 컴포넌트 테스트
+ * 역할: 카드 목록 렌더링 및 동작 검증
+ * 작성일: 2025-03-05
+ * 수정일: 2025-04-25 : lint 오류 수정
+ */
+
 import React from 'react';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import { toast } from 'sonner';
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 
 import CardList from './CardList';
-
-import '@testing-library/jest-dom/vitest';
-import userEvent from '@testing-library/user-event';
 
 // DOM 변경을 기다리는 헬퍼 함수
 const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 30));
@@ -28,7 +34,8 @@ vi.mock('next/navigation', async () => {
   return {
     ...actual,
     useSearchParams: vi.fn(() => ({
-      get: (param: string) => null,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      get: (_: string) => null,
       toString: () => '',
     })),
     useRouter: vi.fn(() => ({
@@ -482,8 +489,8 @@ describe('CardList 컴포넌트', () => {
       push: mockPush,
     };
 
-    // useRouter 모킹
-    (require('next/navigation').useRouter as any).mockImplementation(() => mockRouter);
+    // useRouter 모킹 - import 문법 사용
+    vi.mocked(useRouter).mockReturnValue(mockRouter as any);
 
     // 태그가 있는 카드 데이터 모킹
     const mockCardsWithTags = [

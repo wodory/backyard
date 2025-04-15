@@ -3,6 +3,7 @@
  * 목적: 첫 번째 사용자 API 엔드포인트 테스트
  * 역할: GET 메서드의 정상 작동 및 에러 처리 검증
  * 작성일: 2024-05-28
+ * 수정일: 2024-05-29 : 린터 오류 수정(import 순서 수정)
  */
 
 import { NextResponse } from 'next/server';

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 
@@ -53,7 +52,6 @@ interface CardItem {
 export default function CardList() {
   const { cards, setCards } = useAppStore();
   const [loading, setLoading] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -63,19 +61,19 @@ export default function CardList() {
   const filteredCards = React.useMemo(() => {
     const q = searchParams.get('q')?.toLowerCase();
     const tag = searchParams.get('tag')?.toLowerCase();
-    
+
     if (!q && !tag) return cards as CardItem[];
-    
+
     return (cards as CardItem[]).filter(card => {
-      const matchesQuery = !q || 
-        card.title.toLowerCase().includes(q) || 
+      const matchesQuery = !q ||
+        card.title.toLowerCase().includes(q) ||
         (card.content && card.content.toLowerCase().includes(q));
-      
-      const matchesTag = !tag || 
-        card.cardTags?.some(cardTag => 
+
+      const matchesTag = !tag ||
+        card.cardTags?.some(cardTag =>
           cardTag.tag.name.toLowerCase() === tag
         );
-      
+
       return matchesQuery && matchesTag;
     });
   }, [cards, searchParams]);
@@ -84,27 +82,27 @@ export default function CardList() {
     if (cards.length === 0) {
       fetchCards();
     }
-  }, [cards.length, searchParams]);
+  }, [cards.length, searchParams, fetchCards]);
 
   async function fetchCards() {
     setLoading(true);
     try {
       const q = searchParams.get('q');
       const tag = searchParams.get('tag');
-      
+
       const params = new URLSearchParams();
       if (q) params.append('q', q);
       if (tag) params.append('tag', tag);
-      
+
       const queryString = params.toString();
       const endpoint = `/api/cards${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('카드 목록을 불러오는데 실패했습니다.');
       }
       const data = await response.json();
-      
+
       setCards(data);
     } catch (error) {
       console.error('Error fetching cards:', error);
@@ -157,7 +155,7 @@ export default function CardList() {
   return (
     <div className="space-y-6">
       <SearchBar />
-      
+
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -170,9 +168,9 @@ export default function CardList() {
             <DialogClose asChild>
               <Button variant="outline">취소</Button>
             </DialogClose>
-            <Button 
-              variant="destructive" 
-              onClick={() => deletingCardId && handleDeleteCard(deletingCardId)} 
+            <Button
+              variant="destructive"
+              onClick={() => deletingCardId && handleDeleteCard(deletingCardId)}
               disabled={isDeleting}
             >
               {isDeleting ? "삭제 중..." : "삭제"}
@@ -180,11 +178,11 @@ export default function CardList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {filteredCards.length === 0 ? (
         <div className="text-center py-10">
-          {searchParams.toString() 
-            ? '검색 결과가 없습니다.' 
+          {searchParams.toString()
+            ? '검색 결과가 없습니다.'
             : '카드가 없습니다. 새 카드를 추가해보세요!'}
         </div>
       ) : (
@@ -223,12 +221,12 @@ export default function CardList() {
                           <div className="whitespace-pre-wrap">
                             <TiptapViewer content={card.content || ''} />
                           </div>
-                          
+
                           {card.cardTags && card.cardTags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-4">
                               {card.cardTags.map((cardTag) => (
-                                <Badge 
-                                  key={cardTag.id} 
+                                <Badge
+                                  key={cardTag.id}
                                   variant="secondary"
                                 >
                                   #{cardTag.tag.name}
@@ -244,8 +242,8 @@ export default function CardList() {
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                    <Button 
-                      variant="destructive" 
+                    <Button
+                      variant="destructive"
                       size="sm"
                       onClick={(e) => openDeleteDialog(card.id, e)}
                     >
@@ -253,12 +251,12 @@ export default function CardList() {
                     </Button>
                   </div>
                 </div>
-                
+
                 {card.cardTags && card.cardTags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {card.cardTags.map((cardTag) => (
-                      <Badge 
-                        key={cardTag.id} 
+                      <Badge
+                        key={cardTag.id}
                         variant="secondary"
                         className="cursor-pointer hover:bg-secondary/80 transition-colors"
                         onClick={(e) => handleTagClick(cardTag.tag.name, e)}

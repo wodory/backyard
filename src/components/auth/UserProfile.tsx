@@ -8,10 +8,10 @@ import { toast } from 'sonner';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuTrigger, 
-  DropdownMenuContent, 
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
@@ -58,23 +58,24 @@ export default function UserProfile() {
       router.push('/login');
     } catch (error) {
       toast.error('로그아웃 중 오류가 발생했습니다.');
+      console.error('로그아웃 오류:', error);
     }
   };
 
   // 사용자 이름을 가져오는 헬퍼 함수
   const getUserName = () => {
     if (!user) return '';
-    
+
     // 우선순위: 1. Google 프로필 이름, 2. DB에 저장된 이름, 3. 이메일 앞부분
-    return user.user_metadata?.full_name || 
-           user.dbUser?.name || 
-           (user.email ? user.email.split('@')[0] : '사용자');
+    return user.user_metadata?.full_name ||
+      user.dbUser?.name ||
+      (user.email ? user.email.split('@')[0] : '사용자');
   };
 
   // 아바타 이미지 URL 또는 이니셜을 가져오는 헬퍼 함수
   const getAvatar = () => {
     if (!user) return '';
-    
+
     return user.user_metadata?.avatar_url || '';
   };
 

@@ -4,10 +4,12 @@
  * 역할: 홈 페이지의 렌더링과 기능 검증
  * 작성일: 2025-03-05
  * 수정일: 2025-03-30
+ * 수정일: 2025-04-25 : lint 오류 수정 - import 순서 및 next/link 사용
  */
 
-import { render, screen } from '@testing-library/react';
+import React from 'react';
 
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi } from 'vitest';
 
@@ -15,15 +17,13 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 import Home from './page';
 
-import React from 'react';
-
 // DashboardLayout 모킹
 vi.mock('@/components/layout/DashboardLayout', () => ({
   DashboardLayout: vi.fn().mockImplementation(() => (
     <div data-testid="dashboard-layout">
       <h1>Backyard</h1>
       <p>아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구</p>
-      <a href="/cards">카드 목록 보기</a>
+      <span>카드 목록 보기</span>
     </div>
   )),
 }));
@@ -45,14 +45,14 @@ describe('Home 페이지', () => {
     expect(heading).toBeInTheDocument();
     expect(heading.tagName).toBe('H1');
   });
-  
+
   it('설명 텍스트가 렌더링되어야 합니다', () => {
     render(<Home />);
     const description = screen.getByText('아이디어와 지식을 시각적으로 구성, 관리, 공유할 수 있는 도구');
     expect(description).toBeInTheDocument();
     expect(description.tagName).toBe('P');
   });
-  
+
   it('카드 목록 보기 링크가 렌더링되어야 합니다', () => {
     render(<Home />);
     const link = screen.getByText('카드 목록 보기');
