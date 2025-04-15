@@ -1,5 +1,14 @@
+/**
+ * 파일명: src/app/api/cards/route.ts
+ * 목적: 카드 API 엔드포인트
+ * 역할: 카드 생성 및 조회 기능 제공
+ * 작성일: 2024-05-22
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
+
 import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
 
 // 카드 생성 스키마
@@ -201,7 +210,7 @@ export async function GET(request: NextRequest) {
     console.log('카드 조회 요청 - 파라미터:', { userId, q, tag });
     
     // 검색 조건 구성
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     
     // 사용자 ID 필터
     if (userId) {

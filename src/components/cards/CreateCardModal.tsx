@@ -1,6 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+
+import { XYPosition } from "@xyflow/react";
+import { X, Loader2 } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { toast } from "sonner";
+
+import TiptapEditor from "@/components/editor/TiptapEditor";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,15 +21,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { X, Loader2 } from "lucide-react";
-import { PlusCircle } from "lucide-react";
-import TiptapEditor from "@/components/editor/TiptapEditor";
 import { DEFAULT_USER_ID } from "@/lib/constants";
 import { useAppStore } from "@/store/useAppStore";
 import { CreateCardInput, Card } from "@/types/card";
-import { XYPosition } from "@xyflow/react";
+
 
 // 컴포넌트에 props 타입 정의
 interface CreateCardModalProps {

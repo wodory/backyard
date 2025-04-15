@@ -5,7 +5,10 @@
  * 작성일: 2025-04-01
  */
 
+import { ConnectionLineType, MarkerType, type EdgeMarker } from '@xyflow/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+import { BOARD_SETTINGS_KEY } from '@/lib/ideamap-constants';
 import {
   BoardSettings,
   DEFAULT_BOARD_SETTINGS,
@@ -16,8 +19,6 @@ import {
   updateBoardSettingsOnServer,
   applyEdgeSettings
 } from '@/lib/ideamap-utils';
-import { ConnectionLineType, MarkerType, type EdgeMarker } from '@xyflow/react';
-import { BOARD_SETTINGS_KEY } from '@/lib/ideamap-constants';
 
 // Map 기반 스토리지 구현
 const storageMap = new Map<string, string>();

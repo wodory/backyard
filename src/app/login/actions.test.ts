@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { login, signup, signInWithGoogle } from './actions';
 
 // 모킹 객체 생성

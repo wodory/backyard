@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
+
+import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
+
 import TiptapEditor from "@/components/editor/TiptapEditor";
 import TiptapViewer from "@/components/editor/TiptapViewer";
-import { Pencil, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 
 interface EditCardContentProps {
   cardId: string;

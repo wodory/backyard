@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
+
+import { ReactFlowProvider } from '@xyflow/react';
+
 import { useAppStore } from '@/store/useAppStore';
-import { ProjectToolbar } from './ProjectToolbar';
-import { ShortcutToolbar } from './ShortcutToolbar';
+
 import { MainCanvas } from './MainCanvas';
 import { MainToolbar } from './MainToolbar';
+import { ProjectToolbar } from './ProjectToolbar';
+import { ShortcutToolbar } from './ShortcutToolbar';
 import { Sidebar } from './Sidebar';
-import { ReactFlowProvider } from '@xyflow/react';
 // React Flow 스타일은 MainCanvas에서 import 합니다
 
 export function DashboardLayout() {

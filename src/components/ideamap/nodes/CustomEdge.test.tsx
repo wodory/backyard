@@ -6,11 +6,11 @@
  * 수정일: 2025-04-01
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider, EdgeProps, Position, ConnectionLineType } from '@xyflow/react';
-import { ConnectionLineType as SystemConnectionLineType } from '@xyflow/system';
 import type * as XyflowReact from '@xyflow/react';
+import { ConnectionLineType as SystemConnectionLineType } from '@xyflow/system';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // AppStore 모킹
 vi.mock('@/store/useAppStore', () => ({

@@ -1,0 +1,748 @@
+src/components/auth/UserProfile.tsx:5:53 - error TS2307: Cannot find module '@/components/ui/avatar' or its corresponding type declarations.
+
+5 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+                                                      ~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/components/auth/UserProfile.tsx:38:17 - error TS2345: Argument of type 'ExtendedUser | null' is not assignable to parameter of type 'SetStateAction<User | null>'.
+  Type 'ExtendedUser' is not assignable to type 'SetStateAction<User | null>'.
+    Type 'ExtendedUser' is not assignable to type 'User'.
+      Types of property 'email' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+
+38         setUser(currentUser);
+                   ~~~~~~~~~~~
+
+src/components/debug/DevTools.tsx:50:32 - error TS2786: 'NodeInspector' cannot be used as a JSX component.
+  Its type '() => void' is not a valid JSX element type.
+    Type '() => void' is not assignable to type '(props: any) => ReactNode | Promise<ReactNode>'.
+      Type 'void' is not assignable to type 'ReactNode | Promise<ReactNode>'.
+
+50         {showNodeInspector && <NodeInspector />}
+                                  ~~~~~~~~~~~~~
+
+src/components/debug/NodeInspector.tsx:122:55 - error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+
+122         <div><span className="font-medium">제목:</span> {data?.title || data?.label || '제목 없음'}</div>
+                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/components/IdeaMap.tsx:1:18 - error TS2304: Cannot find name 'prevNodes'.
+
+1 const newNodes = prevNodes.map((node) => {
+                   ~~~~~~~~~
+
+src/components/IdeaMap.tsx:1:33 - error TS7006: Parameter 'node' implicitly has an 'any' type.
+
+1 const newNodes = prevNodes.map((node) => {
+                                  ~~~~
+
+src/components/IdeaMap.tsx:2:21 - error TS2304: Cannot find name 'cardData'.
+
+2     if (node.id === cardData.id) {
+                      ~~~~~~~~
+
+src/components/IdeaMap.tsx:7:24 - error TS2304: Cannot find name 'cardData'.
+
+7                 title: cardData.title,
+                         ~~~~~~~~
+
+src/components/IdeaMap.tsx:8:26 - error TS2304: Cannot find name 'cardData'.
+
+8                 content: cardData.content ?? '',
+                           ~~~~~~~~
+
+src/components/ideamap/components/IdeaMap.tsx:174:5 - error TS2322: Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+  Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+    Type 'null' is not assignable to type 'HTMLDivElement'.
+
+174     reactFlowWrapper,
+        ~~~~~~~~~~~~~~~~
+
+  src/components/ideamap/hooks/useIdeaMapHandlers.ts:27:3
+    27   reactFlowWrapper: React.RefObject<HTMLDivElement>;
+         ~~~~~~~~~~~~~~~~
+    The expected type comes from property 'reactFlowWrapper' which is declared here on type '{ reactFlowWrapper: RefObject<HTMLDivElement>; reactFlowInstance: any; fetchCards: () => Promise<{ nodes: Node<CardData>[]; edges: Edge[]; }>; }'
+
+src/components/ideamap/components/IdeaMap.tsx:283:14 - error TS2345: Argument of type '(currentEdges: Edge[]) => (Edge | { data: { title: string; content: string; tags: any; }; id: string; type?: string | undefined; source: string; target: string; sourceHandle?: string | null; ... 20 more ...; focusable?: boolean; })[]' is not assignable to parameter of type 'Edge[]'.
+
+283     setEdges((currentEdges: Edge[]) => {
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  src/components/ideamap/components/IdeaMap.tsx:283:14
+    283     setEdges((currentEdges: Edge[]) => {
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Did you mean to call this expression?
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:168:13 - error TS2322: Type '{ nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+168     render(<IdeaMapCanvas {...defaultProps} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:173:13 - error TS2322: Type '{ showControls: true; nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+173     render(<IdeaMapCanvas {...defaultProps} showControls={true} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:180:13 - error TS2322: Type '{ showControls: false; nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+180     render(<IdeaMapCanvas {...defaultProps} showControls={false} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:187:13 - error TS2322: Type '{ nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+187     render(<IdeaMapCanvas {...defaultProps} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:195:13 - error TS2322: Type '{ nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+195     render(<IdeaMapCanvas {...defaultProps} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:202:13 - error TS2322: Type '{ nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+202     render(<IdeaMapCanvas {...defaultProps} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:213:13 - error TS2322: Type '{ onLayoutChange: Mock<Procedure>; onAutoLayout: Mock<Procedure>; onSaveLayout: Mock<Procedure>; nodes: Node[]; edges: Edge[]; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+213     render(<IdeaMapCanvas {...defaultProps}
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:227:13 - error TS2322: Type '{ onCreateCard: Mock<Procedure>; nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+227     render(<IdeaMapCanvas {...defaultProps} onCreateCard={onCreateCard} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:237:13 - error TS2322: Type '{ nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+237     render(<IdeaMapCanvas {...defaultProps} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:253:13 - error TS2322: Type '{ ideaMapSettings: { snapToGrid: boolean; animated: boolean; strokeWidth: number; snapGrid: [number, number]; connectionLineType: ConnectionLineType; edgeColor: string; selectedEdgeColor: string; markerEnd: MarkerType; markerSize: number; }; ... 17 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+253     render(<IdeaMapCanvas {...defaultProps} ideaMapSettings={customSettings} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:262:13 - error TS2322: Type '{ onDragOver: Mock<Procedure>; onDrop: Mock<Procedure>; nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<...>; ... 14 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+262     render(<IdeaMapCanvas {...defaultProps} onDragOver={onDragOver} onDrop={onDrop} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:276:13 - error TS2322: Type '{ onViewportChange: Mock<Procedure>; nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; ... 14 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+276     render(<IdeaMapCanvas {...defaultProps} onViewportChange={onViewportChange} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:288:13 - error TS2322: Type '{ ideaMapSettings: { markerEnd: null; snapToGrid: boolean; snapGrid: [number, number]; connectionLineType: ConnectionLineType; animated: boolean; strokeWidth: number; edgeColor: string; selectedEdgeColor: string; markerSize: number; }; ... 17 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+288     render(<IdeaMapCanvas {...defaultProps} ideaMapSettings={settingsWithoutMarker} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/components/IdeaMapCanvas.test.tsx:300:13 - error TS2322: Type '{ nodes: Node[]; edges: Edge[]; onNodesChange: Mock<Procedure>; onEdgesChange: Mock<Procedure>; onConnect: Mock<Procedure>; ... 13 more ...; userId: string; }' is not assignable to type 'IdeaMapCanvasProps'.
+  Types of property 'wrapperRef' are incompatible.
+    Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+      Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+        Type 'null' is not assignable to type 'HTMLDivElement'.
+
+300     render(<IdeaMapCanvas {...defaultProps} />);
+                ~~~~~~~~~~~~~
+
+src/components/ideamap/DebugPanel.tsx:35:69 - error TS2339: Property 'id' does not exist on type 'NodeChange'.
+  Property 'id' does not exist on type 'NodeAddChange<NodeBase>'.
+
+35       const message = `노드 변경: ${nodeChanges.map(c => `${c.type} ${c.id}`).join(', ')}`;
+                                                                       ~~
+
+src/components/ideamap/DebugPanel.tsx:43:69 - error TS2339: Property 'id' does not exist on type 'EdgeChange'.
+  Property 'id' does not exist on type 'EdgeAddChange<EdgeBase>'.
+
+43       const message = `엣지 변경: ${edgeChanges.map(c => `${c.type} ${c.id}`).join(', ')}`;
+                                                                       ~~
+
+src/components/ideamap/hooks/useIdeaMapData.test.tsx:187:25 - error TS2345: Argument of type '{ nodes: { id: string; position: { x: number; y: number; }; data: { id: string; title: string; content: string; tags: never[]; }; }[]; setNodes: Mock<Procedure>; onNodesChange: Mock<Procedure>; ... 23 more ...; loadIdeaMapData: Mock<...>; }' is not assignable to parameter of type 'IdeaMapState'.
+  Type '{ nodes: { id: string; position: { x: number; y: number; }; data: { id: string; title: string; content: string; tags: never[]; }; }[]; setNodes: Mock<Procedure>; onNodesChange: Mock<Procedure>; ... 23 more ...; loadIdeaMapData: Mock<...>; }' is missing the following properties from type 'IdeaMapState': viewportToRestore, isSettingsLoading, settingsError, loadAndApplyIdeaMapSettings, and 18 more.
+
+187         return selector(loadingState);
+                            ~~~~~~~~~~~~
+
+src/components/ideamap/hooks/useIdeaMapData.test.tsx:239:25 - error TS2345: Argument of type '{ nodes: { id: string; position: { x: number; y: number; }; data: { id: string; title: string; content: string; tags: never[]; }; }[]; setNodes: Mock<Procedure>; onNodesChange: Mock<Procedure>; ... 23 more ...; loadIdeaMapData: Mock<...>; }' is not assignable to parameter of type 'IdeaMapState'.
+  Type '{ nodes: { id: string; position: { x: number; y: number; }; data: { id: string; title: string; content: string; tags: never[]; }; }[]; setNodes: Mock<Procedure>; onNodesChange: Mock<Procedure>; ... 23 more ...; loadIdeaMapData: Mock<...>; }' is missing the following properties from type 'IdeaMapState': viewportToRestore, isSettingsLoading, settingsError, loadAndApplyIdeaMapSettings, and 18 more.
+
+239         return selector(currentState);
+                            ~~~~~~~~~~~~
+
+src/components/ideamap/hooks/useIdeaMapData.test.tsx:309:25 - error TS2345: Argument of type '{ nodes: { id: string; position: { x: number; y: number; }; data: { id: string; title: string; content: string; tags: never[]; }; }[]; setNodes: Mock<Procedure>; onNodesChange: Mock<Procedure>; ... 23 more ...; loadIdeaMapData: Mock<...>; }' is not assignable to parameter of type 'IdeaMapState'.
+  Type '{ nodes: { id: string; position: { x: number; y: number; }; data: { id: string; title: string; content: string; tags: never[]; }; }[]; setNodes: Mock<Procedure>; onNodesChange: Mock<Procedure>; ... 23 more ...; loadIdeaMapData: Mock<...>; }' is missing the following properties from type 'IdeaMapState': viewportToRestore, isSettingsLoading, settingsError, loadAndApplyIdeaMapSettings, and 18 more.
+
+309         return selector(currentState);
+                            ~~~~~~~~~~~~
+
+src/components/ideamap/hooks/useIdeaMapUtils.test.tsx:18:10 - error TS2305: Module '"@/lib/ideamap-constants"' has no exported member 'IDEAMAP_TRANSFORM_KEY'.
+
+18 import { IDEAMAP_TRANSFORM_KEY } from '@/lib/ideamap-constants';
+            ~~~~~~~~~~~~~~~~~~~~~
+
+src/components/ideamap/hooks/useNodes.test.tsx:12:26 - error TS2307: Cannot find module '../types/board-types' or its corresponding type declarations.
+
+12 import { CardData } from '../types/board-types';
+                            ~~~~~~~~~~~~~~~~~~~~~~
+
+src/components/ideamap/hooks/useNodes.ts:16:26 - error TS2307: Cannot find module '../types/board-types' or its corresponding type declarations.
+
+16 import { CardData } from '../types/board-types';
+                            ~~~~~~~~~~~~~~~~~~~~~~
+
+src/components/ideamap/nodes/CardNode.test.tsx:157:94 - error TS2345: Argument of type '{ selectedCardIds: never[]; selectedCardId: null; expandedCardId: string; selectCard: Mock<Procedure>; selectCards: Mock<Procedure>; addSelectedCard: Mock<...>; ... 23 more ...; setReactFlowInstance: Mock<...>; }' is not assignable to parameter of type 'AppState'.
+  Type '{ selectedCardIds: never[]; selectedCardId: null; expandedCardId: string; selectCard: Mock<Procedure>; selectCards: Mock<Procedure>; addSelectedCard: Mock<...>; ... 23 more ...; setReactFlowInstance: Mock<...>; }' is missing the following properties from type 'AppState': createCard, applyLayout, saveIdeaMapLayout, logoutAction, and 9 more.
+
+157         vi.spyOn(useAppStoreModule, 'useAppStore').mockImplementation((selector) => selector({
+                                                                                                 ~
+158             // 선택 관련 상태
+    ~~~~~~~~~~~~~~~~~~~~~~~
+... 
+206             setReactFlowInstance: vi.fn(),
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+207         }));
+    ~~~~~~~~~
+
+src/components/ideamap/nodes/CardNode.test.tsx:234:94 - error TS2345: Argument of type '{ selectedCardIds: never[]; selectedCardId: null; expandedCardId: null; selectCard: Mock<Procedure>; selectCards: Mock<Procedure>; addSelectedCard: Mock<...>; ... 23 more ...; setReactFlowInstance: Mock<...>; }' is not assignable to parameter of type 'AppState'.
+  Type '{ selectedCardIds: never[]; selectedCardId: null; expandedCardId: null; selectCard: Mock<Procedure>; selectCards: Mock<Procedure>; addSelectedCard: Mock<...>; ... 23 more ...; setReactFlowInstance: Mock<...>; }' is missing the following properties from type 'AppState': createCard, applyLayout, saveIdeaMapLayout, logoutAction, and 9 more.
+
+234         vi.spyOn(useAppStoreModule, 'useAppStore').mockImplementation((selector) => selector({
+                                                                                                 ~
+235             // 선택 관련 상태
+    ~~~~~~~~~~~~~~~~~~~~~~~
+... 
+283             setReactFlowInstance: vi.fn(),
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+284         }));
+    ~~~~~~~~~
+
+src/components/ideamap/nodes/CardNode.test.tsx:320:94 - error TS2345: Argument of type '{ selectedCardIds: never[]; selectedCardId: null; expandedCardId: string; selectCard: Mock<Procedure>; selectCards: Mock<Procedure>; addSelectedCard: Mock<...>; ... 23 more ...; setReactFlowInstance: Mock<...>; }' is not assignable to parameter of type 'AppState'.
+  Type '{ selectedCardIds: never[]; selectedCardId: null; expandedCardId: string; selectCard: Mock<Procedure>; selectCards: Mock<Procedure>; addSelectedCard: Mock<...>; ... 23 more ...; setReactFlowInstance: Mock<...>; }' is missing the following properties from type 'AppState': createCard, applyLayout, saveIdeaMapLayout, logoutAction, and 9 more.
+
+320         vi.spyOn(useAppStoreModule, 'useAppStore').mockImplementation((selector) => selector({
+                                                                                                 ~
+321             // 선택 관련 상태
+    ~~~~~~~~~~~~~~~~~~~~~~~
+... 
+369             setReactFlowInstance: vi.fn(),
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+370         }));
+    ~~~~~~~~~
+
+src/components/ideamap/nodes/CustomEdge.tsx:11:10 - error TS2305: Module '"@/lib/ideamap-utils"' has no exported member 'loadBoardSettings'.
+
+11 import { loadBoardSettings } from '@/lib/ideamap-utils';
+            ~~~~~~~~~~~~~~~~~
+
+src/components/ideamap/nodes/CustomEdge.tsx:68:11 - error TS2339: Property 'boardSettings' does not exist on type 'AppState'.
+
+68   const { boardSettings } = useAppStore();
+             ~~~~~~~~~~~~~
+
+src/components/ideamap/nodes/NodeInspect.tsx:67:55 - error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+
+67         <div><span className="font-medium">제목:</span> {data?.title || data?.label || '제목 없음'}</div>
+                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/components/ideamap/nodes/NodeInspector.tsx:42:15 - error TS2322: Type '{}' is not assignable to type 'ReactNode'.
+
+42               {inspectedNode.data?.title || '제목 없음'}
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  node_modules/@types/react/index.d.ts:2166:9
+    2166         children?: ReactNode | undefined;
+                 ~~~~~~~~
+    The expected type comes from property 'children' which is declared here on type 'IntrinsicAttributes & DialogTitleProps & RefAttributes<HTMLHeadingElement>'
+
+src/components/ideamap/nodes/NodeInspector.tsx:47:15 - error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+
+47               <div className="mb-4">
+                 ~~~~~~~~~~~~~~~~~~~~~~
+48                 <h3 className="text-sm font-semibold mb-1">ID</h3>
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+49                 <code className="bg-muted p-1 rounded text-xs">{inspectedNode.id}</code>
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+50               </div>
+   ~~~~~~~~~~~~~~~~~~~~
+
+src/components/ideamap/nodes/NodeInspector.tsx:52:15 - error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+
+52               {/* 노드 내용 */}
+                 ~~~~~~~~~~~~~
+
+src/components/ideamap/nodes/NodeInspector.tsx:57:35 - error TS2322: Type '{}' is not assignable to type 'string'.
+
+57                     <TiptapViewer content={inspectedNode.data.content} />
+                                     ~~~~~~~
+
+  src/components/editor/TiptapViewer.tsx:11:3
+    11   content: string;
+         ~~~~~~~
+    The expected type comes from property 'content' which is declared here on type 'IntrinsicAttributes & TiptapViewerProps'
+
+src/components/ideamap/nodes/NodeInspector.tsx:63:68 - error TS2339: Property 'length' does not exist on type '{}'.
+
+63               {inspectedNode.data?.tags && inspectedNode.data.tags.length > 0 && (
+                                                                      ~~~~~~
+
+src/components/ideamap/nodes/NodeInspector.tsx:67:46 - error TS2339: Property 'map' does not exist on type '{}'.
+
+67                     {inspectedNode.data.tags.map((tag: string) => (
+                                                ~~~
+
+src/components/layout/MainToolbar.tsx:16:5 - error TS2339: Property 'saveBoardLayout' does not exist on type 'AppState'.
+
+16     saveBoardLayout: saveIdeaMapLayout,
+       ~~~~~~~~~~~~~~~
+
+src/components/layout/Sidebar.tsx:572:18 - error TS2339: Property 'logout' does not exist on type 'AuthContextType'.
+
+572       await auth.logout();
+                     ~~~~~~
+
+src/components/layout/Sidebar.tsx:674:25 - error TS2322: Type 'CardItem' is not assignable to type 'CardData'.
+  Types of property 'content' are incompatible.
+    Type 'string | null' is not assignable to type 'string'.
+      Type 'null' is not assignable to type 'string'.
+
+674                 cards={[selectedCard]}
+                            ~~~~~~~~~~~~
+
+src/components/layout/Sidebar.tsx:717:17 - error TS2322: Type 'CardItem[] | { id: string; title: string; content: string; }[]' is not assignable to type 'CardData[]'.
+  Type 'CardItem[]' is not assignable to type 'CardData[]'.
+    Type 'CardItem' is not assignable to type 'CardData'.
+      Types of property 'content' are incompatible.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+
+717                 cards={documentViewerProps.cards}
+                    ~~~~~
+
+  src/components/editor/DocumentViewer.tsx:20:3
+    20   cards: CardData[];
+         ~~~~~
+    The expected type comes from property 'cards' which is declared here on type 'IntrinsicAttributes & DocumentViewerProps'
+
+src/components/layout/Sidebar.tsx:809:39 - error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+
+809                         <TiptapViewer content={card.content} />
+                                          ~~~~~~~
+
+  src/components/editor/TiptapViewer.tsx:11:3
+    11   content: string;
+         ~~~~~~~
+    The expected type comes from property 'content' which is declared here on type 'IntrinsicAttributes & TiptapViewerProps'
+
+src/components/tags/TagList.test.tsx:212:45 - error TS7006: Parameter 'response' implicitly has an 'any' type.
+
+212       await mockActions.deleteTag('1').then(response => {
+                                                ~~~~~~~~
+
+src/components/tags/TagList.test.tsx:214:32 - error TS7006: Parameter 'data' implicitly has an 'any' type.
+
+214           response.json().then(data => {
+                                   ~~~~
+
+src/components/ui/checkbox.tsx:4:36 - error TS2307: Cannot find module '@radix-ui/react-checkbox' or its corresponding type declarations.
+
+4 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/components/ui/radio-group.tsx:4:38 - error TS2307: Cannot find module '@radix-ui/react-radio-group' or its corresponding type declarations.
+
+4 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/lib/debug-utils.ts:5:10 - error TS2305: Module '"./ideamap-constants"' has no exported member 'BOARD_SETTINGS_KEY'.
+
+5 import { BOARD_SETTINGS_KEY } from './ideamap-constants';
+           ~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.test.ts:151:42 - error TS7006: Parameter 'edge' implicitly has an 'any' type.
+
+151       const edgesMap = new Map(edges.map(edge => [edge.id, edge]));
+                                             ~~~~
+
+src/store/useIdeaMapStore.test.ts:186:62 - error TS7006: Parameter 'edge' implicitly has an 'any' type.
+
+186     applyEdgeSettings: vi.fn((edges, settings) => edges.map((edge) => ({
+                                                                 ~~~~
+
+src/store/useIdeaMapStore.test.ts:200:69 - error TS7006: Parameter 'edge' implicitly has an 'any' type.
+
+200     applyIdeaMapEdgeSettings: vi.fn((edges, settings) => edges.map((edge) => ({
+                                                                        ~~~~
+
+src/store/useIdeaMapStore.test.ts:486:7 - error TS2322: Type 'Viewport' is not assignable to type 'null'.
+
+486       initialState.viewportToRestore = mockViewport;
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.test.ts:749:27 - error TS7006: Parameter 'state' implicitly has an 'any' type.
+
+749       mockStore.setState((state) => ({
+                              ~~~~~
+
+src/store/useIdeaMapStore.test.ts:860:27 - error TS7006: Parameter 'state' implicitly has an 'any' type.
+
+860       mockStore.setState((state) => {
+                              ~~~~~
+
+src/store/useIdeaMapStore.test.ts:925:62 - error TS2345: Argument of type '{ snapToGrid: boolean; snapGrid: number[]; connectionLineType: ConnectionLineType; markerEnd: MarkerType; strokeWidth: number; markerSize: number; edgeColor: string; selectedEdgeColor: string; animated: boolean; }' is not assignable to parameter of type 'IdeaMapSettings'.
+  Types of property 'snapGrid' are incompatible.
+    Type 'number[]' is not assignable to type '[number, number]'.
+      Target requires 2 element(s) but source may have fewer.
+
+925         const updatedEdges = applyIdeaMapEdgeSettings(edges, boardSettings);
+                                                                 ~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.test.ts:976:50 - error TS2345: Argument of type '{ snapToGrid: boolean; snapGrid: number[]; connectionLineType: ConnectionLineType; markerEnd: MarkerType; strokeWidth: number; markerSize: number; edgeColor: string; selectedEdgeColor: string; animated: boolean; }' is not assignable to parameter of type 'IdeaMapSettings'.
+  Types of property 'snapGrid' are incompatible.
+    Type 'number[]' is not assignable to type '[number, number]'.
+      Target requires 2 element(s) but source may have fewer.
+
+976       return applyIdeaMapEdgeSettings([newEdge], boardSettings)[0];
+                                                     ~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:237:47 - error TS2345: Argument of type 'string' is not assignable to parameter of type 'IdeaMapSettings'.
+
+237             await saveIdeaMapSettingsToServer(userId, newSettings);
+                                                  ~~~~~~
+
+src/store/useIdeaMapStore.ts:286:60 - error TS2304: Cannot find name 'IDEAMAP_LAYOUT_KEY'.
+
+286             const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_KEY);
+                                                               ~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:289:56 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+289             const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_KEY);
+                                                           ~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:292:58 - error TS2304: Cannot find name 'IDEAMAP_TRANSFORM_KEY'.
+
+292             const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_KEY);
+                                                             ~~~~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:435:32 - error TS2304: Cannot find name 'IDEAMAP_LAYOUT_KEY'.
+
+435           localStorage.setItem(IDEAMAP_LAYOUT_KEY, JSON.stringify(positionsData));
+                                   ~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:450:32 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+450           localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(edges));
+                                   ~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:627:47 - error TS2345: Argument of type 'string' is not assignable to parameter of type 'IdeaMapSettings'.
+
+627             await saveIdeaMapSettingsToServer(userId, updatedSettings);
+                                                  ~~~~~~
+
+src/store/useIdeaMapStore.ts:657:32 - error TS2304: Cannot find name 'IDEAMAP_TRANSFORM_KEY'.
+
+657           localStorage.setItem(IDEAMAP_TRANSFORM_KEY, JSON.stringify(viewport));
+                                   ~~~~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:670:56 - error TS2304: Cannot find name 'IDEAMAP_TRANSFORM_KEY'.
+
+670           const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_KEY);
+                                                           ~~~~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:861:58 - error TS2304: Cannot find name 'IDEAMAP_LAYOUT_KEY'.
+
+861           const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_KEY);
+                                                             ~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:871:34 - error TS2304: Cannot find name 'IDEAMAP_LAYOUT_KEY'.
+
+871             localStorage.setItem(IDEAMAP_LAYOUT_KEY, JSON.stringify(updatedPositions));
+                                     ~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:874:56 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+874             const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_KEY);
+                                                           ~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:882:36 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+882               localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(updatedEdges));
+                                       ~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:980:32 - error TS2304: Cannot find name 'IDEAMAP_LAYOUT_KEY'.
+
+980           localStorage.setItem(IDEAMAP_LAYOUT_KEY, JSON.stringify(nodePositions));
+                                   ~~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:1030:56 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+1030           const storedEdgesJSON = localStorage.getItem(IDEAMAP_EDGES_KEY);
+                                                            ~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:1042:32 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+1042           localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(updatedEdges));
+                                    ~~~~~~~~~~~~~~~~~
+
+src/store/useIdeaMapStore.ts:1143:32 - error TS2304: Cannot find name 'IDEAMAP_EDGES_KEY'.
+
+1143           localStorage.setItem(IDEAMAP_EDGES_KEY, JSON.stringify(edges));
+                                    ~~~~~~~~~~~~~~~~~
+
+src/tests/auth/auth-flow.test.ts:10:24 - error TS2305: Module '"../setup"' has no exported member 'getAuthData'.
+
+10 import { STORAGE_KEYS, getAuthData, setAuthData, clearTestEnvironment } from '../setup';
+                          ~~~~~~~~~~~
+
+src/tests/auth/auth-flow.test.ts:10:37 - error TS2305: Module '"../setup"' has no exported member 'setAuthData'.
+
+10 import { STORAGE_KEYS, getAuthData, setAuthData, clearTestEnvironment } from '../setup';
+                                       ~~~~~~~~~~~
+
+src/tests/auth/auth-integration.test.ts:160:9 - error TS2454: Variable 'serverEnv' is used before being assigned.
+
+160     if (serverEnv) serverEnv.restore();
+            ~~~~~~~~~
+
+src/tests/auth/auth-integration.test.ts:166:40 - error TS2307: Cannot find module '../../lib/auth-storage' or its corresponding type declarations.
+
+166       const authStorage = await import('../../lib/auth-storage');
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~
+
+src/tests/auth/auth-integration.test.ts:170:69 - error TS7006: Parameter 'key' implicitly has an 'any' type.
+
+170       vi.mocked(setAuthData, { partial: true }).mockImplementation((key, value) => {
+                                                                        ~~~
+
+src/tests/auth/auth-integration.test.ts:170:74 - error TS7006: Parameter 'value' implicitly has an 'any' type.
+
+170       vi.mocked(setAuthData, { partial: true }).mockImplementation((key, value) => {
+                                                                             ~~~~~
+
+src/tests/auth/auth-integration.test.ts:176:69 - error TS7006: Parameter 'key' implicitly has an 'any' type.
+
+176       vi.mocked(getAuthData, { partial: true }).mockImplementation((key) => {
+                                                                        ~~~
+
+src/tests/auth/auth-integration.test.ts:263:57 - error TS2345: Argument of type 'Promise<string>' is not assignable to parameter of type 'string'.
+
+263       const codeChallenge = await generateCodeChallenge(codeVerifier);
+                                                            ~~~~~~~~~~~~
+
+  src/tests/auth/auth-integration.test.ts:263:57
+    263       const codeChallenge = await generateCodeChallenge(codeVerifier);
+                                                                ~~~~~~~~~~~~
+    Did you forget to use 'await'?
+
+src/tests/auth/auth-integration.test.ts:294:25 - error TS2554: Expected 1 arguments, but got 0.
+
+294       mockSupabase.auth.refreshSession();
+                            ~~~~~~~~~~~~~~
+
+  node_modules/@vitest/spy/dist/index.d.ts:296:3
+    296  (...args: Parameters<T>): ReturnType<T>;
+          ~~~~~~~~~~~~~~~~~~~~~~
+    Arguments for the rest parameter 'args' were not provided.
+
+src/tests/auth/environment-detection.test.ts:110:51 - error TS2307: Cannot find module '../../lib/supabase' or its corresponding type declarations.
+
+110     const { createSupabaseClient } = await import('../../lib/supabase');
+                                                      ~~~~~~~~~~~~~~~~~~~~
+
+src/tests/auth/environment-detection.test.ts:126:72 - error TS2307: Cannot find module '../../lib/supabase' or its corresponding type declarations.
+
+126     const { createSupabaseClient: createBrowserClient } = await import('../../lib/supabase');
+                                                                           ~~~~~~~~~~~~~~~~~~~~
+
+src/tests/auth/pkce.test.ts:12:56 - error TS2307: Cannot find module '@/lib/auth-storage' or its corresponding type declarations.
+
+12 import { STORAGE_KEYS, getAuthData, setAuthData } from '@/lib/auth-storage';
+                                                          ~~~~~~~~~~~~~~~~~~~~
+
+src/tests/ideamap/ideamap-utils.test.ts:10:3 - error TS2305: Module '"@/lib/ideamap-utils"' has no exported member 'BoardSettings'.
+
+10   BoardSettings,
+     ~~~~~~~~~~~~~
+
+src/tests/ideamap/ideamap-utils.test.ts:11:3 - error TS2305: Module '"@/lib/ideamap-utils"' has no exported member 'DEFAULT_BOARD_SETTINGS'.
+
+11   DEFAULT_BOARD_SETTINGS,
+     ~~~~~~~~~~~~~~~~~~~~~~
+
+src/tests/ideamap/ideamap-utils.test.ts:12:3 - error TS2305: Module '"@/lib/ideamap-utils"' has no exported member 'loadBoardSettings'.
+
+12   loadBoardSettings,
+     ~~~~~~~~~~~~~~~~~
+
+src/tests/ideamap/ideamap-utils.test.ts:13:3 - error TS2305: Module '"@/lib/ideamap-utils"' has no exported member 'saveBoardSettings'.
+
+13   saveBoardSettings,
+     ~~~~~~~~~~~~~~~~~
+
+src/tests/ideamap/ideamap-utils.test.ts:14:3 - error TS2724: '"@/lib/ideamap-utils"' has no exported member named 'loadBoardSettingsFromServer'. Did you mean 'loadIdeaMapSettingsFromServer'?
+
+14   loadBoardSettingsFromServer,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/ideamap-utils.ts:113:14
+    113 export const loadIdeaMapSettingsFromServer = async (userId: string): Promise<IdeaMapSettings | null> => {
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'loadIdeaMapSettingsFromServer' is declared here.
+
+src/tests/ideamap/ideamap-utils.test.ts:15:3 - error TS2724: '"@/lib/ideamap-utils"' has no exported member named 'saveBoardSettingsToServer'. Did you mean 'saveIdeaMapSettingsToServer'?
+
+15   saveBoardSettingsToServer,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/ideamap-utils.ts:80:14
+    80 export const saveIdeaMapSettingsToServer = async (settings: IdeaMapSettings, userId: string): Promise<boolean> => {
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'saveIdeaMapSettingsToServer' is declared here.
+
+src/tests/ideamap/ideamap-utils.test.ts:16:3 - error TS2724: '"@/lib/ideamap-utils"' has no exported member named 'updateBoardSettingsOnServer'. Did you mean 'updateIdeaMapSettingsOnServer'?
+
+16   updateBoardSettingsOnServer,
+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  src/lib/ideamap-utils.ts:151:23
+    151 export async function updateIdeaMapSettingsOnServer(userId: string, partialSettings: Partial<IdeaMapSettings>): Promise<boolean> {
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'updateIdeaMapSettingsOnServer' is declared here.
+
+src/tests/ideamap/ideamap-utils.test.ts:17:3 - error TS2305: Module '"@/lib/ideamap-utils"' has no exported member 'applyEdgeSettings'.
+
+17   applyEdgeSettings
+     ~~~~~~~~~~~~~~~~~
+
+src/tests/ideamap/ideamap-utils.test.ts:20:10 - error TS2305: Module '"@/lib/ideamap-constants"' has no exported member 'BOARD_SETTINGS_KEY'.
+
+20 import { BOARD_SETTINGS_KEY } from '@/lib/ideamap-constants';
+            ~~~~~~~~~~~~~~~~~~
+
+src/tests/integration/auth-flow.test.tsx:36:25 - error TS2307: Cannot find module '@/context/AuthContext' or its corresponding type declarations.
+
+36 import { useAuth } from '@/context/AuthContext'
+                           ~~~~~~~~~~~~~~~~~~~~~~~
+
+src/tests/integration/auth-flow.test.tsx:84:46 - error TS2345: Argument of type '{ push: Mock<Procedure>; }' is not assignable to parameter of type 'AppRouterInstance'.
+  Type '{ push: Mock<Procedure>; }' is missing the following properties from type 'AppRouterInstance': back, forward, refresh, replace, prefetch
+
+84         vi.mocked(useRouter).mockReturnValue(mockRouter)
+                                                ~~~~~~~~~~
+
+src/tests/integration/auth-flow.test.tsx:109:19 - error TS2304: Cannot find name 'mockUser'.
+
+109             user: mockUser,
+                      ~~~~~~~~
+
+src/tests/integration/auth-flow.test.tsx:122:67 - error TS2304: Cannot find name 'mockUser'.
+
+122         expect(screen.getByTestId('user-info')).toHaveTextContent(mockUser.email as string)
+                                                                      ~~~~~~~~
+
+src/tests/mocks/env-mock.ts:243:24 - error TS2707: Generic type 'MockInstance<T>' requires between 0 and 1 type arguments.
+
+243   isClientEnvironment: MockInstance<any, any>;
+                           ~~~~~~~~~~~~~~~~~~~~~~
+
+src/tests/mocks/env-mock.ts:244:24 - error TS2707: Generic type 'MockInstance<T>' requires between 0 and 1 type arguments.
+
+244   isServerEnvironment: MockInstance<any, any>;
+                           ~~~~~~~~~~~~~~~~~~~~~~
+
+src/tests/mocks/env-mock.ts:245:28 - error TS2707: Generic type 'MockInstance<T>' requires between 0 and 1 type arguments.
+
+245   getHybridSupabaseClient: MockInstance<any, any>;
+                               ~~~~~~~~~~~~~~~~~~~~~~
+
+
+Found 108 errors in 30 files.
+
+Errors  Files
+     2  src/components/auth/UserProfile.tsx:5
+     1  src/components/debug/DevTools.tsx:50
+     1  src/components/debug/NodeInspector.tsx:122
+     5  src/components/IdeaMap.tsx:1
+     2  src/components/ideamap/components/IdeaMap.tsx:174
+    14  src/components/ideamap/components/IdeaMapCanvas.test.tsx:168
+     2  src/components/ideamap/DebugPanel.tsx:35
+     3  src/components/ideamap/hooks/useIdeaMapData.test.tsx:187
+     1  src/components/ideamap/hooks/useIdeaMapUtils.test.tsx:18
+     1  src/components/ideamap/hooks/useNodes.test.tsx:12
+     1  src/components/ideamap/hooks/useNodes.ts:16
+     3  src/components/ideamap/nodes/CardNode.test.tsx:157
+     2  src/components/ideamap/nodes/CustomEdge.tsx:11
+     1  src/components/ideamap/nodes/NodeInspect.tsx:67
+     6  src/components/ideamap/nodes/NodeInspector.tsx:42
+     1  src/components/layout/MainToolbar.tsx:16
+     4  src/components/layout/Sidebar.tsx:572
+     2  src/components/tags/TagList.test.tsx:212
+     1  src/components/ui/checkbox.tsx:4
+     1  src/components/ui/radio-group.tsx:4
+     1  src/lib/debug-utils.ts:5
+     8  src/store/useIdeaMapStore.test.ts:151
+    17  src/store/useIdeaMapStore.ts:237
+     2  src/tests/auth/auth-flow.test.ts:10
+     7  src/tests/auth/auth-integration.test.ts:160
+     2  src/tests/auth/environment-detection.test.ts:110
+     1  src/tests/auth/pkce.test.ts:12
+     9  src/tests/ideamap/ideamap-utils.test.ts:10
+     4  src/tests/integration/auth-flow.test.tsx:36
+     3  src/tests/mocks/env-mock.ts:243
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

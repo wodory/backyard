@@ -3,11 +3,14 @@
  * 목적: 클라이언트 로그를 서버에 저장하는 API 엔드포인트
  * 역할: 로그 데이터를 받아 서버 로그에 기록하고 필요시 데이터베이스에 저장
  * 작성일: 2025-03-27
+ * 수정일: 2024-05-22 : import 순서 수정, any 타입 구체화
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@supabase/supabase-js';
 // import { createBrowserSupabaseClient } from '@/lib/supabase-browser'; // 클라이언트용 함수 제거
 
@@ -43,7 +46,13 @@ const ensureLogDir = () => {
  * saveLogToFile: 로그 데이터를 파일에 저장
  * @param logData 저장할 로그 데이터
  */
-const saveLogToFile = (logData: any) => {
+const saveLogToFile = (logData: {
+  module: string;
+  level: string;
+  message: string;
+  data?: Record<string, unknown>;
+  timestamp?: string;
+}) => {
   try {
     ensureLogDir();
     

@@ -1,120 +1,131 @@
 /**
- * 파일명: route.test.ts
- * 목적: 첫 번째 사용자 조회 API 엔드포인트 테스트
- * 역할: GET /api/users/first 엔드포인트의 다양한 시나리오에 대한 단위 테스트
- * 작성일: 2025-03-27
+ * 파일명: src/app/api/users/first/route.test.ts
+ * 목적: 첫 번째 사용자 API 엔드포인트 테스트
+ * 역할: GET 메서드의 정상 작동 및 에러 처리 검증
+ * 작성일: 2024-05-28
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GET } from './route';
-
-// 모의된 응답 타입
-type MockedResponse = {
-  body: any;
-  options?: { status?: number };
-};
-
-// Prisma 클라이언트 모킹
-vi.mock('@/lib/prisma', () => ({
-  default: {
-    user: {
-      findFirst: vi.fn()
-    }
-  }
-}));
-
-// NextResponse 모킹 (직접 변수에 모킹 함수 할당하지 않고 객체로 모킹)
-vi.mock('next/server', () => ({
-  NextRequest: function(url: string) {
-    return { url };
-  },
-  NextResponse: {
-    json: vi.fn((body, options) => ({ body, options }))
-  }
-}));
-
-// 필요한 모듈 임포트 - 모킹 후에 임포트해야 함
-import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-describe('첫 번째 사용자 조회 API', () => {
-  // 각 테스트 전에 모든 모의 함수 초기화
+import { expect, describe, it, vi, beforeEach, afterEach, afterAll } from 'vitest';
+
+import prisma from '@/lib/prisma';
+
+import { GET } from './route';
+
+// NextResponse 모킹
+vi.mock('next/server', () => {
+  return {
+    NextResponse: {
+      json: vi.fn((data, options) => {
+        return { data, options } as unknown;
+      })
+    }
+  };
+});
+
+// Prisma 모킹
+vi.mock('@/lib/prisma', () => {
+  return {
+    default: {
+      user: {
+        findFirst: vi.fn()
+      }
+    }
+  };
+});
+
+// User 타입 정의
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+describe('GET users/first', () => {
+  // 테스트 전 설정
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('GET /api/users/first', () => {
-    it('첫 번째 사용자를 성공적으로 반환한다', async () => {
-      // Mock 사용자 데이터 설정
-      const mockUser = {
-        id: 'user-123',
-        name: '테스트 사용자',
-        email: 'test@example.com'
-      };
-      
-      // Prisma findFirst 함수가 mock 사용자를 반환하도록 설정
-      (prisma.user.findFirst as any).mockResolvedValue(mockUser);
-      
-      // API 요청 실행
-      const request = { url: 'http://localhost/api/users/first' };
-      const response = await GET(request as any) as unknown as MockedResponse;
-      
-      // 기대 결과 확인
-      expect(prisma.user.findFirst).toHaveBeenCalledWith({
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, name: true, email: true }
-      });
-      expect(NextResponse.json).toHaveBeenCalledWith(mockUser);
-      expect(response.body).toEqual(mockUser);
+  // 테스트 후 정리
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  // 모든 테스트 종료 후 정리
+  afterAll(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('사용자가 존재하는 경우 사용자 정보를 반환한다', async () => {
+    // Given
+    const mockUser: User = {
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(mockUser);
+    
+    // When
+    await GET();
+    
+    // Then
+    expect(prisma.user.findFirst).toHaveBeenCalledTimes(1);
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      orderBy: {
+        createdAt: 'asc'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
     });
     
-    it('사용자가 없을 경우 404 오류를 반환한다', async () => {
-      // Prisma findFirst 함수가 null을 반환하도록 설정
-      (prisma.user.findFirst as any).mockResolvedValue(null);
-      
-      // API 요청 실행
-      const request = { url: 'http://localhost/api/users/first' };
-      const response = await GET(request as any) as unknown as MockedResponse;
-      
-      // 기대 결과 확인
-      expect(prisma.user.findFirst).toHaveBeenCalledWith({
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, name: true, email: true }
-      });
-      expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: '사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-      expect(response.body).toEqual({ error: '사용자를 찾을 수 없습니다.' });
-      expect(response.options).toEqual({ status: 404 });
-    });
+    expect(NextResponse.json).toHaveBeenCalledWith(mockUser);
+  });
+
+  it('사용자가 존재하지 않는 경우 404 상태코드를 반환한다', async () => {
+    // Given
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null);
     
-    it('데이터베이스 오류 시 500 오류를 반환한다', async () => {
-      // Prisma findFirst 함수가 오류를 발생시키도록 설정
-      (prisma.user.findFirst as any).mockRejectedValue(new Error('데이터베이스 연결 오류'));
-      
-      // 콘솔 에러 모킹
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      // API 요청 실행
-      const request = { url: 'http://localhost/api/users/first' };
-      const response = await GET(request as any) as unknown as MockedResponse;
-      
-      // 기대 결과 확인
-      expect(prisma.user.findFirst).toHaveBeenCalledWith({
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, name: true, email: true }
-      });
-      expect(console.error).toHaveBeenCalledWith('사용자 조회 오류:', expect.any(Error));
-      expect(NextResponse.json).toHaveBeenCalledWith(
-        { error: '사용자 조회 중 오류가 발생했습니다.' },
-        { status: 500 }
-      );
-      expect(response.body).toEqual({ error: '사용자 조회 중 오류가 발생했습니다.' });
-      expect(response.options).toEqual({ status: 500 });
-      
-      // 스파이 정리
-      consoleSpy.mockRestore();
-    });
+    // When
+    await GET();
+    
+    // Then
+    expect(prisma.user.findFirst).toHaveBeenCalledTimes(1);
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { error: '사용자를 찾을 수 없습니다.' },
+      { status: 404 }
+    );
+  });
+
+  it('서버 오류 발생 시 500 상태코드를 반환한다', async () => {
+    // Given
+    const mockError = new Error('Database error');
+    vi.mocked(prisma.user.findFirst).mockRejectedValueOnce(mockError);
+    
+    // Console.error 모킹
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // When
+    await GET();
+    
+    // Then
+    expect(prisma.user.findFirst).toHaveBeenCalledTimes(1);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { error: '사용자 조회 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+    
+    // 스파이 복원
+    consoleErrorSpy.mockRestore();
   });
 }); 

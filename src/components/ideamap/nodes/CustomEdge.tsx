@@ -7,10 +7,12 @@
  */
 
 import React, { useMemo, useEffect } from 'react';
+
 import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
+
+import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
 import { loadBoardSettings } from '@/lib/ideamap-utils';
 import { useAppStore } from '@/store/useAppStore';
-import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
 
 // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
 const COMPONENT_ID = 'CustomEdge_from_nodes_directory';

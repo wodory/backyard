@@ -6,7 +6,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { toast } from 'sonner';
+
 import { useAppStore, Card } from '@/store/useAppStore';
 
 interface UseCardDataOptions {

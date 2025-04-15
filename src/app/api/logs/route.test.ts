@@ -3,13 +3,18 @@
  * 목적: 로그 API 엔드포인트 테스트
  * 역할: 클라이언트 로그를 서버에 저장하는 API 기능 검증
  * 작성일: 2025-04-01
+ * 수정일: 2024-05-22 : import 순서 오류 수정, 사용하지 않는 path import 제거
+ * 수정일: 2024-06-26 : import 순서 오류 추가 수정, 사용하지 않는 NextResponse import 제거
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { expect, vi, describe, it, beforeEach, afterEach } from 'vitest';
+
 import fs from 'fs';
-import path from 'path';
+
+import { NextRequest } from 'next/server';
+
 import { createClient } from '@supabase/supabase-js';
+import { expect, vi, describe, it, beforeEach, afterEach } from 'vitest';
+
 import { POST } from './route';
 
 // fs 모듈 모킹
@@ -59,22 +64,6 @@ vi.mock('process', () => ({
   },
   cwd: () => '/test-cwd',
 }));
-
-// NextResponse 모킹
-vi.mock('next/server', () => {
-  const actual = vi.importActual('next/server');
-  return {
-    ...actual,
-    NextResponse: {
-      json: vi.fn().mockImplementation((data, options = {}) => {
-        return {
-          status: options.status || 200,
-          json: async () => data,
-        };
-      }),
-    },
-  };
-});
 
 describe('로그 API 테스트', () => {
   // 콘솔 모킹

@@ -6,10 +6,11 @@
  * 수정일: 2024-05-01 : AuthContext 모킹 방식 수정 및 signInWithGoogle 반환 타입 조정
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter, usePathname } from 'next/navigation'
+
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // 실제 모듈 모킹
 vi.mock('next/navigation', () => ({

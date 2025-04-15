@@ -7,10 +7,14 @@
  */
 
 import { render, screen } from '@testing-library/react';
+
 import '@testing-library/jest-dom/vitest';
-import Home from './page';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { describe, it, expect, vi } from 'vitest';
+
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+
+import Home from './page';
+
 import React from 'react';
 
 // DashboardLayout 모킹

@@ -8,6 +8,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { ShortcutToolbarMock } from './ShortcutToolbarMock';
 import { setupShortcutToolbarTests, teardownShortcutToolbarTests, mockActions } from './test-utils';
 import '@testing-library/jest-dom';

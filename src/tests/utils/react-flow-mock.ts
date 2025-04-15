@@ -3,6 +3,7 @@
  * 목적: React Flow 컴포넌트 테스트를 위한 모킹 유틸리티
  * 역할: 테스트 환경에서 React Flow에 필요한 브라우저 환경 API 모킹
  * 작성일: 2025-03-28
+ * 수정일: 2023-10-27 : any 타입을 구체적인 타입으로 변경
  */
 
 // React Flow 공식 문서에서 제시하는 테스트 유틸리티 구현
@@ -51,10 +52,10 @@ export const mockReactFlow = () => {
   init = true;
 
   // 전역 객체에 ResizeObserver 추가
-  global.ResizeObserver = ResizeObserver as any;
+  global.ResizeObserver = ResizeObserver as unknown as typeof global.ResizeObserver;
 
   // 전역 객체에 DOMMatrixReadOnly 추가
-  global.DOMMatrixReadOnly = DOMMatrixReadOnly as any;
+  global.DOMMatrixReadOnly = DOMMatrixReadOnly as unknown as typeof global.DOMMatrixReadOnly;
 
   // HTMLElement에 offsetHeight, offsetWidth 속성 추가
   Object.defineProperties(global.HTMLElement.prototype, {
@@ -71,7 +72,7 @@ export const mockReactFlow = () => {
   });
 
   // SVGElement에 getBBox 메서드 추가
-  (global.SVGElement as any).prototype.getBBox = () => ({
+  (global.SVGElement.prototype as unknown as { getBBox: () => { x: number; y: number; width: number; height: number } }).getBBox = () => ({
     x: 0,
     y: 0,
     width: 0,

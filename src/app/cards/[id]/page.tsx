@@ -1,13 +1,21 @@
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import prisma from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
+/**
+ * 파일명: src/app/cards/[id]/page.tsx
+ * 목적: 특정 카드의 상세 정보를 보여주는 페이지
+ * 역할: 카드 ID를 기반으로 상세 정보 조회 및 표시
+ * 작성일: 2024-05-28
+ */
+
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { notFound } from "next/navigation";
+
 import { ArrowLeft } from "lucide-react";
-import DeleteButton from "./DeleteButton";
+import { Metadata } from "next";
+
 import EditCardContent from "@/components/cards/EditCardContent";
-import { Card } from "@prisma/client";
+import { Button } from "@/components/ui/button";
+import prisma from "@/lib/prisma";
+
+import DeleteButton from "./DeleteButton";
 
 interface PageProps {
   params: {
@@ -32,12 +40,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 async function getCard(id: string) {
   try {
-    // @ts-ignore - Prisma 타입 오류 무시
+    // @ts-expect-error - Prisma 스키마와 TypeScript 타입 간의 불일치. CardTag 관계 타입 문제 해결 필요
     const card = await prisma.card.findUnique({
       where: { id },
       include: {
         user: true,
-        // @ts-ignore - Prisma 타입 오류 무시
+        // @ts-expect-error - Prisma 스키마에서 CardTag 모델의 관계 타입과 TypeScript 타입 정의 불일치
         cardTags: {
           include: {
             tag: true,
@@ -77,22 +85,22 @@ export default async function CardPage({ params }: PageProps) {
       <div className="space-y-4">
         <h1 className="text-3xl font-bold">{card.title}</h1>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {/* @ts-ignore - Prisma 타입 오류 무시 */}
+          {/* @ts-expect-error - Prisma에서 반환된 User 객체 타입이 TypeScript 정의와 불일치 */}
           <p>작성자: {card.user?.name || card.user?.email}</p>
           <span>•</span>
           <p>작성일: 2025-03-05</p>
         </div>
 
-        {/* @ts-ignore - Prisma 타입 오류 무시 */}
+        {/* @ts-expect-error - cardTags 속성이 Card 타입에 명시적으로 정의되어 있지 않음 */}
         {card.cardTags && card.cardTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {/* @ts-ignore - Prisma 타입 오류 무시 */}
-            {card.cardTags.map((cardTag: any) => (
+            {/* @ts-expect-error - CardTag 타입 정의 불일치 문제, 향후 타입 수정 필요 */}
+            {card.cardTags.map((cardTag: Record<string, unknown>) => (
               <span
-                key={cardTag.tagId}
+                key={cardTag.tagId as string}
                 className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
               >
-                {cardTag.tag.name}
+                {(cardTag.tag as { name: string }).name}
               </span>
             ))}
           </div>

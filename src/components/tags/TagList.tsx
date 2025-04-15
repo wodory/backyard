@@ -1,18 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +18,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 
 interface TagItem {
   id: string;
@@ -44,19 +48,19 @@ export default function TagList({ initialTags }: TagListProps) {
 
   const handleDeleteTag = async () => {
     if (!tagToDelete) return;
-    
+
     try {
       setIsDeleting(true);
-      
+
       const response = await fetch(`/api/tags/${tagToDelete}`, {
         method: "DELETE",
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "태그 삭제에 실패했습니다.");
       }
-      
+
       // 태그 목록에서 삭제된 태그 제거
       setTags(tags.filter(tag => tag.id !== tagToDelete));
       toast.success("태그가 삭제되었습니다.");
@@ -120,7 +124,7 @@ export default function TagList({ initialTags }: TagListProps) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>태그 삭제 확인</AlertDialogTitle>
                         <AlertDialogDescription>
-                          태그 "{tag.name}"을(를) 삭제하시겠습니까?
+                          태그 &quot;{tag.name}&quot;을(를) 삭제하시겠습니까?
                         </AlertDialogDescription>
                         {tag.count > 0 && (
                           <AlertDialogDescription className="text-destructive">

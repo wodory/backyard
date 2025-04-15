@@ -6,10 +6,12 @@
  * 수정일: 2025-04-01
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Node, Edge, XYPosition, MarkerType, ConnectionLineType } from '@xyflow/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { IdeaMapSettings } from '@/lib/ideamap-utils';
+
 import {
   saveLayout,
   saveEdges,

@@ -6,8 +6,8 @@
  * 수정일: 2025-04-09
  */
 
-import { createClient } from './supabase/server';
 import createLogger from './logger';
+import { createClient } from './supabase/server';
 
 // 로거 생성
 const logger = createLogger('AuthServer');

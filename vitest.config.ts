@@ -6,11 +6,13 @@
  * 수정일: 2025-04-11
  */
 
-import { defineConfig, mergeConfig } from 'vitest/config';
-import viteConfig from './vite.config.js';
-import { loadEnv } from 'vite';
-import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+import { loadEnv } from 'vite';
+import { defineConfig, mergeConfig } from 'vitest/config';
+
+import viteConfig from './vite.config.js';
 
 // ESM에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);

@@ -8,13 +8,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+
+import { useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { useTheme } from '@/contexts/ThemeContext';
-import { useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
+
 
 /**
  * NodeSizeSettings: 노드 크기 조정 컴포넌트

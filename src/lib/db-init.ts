@@ -6,8 +6,9 @@
  * 수정일: 2025-04-09
  */
 
-import { createClient } from './supabase/server';
 import { PrismaClient } from '@prisma/client';
+
+import { createClient } from './supabase/server';
 
 // 테이블 정의 및 생성 SQL
 const tableDefinitions = {

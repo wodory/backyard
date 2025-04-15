@@ -1,6 +1,8 @@
 import React from 'react';
-import prisma from '@/lib/prisma';
+
 import type { Tag } from '@prisma/client';
+
+import prisma from '@/lib/prisma';
 
 // 태그와 연결된 카드 수를 포함하는 타입 정의
 type TagWithCount = Tag & {

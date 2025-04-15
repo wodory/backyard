@@ -6,9 +6,10 @@ import {
   PlusCircle,
   Save
 } from 'lucide-react';
+
+import CreateCardModal from '@/components/cards/CreateCardModal';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
-import CreateCardModal from '@/components/cards/CreateCardModal';
 
 export function MainToolbar() {
   const {

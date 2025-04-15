@@ -1,13 +1,21 @@
 /**
- * 파일명: TagList.test.tsx
+ * 파일명: src/components/tags/TagList.test.tsx
  * 목적: TagList 컴포넌트의 기능 테스트
  * 역할: 태그 목록의 모든 기능이 정상적으로 동작하는지 검증
  * 작성일: 2025-03-05
  * 수정일: 2025-04-03
+ * 수정일: 2024-05-28 : import 순서 수정, 따옴표 escape 처리, 미사용 변수 제거
  */
 
 // 모킹은 테스트 파일 최상단에 위치해야 함
-import { vi } from 'vitest';
+import React from 'react';
+
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+import { TagListMock } from './TagListMock';
+import { mockActions } from './test-utils';
+import '@testing-library/jest-dom';
 
 // Sonner 토스트 모킹
 vi.mock('sonner', () => ({
@@ -16,14 +24,6 @@ vi.mock('sonner', () => ({
     error: vi.fn(),
   },
 }));
-
-// TagListMock 컴포넌트 모킹 (실제 컴포넌트 로직과 별개로 테스트하기 위함)
-import React from 'react';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { TagListMock } from './TagListMock';
-import { mockActions } from './test-utils';
-import '@testing-library/jest-dom';
 
 // 테스트용 태그 데이터
 const mockTags = [
@@ -59,7 +59,7 @@ function TestTagListWithDialog({
       {/* 다이얼로그를 직접 렌더링 */}
       <div role="dialog" aria-modal="true" data-testid="delete-confirmation-dialog">
         <h2>태그 삭제 확인</h2>
-        <p>태그 "{tagName}"을(를) 삭제하시겠습니까?</p>
+        <p>태그 &quot;{tagName}&quot;을(를) 삭제하시겠습니까?</p>
         {showCountWarning && tagCount > 0 && (
           <p>이 태그가 지정된 {tagCount}개의 카드에서 태그가 제거됩니다.</p>
         )}
@@ -206,7 +206,7 @@ describe('TagList 기본 테스트', () => {
       } as Response);
 
       // 테스트용 컴포넌트 렌더링
-      const { container } = render(<TagListMock initialTags={mockTags} />);
+      render(<TagListMock initialTags={mockTags} />);
 
       // API 메서드 직접 호출
       await mockActions.deleteTag('1').then(response => {

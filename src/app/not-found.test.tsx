@@ -7,6 +7,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { expect, describe, it, vi } from 'vitest';
+
 import NotFound from './not-found';
 
 // Next.js Link 컴포넌트 모킹

@@ -6,14 +6,19 @@
  * 수정일: 2025-04-08
  */
 
-import { Metadata } from "next";
 import { Suspense } from 'react';
+
+import Link from "next/link";
+
+import { ChevronRight } from "lucide-react";
+import { Metadata } from "next";
+
 import CardList from "@/components/cards/CardList";
 import CreateCardModal from "@/components/cards/CreateCardModal";
 import { TagFilter } from "@/components/cards/TagFilter";
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight } from "lucide-react";
-import Link from "next/link";
+
+
 
 export const metadata: Metadata = {
   title: "카드 목록 | Backyard",

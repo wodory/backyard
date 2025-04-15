@@ -7,7 +7,9 @@
  */
 
 import { useCallback } from 'react';
+
 import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
+
 import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 

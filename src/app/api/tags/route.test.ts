@@ -4,15 +4,20 @@
  * 역할: 태그 생성 및 조회 API의 기능 검증
  * 작성일: 2025-03-05
  * 수정일: 2025-03-30
+ * 수정일: 2025-05-15 : triple-slash 레퍼런스를 import 문으로 변경
+ * 수정일: 2024-05-22 : import 순서 오류 수정
+ * 수정일: 2024-06-26 : import 순서 추가 수정, 사용하지 않는 NextResponse import 제거
  */
 
-/// <reference types="vitest" />
-import { NextRequest, NextResponse } from 'next/server';
-import { GET, POST } from './route';
+import { NextRequest } from 'next/server';
+
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
-import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth-server';
 import type { Mock } from 'vitest';
+
+import { auth } from '@/lib/auth-server';
+import prisma from '@/lib/prisma';
+
+import { GET, POST } from './route';
 
 // NextRequest와 NextResponse 모킹
 vi.mock('next/server', () => ({

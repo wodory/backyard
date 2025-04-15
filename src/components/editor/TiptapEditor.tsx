@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useCallback, useEffect } from 'react'
-import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
+
 import Heading from '@tiptap/extension-heading'
 import Image from '@tiptap/extension-image'
-import { Button } from '@/components/ui/button'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
 import { 
   Bold as BoldIcon,
   Italic as ItalicIcon,
@@ -17,7 +18,9 @@ import {
   ListOrdered as OrderedListIcon,
   Image as ImageIcon
 } from 'lucide-react'
-import Placeholder from '@tiptap/extension-placeholder'
+
+import { Button } from '@/components/ui/button'
+
 
 interface TiptapEditorProps {
   content: string

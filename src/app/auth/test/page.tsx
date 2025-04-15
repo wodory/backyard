@@ -8,11 +8,12 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { signOut, getCurrentUser, ExtendedUser, signInWithGoogle } from '@/lib/auth';
-import { useState, useEffect } from 'react';
 
 export default function AuthTestPage() {
   const [user, setUser] = useState<ExtendedUser | null>(null);

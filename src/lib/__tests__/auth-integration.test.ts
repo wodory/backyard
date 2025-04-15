@@ -6,8 +6,9 @@
  * 수정일: 2025-04-09
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { vi, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
 import { server } from '@/tests/msw/server';
 
 // 테스트 대상 모듈들을 모킹 설정 이후에 임포트하기 위해 동적 임포트 사용

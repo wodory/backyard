@@ -7,10 +7,13 @@
  * 수정일: 2025-04-10 : Zustand store 모킹 방식 리팩토링에 맞게 수정
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MainToolbar } from './MainToolbar';
 import React from 'react';
+
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { MainToolbar } from './MainToolbar';
+
 
 // 모킹된 함수 참조를 테스트 내에서 가져오기 위한 변수
 const mockApplyLayout = vi.fn();

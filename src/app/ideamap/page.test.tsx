@@ -7,9 +7,10 @@
  */
 
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import IdeaMapPage from './page';
 import { Node, Edge, NodeChange } from '@xyflow/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+
+import IdeaMapPage from './page';
 import '@testing-library/jest-dom/vitest';
 import { autoLayoutNodes } from './page';
 

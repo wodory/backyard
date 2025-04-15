@@ -4,10 +4,15 @@
  * 역할: 로그인 상태에 따른 API 응답 검증
  * 작성일: 2025-04-13
  * 수정일: 2025-04-14 : supabase 클라이언트 모킹 방식 수정 및 실제 API 구현에 맞게 테스트 수정
+ * 수정일: 2024-05-21 : import 순서 수정
+ * 수정일: 2024-05-22 : import 순서 오류 수정
+ * 수정일: 2024-05-22 : import 순서 재수정
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextResponse } from 'next/server'
+
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
 import { GET } from '@/app/api/auth/status/route'
 
 // Supabase 클라이언트 모킹

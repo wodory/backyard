@@ -6,9 +6,10 @@
  * 수정일: 2025-04-11 (리팩토링)
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { IdeaMapSettings } from '@/lib/ideamap-utils';
 
 // 모든 모킹은 파일 최상단에 위치
@@ -74,8 +75,9 @@ vi.mock('@xyflow/react', async () => {
 });
 
 // 테스트할 훅 임포트
-import { useEdges } from './useEdges';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+
+import { useEdges } from './useEdges';
 
 // 테스트용 보드 설정
 const mockIdeaMapSettings: IdeaMapSettings = {

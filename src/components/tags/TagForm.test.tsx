@@ -8,10 +8,11 @@
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { act } from 'react-dom/test-utils';
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
+
 import { TagFormMock } from './TagFormMock';
 import { mockActions, waitForDomChanges, setupTagFormTests, teardownTagFormTests } from './test-utils';
-import { act } from 'react-dom/test-utils';
 
 const setup = () => {
   const user = userEvent.setup({ delay: null });

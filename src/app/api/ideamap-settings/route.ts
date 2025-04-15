@@ -1,5 +1,14 @@
+/**
+ * 파일명: src/app/api/ideamap-settings/route.ts
+ * 목적: 아이디어맵 설정 관리 API
+ * 역할: 사용자별 아이디어맵 설정의 CRUD 기능 제공
+ * 작성일: 2024-05-22
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
+
 import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
 
 // 아이디어맵 설정 스키마

@@ -1,4 +1,5 @@
 import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
+
 import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
 
 export interface IdeaMapSettings {

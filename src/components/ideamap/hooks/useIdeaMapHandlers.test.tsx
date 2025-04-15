@@ -6,12 +6,11 @@
  * 수정일: 2025-04-11
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import { Node, Edge } from '@xyflow/react';
-import { useIdeaMapHandlers } from './useIdeaMapHandlers';
-import { CardData } from '../types/ideamap-types';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import {
@@ -20,6 +19,9 @@ import {
   createMouseEvent,
   mockReactFlow
 } from '@/tests/test-utils';
+
+import { useIdeaMapHandlers } from './useIdeaMapHandlers';
+import { CardData } from '../types/ideamap-types';
 
 // Zustand 스토어 모킹
 const mockSelectCards = vi.fn();

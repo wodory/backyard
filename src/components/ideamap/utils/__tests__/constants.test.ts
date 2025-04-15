@@ -5,8 +5,9 @@
  * 작성일: 2025-03-28
  */
 
-import { describe, it, expect } from 'vitest';
 import { ConnectionLineType, Position } from '@xyflow/react';
+import { describe, it, expect } from 'vitest';
+
 import {
   LAYOUT_DIRECTION,
   NODE_TYPES,

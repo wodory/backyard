@@ -1,6 +1,7 @@
 'use client';
 
 import { LogOut, PanelRight } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
 

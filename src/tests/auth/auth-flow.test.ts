@@ -7,6 +7,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { STORAGE_KEYS, getAuthData, setAuthData, clearTestEnvironment } from '../setup';
 
 // 타입 정의

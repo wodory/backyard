@@ -6,10 +6,10 @@
  * 수정일: 2025-04-11
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Node } from '@xyflow/react';
-import { CardData } from '../types/board-types';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
 
 // 모든 모킹은 파일 상단에 배치 (호이스팅 문제 방지)
 // React Flow 모킹
@@ -41,8 +41,10 @@ vi.mock('sonner', () => ({
 }));
 
 // 실제 컴포넌트 및 유틸리티 임포트 (모킹 후 임포트)
-import { useNodeClickHandlers } from './useNodes';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+
+import { useNodeClickHandlers } from './useNodes';
+import { CardData } from '../types/board-types';
 
 describe('useNodeClickHandlers', () => {
   // 테스트 전 전역 설정

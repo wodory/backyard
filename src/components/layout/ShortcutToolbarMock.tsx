@@ -7,6 +7,7 @@
  */
 
 import React from 'react';
+
 import { mockActions } from './test-utils';
 
 export const ShortcutToolbarMock: React.FC = () => {

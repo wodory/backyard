@@ -3,9 +3,11 @@
  * 목적: 로그 뷰어 페이지 테스트를 위한 모킹 컴포넌트
  * 역할: 실제 컴포넌트의 동작을 시뮬레이션
  * 작성일: 2025-04-01
+ * 수정일: 2024-05-21 : import 순서 수정
  */
 
 import React, { useState } from 'react'
+
 import { Log, mockLogs, mockModules } from '@/tests/msw/handlers/logs'
 
 export const LogViewerPageMock: React.FC = () => {

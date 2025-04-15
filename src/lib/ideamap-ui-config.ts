@@ -1,6 +1,7 @@
 import { MarkerType, ConnectionLineType } from '@xyflow/react';
-import defaultConfig from '../config/uiOptions.json';
 import { I } from 'vitest/dist/chunks/reporters.d.CfRkRKN2.js';
+
+import defaultConfig from '../config/uiOptions.json';
 
 // 카드 보드 UI 설정 타입 정의
 export interface IdeaMapUIConfig {

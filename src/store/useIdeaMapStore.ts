@@ -5,8 +5,6 @@
  * 작성일: 2025-03-28
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { 
   Node, 
   Edge, 
@@ -21,6 +19,12 @@ import {
   Position,
   Viewport
 } from '@xyflow/react';
+import { toast } from 'sonner';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+import { CardData } from '@/components/ideamap/types/ideamap-types';
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { 
   IdeaMapSettings, 
   DEFAULT_IDEAMAP_SETTINGS, 
@@ -31,10 +35,8 @@ import {
   saveIdeaMapSettingsToServer,
   updateIdeaMapSettingsOnServer
 } from '@/lib/ideamap-utils';
-import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-import { toast } from 'sonner';
-import { CardData } from '@/components/ideamap/types/ideamap-types';
+
 import { useAppStore } from './useAppStore';
 
 // 아이디어맵 스토어 상태 인터페이스

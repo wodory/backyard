@@ -4,13 +4,17 @@
  * 역할: 사용자에게 인증 오류 메시지를 보여주고 후속 조치 안내
  * 작성일: 2025-03-26
  * 수정일: 2025-03-27
+ * 수정일: 2024-09-28 : 동적 렌더링 강제를 통한 useSearchParams 오류 해결
  */
 
 'use client';
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+
+export const dynamic = 'force-dynamic';
 
 // 오류 메시지 매핑
 const ERROR_MESSAGES: Record<string, string> = {
@@ -31,14 +35,14 @@ export default function AuthErrorPage() {
     // URL 파라미터에서 오류 정보 추출
     const errorParam = searchParams.get('error') || 'default'
     const errorDescription = searchParams.get('error_description') || ''
-    
+
     setError(errorParam)
     setDescription(errorDescription)
-    
+
     // 오류 로깅
-    console.error('인증 오류:', { 
-      error: errorParam, 
-      description: errorDescription 
+    console.error('인증 오류:', {
+      error: errorParam,
+      description: errorDescription
     })
   }, [searchParams])
 
@@ -50,23 +54,23 @@ export default function AuthErrorPage() {
           <p className="text-gray-700 mb-4">
             {ERROR_MESSAGES[error] || ERROR_MESSAGES.default}
           </p>
-          
+
           {description && (
             <p className="text-sm text-gray-500 mb-6 p-3 bg-gray-50 rounded">
               {description}
             </p>
           )}
-          
+
           <div className="flex flex-col space-y-3">
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
             >
               로그인 페이지로 돌아가기
             </Link>
-            
-            <Link 
-              href="/" 
+
+            <Link
+              href="/"
               className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors"
             >
               홈으로 돌아가기

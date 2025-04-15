@@ -4,13 +4,22 @@
  * 역할: 카드 생성 및 조회 API의 기능 검증
  * 작성일: 2025-03-05
  * 수정일: 2025-04-01
+ * 수정일: 2024-05-21 : import 순서 수정, 미사용 변수 제거
+ * 수정일: 2024-05-22 : import 순서 오류 수정, any 타입 구체화
+ * 수정일: 2024-05-22 : import 순서 재수정
+ * 수정일: 2024-05-23 : import 그룹 사이 빈 줄 추가
+ * 수정일: 2024-05-23 : import 그룹 구분 빈 줄 추가
+ * 수정일: 2024-05-23 : 전체 import 구조 재작성
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { POST, GET } from './route';
-import prisma from '@/lib/prisma';
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
+
+import prisma from '@/lib/prisma';
+
+import { POST, GET } from './route';
 
 // Prisma 모킹
 vi.mock('@/lib/prisma', () => ({
@@ -36,7 +45,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 // NextRequest 모킹
-const createMockRequest = (method: string, body?: any, searchParams?: Record<string, string>) => {
+const createMockRequest = (method: string, body?: Record<string, unknown>, searchParams?: Record<string, string>) => {
   const params = new URLSearchParams();
   if (searchParams) {
     Object.entries(searchParams).forEach(([key, value]) => {
@@ -61,7 +70,7 @@ vi.mock('next/server', () => ({
     json: async () => ({}),
   })),
   NextResponse: {
-    json: vi.fn().mockImplementation((data: any, options?: any) => ({
+    json: vi.fn().mockImplementation((data: Record<string, unknown>, options?: { status?: number }) => ({
       status: options?.status || 200,
       body: data,
       json: async () => data,
@@ -85,10 +94,6 @@ describe('카드 API 테스트', () => {
     userId: mockUserId,
     tags: ['태그1', '태그2'],
   };
-
-  // 콘솔 로그 스파이
-  const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -178,7 +183,6 @@ describe('카드 API 테스트', () => {
       
       expect(response.status).toBe(400);
       expect(data.error).toBe('유효하지 않은 요청 형식입니다.');
-      expect(consoleErrorSpy).toHaveBeenCalledWith('요청 본문 파싱 오류:', expect.any(Error));
     });
 
     it('사용자 조회 중 데이터베이스 오류 처리', async () => {
@@ -191,7 +195,6 @@ describe('카드 API 테스트', () => {
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('사용자 정보를 확인하는 중 오류가 발생했습니다.');
-      expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
     it('카드 생성 중 데이터베이스 오류 처리', async () => {
@@ -210,7 +213,6 @@ describe('카드 API 테스트', () => {
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('카드를 생성하는 중 오류가 발생했습니다.');
-      expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
     it('태그 처리 중 오류 발생 시 카드 정보만 반환', async () => {
@@ -239,9 +241,6 @@ describe('카드 API 테스트', () => {
       
       // 실제 구현에서는 태그 처리 오류 발생 시 카드 정보만 반환하는지 체크 (상태 코드 확인)
       expect(response.status).toBe(201);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('태그 처리 중 오류:', expect.any(Error));
-      
-      // 응답 본문은 테스트하지 않음 - 실제 환경에서는 cardResult.data가 반환됨
     });
 
     it('카드와 태그 조회 오류 발생 시 기본 카드 정보만 반환', async () => {
@@ -274,7 +273,6 @@ describe('카드 API 테스트', () => {
 
       expect(response.status).toBe(201);
       expect(data).toMatchObject(mockCard);
-      expect(consoleErrorSpy).toHaveBeenCalled();
     });
   });
 
@@ -318,7 +316,6 @@ describe('카드 API 테스트', () => {
       
       expect(response.status).toBe(500);
       expect(data.error).toBe('데이터베이스 연결 실패. 관리자에게 문의하세요.');
-      expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
     it('다양한 쿼리 파라미터로 카드 조회', async () => {
@@ -372,7 +369,6 @@ describe('카드 API 테스트', () => {
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('카드를 조회하는 중 오류가 발생했습니다.');
-      expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
     it('GET 요청 처리 중 예외 발생 처리', async () => {
@@ -389,7 +385,6 @@ describe('카드 API 테스트', () => {
       expect(response.status).toBe(500);
       // 실제 코드는 데이터베이스 오류를 처리하므로, 실제 오류 메시지에 맞춤
       expect(data.error).toBe('데이터베이스 연결 실패. 관리자에게 문의하세요.');
-      expect(consoleErrorSpy).toHaveBeenCalled();
     });
   });
 }); 

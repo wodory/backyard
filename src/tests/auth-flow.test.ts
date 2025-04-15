@@ -7,6 +7,7 @@
  */
 
 import { describe, test, expect, vi } from 'vitest';
+
 import { STORAGE_KEYS } from './setup';
 
 // STORAGE_KEYS를 직접 정의

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+
 import { setCookie, getCookie, deleteCookie, setAuthCookie, getAuthCookie, deleteAuthCookie } from './cookie';
 import { createLogger } from './logger';
 

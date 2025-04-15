@@ -1,17 +1,19 @@
-/// <reference types="vitest" />
-import React from 'react';
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import TagsPage from './page';
-import '@testing-library/jest-dom/vitest';
-
 /**
- * 파일명: page.test.tsx
+ * 파일명: src/app/tags/page.test.tsx
  * 목적: 태그 관리 페이지 테스트
  * 역할: 태그 페이지 렌더링 및 기능 검증
  * 작성일: 2025-03-05
  * 수정일: 2025-03-27
+ * 수정일: 2024-05-16 : Triple-slash 참조 제거 및 import 문으로 변경
  */
+
+import React from 'react';
+
+import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import TagsPage from './page';
+import '@testing-library/jest-dom/vitest';
 
 // vi.hoisted를 사용하여 모킹 객체 생성
 const mocks = vi.hoisted(() => ({
@@ -58,26 +60,26 @@ vi.mock('@/components/ui/card', () => ({
 
 // 템플릿 태그 데이터 - _count 속성 추가
 const mockTags = [
-  { 
-    id: '1', 
-    name: '업무', 
-    color: '#FF5733', 
+  {
+    id: '1',
+    name: '업무',
+    color: '#FF5733',
     createdAt: new Date(),
     updatedAt: new Date(),
     _count: { cardTags: 5 }
   },
-  { 
-    id: '2', 
-    name: '개인', 
-    color: '#33FF57', 
+  {
+    id: '2',
+    name: '개인',
+    color: '#33FF57',
     createdAt: new Date(),
     updatedAt: new Date(),
     _count: { cardTags: 3 }
   },
-  { 
-    id: '3', 
-    name: '학습', 
-    color: '#3357FF', 
+  {
+    id: '3',
+    name: '학습',
+    color: '#3357FF',
     createdAt: new Date(),
     updatedAt: new Date(),
     _count: { cardTags: 0 }
@@ -88,33 +90,33 @@ describe('TagsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  
+
   afterEach(() => {
     cleanup();
   });
-  
+
   it('태그 관리 페이지가 올바르게 렌더링되어야 함', async () => {
     // 성공 응답 설정
     mocks.findMany.mockResolvedValue(mockTags);
-    
+
     // 컴포넌트 렌더링
     render(await TagsPage());
-    
+
     // 제목이 렌더링되는지 확인
     expect(screen.getByText('태그 관리')).toBeInTheDocument();
-    
+
     // 태그 추가 카드가 렌더링되는지 확인
     expect(screen.getByText('새 태그 추가')).toBeInTheDocument();
     expect(screen.getByTestId('tag-form')).toBeInTheDocument();
-    
+
     // 태그 목록 카드가 렌더링되는지 확인
     expect(screen.getByText('태그 목록')).toBeInTheDocument();
-    
+
     // TagList 컴포넌트가 올바른 태그 수로 렌더링되는지 확인
     expect(screen.getByTestId('tag-list')).toBeInTheDocument();
     const tagListElement = screen.getByTestId('tag-list');
     expect(tagListElement.textContent).toContain('태그 수: 3');
-    
+
     // prisma가 올바르게 호출되었는지 확인
     expect(mocks.findMany).toHaveBeenCalledTimes(1);
     expect(mocks.findMany).toHaveBeenCalledWith({
@@ -122,46 +124,46 @@ describe('TagsPage', () => {
       include: { _count: { select: { cardTags: true } } }
     });
   });
-  
+
   it('태그가 없을 때도 페이지가 올바르게 렌더링되어야 함', async () => {
     // 빈 배열 반환하도록 모킹
     mocks.findMany.mockResolvedValue([]);
-    
+
     // 컴포넌트 렌더링
     render(await TagsPage());
-    
+
     // 기본 UI 요소 확인
     expect(screen.getByText('태그 관리')).toBeInTheDocument();
     expect(screen.getByText('새 태그 추가')).toBeInTheDocument();
     expect(screen.getByText('태그 목록')).toBeInTheDocument();
-    
+
     // 빈 태그 목록 확인
     const tagListElement = screen.getByTestId('tag-list');
     expect(tagListElement.textContent).toContain('태그 수: 0');
-    
+
     expect(mocks.findMany).toHaveBeenCalledTimes(1);
   });
-  
+
   it('prisma 오류 발생 시 빈 태그 배열로 렌더링되어야 함', async () => {
     // 오류 발생하도록 모킹
     mocks.findMany.mockRejectedValue(new Error('태그 조회 오류'));
-    
+
     // 콘솔 오류 모킹
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
     // 컴포넌트 렌더링
     render(await TagsPage());
-    
+
     // 기본 UI 요소 확인
     expect(screen.getByText('태그 관리')).toBeInTheDocument();
-    
+
     // 오류 발생 시에도 빈 태그 목록 렌더링 확인
     const tagListElement = screen.getByTestId('tag-list');
     expect(tagListElement.textContent).toContain('태그 수: 0');
-    
+
     // 콘솔 오류 호출 확인
     expect(consoleErrorSpy).toHaveBeenCalledWith('태그 조회 오류:', expect.any(Error));
-    
+
     consoleErrorSpy.mockRestore();
   });
 }); 

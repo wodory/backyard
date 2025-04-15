@@ -11,6 +11,7 @@
 
 // 모듈 모킹
 import { vi } from 'vitest';
+
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 
 // React Flow 모킹 먼저 호출
@@ -46,12 +47,16 @@ vi.stubGlobal('window', {
 // 페이지 모듈 import
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
 import { ProjectToolbar } from './ProjectToolbar';
+
 import '@testing-library/jest-dom';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import { toast } from 'sonner';
+
 import { server } from '@/tests/msw/server';
 import { useAppStore } from '@/store/useAppStore';
+
 import React from 'react';
 
 // navigator.clipboard 모킹

@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * 파일명: src/components/ideamap/DagreNodePositioning.tsx
+ * 목적: Dagre 레이아웃 알고리즘을 사용하여 노드 위치를 자동으로 계산
+ * 역할: Idea Map의 노드 자동 배치 및 레이아웃 적용 컴포넌트
+ * 작성일: 2023-04-10
+ * 수정일: 2024-05-30 : prefer-const 린트 규칙 적용
+ * 수정일: 2025-05-07 : 미사용 변수 제거 (nodesPositioned)
+ */
+
+import React, { useEffect } from 'react';
+
 import { useReactFlow, Node, Edge, Position } from '@xyflow/react';
 import dagre from 'dagre';
+
 import defaultConfig from '../../config/uiOptions.json';
 
 interface DagreNodePositioningProps {
@@ -16,7 +27,6 @@ const nodeWidth = defaultConfig.layout.nodeSize?.width || 130;
 const nodeHeight = defaultConfig.layout.nodeSize?.height || 48;
 
 const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
-  const [nodesPositioned, setNodesPositioned] = useState(false);
   const { fitView, getNodes } = useReactFlow();
 
   // React Flow 인스턴스에서 노드 직접 가져오기
@@ -50,7 +60,7 @@ const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Ed
           return node;
         }
 
-        let updatedNode = {
+        const updatedNode = {
           ...node,
           position: {
             x: nodeWithPosition.x - nodeWidth / 2,
@@ -90,7 +100,6 @@ const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Ed
       // 업데이트된 엣지 적용
       SetEdges(layoutedEdges);
 
-      setNodesPositioned(true);
       window.requestAnimationFrame(() => {
         fitView();
       });

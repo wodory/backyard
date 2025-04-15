@@ -6,9 +6,11 @@
  * 수정일: 2025-04-10
  */
 
-import { useIdeaMapStore } from '@/store/useIdeaMapStore';
-import { Node, CardData } from '../types/ideamap-types';
 import { Edge } from '@xyflow/react';
+
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+
+import { Node, CardData } from '../types/ideamap-types';
 
 /**
  * useIdeaMapData: 아이디어맵 데이터 로드 및 관리를 위한 커스텀 훅

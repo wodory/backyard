@@ -11,9 +11,10 @@
 'use client';
 
 import { User } from '@supabase/supabase-js';
-import createLogger from './logger';
+
 import { base64UrlEncode, stringToArrayBuffer } from './base64';
 import { isClient } from './environment';
+import createLogger from './logger';
 import { createClient } from './supabase/client';
 
 // 모듈별 로거 생성

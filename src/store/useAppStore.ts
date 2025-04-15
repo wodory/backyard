@@ -1,18 +1,19 @@
+import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
+import { toast } from 'sonner'
 import { create } from 'zustand'
 import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middleware'
-import { toast } from 'sonner'
-import type { CreateCardInput } from '@/types/card'
+
+import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
+import { signOut, getCurrentUser } from "@/lib/auth"
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
 import { 
   IdeaMapSettings, 
   DEFAULT_IDEAMAP_SETTINGS, 
   loadIdeaMapSettings,
   saveIdeaMapSettings
 } from '@/lib/ideamap-utils'
-import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
-import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
-import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
-import { signOut, getCurrentUser } from "@/lib/auth"
+import type { CreateCardInput } from '@/types/card'
 
 // 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
 export interface Card {
@@ -403,10 +404,23 @@ export const useAppStore = create<AppState>()(
         set({ ideaMapSettings: optimisticSettings, isLoading: true, error: null });
 
         try {
-           // TODO: Replace with actual user ID mechanism if needed
-          const userId = "current-user-id"; // Placeholder
-          const response = await fetch('/api/ideamap-settings', { // 엔드포인트 수정
-             method: 'POST',
+          // 현재 로그인한 사용자 ID 가져오기
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          const userId = user.id;
+          
+          // 로그인된 사용자가 없는 경우 로컬 업데이트만 수행
+          if (!userId) {
+            console.warn('로그인된 사용자 정보가 없습니다. 로컬 설정만 업데이트합니다.');
+            // 최종 업데이트는 유지하고 로딩 상태만 해제
+            set({
+              isLoading: false,
+              error: null
+            });
+            return;
+          }
+          
+          const response = await fetch('/api/ideamap-settings', {
+             method: 'PATCH', // POST 대신 PATCH 사용 (부분 업데이트)
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify({
                userId,
@@ -416,10 +430,10 @@ export const useAppStore = create<AppState>()(
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(errorData.message || `서버 오류: ${response.status}`);
+            throw new Error(errorData.message || errorData.error || `서버 오류: ${response.status}`);
           }
 
-          const responseData = await response.json(); // API returns the full updated settings object
+          const responseData = await response.json();
           const savedSettings = responseData.settings || optimisticSettings;
 
           // Update store with confirmed settings from server
@@ -431,15 +445,27 @@ export const useAppStore = create<AppState>()(
           toast.success('설정이 업데이트되었습니다.');
 
         } catch (error) {
+          console.error('설정 업데이트 오류:', error);
+          
           // Rollback on error
           set({
              ideaMapSettings: optimisticSettings, // 오류 발생해도 사용자 변경 유지
              isLoading: false,
              error: error instanceof Error ? error : new Error(String(error))
           });
-          toast.error(`설정 업데이트 실패: ${error instanceof Error ? error.message : String(error)}`);
-           // Re-throw or handle error as needed for callers
-           // throw error;
+          
+          // 오류 메시지 구체화
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          let userMessage = `설정 업데이트 실패: ${errorMessage}`;
+          
+          // 특정 오류 패턴에 대한 사용자 친화적 메시지
+          if (errorMessage.includes('Foreign key constraint failed')) {
+            userMessage = '사용자 인증 정보를 찾을 수 없습니다. 로그아웃 후 다시 로그인해 보세요.';
+          } else if (!navigator.onLine) {
+            userMessage = '인터넷 연결이 끊겼습니다. 연결 상태를 확인하고 다시 시도하세요.';
+          }
+          
+          toast.error(userMessage);
         }
       },
       

@@ -4,12 +4,26 @@
  * 역할: 서버에 저장된 로그를 조회하고 필터링하여 제공
  * 작성일: 2025-03-27
  * 수정일: 2025-04-09
+ * 수정일: 2024-05-28 : module 변수명을 logModule로 변경하여 Next.js 오류 해결
+ * 수정일: 2024-05-28 : any 타입을 구체적인 타입으로 변경
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createClient } from '@/lib/supabase/server';
+
+// 로그 항목 인터페이스 정의
+interface LogEntry {
+  module: string;
+  level: string;
+  message: string;
+  timestamp: string;
+  sessionId?: string;
+  details?: Record<string, unknown>;
+}
 
 // 로그 파일 경로
 const LOG_DIR = process.env.LOG_DIR || 'logs';
@@ -42,11 +56,11 @@ export async function GET(request: NextRequest) {
     
     // 로그 파일 읽기
     const fileContent = fs.readFileSync(LOG_FILE, 'utf-8');
-    const logs = JSON.parse(fileContent);
+    const logs = JSON.parse(fileContent) as LogEntry[];
     
     // URL 파라미터로 필터링
     const searchParams = request.nextUrl.searchParams;
-    const module = searchParams.get('module');
+    const logModule = searchParams.get('module');
     const level = searchParams.get('level');
     const limit = parseInt(searchParams.get('limit') || '100', 10);
     const sessionId = searchParams.get('sessionId');
@@ -54,20 +68,20 @@ export async function GET(request: NextRequest) {
     // 필터링 적용
     let filteredLogs = logs;
     
-    if (module) {
-      filteredLogs = filteredLogs.filter((log: any) => log.module === module);
+    if (logModule) {
+      filteredLogs = filteredLogs.filter((log: LogEntry) => log.module === logModule);
     }
     
     if (level) {
-      filteredLogs = filteredLogs.filter((log: any) => log.level === level);
+      filteredLogs = filteredLogs.filter((log: LogEntry) => log.level === level);
     }
     
     if (sessionId) {
-      filteredLogs = filteredLogs.filter((log: any) => log.sessionId === sessionId);
+      filteredLogs = filteredLogs.filter((log: LogEntry) => log.sessionId === sessionId);
     }
     
     // 최근 로그 순으로 정렬
-    filteredLogs.sort((a: any, b: any) => {
+    filteredLogs.sort((a: LogEntry, b: LogEntry) => {
       const dateA = new Date(a.timestamp).getTime();
       const dateB = new Date(b.timestamp).getTime();
       return dateB - dateA;
@@ -77,10 +91,10 @@ export async function GET(request: NextRequest) {
     filteredLogs = filteredLogs.slice(0, limit);
     
     // 모듈 목록 추출 (필터링을 위한 옵션)
-    const modules = Array.from(new Set(logs.map((log: any) => log.module)));
+    const modules = Array.from(new Set(logs.map((log: LogEntry) => log.module)));
     
     // 세션 ID 목록 추출
-    const sessionIds = Array.from(new Set(logs.map((log: any) => log.sessionId))).filter(Boolean);
+    const sessionIds = Array.from(new Set(logs.map((log: LogEntry) => log.sessionId))).filter(Boolean);
     
     return NextResponse.json({
       logs: filteredLogs,
@@ -89,10 +103,10 @@ export async function GET(request: NextRequest) {
       modules,
       sessionIds
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('로그 조회 오류:', error);
     return NextResponse.json(
-      { error: `로그 조회 중 오류가 발생했습니다: ${error.message}` },
+      { error: `로그 조회 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}` },
       { status: 500 }
     );
   }

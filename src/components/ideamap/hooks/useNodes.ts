@@ -7,12 +7,15 @@
  */
 
 import { useCallback } from 'react';
-import { toast } from 'sonner';
-import { useAppStore } from '@/store/useAppStore';
+
 import { 
   NodeMouseHandler,
   Node
 } from '@xyflow/react';
+import { toast } from 'sonner';
+
+import { useAppStore } from '@/store/useAppStore';
+
 import { CardData } from '../types/board-types';
 
 /**

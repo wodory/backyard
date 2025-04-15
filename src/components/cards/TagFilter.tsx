@@ -8,13 +8,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Loader2, Tags, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface Tag {
   id: string;

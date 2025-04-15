@@ -7,20 +7,21 @@
  * 수정일: 2023-10-31 : NextAuth signOut을 Supabase signOut으로 대체
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
-import { useAppStore, Card } from '@/store/useAppStore';
-import { DEFAULT_IDEAMAP_SETTINGS, IdeaMapSettings } from '@/lib/ideamap-utils';
-import { toast } from 'sonner';
 import { act } from '@testing-library/react';
-import { server } from '@/tests/msw/server';
-import { http, HttpResponse } from 'msw';
-import { CreateCardInput } from '@/types/card';
-import * as layoutUtils from '@/lib/layout-utils';
-import * as graphUtils from '@/components/ideamap/utils/ideamap-graphUtils';
-import { Node, Edge } from '@xyflow/react';
 import { waitFor } from '@testing-library/react';
+import { Node, Edge } from '@xyflow/react';
+import { http, HttpResponse } from 'msw';
+import { toast } from 'sonner';
+import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
+
+import * as graphUtils from '@/components/ideamap/utils/ideamap-graphUtils';
 import * as authLib from '@/lib/auth';
+import { DEFAULT_IDEAMAP_SETTINGS, IdeaMapSettings } from '@/lib/ideamap-utils';
+import * as layoutUtils from '@/lib/layout-utils';
+import { useAppStore, Card } from '@/store/useAppStore';
+import { server } from '@/tests/msw/server';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock'; // ReactFlow 모킹 유틸리티 가져오기
+import { CreateCardInput } from '@/types/card';
 
 // React Flow를 위한 브라우저 환경 모킹 초기화
 mockReactFlow();

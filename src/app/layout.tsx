@@ -1,16 +1,19 @@
 /**
- * 파일명: layout.tsx
+ * 파일명: src/app/layout.tsx
  * 목적: 앱의 기본 레이아웃 구조 정의
  * 역할: 전체 페이지 구조와 공통 UI 요소 제공
  * 작성일: 2025-02-27
  * 수정일: 2025-03-28
  * 수정일: 2024-05-08 : 메타데이터 추가
+ * 수정일: 2024-05-28 : import 순서 정렬
  */
 
-import { ClientLayout } from "@/components/layout/ClientLayout";
 import "@/app/globals.css";
 import "@xyflow/react/dist/style.css";
+
 import { Metadata } from "next";
+
+import { ClientLayout } from "@/components/layout/ClientLayout";
 
 export const metadata: Metadata = {
   title: "Backyard - 생각을 관리하는 새로운 방법",

@@ -5,16 +5,22 @@
  * 작성일: 2025-04-08
  */
 
+import { useState } from 'react';
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
-import { toast } from 'sonner';
-import CreateCardModal from './CreateCardModal';
+import { http, HttpResponse } from 'msw';
 import { act } from 'react-dom/test-utils';
+import { toast } from 'sonner';
+import { vi } from 'vitest';
+
+
+
 import { useAppStore } from '@/store/useAppStore';
 import { server } from '@/tests/msw/server';
-import { http, HttpResponse } from 'msw';
-import { useState } from 'react';
+
+import CreateCardModal from './CreateCardModal';
+
 
 // useRouter 모킹
 const mockRouter = {

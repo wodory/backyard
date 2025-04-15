@@ -1,9 +1,12 @@
 import React from 'react';
+
 import { render } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
-import DagreNodePositioning from './DagreNodePositioning';
-import { vi } from 'vitest';
 import { Edge } from '@xyflow/react';
+import { vi } from 'vitest';
+
+import DagreNodePositioning from './DagreNodePositioning';
+
 
 // 단순 렌더링 테스트
 describe('DagreNodePositioning', () => {

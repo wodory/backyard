@@ -1,15 +1,19 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useAppStore } from '@/store/useAppStore';
-import { useIdeaMapStore } from '@/store/useIdeaMapStore';
-import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
+import { useRouter } from 'next/navigation';
+
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatDate } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+
+import CardList from '@/components/cards/CardList';
+import { EditCardModal } from '@/components/cards/EditCardModal';
+import DocumentViewer from '@/components/editor/DocumentViewer';
 import TiptapViewer from '@/components/editor/TiptapViewer';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,15 +24,15 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { useResizable } from '@/hooks/useResizable';
-import DocumentViewer from '@/components/editor/DocumentViewer';
-import CardList from '@/components/cards/CardList';
-import type { Card } from '@/types/card';
-import { EditCardModal } from '@/components/cards/EditCardModal';
 import { Portal } from '@/components/ui/portal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useResizable } from '@/hooks/useResizable';
+import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import type { Card } from '@/types/card';
+
 
 // 카드 인터페이스 정의
 interface Tag {
@@ -67,6 +71,8 @@ export function Sidebar({ className }: SidebarProps) {
     cards
   } = useAppStore();
 
+  const auth = useAuth();
+
   // useIdeaMapStore에서 노드 데이터 가져오기
   const ideaMapNodes = useIdeaMapStore(state => state.nodes);
 
@@ -95,6 +101,9 @@ export function Sidebar({ className }: SidebarProps) {
     onWidthChange: setSidebarWidth,
     storageKey: 'sidebar-width'
   });
+
+  // 다중 선택 모드인지 확인 - 이 변수는 항상 앞에 선언
+  const isMultiSelectMode = useMemo(() => selectedCardIds.length > 1, [selectedCardIds]);
 
   // 카드 목록 불러오기
   useEffect(() => {
@@ -151,7 +160,7 @@ export function Sidebar({ className }: SidebarProps) {
       console.log('다중 선택 모드:', isMultiSelectMode);
       console.groupEnd();
     }
-  }, [selectedCardIds, selectedCards]);
+  }, [selectedCardIds, selectedCards, isMultiSelectMode]);
 
   // 선택된 카드의 카드 데이터 가져오기 (다중 선택 모드)
   useEffect(() => {
@@ -492,9 +501,6 @@ export function Sidebar({ className }: SidebarProps) {
     startResize(e);
   };
 
-  // 다중 선택 모드인지 확인 - 이 변수는 항상 useMemo 후에 계산되어야 합니다
-  const isMultiSelectMode = selectedCardIds.length > 1;
-
   // DocumentViewer 컴포넌트에 전달할 데이터 처리 - 이제 간소화됨
   const documentViewerProps = useMemo(() => {
     if (selectedCardIds.length > 1) {
@@ -507,7 +513,10 @@ export function Sidebar({ className }: SidebarProps) {
     } else if (selectedCardIds.length === 1 && selectedCard) {
       // 단일 선택 모드
       return {
-        cards: [selectedCard],
+        cards: [{
+          ...selectedCard,
+          content: selectedCard.content || '' // null인 경우 빈 문자열로 처리
+        }],
         isMultiSelection: false,
         loading: false
       };
@@ -565,11 +574,10 @@ export function Sidebar({ className }: SidebarProps) {
   // 로그아웃 처리 함수
   const handleLogout = async () => {
     try {
-      const auth = useAuth();
       console.log('[로그아웃] 로그아웃 버튼 클릭됨, AuthContext 사용');
 
-      // AuthContext의 logout 함수 사용
-      await auth.logout();
+      // AuthContext의 signOut 함수 사용
+      await auth.signOut();
       toast.success('로그아웃되었습니다.');
     } catch (error) {
       console.error('[로그아웃] 오류 발생:', error);
@@ -806,7 +814,7 @@ export function Sidebar({ className }: SidebarProps) {
                         </div>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        <TiptapViewer content={card.content} />
+                        <TiptapViewer content={card.content || ''} />
                       </div>
                     </div>
                   ))}

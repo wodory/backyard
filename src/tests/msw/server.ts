@@ -6,10 +6,12 @@
  * 수정일: 2025-04-09
  */
 
-import { setupServer } from 'msw/node';
-import { handlers } from './handlers';
-import createLogger from '@/lib/logger';
 import { HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+
+import createLogger from '@/lib/logger';
+
+import { handlers } from './handlers';
 
 // 로거 생성
 const logger = createLogger('MSWServer');

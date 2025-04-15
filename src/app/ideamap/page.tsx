@@ -9,6 +9,7 @@
 'use client';
 
 import { ReactFlowProvider } from '@xyflow/react';
+
 import IdeaMap from '@/components/ideamap/components/IdeaMap';
 import { useAppStore } from '@/store/useAppStore';
 

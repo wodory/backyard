@@ -1,5 +1,6 @@
-import { cn, formatDate, extractTags, parseTagsInText, hexToHsl, hslToHex } from './utils';
 import { describe, it, expect } from 'vitest';
+
+import { cn, formatDate, extractTags, parseTagsInText, hexToHsl, hslToHex } from './utils';
 
 describe('유틸리티 함수', () => {
   describe('cn 함수', () => {

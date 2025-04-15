@@ -7,6 +7,7 @@
  */
 
 import React, { useState } from 'react';
+
 import { mockActions } from './test-utils';
 
 interface Tag {
@@ -25,7 +26,7 @@ interface ApiResponse {
     message?: string;
     error?: string;
     status?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export const TagListMock: React.FC<TagListMockProps> = ({ initialTags }) => {
@@ -96,7 +97,7 @@ export const TagListMock: React.FC<TagListMockProps> = ({ initialTags }) => {
                         const tag = getTagById(tagToDelete);
                         return (
                             <>
-                                <p>태그 "{tag?.name}"을(를) 삭제하시겠습니까?</p>
+                                <p>태그 &quot;{tag?.name}&quot;을(를) 삭제하시겠습니까?</p>
                                 {tag && tag.count > 0 && (
                                     <p>이 태그가 지정된 {tag.count}개의 카드에서 태그가 제거됩니다.</p>
                                 )}

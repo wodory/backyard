@@ -9,15 +9,17 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+
 import Link from "next/link"
-import { ArrowRight, Mail, Lock } from "lucide-react"
-import { login, signInWithGoogle } from '@/app/login/actions' // 서버 액션 import
 import { useSearchParams } from 'next/navigation' // 에러/메시지 표시 위해 추가
 
+import { ArrowRight, Mail, Lock } from "lucide-react"
+
+import { login, signInWithGoogle } from '@/app/login/actions' // 서버 액션 import
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
 export default function LoginForm() {

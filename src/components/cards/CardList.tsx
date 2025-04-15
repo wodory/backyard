@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import Link from "next/link";
-import { toast } from "sonner";
-import { formatDate } from "@/lib/utils";
-import { SearchBar } from "./SearchBar";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+
 import { Trash2, Eye } from "lucide-react";
+import { toast } from "sonner";
+
+import TiptapViewer from "@/components/editor/TiptapViewer";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +23,14 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import TiptapViewer from "@/components/editor/TiptapViewer";
+import { formatDate } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
-import { useRouter } from "next/navigation";
+
+import { SearchBar } from "./SearchBar";
+
+
+
+
 
 interface Tag {
   id: string;

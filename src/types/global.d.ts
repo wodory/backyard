@@ -3,9 +3,11 @@
  * 목적: 전역 타입 선언
  * 역할: 전역 변수 및 확장 타입을 선언
  * 작성일: 2025-03-27
+ * 수정일: 2023-10-27 : any 타입을 unknown으로 변경하여 ESLint 오류 수정
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+
 import { Database } from './supabase';
 
 declare global {
@@ -25,7 +27,7 @@ declare global {
    * 콘솔 메서드 오버라이드를 위한 타입 선언
    */
   interface Console {
-    warn: (...data: any[]) => void;
-    originalWarn?: (...data: any[]) => void;
+    warn: (...data: unknown[]) => void;
+    originalWarn?: (...data: unknown[]) => void;
   }
 } 

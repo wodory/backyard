@@ -1,12 +1,20 @@
 /**
+ * 파일명: src/app/api/cards/[id]/route.test.ts
+ * 목적: 카드 상세 API 엔드포인트 테스트
+ * 역할: GET, PUT, DELETE 요청 핸들러의 기능 검증
+ * 작성일: 2024-05-22
+ * 수정일: 2024-05-22 : import 순서 수정
  * @vitest-environment node
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { GET, PUT, DELETE } from './route';
-import prisma from '@/lib/prisma';
-import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+import { NextRequest } from 'next/server';
+
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import type { Mock } from 'vitest';
+
+import prisma from '@/lib/prisma';
+
+import { GET, PUT, DELETE } from './route';
 
 // 타입 정의
 interface MockContext {
@@ -68,7 +76,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 // Request 객체 모킹
-const createMockRequest = (method: string, body?: any) => {
+const createMockRequest = (method: string, body?: Record<string, unknown>) => {
   const request = {
     method,
     url: 'http://localhost:3000/api/cards/1',
@@ -172,17 +180,6 @@ describe('Card Detail API', () => {
 
   describe('PUT /api/cards/[id]', () => {
     it('유효한 데이터로 카드를 업데이트한다', async () => {
-      // 모킹된 데이터
-      const mockUpdatedCard = {
-        id: '1',
-        title: '업데이트된 제목',
-        content: '업데이트된 내용',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 'user1',
-        cardTags: [],
-      };
-
       // 요청 데이터
       const requestData = {
         title: '업데이트된 제목',

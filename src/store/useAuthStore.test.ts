@@ -24,6 +24,9 @@ vi.mock('@/lib/logger', () => {
 });
 
 import { beforeEach, describe, expect, it } from 'vitest';
+
+import createLogger from '@/lib/logger';
+
 import { 
   useAuthStore, 
   selectIsAuthenticated, 
@@ -34,7 +37,6 @@ import {
   selectIsLoading, 
   selectError 
 } from './useAuthStore';
-import createLogger from '@/lib/logger';
 
 // 모킹된 로거 인스턴스 가져오기
 const mockLoggerInstance = vi.mocked(createLogger('AuthStore'));

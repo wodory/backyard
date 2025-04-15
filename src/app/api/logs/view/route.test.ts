@@ -4,13 +4,18 @@
  * 역할: GET /api/logs/view 엔드포인트에 대한 다양한 시나리오의 단위 테스트
  * 작성일: 2025-03-27
  * 수정일: 2025-04-09
+ * 수정일: 2024-05-22 : import 순서 오류 수정, 사용하지 않는 import 제거
+ * 수정일: 2024-06-26 : import 순서 오류 추가 수정, import 그룹 사이 빈 줄 추가
  */
 
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
-import { GET } from './route';
 import fs from 'fs';
+
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import type { Mock } from 'vitest';
+
+import { createClient } from '@/lib/supabase/server';
+
+import { GET } from './route';
 
 // 타입 정의
 interface MockedResponse {
@@ -86,9 +91,6 @@ vi.mock('process', () => ({
     LOG_DIR: 'logs'
   }
 }));
-
-// 모듈 임포트
-import { createClient } from '@/lib/supabase/server';
 
 describe('로그 조회 API', () => {
   // 테스트 샘플 로그 데이터

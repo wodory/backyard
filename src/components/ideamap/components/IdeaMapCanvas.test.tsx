@@ -7,13 +7,19 @@
  */
 
 import React from 'react';
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import '@testing-library/jest-dom';
 import { mockReactFlow, createTestNode, createTestEdge } from '@/tests/test-utils';
+
 import IdeaMapCanvas from './IdeaMapCanvas';
+
 import { MarkerType, ConnectionLineType } from '@xyflow/react';
+
 import { ReactNode } from 'react';
+
 import { Node, Edge, Connection, Viewport } from '@xyflow/react';
 
 // React Flow 모킹

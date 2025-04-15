@@ -1,0 +1,696 @@
+./src/app/admin/logs/page.test.tsx
+11:1  Error: There should be no empty line within import group  import/order
+13:1  Error: `@testing-library/react` import should occur before import of `vitest`  import/order
+17:1  Error: There should be at least one empty line between import groups  import/order
+
+./src/app/admin/logs/test-utils.ts
+10:1  Error: There should be no empty line within import group  import/order
+12:1  Error: `msw` import should occur before import of `vitest`  import/order
+
+./src/app/api/auth/status/route.test.ts
+13:1  Error: `next/server` import should occur before import of `vitest`  import/order
+
+./src/app/api/cards/[id]/route.test.ts
+12:1  Error: `next/server` import should occur before import of `vitest`  import/order
+
+./src/app/api/cards/[id]/route.ts
+9:1  Error: There should be at least one empty line between import groups  import/order
+11:1  Error: `@prisma/client` import should occur before import of `zod`  import/order
+
+./src/app/api/cards/route.test.ts
+14:1  Error: `next/server` import should occur before import of `vitest`  import/order
+16:1  Error: There should be at least one empty line between import groups  import/order
+
+./src/app/api/db-init/route.ts
+8:10  Error: 'NextRequest' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/logs/route.test.ts
+9:1  Error: `vitest` import should occur after import of `@supabase/supabase-js`  import/order
+12:1  Error: There should be at least one empty line between import groups  import/order
+12:8  Error: 'path' is defined but never used.  @typescript-eslint/no-unused-vars
+13:1  Error: There should be at least one empty line between import groups  import/order
+13:23  Error: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/logs/view/route.test.ts
+13:1  Error: `fs` import should occur before import of `vitest`  import/order
+15:1  Error: There should be at least one empty line between import groups  import/order
+
+./src/app/api/tags/route.test.ts
+14:1  Error: `next/server` import should occur before import of `vitest`  import/order
+14:23  Error: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/[id]/route.test.ts
+9:10  Error: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+11:48  Error: 'afterEach' is defined but never used.  @typescript-eslint/no-unused-vars
+138:13  Error: 'mockParams' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/[id]/route.ts
+35:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+50:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/user/register/route.test.ts
+10:10  Error: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+12:48  Error: 'afterEach' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/register/route.ts
+42:23  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+59:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/users/first/route.test.ts
+9:1  Error: There should be at least one empty line between import groups  import/order
+
+./src/app/auth/callback/route.ts
+8:10  Error: 'redirect' is defined but never used.  @typescript-eslint/no-unused-vars
+11:15  Error: 'EmailOtpType' is defined but never used.  @typescript-eslint/no-unused-vars
+51:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/auth/error/page.test.tsx
+10:10  Error: 'userEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/auth/login/page.tsx
+16:58  Error: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+21:9  Error: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/[id]/DeleteButton.test.tsx
+16:1  Error: There should be at least one empty line between import groups  import/order
+17:37  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+23:1  Error: `next/navigation` import should occur before import of `@testing-library/react`  import/order
+23:10  Error: 'useRouter' is defined but never used.  @typescript-eslint/no-unused-vars
+25:1  Error: `sonner` import should occur before import of `vitest`  import/order
+299:26  Error: 'getByTestId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+315:13  Error: 'mockHandleDelete' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+332:13  Error: 'mockHandleDelete' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+354:13  Error: 'mockHandleDelete' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/[id]/edit/page.test.tsx
+9:1  Error: `vitest` import should occur after import of `react-dom/test-utils`  import/order
+10:18  Error: 'screen' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/[id]/edit/page.tsx
+12:29  Error: 'CardHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+12:41  Error: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+19:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/cards/[id]/edit/test-utils.ts
+33:40  Error: 'id' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/[id]/page.test.tsx
+9:1  Error: There should be at least one empty line between import groups  import/order
+37:22  Error: 'date' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/page.test.tsx
+10:1  Error: `react` import should occur before import of `@testing-library/react`  import/order
+12:1  Error: `vitest` import should occur before import of `./page`  import/order
+23:17  Error: 'key' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/page.tsx
+11:8  Error: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+13:10  Error: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/ideamap/page.test.tsx
+9:26  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+9:35  Error: 'fireEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+9:46  Error: 'act' is defined but never used.  @typescript-eslint/no-unused-vars
+56:7  Error: 'viewportCenterMock' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+122:30  Error: 'changes' is defined but never used.  @typescript-eslint/no-unused-vars
+122:39  Error: 'nodes' is defined but never used.  @typescript-eslint/no-unused-vars
+251:7  Error: 'mockCardData' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/ideamap/page.tsx
+17:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+18:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/layout.test.tsx
+9:1  Error: There should be no empty line within import group  import/order
+
+./src/app/login/page.test.tsx
+12:26  Error: 'fireEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+13:48  Error: 'afterEach' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/page.test.tsx
+9:1  Error: There should be no empty line within import group  import/order
+18:1  Error: `react` import should occur before import of `@testing-library/react`  import/order
+26:7  Error: Do not use an `<a>` element to navigate to `/cards/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+./src/app/tags/page.test.tsx
+34:22  Error: 'date' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/auth/AuthForm.tsx
+91:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+113:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/auth/UserProfile.tsx
+59:14  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/cards/CardList.test.tsx
+5:26  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+12:1  Error: `@testing-library/user-event` import should occur before import of `sonner`  import/order
+12:8  Error: 'userEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+31:13  Error: 'param' is defined but never used.  @typescript-eslint/no-unused-vars
+486:6  Error: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+
+./src/components/cards/CardList.tsx
+5:8  Error: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+56:10  Error: 'selectedCard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+56:24  Error: 'setSelectedCard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+87:6  Warning: React Hook useEffect has a missing dependency: 'fetchCards'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/cards/CreateCardModal.test.tsx
+14:10  Error: 'toast' is defined but never used.  @typescript-eslint/no-unused-vars
+72:7  Error: 'mockUserResponse' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+590:26  Error: 'setTags' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/cards/CreateCardModal.tsx
+8:10  Error: 'toast' is defined but never used.  @typescript-eslint/no-unused-vars
+45:3  Error: 'position' is defined but never used.  @typescript-eslint/no-unused-vars
+46:3  Error: 'connectingNodeId' is defined but never used.  @typescript-eslint/no-unused-vars
+47:3  Error: 'handleType' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/cards/EditCardForm.tsx
+3:27  Error: 'useRef' is defined but never used.  @typescript-eslint/no-unused-vars
+5:10  Error: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+6:13  Error: 'Plus' is defined but never used.  @typescript-eslint/no-unused-vars
+14:10  Error: 'DEFAULT_USER_ID' is defined but never used.  @typescript-eslint/no-unused-vars
+19:9  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+20:30  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:54  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/cards/EditCardModal.tsx
+13:33  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/debug/NodeInspector.tsx
+1:31  Error: 'useCallback' is defined but never used.  @typescript-eslint/no-unused-vars
+3:24  Error: 'Node' is defined but never used.  @typescript-eslint/no-unused-vars
+6:11  Error: 'NodeData' is defined but never used.  @typescript-eslint/no-unused-vars
+7:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+16:11  Error: 'getNodes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+106:9  Error: 'handleInfo' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/debug/ViewportLogger.tsx
+8:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/editor/DocumentViewer.tsx
+7:10  Error: 'formatDate' is defined but never used.  @typescript-eslint/no-unused-vars
+46:11  Error: 'title' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+46:27  Error: 'date' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/components/IdeaMap.test.tsx
+16:10  Error: 'useAuth' is defined but never used.  @typescript-eslint/no-unused-vars
+17:10  Error: 'useAppStore' is defined but never used.  @typescript-eslint/no-unused-vars
+21:10  Error: 'useEdges' is defined but never used.  @typescript-eslint/no-unused-vars
+22:10  Error: 'useIdeaMapUtils' is defined but never used.  @typescript-eslint/no-unused-vars
+23:10  Error: 'useNodeClickHandlers' is defined but never used.  @typescript-eslint/no-unused-vars
+71:55  Error: React Hook "React.useState" is called in function "default" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use".  react-hooks/rules-of-hooks
+168:7  Error: 'mockSetNodes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/components/IdeaMap.tsx
+18:1  Error: There should be at least one empty line between import groups  import/order
+21:3  Error: 'Position' is defined but never used.  @typescript-eslint/no-unused-vars
+22:3  Error: 'Viewport' is defined but never used.  @typescript-eslint/no-unused-vars
+26:1  Error: There should be at least one empty line between import groups  import/order
+26:1  Error: `@/components/ideamap/types/ideamap-types` import should occur after import of `@/components/cards/CreateCardModal`  import/order
+26:16  Error: 'Edges' is defined but never used.  @typescript-eslint/no-unused-vars
+26:23  Error: 'EdgeSetFunction' is defined but never used.  @typescript-eslint/no-unused-vars
+37:1  Error: There should be no empty line within import group  import/order
+43:1  Error: There should be no empty line within import group  import/order
+55:11  Error: 'LocalIdeaMapSettings' is defined but never used.  @typescript-eslint/no-unused-vars
+102:9  Error: 'layoutDirection' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+121:5  Error: 'applyGridLayout' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+163:9  Error: 'handleIdeaMapSettingsChangeWrapper' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+168:9  Error: 'handleLayoutChange' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+288:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+376:9  Error: 'handleSaveLayout' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/components/IdeaMapCanvas.test.tsx
+15:10  Error: 'mockReactFlow' is defined but never used.  @typescript-eslint/no-unused-vars
+19:1  Error: `@xyflow/react` import should occur before import of `vitest`  import/order
+21:1  Error: `react` import should occur before import of `@testing-library/react`  import/order
+23:1  Error: `@xyflow/react` import should occur before import of `vitest`  import/order
+23:22  Error: 'Connection' is defined but never used.  @typescript-eslint/no-unused-vars
+23:34  Error: 'Viewport' is defined but never used.  @typescript-eslint/no-unused-vars
+45:29  Error: 'onNodesChange' is defined but never used.  @typescript-eslint/no-unused-vars
+45:44  Error: 'onEdgesChange' is defined but never used.  @typescript-eslint/no-unused-vars
+45:59  Error: 'onConnect' is defined but never used.  @typescript-eslint/no-unused-vars
+45:70  Error: 'onConnectStart' is defined but never used.  @typescript-eslint/no-unused-vars
+45:86  Error: 'onConnectEnd' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/hooks/test-utils.ts
+8:10  Error: 'ReactNode' is defined but never used.  @typescript-eslint/no-unused-vars
+10:10  Error: 'renderHook' is defined but never used.  @typescript-eslint/no-unused-vars
+58:24  Error: 'nodesToSave' is defined but never used.  @typescript-eslint/no-unused-vars
+59:22  Error: 'updater' is defined but never used.  @typescript-eslint/no-unused-vars
+63:37  Error: 'nodes' is defined but never used.  @typescript-eslint/no-unused-vars
+146:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+159:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ideamap/hooks/useEdges.test.tsx
+13:1  Error: There should be no empty line within import group  import/order
+
+./src/components/ideamap/hooks/useEdges.ts
+24:3  Error: 'ideaMapSettings' is defined but never used.  @typescript-eslint/no-unused-vars
+25:3  Error: 'nodes' is defined but never used.  @typescript-eslint/no-unused-vars
+26:3  Error: 'initialEdges' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/hooks/useIdeaMapData.ts
+9:10  Error: 'Edge' is defined but never used.  @typescript-eslint/no-unused-vars
+13:10  Error: 'Node' is defined but never used.  @typescript-eslint/no-unused-vars
+13:16  Error: 'CardData' is defined but never used.  @typescript-eslint/no-unused-vars
+20:32  Error: 'onSelectCard' is defined but never used.  @typescript-eslint/no-unused-vars
+34:36  Error: 'reactFlowInstance' is defined but never used.  @typescript-eslint/no-unused-vars
+34:56  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ideamap/hooks/useIdeaMapHandlers.test.tsx
+11:10  Error: 'Node' is defined but never used.  @typescript-eslint/no-unused-vars
+11:16  Error: 'Edge' is defined but never used.  @typescript-eslint/no-unused-vars
+14:10  Error: 'useAppStore' is defined but never used.  @typescript-eslint/no-unused-vars
+15:10  Error: 'useIdeaMapStore' is defined but never used.  @typescript-eslint/no-unused-vars
+19:3  Error: 'createMouseEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+24:10  Error: 'CardData' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/hooks/useIdeaMapHandlers.ts
+31:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+106:52  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+119:15  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ideamap/hooks/useIdeaMapUtils.test.tsx
+10:42  Error: 'Node' is defined but never used.  @typescript-eslint/no-unused-vars
+10:48  Error: 'Edge' is defined but never used.  @typescript-eslint/no-unused-vars
+10:54  Error: 'Viewport' is defined but never used.  @typescript-eslint/no-unused-vars
+109:57  Error: 'edges' is defined but never used.  @typescript-eslint/no-unused-vars
+109:64  Error: 'settings' is defined but never used.  @typescript-eslint/no-unused-vars
+129:48  Error: 'nodes' is defined but never used.  @typescript-eslint/no-unused-vars
+132:54  Error: 'nodes' is defined but never used.  @typescript-eslint/no-unused-vars
+132:61  Error: 'edges' is defined but never used.  @typescript-eslint/no-unused-vars
+132:68  Error: 'direction' is defined but never used.  @typescript-eslint/no-unused-vars
+210:9  Error: 'mockedLoadIdeaMapSettingsFromServer' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+211:9  Error: 'mockedGetGridLayout' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+243:51  Error: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+247:17  Error: 'userId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/hooks/useNodes.test.tsx
+359:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/components/ideamap/nodes/CardNode.test.tsx
+8:37  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+9:29  Error: 'Node' is defined but never used.  @typescript-eslint/no-unused-vars
+10:48  Error: 'beforeAll' is defined but never used.  @typescript-eslint/no-unused-vars
+13:1  Error: There should be no empty line within import group  import/order
+211:17  Error: 'container' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/nodes/CardNode.tsx
+45:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+67:20  Error: 'setIsActive' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+110:9  Error: 'selectedCardIdsKey' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+115:9  Error: 'uiConfig' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+157:9  Error: 'deselectThisNode' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+174:9  Error: 'deselectAllNodes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+234:6  Warning: React Hook useEffect has a missing dependency: 'handleCardCollapse'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+349:55  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ideamap/nodes/CustomEdge.test.tsx
+12:32  Error: 'SystemConnectionLineType' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/nodes/CustomEdge.tsx
+9:26  Error: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+13:10  Error: 'EDGE_TYPES_KEYS' is defined but never used.  @typescript-eslint/no-unused-vars
+14:10  Error: 'loadBoardSettings' is defined but never used.  @typescript-eslint/no-unused-vars
+29:16  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+42:3  Error: 'source' is defined but never used.  @typescript-eslint/no-unused-vars
+43:3  Error: 'target' is defined but never used.  @typescript-eslint/no-unused-vars
+53:3  Error: 'type' is defined but never used.  @typescript-eslint/no-unused-vars
+126:6  Warning: React Hook useMemo has an unnecessary dependency: 'id'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+143:11  Error: 'animationClass' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+179:17  Error: 'sourceHandleId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+179:33  Error: 'targetHandleId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+179:49  Error: 'pathOptions' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+179:62  Error: 'selectable' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+179:74  Error: 'deletable' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/nodes/NodeInspect.tsx
+52:9  Error: 'handleInfo' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/nodes/NodeInspector.tsx
+9:10  Error: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+28:59  Error: 'setInspectedNode' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/types/ideamap-types.ts
+9:1  Error: There should be at least one empty line between import groups  import/order
+22:1  Error: `react` import should occur before import of `@xyflow/react`  import/order
+50:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ideamap/utils/__tests__/graphUtils.test.ts
+9:22  Error: 'XYPosition' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ideamap/utils/ideamap-graphUtils.ts
+8:34  Error: 'Position' is defined but never used.  @typescript-eslint/no-unused-vars
+104:68  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+119:47  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+135:46  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+135:67  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+136:31  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+172:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/layout/ClientLayout.tsx
+18:1  Error: There should be no empty line within import group  import/order
+21:10  Error: 'createClient' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/MainCanvas.tsx
+4:10  Error: 'Loader2' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/MainToolbar.tsx
+18:5  Error: 'layoutDirection' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/ProjectToolbar.test.tsx
+48:1  Error: `@testing-library/react` import should occur before import of `vitest`  import/order
+48:35  Error: 'fireEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+49:1  Error: `vitest` import should occur before import of `@/tests/utils/react-flow-mock`  import/order
+54:1  Error: `@xyflow/react` import should occur before import of `vitest`  import/order
+55:1  Error: `sonner` import should occur before import of `vitest`  import/order
+55:10  Error: 'toast' is defined but never used.  @typescript-eslint/no-unused-vars
+57:1  Error: `@/tests/msw/server` import should occur before import of `@/tests/utils/react-flow-mock`  import/order
+58:1  Error: `@/store/useAppStore` import should occur before import of `@/tests/utils/react-flow-mock`  import/order
+60:1  Error: `react` import should occur before import of `vitest`  import/order
+181:11  Error: 'TestComponentProps' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/ProjectToolbar.tsx
+3:17  Error: 'useState' is defined but never used.  @typescript-eslint/no-unused-vars
+8:3  Error: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
+9:3  Error: 'Palette' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Error: 'ChevronsUpDown' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Error: 'AlignHorizontalJustifyCenter' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Error: 'AlignVerticalJustifyCenter' is defined but never used.  @typescript-eslint/no-unused-vars
+14:3  Error: 'LayoutGrid' is defined but never used.  @typescript-eslint/no-unused-vars
+21:3  Error: 'Layout' is defined but never used.  @typescript-eslint/no-unused-vars
+54:3  Error: 'IDEAMAP_LAYOUT_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+55:3  Error: 'IDEAMAP_EDGES_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+56:3  Error: 'IDEAMAP_TRANSFORM_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+58:10  Error: 'IdeaMapSettings' is defined but never used.  @typescript-eslint/no-unused-vars
+68:5  Error: 'layoutDirection' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+69:5  Error: 'setLayoutDirection' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+76:5  Error: 'activeProjectId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+79:5  Error: 'setActiveProject' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+113:14  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/ShortcutToolbar.test.tsx
+88:22  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/Sidebar.tsx
+8:24  Error: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+8:59  Error: 'LogOut' is defined but never used.  @typescript-eslint/no-unused-vars
+11:8  Error: 'CardList' is defined but never used.  @typescript-eslint/no-unused-vars
+15:10  Error: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+24:3  Error: 'DialogTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+61:9  Error: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+77:9  Error: 'ideaMapNodes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+80:9  Error: 'cardsWithType' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+122:6  Warning: React Hook useEffect has a missing dependency: 'fetchCardDetails'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+131:6  Warning: React Hook useEffect has a missing dependency: 'fetchSelectedCards'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+148:6  Warning: React Hook useEffect has missing dependencies: 'fetchCardDetails' and 'fetchSelectedCards'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+300:59  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+300:73  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+483:9  Error: 'getMultiCardTags' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+544:43  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+575:9  Error: 'handleLogout' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+787:74  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/layout/test-utils.ts
+9:10  Error: 'toast' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/settings/NodeSizeSettings.test.tsx
+10:37  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/tags/TagForm.test.tsx
+9:18  Error: 'screen' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/tags/TagForm.tsx
+39:13  Error: 'data' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/tags/test-utils.ts
+25:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+26:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+29:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+30:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/modal.tsx
+10:13  Error: 'React' is defined but never used.  @typescript-eslint/no-unused-vars
+18:3  Error: 'DialogHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/contexts/AuthContext.tsx
+12:69  Error: 'useCallback' is defined but never used.  @typescript-eslint/no-unused-vars
+17:10  Error: 'isClient' is defined but never used.  @typescript-eslint/no-unused-vars
+65:27  Error: React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render.  react-hooks/rules-of-hooks
+66:33  Error: React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render.  react-hooks/rules-of-hooks
+67:37  Error: React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render.  react-hooks/rules-of-hooks
+68:43  Error: React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render.  react-hooks/rules-of-hooks
+69:45  Error: React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render.  react-hooks/rules-of-hooks
+70:37  Error: React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render.  react-hooks/rules-of-hooks
+89:3  Error: React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+158:6  Warning: React Hook useEffect has missing dependencies: 'isInitialized' and 'supabase.auth'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+161:3  Error: React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+205:6  Warning: React Hook useEffect has a missing dependency: 'supabase.auth'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/hooks/useAddNodeOnEdgeDrop.ts
+3:54  Error: 'Connection' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/hooks/useCardData.ts
+12:23  Error: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+28:3  Error: 'userId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/__tests__/auth-integration.test.ts
+97:22  Error: 'algorithm' is defined but never used.  @typescript-eslint/no-unused-vars
+97:41  Error: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/auth.test.ts
+88:13  Error: 'authModule' is defined but never used.  @typescript-eslint/no-unused-vars
+144:53  Error: 'algorithm' is defined but never used.  @typescript-eslint/no-unused-vars
+144:64  Error: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+164:51  Error: 'algorithm' is defined but never used.  @typescript-eslint/no-unused-vars
+164:62  Error: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+232:13  Error: 'mockLogger' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+238:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+267:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+284:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+309:9  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+565:72  Error: 'key' is defined but never used.  @typescript-eslint/no-unused-vars
+711:16  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/auth.ts
+15:10  Error: 'base64UrlEncode' is defined but never used.  @typescript-eslint/no-unused-vars
+15:27  Error: 'stringToArrayBuffer' is defined but never used.  @typescript-eslint/no-unused-vars
+24:7  Error: 'OAUTH_CONFIG' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+113:12  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+349:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/base64.test.ts
+196:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+199:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/lib/cookie.test.ts
+11:10  Error: 'createLogger' is defined but never used.  @typescript-eslint/no-unused-vars
+188:7  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/lib/db-init.ts
+11:10  Error: 'createClient' is defined but never used.  @typescript-eslint/no-unused-vars
+14:7  Error: 'tableDefinitions' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+63:7  Error: 'rlsPolicies' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+149:16  Error: 'tableExists' is defined but never used.  @typescript-eslint/no-unused-vars
+149:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+183:16  Error: 'createCheckTableExistsFunction' is defined but never used.  @typescript-eslint/no-unused-vars
+183:57  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+231:14  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/environment.test.ts
+21:7  Error: 'originalProcess' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/flow-constants.ts
+29:38  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/ideamap-ui-config.test.ts
+112:1  Error: There should be no empty line within import group  import/order
+
+./src/lib/ideamap-ui-config.ts
+2:10  Error: 'I' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/layout-utils.test.ts
+9:36  Error: 'beforeEach' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/logger.test.ts
+95:9  Error: 'debugFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+96:9  Error: 'infoFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+97:9  Error: 'warnFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+98:9  Error: 'errorFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+251:82  Error: 'levelValue' is defined but never used.  @typescript-eslint/no-unused-vars
+262:7  Error: Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+./src/lib/logger.ts
+23:10  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+109:10  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+174:13  Error: 'logs' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+177:12  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+188:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+189:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+190:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+191:37  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/prisma.ts
+47:5  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+56:26  Error: 'args' is defined but never used.  @typescript-eslint/no-unused-vars
+56:32  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+65:5  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/lib/supabase-server.ts
+31:13  Error: 'name' is defined but never used.  @typescript-eslint/no-unused-vars
+31:27  Error: 'value' is defined but never used.  @typescript-eslint/no-unused-vars
+31:42  Error: 'options' is defined but never used.  @typescript-eslint/no-unused-vars
+31:51  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:16  Error: 'name' is defined but never used.  @typescript-eslint/no-unused-vars
+35:30  Error: 'options' is defined but never used.  @typescript-eslint/no-unused-vars
+35:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/store/useAppStore.test.ts
+11:10  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+12:16  Error: 'Edge' is defined but never used.  @typescript-eslint/no-unused-vars
+17:13  Error: 'graphUtils' is defined but never used.  @typescript-eslint/no-unused-vars
+20:13  Error: 'layoutUtils' is defined but never used.  @typescript-eslint/no-unused-vars
+63:66  Error: 'direction' is defined but never used.  @typescript-eslint/no-unused-vars
+524:17  Error: 'reqBody' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+548:47  Error: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/store/useAppStore.ts
+1:35  Error: 'Edge' is defined but never used.  @typescript-eslint/no-unused-vars
+8:10  Error: 'IDEAMAP_LAYOUT_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+8:38  Error: 'IDEAMAP_EDGES_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Error: 'DEFAULT_IDEAMAP_SETTINGS' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Error: 'saveIdeaMapSettings' is defined but never used.  @typescript-eslint/no-unused-vars
+28:18  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+39:14  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+287:22  Error: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+687:28  Error: 'state' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/store/useAuthStore.test.ts
+8:1  Error: There should be no empty line within import group  import/order
+
+./src/store/useIdeaMapStore.test.ts
+9:10  Error: 'http' is defined but never used.  @typescript-eslint/no-unused-vars
+9:16  Error: 'HttpResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+17:10  Error: 'mockReactFlow' is defined but never used.  @typescript-eslint/no-unused-vars
+62:7  Error: 'mockUserId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+215:60  Error: 'userId' is defined but never used.  @typescript-eslint/no-unused-vars
+215:68  Error: 'settings' is defined but never used.  @typescript-eslint/no-unused-vars
+218:62  Error: 'userId' is defined but never used.  @typescript-eslint/no-unused-vars
+236:66  Error: 'direction' is defined but never used.  @typescript-eslint/no-unused-vars
+561:67  Error: 'nodeIds' is defined but never used.  @typescript-eslint/no-unused-vars
+798:52  Error: 'edgeIds' is defined but never used.  @typescript-eslint/no-unused-vars
+825:15  Error: 'nodes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/store/useIdeaMapStore.ts
+27:10  Error: 'IDEAMAP_LAYOUT_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+27:38  Error: 'IDEAMAP_EDGES_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+27:65  Error: 'IDEAMAP_TRANSFORM_STORAGE_KEY' is defined but never used.  @typescript-eslint/no-unused-vars
+31:3  Error: 'loadIdeaMapSettings' is defined but never used.  @typescript-eslint/no-unused-vars
+36:3  Error: 'updateIdeaMapSettingsOnServer' is defined but never used.  @typescript-eslint/no-unused-vars
+83:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+84:36  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+106:66  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+107:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+108:39  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+141:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+302:60  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+311:45  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+345:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+367:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+381:31  Error: 'ideaMapSettings' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+598:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+632:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+730:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+756:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+804:25  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+815:15  Error: 'transformSaved' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+880:24  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+977:100  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1010:34  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/tests/auth/auth-integration.test.ts
+18:33  Error: 'mockServerEnvironment' is defined but never used.  @typescript-eslint/no-unused-vars
+20:63  Error: 'mockSupabaseSession' is defined but never used.  @typescript-eslint/no-unused-vars
+153:11  Error: 'createClient' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+153:26  Error: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+245:56  Error: 'buffer' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/auth/middleware.test.ts
+99:11  Error: 'response' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+127:11  Error: 'response' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+154:11  Error: 'response' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+186:11  Error: 'response' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+218:11  Error: 'response' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/auth-flow.test.ts
+96:5  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+
+./src/tests/integration/auth-flow.test.tsx
+11:26  Error: 'fireEvent' is defined but never used.  @typescript-eslint/no-unused-vars
+135:15  Error: 'cookiesDeleteSpy' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/mocks/additional-mocks.ts
+18:33  Error: The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type.  @typescript-eslint/no-unsafe-function-type
+25:54  Error: The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type.  @typescript-eslint/no-unsafe-function-type
+29:54  Error: The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type.  @typescript-eslint/no-unsafe-function-type
+74:51  Error: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/mocks/storage-mock.ts
+64:46  Error: 'options' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+94:28  Error: 'algorithm' is defined but never used.  @typescript-eslint/no-unused-vars
+94:47  Error: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/mocks/supabase-mock.ts
+66:35  Error: The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type.  @typescript-eslint/no-unsafe-function-type
+151:43  Error: The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type.  @typescript-eslint/no-unsafe-function-type
+
+./src/tests/msw/handlers.ts
+194:14  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+224:14  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/setup.ts
+54:10  Error: 'setupDocument' is defined but never used.  @typescript-eslint/no-unused-vars
+154:9  Error: 'debugFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+155:9  Error: 'infoFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+156:9  Error: 'warnFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+157:9  Error: 'errorFn' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+216:1  Error: Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free.  @typescript-eslint/ban-ts-comment
+236:7  Error: 'mockRouterFunctions' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+345:22  Error: 'callback' is defined but never used.  @typescript-eslint/no-unused-vars
+345:32  Error: The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type.  @typescript-eslint/no-unsafe-function-type
+345:42  Error: 'timeout' is defined but never used.  @typescript-eslint/no-unused-vars
+350:7  Error: 'mockedClipboard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+352:7  Error: 'DataTransferItemMock' is defined but never used.  @typescript-eslint/no-unused-vars
+353:7  Error: 'DataTransferMock' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/test-utils.tsx
+11:71  Error: 'originalWaitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+13:22  Error: 'Connection' is defined but never used.  @typescript-eslint/no-unused-vars
+13:53  Error: 'ReactFlowProps' is defined but never used.  @typescript-eslint/no-unused-vars
+13:69  Error: 'ConnectionLineType' is defined but never used.  @typescript-eslint/no-unused-vars
+59:25  Error: 'format' is defined but never used.  @typescript-eslint/no-unused-vars
+62:22  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+84:18  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+92:18  Error: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/theme/integration.test.tsx
+10:37  Error: 'waitFor' is defined but never used.  @typescript-eslint/no-unused-vars
+124:14  Error: 'id' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/tests/utils/async-utils.ts
+92:14  Error: '_' is defined but never used.  @typescript-eslint/no-unused-vars
+122:16  Error: '_' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+error Command failed with exit code 1.  

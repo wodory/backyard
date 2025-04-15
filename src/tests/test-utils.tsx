@@ -7,10 +7,12 @@
  */
 
 import React, { ReactElement } from 'react';
+
 import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi, expect as vitestExpect } from 'vitest';
 import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
+import { vi, expect as vitestExpect } from 'vitest';
+
 import { CardData } from '@/components/ideamap/types/ideamap-types';
 
 // XYFlow 모킹

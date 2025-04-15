@@ -7,9 +7,12 @@
  */
 
 import { useCallback } from 'react';
+
 import { Node, Edge, XYPosition } from '@xyflow/react';
+
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+
 import { CardData } from '../types/ideamap-types';
 
 /**

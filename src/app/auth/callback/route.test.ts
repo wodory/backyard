@@ -6,10 +6,13 @@
  * 수정일: 2025-03-30
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GET } from './route';
 import { NextRequest, NextResponse } from 'next/server';
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { createClient } from '@/lib/supabase/server';
+
+import { GET } from './route';
 
 // Supabase 클라이언트 모킹
 vi.mock('@/utils/supabase/server', () => ({

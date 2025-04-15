@@ -1,18 +1,24 @@
 /**
- * 파일명: useIdeaMapData.test.tsx
+ * 파일명: src/components/ideamap/hooks/useIdeaMapData.test.tsx
  * 목적: useIdeaMapData 훅의 기능 테스트
  * 역할: 아이디어맵 데이터 로딩 및 로딩 상태 관리 테스트
  * 작성일: 2023-04-10
  * 수정일: 2025-05-05
+ * 수정일: 2025-05-06 : 미사용 변수 제거 및 ESLint 오류 수정
+ * 수정일: 2025-05-07 : IdeaMapState 인터페이스에 누락된 속성 추가
+ * 수정일: 2025-05-07 : 남아있는 ESLint 오류 수정
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { server } from '@/tests/msw/server';
+import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import { http, HttpResponse } from 'msw';
-import { Viewport, ConnectionLineType, MarkerType } from '@xyflow/react';
+import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } from 'vitest';
+
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { mockLocalStorage } from '@/tests/mocks/storage-mock';
-import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { server } from '@/tests/msw/server';
+
+import { useIdeaMapData } from './useIdeaMapData';
 
 // 모든 모킹은 파일 상단에 그룹화
 // 외부 모듈부터 모킹 (호이스팅 고려)
@@ -116,6 +122,38 @@ const createMockState = (overrides = {}) => ({
   needsFitView: false,
   loadIdeaMapData: mockLoadIdeaMapData,  // 일관된 모킹 함수 사용
 
+  // 추가된 상태 및 액션
+  viewportToRestore: null,
+  isSettingsLoading: false,
+  settingsError: null,
+
+  // useIdeaMapUtils에서 이전된 액션들
+  loadAndApplyIdeaMapSettings: vi.fn(),
+  updateAndSaveIdeaMapSettings: vi.fn(),
+  saveViewport: vi.fn(),
+  restoreViewport: vi.fn(),
+  saveIdeaMapState: vi.fn().mockReturnValue(true),
+
+  // 노드 추가 관련 액션
+  addNodeAtPosition: vi.fn().mockResolvedValue(null),
+  addCardAtCenterPosition: vi.fn().mockResolvedValue(null),
+  createEdgeAndNodeOnDrop: vi.fn().mockResolvedValue(null),
+
+  // 새로 추가한 액션들 (useNodes 훅에서 이전)
+  applyNodeChangesAction: vi.fn(),
+  removeNodesAndRelatedEdgesFromStorage: vi.fn(),
+  addNodeAction: vi.fn().mockResolvedValue(null),
+  deleteNodeAction: vi.fn(),
+  saveNodesAction: vi.fn().mockReturnValue(true),
+
+  // 새로 추가할 엣지 관련 액션들 (useEdges 훅에서 이전)
+  applyEdgeChangesAction: vi.fn(),
+  removeEdgesFromStorage: vi.fn(),
+  connectNodesAction: vi.fn(),
+  saveEdgesAction: vi.fn().mockReturnValue(true),
+  updateAllEdgeStylesAction: vi.fn(),
+  createEdgeOnDropAction: vi.fn().mockReturnValue({ id: 'new-edge', source: 'node-1', target: 'node-2' }),
+
   ...overrides
 });
 
@@ -135,12 +173,6 @@ vi.mock('@/store/useIdeaMapStore', () => ({
     };
   })
 }));
-
-// 모킹 이후에 필요한 모듈 가져오기
-import { useIdeaMapData } from './useIdeaMapData';
-import { useReactFlow } from '@xyflow/react';
-import { useIdeaMapStore } from '@/store/useIdeaMapStore';
-import { toast } from 'sonner';
 
 // toast 모킹
 vi.mock('sonner', () => ({
@@ -181,17 +213,17 @@ describe('useIdeaMapData 훅 테스트', () => {
 
   it('테스트 1: 초기 로딩 상태가 올바르게 설정되어야 함', async () => {
     // isIdeaMapLoading이 true인 상태로 설정
-    const loadingState = createMockState({ isIdeaMapLoading: true });
+    const mockState = createMockState({ isIdeaMapLoading: true });
     vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
       if (typeof selector === 'function') {
-        return selector(loadingState);
+        return selector(mockState);
       }
       return {
         subscribe: vi.fn((callback) => {
-          callback(loadingState);
+          callback(mockState);
           return () => { };
         }),
-        getState: () => loadingState
+        getState: () => mockState
       };
     });
 
@@ -214,12 +246,13 @@ describe('useIdeaMapData 훅 테스트', () => {
     );
 
     // 먼저 로딩 상태를 true로 설정
-    let stateOverrides = { isIdeaMapLoading: true };
-    const loadingState = createMockState(stateOverrides);
+    const stateOverrides = { isIdeaMapLoading: true };
 
-    let updateState = (newState: any) => {
-      stateOverrides = { ...stateOverrides, ...newState };
-      return createMockState(stateOverrides);
+    const updateState = (newState: Record<string, unknown>) => {
+      return createMockState({
+        ...stateOverrides,
+        ...newState
+      });
     };
 
     // loadIdeaMapData 함수를 모킹하여 호출 시 isIdeaMapLoading을 false로 변경
@@ -278,15 +311,17 @@ describe('useIdeaMapData 훅 테스트', () => {
     );
 
     // 상태 관리를 위한 변수
-    let stateOverrides = {
+    const initialStateOverrides = {
       isIdeaMapLoading: true,
       ideaMapError: null
     };
 
     // 상태 업데이트 함수
-    let updateState = (newState: any) => {
-      stateOverrides = { ...stateOverrides, ...newState };
-      return createMockState(stateOverrides);
+    const updateState = (newState: Record<string, unknown>) => {
+      return createMockState({
+        ...initialStateOverrides,
+        ...newState
+      });
     };
 
     // 에러가 발생하는 loadIdeaMapData 함수 모킹
@@ -301,7 +336,7 @@ describe('useIdeaMapData 훅 테스트', () => {
     // 스토어 모킹 업데이트
     vi.mocked(useIdeaMapStore).mockImplementation((selector) => {
       const currentState = createMockState({
-        ...stateOverrides,
+        ...initialStateOverrides,
         loadIdeaMapData: mockLoadDataWithError
       });
 
@@ -329,7 +364,7 @@ describe('useIdeaMapData 훅 테스트', () => {
     await act(async () => {
       try {
         await result.current.loadNodesAndEdges();
-      } catch (error) {
+      } catch {
         // 에러 무시 (테스트에서는 에러가 발생해도 계속 진행)
       }
     });

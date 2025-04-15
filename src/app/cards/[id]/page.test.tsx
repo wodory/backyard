@@ -1,9 +1,18 @@
-/// <reference types="vitest" />
+/**
+ * 파일명: src/app/cards/[id]/page.test.tsx
+ * 목적: 카드 상세 페이지 테스트
+ * 역할: 카드 상세 페이지 렌더링 및 기능 검증
+ * 작성일: 2025-02-15
+ * 수정일: 2024-05-16 : Triple-slash 참조 제거 및 import 문으로 변경
+ */
+
 import React from 'react';
+
 import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import CardPage, { generateMetadata } from './page';
 import '@testing-library/jest-dom/vitest';
+
+import CardPage, { generateMetadata } from './page';
 
 // next/navigation 모킹
 vi.mock('next/navigation', () => ({

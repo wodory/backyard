@@ -6,8 +6,10 @@
  * 수정일: 2025-03-27
  */
 
-import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+
+import { createServerClient } from '@supabase/ssr';
+
 import { Database } from '../types/supabase';
 
 /**

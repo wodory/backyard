@@ -70,6 +70,7 @@ vi.mock('cookies-next', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { 
   generateCodeVerifier, 
   generateCodeChallenge, 
@@ -717,7 +718,7 @@ describe('Auth 모듈', () => {
 
       // result.error의 타입을 확인하고 테스트
       if ('error' in result) {
-        let errorMessage = String(result.error);
+        const errorMessage = String(result.error);
         expect(errorMessage).toContain('로그인 처리 중 오류가 발생했습니다');
       }
       

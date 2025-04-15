@@ -9,9 +9,9 @@
 import { describe, test, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 import { act } from 'react-dom/test-utils';
 
 /**

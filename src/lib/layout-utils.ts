@@ -6,8 +6,9 @@
  * 수정일: 2025-03-27
  */
 
-import dagre from 'dagre';
 import { Node, Edge, Position } from '@xyflow/react';
+import dagre from 'dagre';
+
 import defaultConfig from '../config/uiOptions.json';
 import { useTheme } from '../contexts/ThemeContext';
 

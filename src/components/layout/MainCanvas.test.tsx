@@ -6,8 +6,9 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { MainCanvas } from './MainCanvas';
 import { vi } from 'vitest';
+
+import { MainCanvas } from './MainCanvas';
 
 // 종속성 모킹
 vi.mock('@/store/useAppStore', () => ({

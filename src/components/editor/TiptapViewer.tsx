@@ -1,11 +1,12 @@
 "use client";
 
 import React from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
+
 import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 
 interface TiptapViewerProps {
   content: string;

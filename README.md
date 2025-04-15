@@ -1,5 +1,4 @@
 # Backyard
-
 마인드맵 스타일의 카드 보드 애플리케이션입니다.
 
 ## 기술 스택
@@ -12,6 +11,7 @@
   - 개발: SQLite
   - 프로덕션: Supabase (PostgreSQL)
 - **인증**: Supabase Auth (Google OAuth)
+- **데이터 패칭**: TanStack Query
 - **배포**: Vercel
 
 ## 프로젝트 설정 방법
@@ -110,13 +110,11 @@ yarn dev
 
 ### 8. 프로덕션 배포 (Vercel)
 
-1. [Vercel](https://vercel.com)에서 GitHub 저장소 import
-2. 환경 변수 설정:
-   - `.env.production` 파일의 내용을 Vercel 프로젝트 설정 > Environment Variables에 추가
-3. 배포 실행:
-   ```bash
-   npx vercel deploy --prod
-   ```
+1. Vercel CLI 설치: npm install -g vercel 또는 yarn global add vercel
+2. Vercel 로그인: vercel login (최초 1회)
+3. 프로젝트 연결: vercel link (최초 1회, 로컬 디렉토리와 Vercel 프로젝트 연결)
+4. 프로덕션 배포: yarn deploy
+5. 프리뷰 배포: yarn deploy:preview
 
 ## 주요 기능
 

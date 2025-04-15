@@ -7,8 +7,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { GET } from './route';
+
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+
+import { GET } from './route';
 
 // NextResponse 모킹
 vi.mock('next/server', () => {

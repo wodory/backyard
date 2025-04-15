@@ -10,12 +10,14 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+
 import { User, Session, SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+
 import { STORAGE_KEYS } from '@/lib/auth';
-import { Database } from '@/types/supabase';
-import createLogger from '@/lib/logger';
 import { isClient } from '@/lib/environment';
+import createLogger from '@/lib/logger';
+import { createClient } from '@/lib/supabase/client';
+import { Database } from '@/types/supabase';
 
 // 모듈별 로거 생성
 const logger = createLogger('AuthContext');
@@ -118,6 +120,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(data.session);
             setUser(data.session.user);
 
+            // 로그인 성공 시 localStorage에 사용자 정보 저장
+            try {
+              localStorage.setItem('user', JSON.stringify({
+                id: data.session.user.id,
+                email: data.session.user.email,
+                name: data.session.user.user_metadata?.full_name || '',
+                provider: data.session.user.app_metadata?.provider || ''
+              }));
+            } catch (storageError) {
+              logger.error('사용자 정보 저장 중 오류', storageError);
+            }
+
             logger.info('현재 세션 복원 성공', {
               user_id: data.session.user?.id?.substring(0, 8) + '...',
               provider: data.session.user?.app_metadata?.provider
@@ -170,6 +184,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(newSession.user);
           setSession(newSession);
 
+          // localStorage에 사용자 정보 저장
+          try {
+            localStorage.setItem('user', JSON.stringify({
+              id: newSession.user.id,
+              email: newSession.user.email,
+              name: newSession.user.user_metadata?.full_name || '',
+              provider: newSession.user.app_metadata?.provider || ''
+            }));
+          } catch (storageError) {
+            logger.error('사용자 정보 저장 중 오류', storageError);
+          }
+
           // 로그인 시 사용자 정보 출력 (디버깅용)
           console.log('=== 로그인 성공: 사용자 정보 ===');
           console.log('ID:', newSession.user?.id);
@@ -184,6 +210,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           logger.info('로그아웃 이벤트 발생');
           setUser(null);
           setSession(null);
+
+          // localStorage에서 사용자 정보 제거
+          try {
+            localStorage.removeItem('user');
+          } catch (storageError) {
+            logger.error('사용자 정보 제거 중 오류', storageError);
+          }
 
           // code_verifier 제거 (세션 스토리지만 사용)
           sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);

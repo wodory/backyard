@@ -1,3 +1,11 @@
+/**
+ * 파일명: src/types/supabase.ts
+ * 목적: Supabase 데이터베이스 타입 정의
+ * 역할: Supabase 데이터베이스 스키마 타입을 정의하여 타입 안정성 제공
+ * 작성일: 2025-03-27
+ * 수정일: 2023-10-27 : 빈 객체 타입({})을 명시적인 타입으로 변경
+ */
+
 export type Json =
   | string
   | number
@@ -118,7 +126,7 @@ export interface Database {
         }
       }
     }
-    Views: {}
-    Functions: {}
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 } 

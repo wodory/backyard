@@ -5,9 +5,10 @@
  * 작성일: 2025-03-30
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useNodeStore } from '@/store/useNodeStore';
 import { Node } from '@xyflow/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+
+import { useNodeStore } from '@/store/useNodeStore';
 
 describe('useNodeStore', () => {
   // 각 테스트 전에 스토어 초기화

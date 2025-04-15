@@ -5,9 +5,10 @@
  * 작성일: 2025-03-27
  */
 
+import React from 'react';
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import React from 'react';
 import '@testing-library/jest-dom/vitest';
 
 // updateNodeSize 모킹 함수

@@ -1,10 +1,11 @@
+import { Tag } from "@prisma/client";
 import { Metadata } from "next";
-import prisma from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import TagForm from "@/components/tags/TagForm";
 import TagList from "@/components/tags/TagList";
-import { Tag } from "@prisma/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import prisma from "@/lib/prisma";
+import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "태그 관리 | Backyard",

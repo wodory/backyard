@@ -5,7 +5,10 @@
  * 작성일: 2025-04-01
  */
 
+import { Edge, ConnectionLineType, MarkerType } from '@xyflow/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
 import { 
   loadIdeaMapSettings, 
   saveIdeaMapSettings, 
@@ -16,8 +19,6 @@ import {
   DEFAULT_IDEAMAP_SETTINGS,
   type IdeaMapSettings
 } from './ideamap-utils';
-import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
-import { Edge, ConnectionLineType, MarkerType } from '@xyflow/react';
 
 // 전역 모킹 설정
 const localStorageMock = new Map();

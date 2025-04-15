@@ -7,9 +7,9 @@
  * 환경 파일을 확인하고 필요한 설정을 적용합니다.
  */
 
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 // __dirname 대체

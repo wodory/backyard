@@ -5,9 +5,12 @@
  * 작성일: 2025-04-09
  */
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+
 import { Database } from '@/types/supabase'
+
 import createLogger from '../logger'
 
 // 로거 생성

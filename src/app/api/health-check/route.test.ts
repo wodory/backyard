@@ -3,12 +3,17 @@
  * 목적: 헬스 체크 API 엔드포인트 테스트
  * 역할: 데이터베이스 연결 상태를 확인하는 API 기능 검증
  * 작성일: 2025-04-01
+ * 수정일: 2024-06-19 : 사용하지 않는 NextResponse import 제거
+ * 수정일: 2024-05-22 : createRequest 호출 수정
+ * 수정일: 2024-06-21 : 인수가 필요하지 않은 HEAD() 및 GET() 함수 호출 수정
+ * 수정일: 2024-06-22 : 사용하지 않는 NextRequest import 제거 및 any 타입 구체화
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import { expect, vi, describe, it, beforeEach, afterEach } from 'vitest';
-import { GET, HEAD } from './route';
+
 import prisma from '@/lib/prisma';
+
+import { GET, HEAD } from './route';
 
 // Prisma 모듈 모킹
 vi.mock('@/lib/prisma', () => ({
@@ -19,7 +24,7 @@ vi.mock('@/lib/prisma', () => ({
 
 // NextResponse 모킹
 vi.mock('next/server', () => {
-  const mockResponse = (body: any = null, init: any = {}) => {
+  const mockResponse = (body: unknown = null, init: { status?: number } = {}) => {
     return {
       status: init?.status || 200,
       json: async () => body,
@@ -28,9 +33,9 @@ vi.mock('next/server', () => {
   
   class MockNextResponse {
     status: number;
-    body: any;
+    body: unknown;
   
-    constructor(body: any = null, init: any = {}) {
+    constructor(body: unknown = null, init: { status?: number } = {}) {
       this.status = init?.status || 200;
       this.body = body;
     }
@@ -39,7 +44,7 @@ vi.mock('next/server', () => {
       return Promise.resolve(this.body);
     }
   
-    static json(data: any, init: any = {}) {
+    static json(data: unknown, init: { status?: number } = {}) {
       return mockResponse(data, init);
     }
   }
@@ -54,9 +59,6 @@ describe('헬스 체크 API 테스트', () => {
   // 콘솔 모킹
   const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-  // 요청 객체 생성
-  const createRequest = () => ({} as NextRequest);
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -68,10 +70,9 @@ describe('헬스 체크 API 테스트', () => {
   describe('HEAD 메소드 테스트', () => {
     it('DB 연결 성공 시 200 상태 코드를 반환해야 함', async () => {
       // Prisma 쿼리 성공 모킹
-      (prisma.$queryRaw as any).mockResolvedValueOnce([{ 1: 1 }]);
+      (prisma.$queryRaw as jest.Mock).mockResolvedValueOnce([{ 1: 1 }]);
       
-      const request = createRequest();
-      const response = await HEAD(request);
+      const response = await HEAD();
       
       // 응답 검증
       expect(response.status).toBe(200);
@@ -85,10 +86,9 @@ describe('헬스 체크 API 테스트', () => {
 
     it('DB 연결 실패 시 503 상태 코드를 반환해야 함', async () => {
       // Prisma 쿼리 실패 모킹
-      (prisma.$queryRaw as any).mockRejectedValueOnce(new Error('DB 연결 오류'));
+      (prisma.$queryRaw as jest.Mock).mockRejectedValueOnce(new Error('DB 연결 오류'));
       
-      const request = createRequest();
-      const response = await HEAD(request);
+      const response = await HEAD();
       
       // 응답 검증
       expect(response.status).toBe(503);
@@ -104,10 +104,9 @@ describe('헬스 체크 API 테스트', () => {
   describe('GET 메소드 테스트', () => {
     it('DB 연결 성공 시 200 상태 코드와 성공 메시지를 반환해야 함', async () => {
       // Prisma 쿼리 성공 모킹
-      (prisma.$queryRaw as any).mockResolvedValueOnce([{ 1: 1 }]);
+      (prisma.$queryRaw as jest.Mock).mockResolvedValueOnce([{ 1: 1 }]);
       
-      const request = createRequest();
-      const response = await GET(request);
+      const response = await GET();
       const data = await response.json();
       
       // 응답 검증
@@ -126,10 +125,9 @@ describe('헬스 체크 API 테스트', () => {
 
     it('DB 연결 실패 시 503 상태 코드와 오류 메시지를 반환해야 함', async () => {
       // Prisma 쿼리 실패 모킹
-      (prisma.$queryRaw as any).mockRejectedValueOnce(new Error('DB 연결 오류'));
+      (prisma.$queryRaw as jest.Mock).mockRejectedValueOnce(new Error('DB 연결 오류'));
       
-      const request = createRequest();
-      const response = await GET(request);
+      const response = await GET();
       const data = await response.json();
       
       // 응답 검증

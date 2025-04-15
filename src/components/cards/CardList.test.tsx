@@ -1,9 +1,13 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
-import CardList from './CardList';
-import { toast } from 'sonner';
+
 import { useSearchParams } from 'next/navigation';
+
+import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
+import { toast } from 'sonner';
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
+
+import CardList from './CardList';
+
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
 

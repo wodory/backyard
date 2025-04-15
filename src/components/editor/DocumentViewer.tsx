@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useMemo, useEffect } from 'react';
-import { formatDate } from '@/lib/utils';
-import TiptapViewer from './TiptapViewer';
+
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate } from '@/lib/utils';
+
+import TiptapViewer from './TiptapViewer';
 
 // 카드 타입 정의
 interface CardData {

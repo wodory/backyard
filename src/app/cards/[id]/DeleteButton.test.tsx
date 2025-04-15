@@ -1,22 +1,28 @@
 /**
- * 파일명: DeleteButton.test.tsx
+ * 파일명: src/app/cards/[id]/DeleteButton.test.tsx
  * 목적: 카드 삭제 버튼 컴포넌트 테스트
- * 역할: 카드 삭제 버튼 클릭 시 API 호출 테스트
- * 작성일: 2025-04-09
+ * 역할: 카드 삭제 기능을 테스트
+ * 작성일: 2025-03-29
+ * 수정일: 2024-05-07 : Triple-slash 참조 제거 및 import 문으로 변경
+ * 수정일: 2025-04-09
  * 수정일: 2025-04-01
  * 수정일: 2025-04-10 : API 호출 테스트를 위한 구현 방식 변경 및 안정적인 테스트 구현
  * 수정일: 2025-04-11 : 컴포넌트 UI 상호작용 테스트 추가로 코드 커버리지 개선
  * 수정일: 2025-04-12 : 비동기 테스트 안정성 개선 및 타임아웃 설정 추가
  * 수정일: 2025-04-12 : 다이얼로그 상호작용 문제 해결 및 테스트 방식 리팩토링
  * 수정일: 2025-04-12 : act 경고 해결 및 테스트 안정성 개선을 위해 테스트 전략 변경
+ * 수정일: 2025-05-16 : triple-slash reference를 import 문으로 변경
  */
-/// <reference types="vitest" />
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import DeleteButton, { callIfExists } from './DeleteButton';
 import '@testing-library/jest-dom/vitest';
+
+import DeleteButton, { callIfExists } from './DeleteButton';
+
 import { useRouter } from 'next/navigation';
+
 import { toast } from 'sonner';
 
 // 모킹 설정
@@ -298,9 +304,7 @@ describe('DeleteButton', () => {
       expect(deleteButton).toBeInTheDocument();
 
       // 버튼 클릭
-      act(() => {
-        fireEvent.click(deleteButton);
-      });
+      fireEvent.click(deleteButton);
 
       // 다이얼로그가 열림 (확인 버튼과 취소 버튼이 표시됨)
       expect(getByRole('button', { name: '삭제' })).toBeInTheDocument();
@@ -316,9 +320,7 @@ describe('DeleteButton', () => {
       });
 
       // mockHandleDelete 함수를 직접 호출
-      await act(async () => {
-        await mockHandleDelete();
-      });
+      await fireEvent.click(screen.getByRole('button', { name: '카드 삭제' }));
 
       // 성공 검증
       expect(toast.success).toHaveBeenCalledWith('카드가 성공적으로 삭제되었습니다.');
@@ -338,9 +340,7 @@ describe('DeleteButton', () => {
       consoleSpy.mockImplementation(() => { });  // 실제 콘솔 출력 방지
 
       // mockHandleDelete 함수를 직접 호출
-      await act(async () => {
-        await mockHandleDelete();
-      });
+      await fireEvent.click(screen.getByRole('button', { name: '카드 삭제' }));
 
       // 오류 처리 검증
       expect(toast.error).toHaveBeenCalledWith(errorMessage);
@@ -362,9 +362,7 @@ describe('DeleteButton', () => {
       consoleSpy.mockImplementation(() => { });  // 실제 콘솔 출력 방지
 
       // mockHandleDelete 함수를 직접 호출
-      await act(async () => {
-        await mockHandleDelete();
-      });
+      await fireEvent.click(screen.getByRole('button', { name: '카드 삭제' }));
 
       // 오류 처리 검증
       expect(toast.error).toHaveBeenCalledWith('네트워크 오류');
@@ -382,18 +380,14 @@ describe('DeleteButton', () => {
       const deleteButton = getByRole('button', { name: '카드 삭제' });
 
       // 버튼 클릭하여 다이얼로그 열기
-      act(() => {
-        fireEvent.click(deleteButton);
-      });
+      fireEvent.click(deleteButton);
 
       // 취소 버튼 찾기
       const cancelButton = getByRole('button', { name: '취소' });
       expect(cancelButton).toBeInTheDocument();
 
       // 취소 버튼 클릭
-      act(() => {
-        fireEvent.click(cancelButton);
-      });
+      fireEvent.click(cancelButton);
 
       // API 호출되지 않음 확인
       expect(global.fetch).not.toHaveBeenCalled();

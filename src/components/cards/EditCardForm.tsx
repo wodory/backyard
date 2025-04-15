@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+
+import { Card } from '@prisma/client';
+import { X, Plus } from "lucide-react";
+import { toast } from "sonner";
+
+import TiptapEditor from "@/components/editor/TiptapEditor";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { X, Plus } from "lucide-react";
-import TiptapEditor from "@/components/editor/TiptapEditor";
 import { DEFAULT_USER_ID } from "@/lib/constants";
-import { Card } from '@prisma/client';
+
 
 // 컴포넌트 props 타입 정의
 interface EditCardFormProps {

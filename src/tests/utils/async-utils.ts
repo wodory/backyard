@@ -3,9 +3,10 @@
  * 목적: 비동기 테스트 유틸리티 제공
  * 역할: 비동기 테스트에 필요한 유틸리티 함수 제공
  * 작성일: 2025-03-30
+ * 수정일: 2023-10-27 : ESLint 오류 수정 (미사용 변수 제거)
  */
 
-import { vi, expect } from 'vitest';
+import { vi } from 'vitest';
 
 /**
  * flushPromises: 비동기 큐의 모든 프로미스를 해결
@@ -88,7 +89,7 @@ export async function pollUntil<T>(
       if (result) {
         return result;
       }
-    } catch (error) {
+    } catch (_) {
       // 조건이 충족되지 않음, 계속 진행
     }
     
@@ -118,7 +119,7 @@ export async function expectEventually(
       try {
         await assertion();
         return true;
-      } catch (error) {
+      } catch (_) {
         return false;
       }
     },

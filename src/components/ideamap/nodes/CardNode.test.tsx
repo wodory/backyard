@@ -5,9 +5,10 @@
  * 작성일: 2025-04-01
  */
 
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
 
@@ -116,9 +117,10 @@ vi.mock('@/store/useAppStore', () => ({
 }));
 
 // 나머지 모듈 import
+import * as useAppStoreModule from '@/store/useAppStore';
+
 import CardNode from './CardNode';
 import { NodeData } from './CardNode';
-import * as useAppStoreModule from '@/store/useAppStore';
 
 // 테스트 데이터 설정
 const mockNodeData: NodeData = {

@@ -7,10 +7,12 @@
  */
 
 import { useEffect } from 'react';
+
 import { Node } from '@xyflow/react';
-import { Modal } from '@/components/ui/modal';
-import { Badge } from '@/components/ui/badge';
+
 import TiptapViewer from '@/components/editor/TiptapViewer';
+import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import { useNodeStore } from '@/store/useNodeStore';
 
 interface NodeInspectorProps {

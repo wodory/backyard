@@ -1,9 +1,19 @@
-/// <reference types="vitest" />
-import { NextRequest, NextResponse } from 'next/server';
-import { DELETE, GET, PUT } from './route';
+/**
+ * 파일명: route.test.ts
+ * 목적: 특정 ID의 태그 API 엔드포인트 테스트
+ * 역할: 태그 조회, 수정, 삭제 API의 기능 검증
+ * 작성일: 2025-05-15
+ * 수정일: 2024-05-28 : 사용되지 않는 NextResponse import 제거 및 any 타입 수정
+ */
+
+import { NextRequest } from 'next/server';
+
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
-import prisma from '@/lib/prisma';
 import type { Mock } from 'vitest';
+
+import prisma from '@/lib/prisma';
+
+import { DELETE, GET, PUT } from './route';
 
 // NextResponse.json 모킹
 vi.mock('next/server', async () => {
@@ -12,7 +22,7 @@ vi.mock('next/server', async () => {
     ...actual,
     NextResponse: {
       ...actual.NextResponse,
-      json: vi.fn().mockImplementation((data: any, options: { status?: number } = {}) => {
+      json: vi.fn().mockImplementation((data: unknown, options: { status?: number } = {}) => {
         return {
           status: options.status || 200,
           body: data,
@@ -380,26 +390,21 @@ describe('태그 API', () => {
       expect(prisma.tag.delete).not.toHaveBeenCalled();
     });
   
-    it('서버 오류 발생 시 500 에러를 반환해야 함', async () => {
-      const tagId = '1';
-      const mockTag = { 
-        id: tagId, 
+    it('서버 오류 발생 시 500 응답을 반환해야 함', async () => {
+      // DB 오류 모킹
+      const dbError = new Error('데이터베이스 오류');
+      (prisma.tag.findUnique as Mock).mockResolvedValueOnce({
+        id: mockTagId,
         name: '테스트 태그',
         _count: { cardTags: 2 }
-      };
+      });
+      (prisma.tag.delete as Mock).mockRejectedValueOnce(dbError);
       
-      // prisma 모킹 설정
-      (prisma.tag.findUnique as any).mockResolvedValue(mockTag);
-      (prisma.tag.delete as any).mockRejectedValue(new Error('데이터베이스 오류'));
-      
-      // DELETE 요청 시뮬레이션
-      const request = new NextRequest(`http://localhost:3000/api/tags/${tagId}`, {
+      const request = new NextRequest(`http://localhost:3000/api/tags/${mockTagId}`, {
         method: 'DELETE'
       });
       
-      const response = await DELETE(request, {
-        params: { id: tagId }
-      });
+      const response = await DELETE(request, mockContext);
       
       // 응답 검증
       expect(response.status).toBe(500);

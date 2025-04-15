@@ -5,10 +5,10 @@
  * 작성일: 2024-05-09
  */
 
+const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
-const { exec } = require('child_process');
 
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);

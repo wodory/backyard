@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
+
+import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import {
   Menu,
   ChevronRight,
@@ -21,6 +23,8 @@ import {
   FileText,
   FolderOpen
 } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -37,10 +41,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
-import { toast } from 'sonner';
-import { ConnectionLineType, MarkerType } from '@xyflow/react';
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import {
   SNAP_GRID_OPTIONS,
   CONNECTION_TYPE_OPTIONS,
@@ -50,12 +50,14 @@ import {
   EDGE_COLOR_OPTIONS,
   EDGE_ANIMATION_OPTIONS
 } from '@/lib/ideamap-constants';
-import createLogger from '@/lib/logger';
 import {
   IDEAMAP_LAYOUT_STORAGE_KEY,
   IDEAMAP_EDGES_STORAGE_KEY,
   IDEAMAP_TRANSFORM_STORAGE_KEY
 } from '@/lib/ideamap-constants';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
+import createLogger from '@/lib/logger';
+import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 
 // 모듈별 로거 생성
 const logger = createLogger('ProjectToolbar');

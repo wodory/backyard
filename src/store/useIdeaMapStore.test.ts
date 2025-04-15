@@ -5,15 +5,16 @@
  * 작성일: 2025-04-12
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { Node, Edge, Viewport, ConnectionLineType, MarkerType, NodeChange, EdgeChange, Connection, applyEdgeChanges, addEdge } from '@xyflow/react';
-import { server } from '@/tests/msw/server';
 import { http, HttpResponse } from 'msw';
-import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import { IDEAMAP_TRANSFORM_STORAGE_KEY, IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { toast } from 'sonner';
-import { applyIdeaMapEdgeSettings } from '@/lib/ideamap-utils';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
 import { CardData } from '@/components/ideamap/types/ideamap-types';
+import { IDEAMAP_TRANSFORM_STORAGE_KEY, IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { applyIdeaMapEdgeSettings } from '@/lib/ideamap-utils';
+import { server } from '@/tests/msw/server';
+import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 
 // Zustand 모듈 모킹
 vi.mock('zustand', () => {

@@ -6,8 +6,8 @@
  * 수정일: 2025-04-03
  */
 
-import { vi } from 'vitest';
 import { toast } from 'sonner';
+import { vi } from 'vitest';
 
 // 모킹된 액션들
 export const mockActions = {

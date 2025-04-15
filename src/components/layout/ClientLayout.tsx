@@ -9,10 +9,12 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
+
+import { Toaster } from "sonner";
+
+import InitDatabase from "@/components/debug/InitDatabase";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { Toaster } from "sonner";
-import InitDatabase from "@/components/debug/InitDatabase";
 import createLogger from '@/lib/logger';
 
 // Supabase 클라이언트 초기화 (클라이언트에서만 실행)

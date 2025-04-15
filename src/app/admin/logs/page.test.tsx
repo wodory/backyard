@@ -1,17 +1,23 @@
 /**
- * 파일명: page.test.tsx
+ * 파일명: src/app/admin/logs/page.test.tsx
  * 목적: 로그 뷰어 관리자 페이지 테스트
  * 역할: 로그 조회 및 필터링 기능 테스트
  * 작성일: 2025-03-27
  * 수정일: 2025-04-01
+ * 수정일: 2024-05-21 : import 순서 수정
+ * 수정일: 2024-05-22 : import 순서 오류 수정
+ * 수정일: 2024-05-23 : import 순서 및 그룹화 오류 수정
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+
 import '@testing-library/jest-dom/vitest'
-import { setupLogViewerTests, teardownLogViewerTests } from './test-utils'
-import { LogViewerPageMock } from './LogViewerPageMock'
+
 import { mockLogs } from '@/tests/msw/handlers/logs'
+
+import { LogViewerPageMock } from './LogViewerPageMock'
+import { setupLogViewerTests, teardownLogViewerTests } from './test-utils'
 
 // Next.js 모킹
 vi.mock('next/navigation', () => ({

@@ -7,20 +7,18 @@
  */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals, Node as FlowNode } from '@xyflow/react';
-import { Button } from "@/components/ui/button";
-import Link from 'next/link';
-import { Tag, ChevronRight, ChevronUp } from 'lucide-react';
-import TiptapViewer from '@/components/editor/TiptapViewer';
-import { loadDefaultIdeaMapUIConfig } from '@/lib/ideamap-ui-config';
 import { CSSProperties } from 'react';
-import { useAppStore } from '@/store/useAppStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn, hexToHsl, hslToHex } from '@/lib/utils';
+
+import { Handle, Position, NodeProps, useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
+import { ChevronRight, ChevronUp } from 'lucide-react';
 import { createPortal } from 'react-dom';
+
 import { EditCardModal } from '@/components/cards/EditCardModal';
+import TiptapViewer from '@/components/editor/TiptapViewer';
 import { useTheme } from '@/contexts/ThemeContext';
-import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
+import { loadDefaultIdeaMapUIConfig } from '@/lib/ideamap-ui-config';
+import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
 
 // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
 const COMPONENT_ID = 'CardNode_from_nodes_directory';
@@ -62,7 +60,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 // 카드 노드 컴포넌트 정의
 export default function CardNode({ data, isConnectable, selected, id }: NodeProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { getNode, setNodes } = useReactFlow();
+  const { setNodes } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
   const updateNodeInternals = useUpdateNodeInternals();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -87,7 +85,6 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
 
   // 선택 및 확장 관련 상태와 함수들을 스토어에서 가져오기
   const selectCard = useAppStore((state) => state.selectCard);
-  const addSelectedCard = useAppStore((state) => state.addSelectedCard);
   const removeSelectedCard = useAppStore((state) => state.removeSelectedCard);
   const clearSelectedCards = useAppStore((state) => state.clearSelectedCards);
   const selectedCardIds = useAppStore((state) => state.selectedCardIds);
@@ -130,15 +127,6 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
 
   // 핸들 관련 설정 - 테마 컨텍스트에서 가져오기
   const handleSize = theme.handle.size;
-  const connectionLineColor = theme.edge.color;
-
-  // CSS 변수를 가져오는 함수
-  const getCssVariable = (name: string): string => {
-    if (typeof window !== 'undefined') {
-      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    }
-    return '';
-  };
 
   // 호버 상태 관리
   const handleMouseEnter = useCallback(() => {

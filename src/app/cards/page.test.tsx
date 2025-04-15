@@ -3,9 +3,12 @@
  */
 
 import { render, screen } from '@testing-library/react';
+
 import CardsPage from './page';
+
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
+
 import { describe, it, expect, vi } from 'vitest';
 
 // Next.js의 router 훅 모킹

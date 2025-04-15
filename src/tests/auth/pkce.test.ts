@@ -6,11 +6,12 @@
  * 수정일: 2025-04-09
  */
 
+import { SupabaseClient, OAuthResponse } from '@supabase/supabase-js';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createClient } from '@/lib/supabase/client';
+
 import { generateCodeChallenge } from '@/lib/auth';
 import { STORAGE_KEYS, getAuthData, setAuthData } from '@/lib/auth-storage';
-import { SupabaseClient, OAuthResponse } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
 import { Database } from '@/types/supabase';
 
 // 로거 모킹

@@ -8,11 +8,11 @@ const nextConfig: NextConfig = {
   },
   // 빠른 배포를 위해 ESLint 검사 비활성화
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // 빠른 배포를 위해 타입 검사 비활성화
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   // React Flow 및 관련 패키지 트랜스파일 설정
   transpilePackages: ['@xyflow/react', 'zustand'],

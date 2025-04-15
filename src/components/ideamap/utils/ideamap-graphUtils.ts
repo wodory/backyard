@@ -6,8 +6,9 @@
  */
 
 import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
+
 import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IdeaMapSettings } from '@/lib/ideamap-utils';
 
 /**
  * 레이아웃을 로컬 스토리지에 저장

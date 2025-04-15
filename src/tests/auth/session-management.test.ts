@@ -7,6 +7,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { clearTestEnvironment } from '../setup';
 
 // Supabase 및 하이브리드 클라이언트 모킹

@@ -3,28 +3,28 @@
  * 목적: 아이디어맵 유틸리티 함수 관련 로직 분리
  * 역할: 아이디어맵 레이아웃, 저장, 초기화 등 유틸리티 함수를 관리
  * 작성일: 2025-03-28
+ * 수정일: 2023-10-27 : 미사용 import 및 변수 제거, useCallback 의존성 배열 수정
  */
 
 import { useCallback, useRef } from 'react';
-import { Node, Edge, useReactFlow, Viewport } from '@xyflow/react';
+
+import { Node, Edge, useReactFlow } from '@xyflow/react';
 import { toast } from 'sonner';
-import { useAppStore } from '@/store/useAppStore';
+
+import { IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import {
   IdeaMapSettings,
-  DEFAULT_IDEAMAP_SETTINGS,
-  loadIdeaMapSettings,
-  saveIdeaMapSettings,
   loadIdeaMapSettingsFromServer,
   saveIdeaMapSettingsToServer
 } from '@/lib/ideamap-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
-import { IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { useAppStore } from '@/store/useAppStore';
+
 import { CardData } from '../types/ideamap-types';
 
 /**
  * useIdeaMapUtils: 아이디어맵 유틸리티 함수 관련 로직을 관리하는 훅
  * @param reactFlowWrapper ReactFlow 래퍼 참조
- * @param updateNodeInternals 노드 내부 업데이트 함수
  * @param saveLayout 레이아웃 저장 함수
  * @param saveEdges 엣지 저장 함수
  * @param nodes 현재 노드 배열
@@ -35,7 +35,6 @@ import { CardData } from '../types/ideamap-types';
  */
 export function useIdeaMapUtils({
   reactFlowWrapper,
-  updateNodeInternals,
   saveLayout,
   saveEdges,
   nodes,
@@ -44,7 +43,7 @@ export function useIdeaMapUtils({
   setEdges
 }: {
   reactFlowWrapper: React.RefObject<HTMLDivElement | null>;
-  updateNodeInternals: (nodeId: string) => void;
+  updateNodeInternals?: (nodeId: string) => void;
   saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
   saveEdges: (edgesToSave?: Edge[]) => boolean;
   nodes: Node<CardData>[];
@@ -53,13 +52,36 @@ export function useIdeaMapUtils({
   setEdges: (updater: ((edges: Edge[]) => Edge[]) | Edge[]) => void;
 }) {
   // 전역 상태에서 아이디어맵 설정 가져오기
-  const { ideaMapSettings, setIdeaMapSettings } = useAppStore();
+  const { setIdeaMapSettings } = useAppStore();
   
   // 저장되지 않은 변경사항 플래그
   const hasUnsavedChanges = useRef(false);
   
   // ReactFlow 인스턴스
   const reactFlowInstance = useReactFlow();
+
+  /**
+   * 엣지 설정 적용 헬퍼 함수
+   * @param currentEdges 현재 엣지 배열
+   * @param settings 적용할 설정
+   * @returns 설정이 적용된 엣지 배열
+   */
+  const applyIdeaMapEdgeSettings = useCallback((currentEdges: Edge[], settings: IdeaMapSettings) => {
+    return currentEdges.map(edge => ({
+      ...edge,
+      animated: settings.animated,
+      style: {
+        ...edge.style,
+        strokeWidth: settings.strokeWidth,
+        stroke: edge.selected ? settings.selectedEdgeColor : settings.edgeColor
+      },
+      markerEnd: settings.markerEnd ? {
+        type: settings.markerEnd,
+        width: settings.markerSize,
+        height: settings.markerSize,
+      } : undefined
+    }));
+  }, []);
 
   /**
    * 인증 상태에 따라 서버에서 설정 불러오기
@@ -85,7 +107,7 @@ export function useIdeaMapUtils({
         console.error('서버에서 아이디어맵 설정 불러오기 실패:', err);
       }
     }
-  }, [edges, setEdges, setIdeaMapSettings]);
+  }, [edges, setEdges, setIdeaMapSettings, applyIdeaMapEdgeSettings]);
 
   /**
    * 뷰포트(transform) 저장
@@ -182,7 +204,7 @@ export function useIdeaMapUtils({
     } else {
       console.log('[useIdeaMapUtils] 비인증 사용자, 서버 저장 생략');
     }
-  }, [edges, setEdges, setIdeaMapSettings]);
+  }, [edges, setEdges, setIdeaMapSettings, applyIdeaMapEdgeSettings]);
 
   /**
    * 뷰포트 중앙 업데이트
@@ -257,29 +279,6 @@ export function useIdeaMapUtils({
     
     toast.success(`${direction === 'horizontal' ? '수평' : '수직'} 레이아웃이 적용되었습니다.`);
   }, [nodes, edges, setNodes, setEdges, saveLayout, saveEdges]);
-
-  /**
-   * 엣지 설정 적용 헬퍼 함수
-   * @param currentEdges 현재 엣지 배열
-   * @param settings 적용할 설정
-   * @returns 설정이 적용된 엣지 배열
-   */
-  const applyIdeaMapEdgeSettings = useCallback((currentEdges: Edge[], settings: IdeaMapSettings) => {
-    return currentEdges.map(edge => ({
-      ...edge,
-      animated: settings.animated,
-      style: {
-        ...edge.style,
-        strokeWidth: settings.strokeWidth,
-        stroke: edge.selected ? settings.selectedEdgeColor : settings.edgeColor
-      },
-      markerEnd: settings.markerEnd ? {
-        type: settings.markerEnd,
-        width: settings.markerSize,
-        height: settings.markerSize,
-      } : undefined
-    }));
-  }, []);
 
   return {
     loadIdeaMapSettingsFromServerIfAuthenticated,

@@ -5,8 +5,9 @@
  * 작성일: 2025-04-01
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import TestDatabasePage from './page';
 
 // Prisma 클라이언트 모킹

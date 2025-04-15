@@ -7,9 +7,10 @@
  */
 
 import '@testing-library/jest-dom/vitest';
-import { beforeEach, afterEach, vi, expect, beforeAll, afterAll } from 'vitest';
-import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { cleanup } from '@testing-library/react';
+import { beforeEach, afterEach, vi, expect, beforeAll, afterAll } from 'vitest';
+
 import { server } from './msw/server'; // MSW 서버 임포트
 
 // Testing Library의 jest-dom 매처 확장

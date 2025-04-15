@@ -7,8 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+
 import { auth } from '@/lib/auth-server';
+import prisma from '@/lib/prisma';
 
 /**
  * GET: 태그 목록을 반환하는 API

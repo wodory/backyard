@@ -6,6 +6,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
 import defaultConfig from '../config/uiOptions.json';
 
 export interface NodeTheme {

@@ -7,18 +7,20 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { vi, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
+import { http, HttpResponse } from 'msw';
 import { toast } from 'sonner';
-import { useIdeaMapUtils } from './useIdeaMapUtils';
+import { vi, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
+import { IDEAMAP_TRANSFORM_KEY } from '@/lib/ideamap-constants';
 import { IdeaMapSettings, saveIdeaMapSettingsToServer, loadIdeaMapSettingsFromServer } from '@/lib/ideamap-utils';
 import { getGridLayout, getLayoutedElements } from '@/lib/layout-utils';
-import { mockReactFlow } from '@/tests/utils/react-flow-mock';
-import { ConnectionLineType, MarkerType, Node, Edge, Viewport } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
-import { IDEAMAP_TRANSFORM_KEY } from '@/lib/ideamap-constants';
-import { server } from '@/tests/msw/server';
-import { http, HttpResponse } from 'msw';
 import { AppState } from '@/store/useAppStore';
+import { server } from '@/tests/msw/server';
+import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+
+import { useIdeaMapUtils } from './useIdeaMapUtils';
 
 // MSW 서버 설정
 beforeAll(() => server.listen());

@@ -1,7 +1,21 @@
+/**
+ * 파일명: src/app/api/cards/[id]/route.ts
+ * 목적: 개별 카드 API 엔드포인트
+ * 역할: 카드 조회, 수정, 삭제 기능 제공
+ * 작성일: 2024-05-21
+ * 수정일: 2024-05-22 : import 순서 수정
+ * 수정일: 2024-05-22 : import 순서 재수정
+ * 수정일: 2024-05-23 : import 그룹 빈 줄 수정
+ * 수정일: 2024-05-23 : import 그룹 사이 빈 줄 추가
+ * 수정일: 2024-05-23 : 전체 import 구조 재작성
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import prisma from '@/lib/prisma';
+
 import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 
 // 카드 수정 스키마
 const updateCardSchema = z.object({

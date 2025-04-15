@@ -11,8 +11,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import LoginForm from '@/components/login/loginForm';
+
 import Image from 'next/image';
+
+import LoginForm from '@/components/login/loginForm';
 
 // 배경 이미지 배열 (v0 디자인에서 가져온 이미지)
 const backgroundImages = [

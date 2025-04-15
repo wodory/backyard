@@ -7,8 +7,10 @@
  */
 
 import React from 'react';
+
 import { render, screen } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+
 import { ThemeProvider } from './ThemeContext';
 
 // 모든 모킹을 파일 상단에 그룹화

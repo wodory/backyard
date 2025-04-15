@@ -1,14 +1,19 @@
 /**
- * 파일명: BoardCanvas.tsx
+ * 파일명: src/components/ideamap/components/IdeaMapCanvas.tsx
  * 목적: ReactFlow 캔버스 렌더링 컴포넌트
  * 역할: Board 컴포넌트에서 ReactFlow 캔버스 관련 로직을 분리하여 렌더링을 담당
  * 작성일: 2025-03-28
  * 수정일: 2025-03-30
+ * 수정일: 2023-10-27 : ESLint 오류 수정 (미사용 변수 제거, any 타입 수정)
+ * 수정일: 2023-10-27 : wrapperRef 타입을 SafeRef로 수정
+ * 수정일: 2023-10-27 : import 순서 수정 및 미사용 변수(ConnectionLineType) 제거
+ * 수정일: 2023-10-27 : connectionLineType 타입을 ConnectionLineType으로 수정
  */
 
 'use client';
 
 import React, { useMemo } from 'react';
+
 import {
   ReactFlow,
   Controls,
@@ -19,19 +24,20 @@ import {
   NodeChange,
   EdgeChange,
   Connection,
-  OnConnectStartParams,
   OnConnectStart,
   OnConnectEnd,
   MarkerType,
-  Viewport
+  Viewport,
+  ConnectionLineType
 } from '@xyflow/react';
+
+import { SafeRef } from '@/components/ideamap/types/ideamap-types';
+import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
 import { IdeaMapSettings } from '@/lib/ideamap-utils';
 // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
 // import CardNode from '@/components/ideamap/nodes/CardNode';
 // import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
 // 노드 타입 직접 가져오기 대신 flow-constants에서 가져오기
-import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
-import NodeInspect from '@/components/ideamap/nodes/NodeInspect';
 import { cn } from '@/lib/utils';
 // 삭제 3/29
 // import BoardControls from './BoardControls';
@@ -55,30 +61,14 @@ interface IdeaMapCanvasProps {
   onNodeClick: (e: React.MouseEvent, node: Node) => void;
   /** 빈 공간 클릭 핸들러 */
   onPaneClick: (e: React.MouseEvent) => void;
-  /** 레이아웃 방향 */
-  layoutDirection: 'horizontal' | 'vertical';
   /** 아이디어맵 설정 */
   ideaMapSettings: IdeaMapSettings;
-  /** 아이디어맵 설정 변경 핸들러 */
-  onIdeaMapSettingsChange: (settings: IdeaMapSettings, isAuthenticated: boolean, userId?: string) => void;
-  /** 레이아웃 변경 핸들러 */
-  onLayoutChange: (direction: 'horizontal' | 'vertical') => void;
-  /** 자동 레이아웃 적용 핸들러 */
-  onAutoLayout: () => void;
-  /** 레이아웃 저장 핸들러 */
-  onSaveLayout: () => void;
-  /** 카드 생성 버튼 클릭 핸들러 */
-  onCreateCard: () => void;
   /** 컨트롤 표시 여부 */
   showControls?: boolean;
   /** 래퍼 ref */
-  wrapperRef: React.RefObject<HTMLDivElement>;
+  wrapperRef: SafeRef<HTMLDivElement>;
   /** 추가 CSS 클래스 */
   className?: string;
-  /** 사용자 인증 여부 */
-  isAuthenticated: boolean;
-  /** 사용자 ID */
-  userId?: string;
   /** 드래그 오버 핸들러 (옵셔널) */
   onDragOver?: (event: React.DragEvent) => void;
   /** 드롭 핸들러 (옵셔널) */
@@ -101,18 +91,10 @@ export default function IdeaMapCanvas({
   onConnectEnd,
   onNodeClick,
   onPaneClick,
-  layoutDirection,
   ideaMapSettings,
-  onIdeaMapSettingsChange,
-  onLayoutChange,
-  onAutoLayout,
-  onSaveLayout,
-  onCreateCard,
   showControls = true,
   wrapperRef,
   className = "",
-  isAuthenticated,
-  userId,
   onDragOver,
   onDrop,
   onViewportChange
@@ -172,7 +154,7 @@ export default function IdeaMapCanvas({
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
         connectionMode={ConnectionMode.Loose}
-        connectionLineType={ideaMapSettings.connectionLineType as any}
+        connectionLineType={ideaMapSettings.connectionLineType as ConnectionLineType}
         snapToGrid={ideaMapSettings.snapToGrid}
         snapGrid={ideaMapSettings.snapGrid}
         fitView

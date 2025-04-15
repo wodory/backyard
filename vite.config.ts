@@ -6,10 +6,11 @@
  * 수정일: 2025-04-11
  */
 
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 // ESM에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);

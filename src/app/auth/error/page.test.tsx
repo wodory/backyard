@@ -6,9 +6,10 @@
  * 수정일: 2025-03-30
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+
 import ErrorPage from './page';
 
 // 모킹 설정

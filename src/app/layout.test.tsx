@@ -7,10 +7,12 @@
  */
 
 import { render, screen } from '@testing-library/react';
+
 import '@testing-library/jest-dom/vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import RootLayout from './layout';
 import { metadata } from './metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // next/font 모듈 모킹
 vi.mock('next/font/google', () => ({

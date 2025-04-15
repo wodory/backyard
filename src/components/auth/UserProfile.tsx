@@ -1,8 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+
+import { useRouter } from 'next/navigation';
+
+import { toast } from 'sonner';
+
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
   DropdownMenuTrigger, 
@@ -11,8 +16,8 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { getCurrentUser, signOut } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+
+
 
 type User = {
   id: string;

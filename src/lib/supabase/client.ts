@@ -7,7 +7,9 @@
  */
 
 import { createBrowserClient } from '@supabase/ssr'
+
 import { Database } from '@/types/supabase'
+
 import createLogger from '../logger'
 
 // 로거 생성

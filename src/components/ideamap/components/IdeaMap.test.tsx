@@ -7,17 +7,20 @@
  */
 
 import React from 'react';
+
 import { render, screen, fireEvent } from '@testing-library/react';
+import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import '@testing-library/jest-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppStore } from '@/store/useAppStore';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+
 import IdeaMap from './IdeaMap';
-import { useNodeClickHandlers } from '../hooks/useNodes';
 import { useEdges } from '../hooks/useEdges';
 import { useIdeaMapUtils } from '../hooks/useIdeaMapUtils';
-import { useAppStore } from '@/store/useAppStore';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useNodeClickHandlers } from '../hooks/useNodes';
 
 // React Flow 모킹
 mockReactFlow();

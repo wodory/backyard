@@ -8,8 +8,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { POST } from './route';
+
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
+
+import { POST } from './route';
 
 // Request, NextResponse 모킹
 vi.mock('next/server', () => {

@@ -5,8 +5,9 @@
  * 작성일: 2025-04-01
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Node, Edge, Position } from '@xyflow/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import { getLayoutedElements, getGridLayout } from './layout-utils';
 
 // 실제 dagre 모듈 모킹
