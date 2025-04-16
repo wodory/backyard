@@ -4,14 +4,13 @@
  * 역할: 노드 간 연결선을 시각화하는 컴포넌트
  * 작성일: 2025-03-08
  * 수정일: 2025-03-31
+ * 수정일: 2023-10-27 : 사용하지 않는 import/변수 제거 및 any 타입 개선
  */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 
 import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
 
-import { EDGE_TYPES_KEYS } from '@/lib/flow-constants';
-import { loadBoardSettings } from '@/lib/ideamap-utils';
 import { useAppStore } from '@/store/useAppStore';
 
 // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
@@ -26,7 +25,7 @@ interface CustomEdgeProps extends EdgeProps {
   animated?: boolean;
   data?: {
     edgeType?: ConnectionLineType;
-    settings?: any;
+    settings?: Record<string, unknown>;
   };
 }
 
@@ -38,9 +37,6 @@ interface CustomEdgeProps extends EdgeProps {
 console.log('[CustomEdge] 컴포넌트 정의 전: 함수 형태의 컴포넌트 생성');
 
 function CustomEdge({
-  id,
-  source,
-  target,
   sourceX,
   sourceY,
   targetX,
@@ -50,31 +46,19 @@ function CustomEdge({
   style = {},
   markerEnd,
   selected,
-  type,
   animated,
   data,
   ...restProps
 }: CustomEdgeProps) {
-  // 컴포넌트 초기화 로그 - 상세 정보 추가 (타입 검증은 유지)
-  // console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
-  //   id: id,
-  //   source: source,
-  //   target: target,
-  //   type: type,
-  //   expectedType: EDGE_TYPES_KEYS.custom,
-  //   isTypeValid: type === EDGE_TYPES_KEYS.custom,
-  //   componentId: COMPONENT_ID
-  // });
-
-  // Zustand 스토어에서 boardSettings 가져오기
-  const { boardSettings } = useAppStore();
+  // Zustand 스토어에서 ideaMapSettings 가져오기
+  const { ideaMapSettings } = useAppStore();
 
   // 글로벌 설정과 로컬 설정 결합
   const effectiveSettings = useMemo(() => {
     // 로컬 설정이 있으면 우선적으로 사용, 없으면 글로벌 설정 사용
     const localSettings = data?.settings;
-    return localSettings ? { ...boardSettings, ...localSettings } : boardSettings;
-  }, [boardSettings, data?.settings]);
+    return localSettings ? { ...ideaMapSettings, ...localSettings } : ideaMapSettings;
+  }, [ideaMapSettings, data?.settings]);
 
   // 엣지 연결 좌표 계산 (useMemo로 최적화)
   const edgeParams = useMemo(() => ({
@@ -86,7 +70,7 @@ function CustomEdge({
     targetPosition,
   }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
 
-  // 엣지 타입 결정: data.edgeType > boardSettings.connectionLineType > 기본값
+  // 엣지 타입 결정: data.edgeType > ideaMapSettings.connectionLineType > 기본값
   const effectiveEdgeType = useMemo(() => {
     // data.edgeType이 있으면 우선 사용
     if (data?.edgeType) {
@@ -98,8 +82,6 @@ function CustomEdge({
 
   // 엣지 패스 계산 (연결선 타입에 따라)
   const [edgePath] = useMemo(() => {
-    // console.log(`엣지 ${id}의 타입 업데이트:`, effectiveEdgeType);
-
     // 타입에 따라 적절한 경로 생성 함수 사용
     switch (effectiveEdgeType) {
       case ConnectionLineType.Straight:
@@ -123,7 +105,7 @@ function CustomEdge({
       default:
         return getBezierPath(edgeParams);
     }
-  }, [effectiveEdgeType, edgeParams, id]);
+  }, [effectiveEdgeType, edgeParams]);
 
   // 실제 애니메이션 여부는 보드 설정과 컴포넌트 prop 결합
   const isAnimated = animated !== undefined ? animated : effectiveSettings.animated;
@@ -139,32 +121,19 @@ function CustomEdge({
       transition: 'stroke 0.2s, stroke-width 0.2s',
     };
 
-    // 2. 애니메이션 스타일 - 이제 CSS 클래스로 처리
-    const animationClass = isAnimated ? 'edge-animated' : '';
-
-    // 3. 선택 상태에 따른 스타일
+    // 2. 선택 상태에 따른 스타일
     const selectedStyle = selected ? {
       strokeWidth: `var(--edge-selected-width)`,
       stroke: `var(--edge-selected-color)`,
     } : {};
 
-    // 4. 스타일 병합 (props의 style이 가장 우선)
+    // 3. 스타일 병합 (props의 style이 가장 우선)
     return {
       ...baseStyle,
       ...selectedStyle,
       ...style, // props의 style을 마지막에 적용하여 우선시
     };
-  }, [style, selected, isAnimated]);
-
-  // 엣지 컴포넌트에서 변경 내용 로깅 (개발 모드에서만)
-  // useEffect(() => {
-  //   if (process.env.NODE_ENV === 'development') {
-  //     console.log(`엣지 ${id} 렌더링:`, {
-  //       edgeType: effectiveEdgeType,
-  //       selected
-  //     });
-  //   }
-  // }, [id, effectiveEdgeType, selected]);
+  }, [style, selected]);
 
   return (
     <BaseEdge
@@ -176,7 +145,7 @@ function CustomEdge({
       data-component-id={COMPONENT_ID}
       {...(() => {
         // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
-        const { sourceHandleId, targetHandleId, pathOptions, selectable, deletable, ...cleanProps } = restProps;
+        const { ...cleanProps } = restProps;
         return cleanProps;
       })()}
     />

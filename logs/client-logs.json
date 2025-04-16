@@ -3145,5 +3145,13 @@
     "message": "code_verifier를 찾을 수 없음",
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-16T06:54:27.329Z"
+  },
+  {
+    "timestamp": "2025-04-16T10:06:27.339Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-16T10:06:28.991Z"
   }
 ]

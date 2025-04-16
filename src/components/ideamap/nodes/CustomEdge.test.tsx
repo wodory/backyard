@@ -4,12 +4,12 @@
  * 역할: 엣지 컴포넌트의 기능 테스트
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
+ * 수정일: 2023-10-27 : 사용하지 않는 import 제거
  */
 
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider, EdgeProps, Position, ConnectionLineType } from '@xyflow/react';
 import type * as XyflowReact from '@xyflow/react';
-import { ConnectionLineType as SystemConnectionLineType } from '@xyflow/system';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // AppStore 모킹

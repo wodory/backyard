@@ -1,0 +1,43 @@
+yarn run v1.22.22
+$ yarn port:check && yarn env:dev && yarn db:setup:dev && next dev -p 3000
+$ node scripts/check-port.js
+
+🔍 포트 3000 상태 확인 중...
+✅ 포트 3000는 사용 가능합니다.
+$ vercel env pull .env.development.local
+$ NODE_ENV=development yarn db:setup && yarn prisma:generate
+$ node scripts/select-db.js
+환경: 개발
+데이터베이스: sqlite
+소스 스키마: /Users/wodory/Development/apps/backyard/prisma/schema.sqlite.prisma
+타겟 스키마: /Users/wodory/Development/apps/backyard/prisma/schema.prisma
+✅ 성공: sqlite 스키마를 복사했습니다.
+이제 다음 명령어를 실행하세요: npx prisma generate
+$ prisma generate
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.6.0) to ./node_modules/.prisma/client in 29ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want real-time updates to your database without manual polling? Discover how with Pulse: https://pris.ly/tip-0-pulse
+
+   ▲ Next.js 15.3.0
+   - Local:        http://localhost:3000
+   - Network:      http://10.61.64.96:3000
+   - Environments: .env.development.local, .env.local, .env.development, .env
+
+ ✓ Starting...
+ ✓ Ready in 1204ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1324ms (955 modules)
+ GET /_next/static/webpack/8e28174464608cb0.webpack.hot-update.json 404 in 1903ms
+ GET /_next/static/webpack/8e28174464608cb0.webpack.hot-update.json 404 in 99ms
+ ✓ Compiled /middleware in 728ms (592 modules)
+[10:04:40][SupabaseMiddleware][INFO] 미들웨어에서 세션 새로고침 성공 { userId: '787043b3...', email: 'wod...' }
+[10:04:40][SupabaseMiddleware][INFO] 미들웨어에서 세션 새로고침 성공 { userId: '787043b3...', email: 'wod...' }
+[10:04:40][SupabaseMiddleware][INFO] 미들웨어에서 세션 새로고침 성공 { userId: '787043b3...', email: 'wod...' }
+ ○ Compiling / ...
+[10:04:43][SupabaseMiddleware][INFO] 미들웨어에서 세션 새로고침 성공 { userId: '787043b3...', email: 'wod...' }
+ GET / 500 in 11ms
