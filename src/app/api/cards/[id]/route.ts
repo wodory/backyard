@@ -3,11 +3,7 @@
  * 목적: 개별 카드 API 엔드포인트
  * 역할: 카드 조회, 수정, 삭제 기능 제공
  * 작성일: 2024-05-21
- * 수정일: 2024-05-22 : import 순서 수정
- * 수정일: 2024-05-22 : import 순서 재수정
- * 수정일: 2024-05-23 : import 그룹 빈 줄 수정
- * 수정일: 2024-05-23 : import 그룹 사이 빈 줄 추가
- * 수정일: 2024-05-23 : 전체 import 구조 재작성
+ * 수정일: 2025-04-16 : params를 await로 비동기적으로 접근하도록 수정 (Next.js 15 규칙에 맞게)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,13 +21,20 @@ const updateCardSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+// 카드 내용 부분 업데이트 스키마
+const patchCardSchema = z.object({
+  content: z.string().optional(),
+});
+
 // 개별 카드 조회 API
 export async function GET(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    // params 객체를 비동기적으로 접근
+    const params = await context.params;
+    const { id } = params;
     console.log(`카드 상세 조회 요청: ID=${id}`);
     
     // 카드 조회 (태그 정보 포함)
@@ -63,7 +66,9 @@ export async function GET(
     console.log(`카드 조회 성공: ID=${id}`);
     return NextResponse.json(card);
   } catch (error) {
-    console.error(`카드 조회 오류 (ID=${context.params.id}):`, error);
+    // 오류 로깅 부분도 안전하게 접근
+    const params = await context.params;
+    console.error(`카드 조회 오류 (ID=${params?.id || '알 수 없음'}):`, error);
     return NextResponse.json(
       { error: '카드를 조회하는 중 오류가 발생했습니다.' },
       { status: 500 }
@@ -77,7 +82,9 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    // params 객체를 비동기적으로 접근
+    const params = await context.params;
+    const { id } = params;
     const body = await request.json();
     
     // 데이터 유효성 검사
@@ -195,7 +202,9 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    // params 객체를 비동기적으로 접근
+    const params = await context.params;
+    const { id } = params;
     
     // 카드 존재 여부 확인
     const existingCard = await prisma.card.findUnique({
@@ -222,6 +231,67 @@ export async function DELETE(
     console.error('카드 삭제 오류:', error);
     return NextResponse.json(
       { error: '카드를 삭제하는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
+// 카드 내용 부분 업데이트 API
+export async function PATCH(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  try {
+    // params 객체를 비동기적으로 접근
+    const params = await context.params;
+    const { id } = params;
+    const body = await request.json();
+    
+    // 데이터 유효성 검사
+    const validation = patchCardSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: '유효하지 않은 데이터입니다.', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+    
+    // 카드 존재 여부 확인
+    const existingCard = await prisma.card.findUnique({
+      where: { id }
+    });
+    
+    if (!existingCard) {
+      return NextResponse.json(
+        { error: '카드를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+    
+    // 카드 내용만 업데이트
+    const updatedCard = await prisma.card.update({
+      where: { id },
+      data: validation.data,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        cardTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
+    });
+    
+    return NextResponse.json(updatedCard);
+  } catch (error) {
+    console.error('카드 내용 업데이트 오류:', error);
+    return NextResponse.json(
+      { error: '카드 내용을 업데이트하는 중 오류가 발생했습니다.' },
       { status: 500 }
     );
   }

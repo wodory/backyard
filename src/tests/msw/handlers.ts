@@ -4,6 +4,7 @@
  * 역할: API 요청을 가로채기 위한 MSW 핸들러 제공
  * 작성일: 2025-03-30
  * 수정일: 2025-04-08
+ * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수 제거)
  */
 
 import { http, HttpResponse } from 'msw';
@@ -191,7 +192,7 @@ export const handlers = [
         ...createMockCard(id as string),
         ...requestData
       });
-    } catch (error) {
+    } catch {
       return new HttpResponse(JSON.stringify({ error: '잘못된 요청 형식입니다' }), {
         status: 400,
         headers: {
@@ -221,7 +222,7 @@ export const handlers = [
         cardTags: (newCardData.tags || []).map((tag: string) => ({ id: tag, name: tag })) // cardTags 형식 맞추기
       };
       return HttpResponse.json(createdCard, { status: 201 });
-    } catch (error) {
+    } catch {
       return HttpResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
     }
   }),

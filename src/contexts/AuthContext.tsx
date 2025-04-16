@@ -5,6 +5,7 @@
  * 작성일: 2025-03-08
  * 수정일: 2025-04-09
  * 수정일: 2024-05-08 : localStorage 관련 코드 제거 - @supabase/ssr의 쿠키 기반 세션 관리와 호환되도록 수정
+ * 수정일: 2023-10-27 : 불필요한 서버 환경 체크 로직 제거 ('use client' 지시문이 있으므로 항상 클라이언트에서 실행됨)
  */
 
 'use client';
@@ -47,21 +48,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // 서버 환경에서는 빈 Provider만 반환
-  if (!isClientEnv) {
-    logger.error('AuthProvider가 서버 환경에서 사용되었습니다. 클라이언트 컴포넌트에서만 사용해야 합니다.');
-    return <AuthContext.Provider value={{
-      user: null,
-      session: null,
-      isLoading: false,
-      signOut: async () => { },
-      codeVerifier: null,
-      error: null,
-      setCodeVerifier: () => { },
-    }}>{children}</AuthContext.Provider>;
-  }
-
-  // 여기서부터는 클라이언트 환경에서만 실행됨
+  // 'use client'가 있으므로 이 코드는 항상 클라이언트에서만 실행됨
+  // 서버 환경 체크는 불필요함
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,12 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Supabase 세션 상태 변경 감지
   useEffect(() => {
-    if (!isClientEnv) return;
-
     try {
       const {
         data: { subscription }
-      } = supabase.auth.onAuthStateChange((event, newSession) => {
+      } = supabase.auth.onAuthStateChange(async (event, newSession) => {
         logger.info('Supabase 인증 상태 변경 감지', { event });
 
         if (event === 'SIGNED_IN' && newSession) {

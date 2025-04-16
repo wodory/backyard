@@ -4,13 +4,14 @@
  * 역할: Next.js, React 컴포넌트를 테스트하기 위한 유틸리티 제공
  * 작성일: 2025-03-30
  * 수정일: 2025-04-01
+ * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수 제거)
  */
 
 import React, { ReactElement } from 'react';
 
-import { render as rtlRender, RenderOptions, RenderResult, waitFor as originalWaitFor, screen as rtlScreen } from '@testing-library/react';
+import { render as rtlRender, RenderOptions, RenderResult, screen as rtlScreen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Node, Edge, Connection, ReactFlowInstance, ReactFlowProps, ConnectionLineType, MarkerType } from '@xyflow/react';
+import { Node, Edge, ReactFlowInstance, MarkerType } from '@xyflow/react';
 import { vi, expect as vitestExpect } from 'vitest';
 
 import { CardData } from '@/components/ideamap/types/ideamap-types';
@@ -56,10 +57,10 @@ export const createDragEvent = (data: any = {}): React.DragEvent => ({
     stopPropagation: vi.fn(),
     dataTransfer: {
         dropEffect: 'none',
-        getData: vi.fn((format: string) => {
+        getData: vi.fn(() => {
             try {
                 return typeof data === 'string' ? data : JSON.stringify(data);
-            } catch (error) {
+            } catch {
                 return '';
             }
         }),
@@ -81,7 +82,7 @@ export const screen = {
     getByText: (text: string) => {
         try {
             return rtlScreen.getByText(text);
-        } catch (error) {
+        } catch {
             console.error(`getByText failed for: ${text}`);
             return document.createElement('div');
         }
@@ -89,7 +90,7 @@ export const screen = {
     getByTestId: (testId: string) => {
         try {
             return rtlScreen.getByTestId(testId);
-        } catch (error) {
+        } catch {
             console.error(`getByTestId failed for: ${testId}`);
             return document.createElement('div');
         }

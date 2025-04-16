@@ -4,6 +4,7 @@
  * 역할: 테스트 환경 설정 및 전역 설정 제공
  * 작성일: 2025-03-27
  * 수정일: 2025-04-08 - waitFor 제대로 작동하도록 setTimeout 모킹 방식 수정
+ * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수/함수 제거, 타입 문제 해결)
  */
 
 import '@testing-library/jest-dom/vitest';
@@ -48,24 +49,6 @@ afterAll(() => {
 // 항상 document.body가 존재하도록 함
 if (typeof document !== 'undefined' && !document.body) {
   document.body = document.createElement('body');
-}
-
-// 문서 초기화 함수 - 테스트 전 호출
-function setupDocument() {
-  if (typeof document !== 'undefined') {
-    if (!document.body) {
-      document.body = document.createElement('body');
-    }
-    // 루트 컨테이너 초기화 (기존 로직 유지)
-    const rootEl = document.querySelector('#test-root');
-    if (!rootEl) {
-        const newRootEl = document.createElement('div');
-        newRootEl.id = 'test-root';
-        document.body.appendChild(newRootEl);
-    } else if (rootEl.parentNode !== document.body) {
-        document.body.appendChild(rootEl); // 루트가 body 밖에 있으면 다시 추가
-    }
-  }
 }
 
 // Logger 모킹 (실제 구현과 일치하도록 수정)
@@ -151,12 +134,6 @@ vi.mock('@/lib/logger', () => {
   });
 
   // 수정: 각 로그 함수를 vi.fn()으로 명시적으로 만들어 스파이로 인식되도록 함
-  const debugFn = vi.fn((message: string, data?: any) => mockLogger('module', 'debug', message, data));
-  const infoFn = vi.fn((message: string, data?: any) => mockLogger('module', 'info', message, data));
-  const warnFn = vi.fn((message: string, data?: any) => mockLogger('module', 'warn', message, data));
-  const errorFn = vi.fn((message: string, data?: any) => mockLogger('module', 'error', message, data));
-
-  // 수정: createLoggerMock이 각 로그 메소드가 스파이인 객체를 반환하도록 함
   const createLoggerMock = vi.fn((module: string) => {
     // 모듈별로 새로운 스파이 함수 생성
     return {
@@ -212,8 +189,7 @@ vi.stubGlobal('indexedDB', mockIndexedDB);
 class MockResizeObserver { /* ... */ } // 기존 구현 유지
 vi.stubGlobal('ResizeObserver', MockResizeObserver);
 
-// DOMStringList 모킹 (기존 로직 유지)
-// @ts-ignore
+// DOMStringList 모킹 (기존 구현 유지)
 class MockDOMStringList { /* ... */ } // 기존 구현 유지
 vi.stubGlobal('DOMStringList', MockDOMStringList);
 
@@ -231,10 +207,6 @@ const storageMap = new Map<string, string>();
 // crypto 객체 모킹 (기존 로직 유지)
 const mockCrypto = { /* ... */ }; // 기존 구현 유지
 vi.stubGlobal('crypto', mockCrypto);
-
-// Next.js navigation 모듈 모킹 (기존 로직 유지)
-const mockRouterFunctions = { /* ... */ }; // 기존 구현 유지
-// vi.mock('next/navigation', () => ({ /* ... */ })); // 기존 구현 유지
 
 vi.mock('next/navigation', () => {
   const actual = vi.importActual('next/navigation'); // 실제 모듈의 다른 export 보존
@@ -329,11 +301,6 @@ vi.mock('@supabase/supabase-js', () => {
   return { createClient };
 });
 
-// 테스트 유틸리티 함수 (set/getAuthData는 이제 storageMap이 아닌 localStorage 모킹에 의존하도록 변경 필요)
-// **중요**: 이 유틸리티 함수들이 테스트에서 직접 사용되고 있다면 수정해야 합니다.
-//          만약 사용되지 않고, 오직 모킹 내부에서만 storageMap을 썼다면 이 함수들은 제거 가능합니다.
-// export const setAuthData = async (key: string, value: string): Promise<void> => { mockLocalStorage.setItem(key, value); };
-// export const getAuthData = async (key: string): Promise<string | null> => { return mockLocalStorage.getItem(key); };
 export const clearTestEnvironment = () => {
   storageMap.clear(); // AsyncStorage 모킹용으로 유지
   mockLocalStorage.clear(); // localStorage 모킹 클리어
@@ -341,17 +308,9 @@ export const clearTestEnvironment = () => {
   vi.clearAllMocks();
 };
 
-// 타이머 및 DOM API 모킹 (기존 로직 유지)
-const mockTimerFn = (callback: Function, timeout?: number) => { /* ... */ }; // 기존 구현 유지
+// 타이머 및 DOM API 모킹
+const mockTimerFn = (/* 사용하지 않는 파라미터 제거 */) => { /* ... */ };
 global.setTimeout = vi.fn(mockTimerFn) as unknown as typeof setTimeout;
-// ... 기타 타이머 및 DOM API 모킹 ...
-
-// 클립보드 모킹 (기존 로직 유지)
-const mockedClipboard = { /* ... */ }; // 기존 구현 유지
-// ... navigator 설정 ...
-class DataTransferItemMock { /* ... */ } // 기존 구현 유지
-class DataTransferMock { /* ... */ } // 기존 구현 유지
-Object.defineProperty(global, 'DataTransfer', { /* ... */ }); // 기존 구현 유지
 
 // --- 테스트 전/후 처리 ---
 beforeEach(async () => {
@@ -361,7 +320,6 @@ beforeEach(async () => {
   // mockSessionStorage.clear();
   // storageMap.clear(); // AsyncStorage 모킹용 초기화
   // // 문서 초기화
-  // setupDocument();
   // // 모든 모의 함수 호출 기록 초기화
   // vi.clearAllMocks();
   // // window.location 초기화

@@ -14,7 +14,7 @@ import type { Mock } from 'vitest';
 
 import prisma from '@/lib/prisma';
 
-import { GET, PUT, DELETE } from './route';
+import { GET, PUT, DELETE, PATCH } from './route';
 
 // 타입 정의
 interface MockContext {
@@ -260,6 +260,83 @@ describe('Card Detail API', () => {
       const request = createMockRequest('PUT', requestData);
       const context = createMockContext('1');
       const response = await PUT(request, context);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(500);
+      expect(data).toHaveProperty('error');
+    });
+  });
+
+  describe('PATCH /api/cards/[id]', () => {
+    it('유효한 데이터로 카드 내용을 업데이트한다', async () => {
+      // 요청 데이터
+      const requestData = {
+        content: '업데이트된 내용만',
+      };
+
+      // Prisma 응답 모킹
+      (prisma.card.findUnique as Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
+      (prisma.card.update as Mock).mockResolvedValue({
+        id: '1',
+        title: '기존 제목',
+        content: '업데이트된 내용만',
+      });
+
+      // API 호출
+      const request = createMockRequest('PATCH', requestData);
+      const context = createMockContext('1');
+      const response = await PATCH(request, context);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(200);
+      expect(data).toMatchObject({
+        id: '1',
+        content: '업데이트된 내용만',
+      });
+      expect(prisma.card.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { content: '업데이트된 내용만' },
+        include: expect.any(Object)
+      });
+    });
+
+    it('존재하지 않는 카드 업데이트 시 404 응답을 반환한다', async () => {
+      // Prisma 응답 모킹 (카드가 없음)
+      (prisma.card.findUnique as Mock).mockResolvedValue(null);
+
+      // 요청 데이터
+      const requestData = {
+        content: '업데이트된 내용',
+      };
+
+      // API 호출
+      const request = createMockRequest('PATCH', requestData);
+      const context = createMockContext('999');
+      const response = await PATCH(request, context);
+      const data = await response.json();
+
+      // 검증
+      expect(response.status).toBe(404);
+      expect(data).toHaveProperty('error');
+      expect(prisma.card.update).not.toHaveBeenCalled();
+    });
+
+    it('PATCH 요청 중 DB 에러 발생 시 500 응답을 반환한다', async () => {
+      // 요청 데이터
+      const requestData = {
+        content: '업데이트된 내용',
+      };
+
+      // Prisma 응답 모킹
+      (prisma.card.findUnique as Mock).mockResolvedValue({ id: '1' }); // 카드 존재 확인
+      (prisma.card.update as Mock).mockRejectedValue(new Error('DB 에러'));
+
+      // API 호출
+      const request = createMockRequest('PATCH', requestData);
+      const context = createMockContext('1');
+      const response = await PATCH(request, context);
       const data = await response.json();
 
       // 검증

@@ -3,11 +3,12 @@
  * 목적: 테마 관련 컴포넌트 통합 테스트
  * 역할: ThemeContext와 NodeSizeSettings의 통합 검증
  * 작성일: 2025-03-27
+ * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수 제거)
  */
 
 import React from 'react';
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -84,21 +85,21 @@ vi.mock('../../components/settings/NodeSizeSettings', () => {
           // 다른 테스트에서 호출됨
         }, 0);
       }, []);
-      
+
       return (
         <div>
           <label>너비: <span>220px</span></label>
           <input data-testid="width-input" type="number" />
           <label>헤더 높이: <span>48px</span></label>
           <input data-testid="height-input" type="number" />
-          <button 
-            data-testid="apply-button" 
+          <button
+            data-testid="apply-button"
             onClick={() => updateNodeSizeMock(200, 60, 250)}
           >
             변경사항 적용
           </button>
-          <button 
-            data-testid="reset-button" 
+          <button
+            data-testid="reset-button"
             onClick={() => updateNodeSizeMock(130, 48, 180)}
           >
             기본값으로 초기화
@@ -121,7 +122,7 @@ vi.mock('../../components/ui/dialog', () => ({
 }));
 
 vi.mock('../../components/ui/slider', () => ({
-  Slider: ({ id, defaultValue, onValueChange }: any) => (
+  Slider: ({ defaultValue, onValueChange }: any) => (
     <input
       type="range"
       min="0"
@@ -148,57 +149,57 @@ import { NodeSizeSettings } from '../../components/settings/NodeSizeSettings';
 
 describe('테마 관련 컴포넌트 통합 테스트', () => {
   const setPropertyMock = vi.fn();
-  
+
   beforeEach(() => {
     document.documentElement.style.setProperty = setPropertyMock;
     updateNodeSizeMock.mockClear();
     updateNodeInternalsMock.mockClear();
     vi.useFakeTimers();
   });
-  
+
   afterEach(() => {
     document.documentElement.style.setProperty = originalSetProperty;
     vi.clearAllMocks();
     vi.useRealTimers();
   });
-  
+
   test('NodeSizeSettings의 변경이 ThemeContext를 통해 CSS 변수에 반영되어야 함', () => {
     // NodeSizeSettings를 렌더링
     render(<NodeSizeSettings />);
-    
+
     // 너비 입력 필드 변경
     const widthInput = screen.getByTestId('width-input');
     fireEvent.change(widthInput, { target: { value: '200' } });
-    
+
     // 변경사항 적용 버튼 클릭
     const applyButton = screen.getByTestId('apply-button');
     fireEvent.click(applyButton);
-    
+
     // updateNodeSize가 호출되었는지 확인
     expect(updateNodeSizeMock).toHaveBeenCalledWith(200, 60, 250);
-    
+
     // setTimeout 실행을 위해 타이머 진행
     vi.advanceTimersByTime(100);
   });
-  
+
   test('기본값으로 초기화가 ThemeProvider를 통해 반영되어야 함', () => {
     // NodeSizeSettings를 렌더링
     render(<NodeSizeSettings />);
-    
+
     // 초기화 버튼 클릭
     const resetButton = screen.getByTestId('reset-button');
     fireEvent.click(resetButton);
-    
+
     // updateNodeSize가 호출되었는지 확인
     expect(updateNodeSizeMock).toHaveBeenCalledWith(130, 48, 180);
-    
+
     // setTimeout 실행을 위해 타이머 진행
     vi.advanceTimersByTime(100);
   });
-  
+
   test('DOM에 CSS 변수가 적용되는지 확인', () => {
     const savedGetComputedStyle = window.getComputedStyle;
-    
+
     // getComputedStyle 모킹
     window.getComputedStyle = vi.fn().mockImplementation(() => ({
       getPropertyValue: (prop: string) => {
@@ -207,19 +208,19 @@ describe('테마 관련 컴포넌트 통합 테스트', () => {
         return '';
       }
     })) as any;
-    
+
     // 테스트 요소 렌더링
     render(
       <div data-testid="test-element" style={{ width: 'var(--card-default-width)' }}>
         테스트 요소
       </div>
     );
-    
+
     // CSS 변수가 DOM에 적용되었는지 확인
     const testElement = screen.getByTestId('test-element');
     const styles = window.getComputedStyle(testElement);
     expect(styles.getPropertyValue('--card-default-width')).toBe('200px');
-    
+
     // 모킹 복원
     window.getComputedStyle = savedGetComputedStyle;
   });
