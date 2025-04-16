@@ -1,3 +1,10 @@
+/**
+ * 파일명: src/components/cards/EditCardModal.tsx
+ * 목적: 카드 수정 모달 컴포넌트
+ * 역할: 카드 정보를 수정하기 위한 모달 인터페이스 제공
+ * 작성일: 2024-05-17
+ */
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -5,12 +12,13 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 import EditCardForm from "@/components/cards/EditCardForm";
+import type { CardData } from "@/components/cards/EditCardForm";
 import { Button } from "@/components/ui/button";
 
 interface EditCardModalProps {
   cardId: string;
   onClose: () => void;
-  onCardUpdated?: (updatedCard: any) => void;
+  onCardUpdated?: (updatedCard: CardData) => void;
 }
 
 /**
@@ -21,7 +29,7 @@ export function EditCardModal({
   onClose,
   onCardUpdated
 }: EditCardModalProps) {
-  const [card, setCard] = useState<any>(null);
+  const [card, setCard] = useState<CardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,11 +39,11 @@ export function EditCardModal({
       try {
         setLoading(true);
         const response = await fetch(`/api/cards/${cardId}`);
-        
+
         if (!response.ok) {
           throw new Error('카드를 찾을 수 없습니다.');
         }
-        
+
         const data = await response.json();
         setCard(data);
       } catch (err) {
@@ -51,8 +59,8 @@ export function EditCardModal({
   }, [cardId]);
 
   // 카드 업데이트 콜백
-  const handleCardUpdated = (updatedCard: any) => {
-    if (onCardUpdated) {
+  const handleCardUpdated = (updatedCard?: CardData) => {
+    if (onCardUpdated && updatedCard) {
       onCardUpdated(updatedCard);
     }
     onClose();
@@ -79,9 +87,9 @@ export function EditCardModal({
           ) : error ? (
             <div className="text-center text-red-500 py-8">
               <p>{error}</p>
-              <Button 
-                variant="outline" 
-                onClick={onClose} 
+              <Button
+                variant="outline"
+                onClick={onClose}
                 className="mt-4"
               >
                 닫기
@@ -93,9 +101,9 @@ export function EditCardModal({
                 <h2 className="text-xl font-semibold">카드 수정</h2>
                 <p className="text-sm text-muted-foreground">카드 정보를 수정하려면 아래 양식을 작성하세요.</p>
               </div>
-              <EditCardForm 
-                card={card} 
-                onSuccess={handleCardUpdated} 
+              <EditCardForm
+                card={card}
+                onSuccess={handleCardUpdated}
                 onCancel={onClose}
               />
             </>

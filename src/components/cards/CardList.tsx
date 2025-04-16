@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -78,13 +78,7 @@ export default function CardList() {
     });
   }, [cards, searchParams]);
 
-  useEffect(() => {
-    if (cards.length === 0) {
-      fetchCards();
-    }
-  }, [cards.length, searchParams, fetchCards]);
-
-  async function fetchCards() {
+  const fetchCards = useCallback(async () => {
     setLoading(true);
     try {
       const q = searchParams.get('q');
@@ -110,7 +104,13 @@ export default function CardList() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [searchParams, setCards]);
+
+  useEffect(() => {
+    if (cards.length === 0) {
+      fetchCards();
+    }
+  }, [cards.length, fetchCards]);
 
   const handleTagClick = (tagName: string, e: React.MouseEvent) => {
     e.preventDefault();

@@ -4,6 +4,7 @@
  * 역할: IdeaMap 컴포넌트의 기능을 검증하는 테스트 코드 제공
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
+ * 수정일: 2024-05-17 : 사용되지 않는 import와 변수 제거
  */
 
 import React from 'react';
@@ -13,14 +14,9 @@ import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import '@testing-library/jest-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAppStore } from '@/store/useAppStore';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 
 import IdeaMap from './IdeaMap';
-import { useEdges } from '../hooks/useEdges';
-import { useIdeaMapUtils } from '../hooks/useIdeaMapUtils';
-import { useNodeClickHandlers } from '../hooks/useNodes';
 
 // React Flow 모킹
 mockReactFlow();
@@ -68,49 +64,54 @@ vi.mock('@xyflow/react', async () => {
 // IdeaMap 컴포넌트 자체 모킹으로 변경
 vi.mock('./IdeaMap', () => ({
   default: ({ showControls }: { showControls?: boolean }) => {
-    const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+    // React Hook "useState" 규칙 위반 문제 해결 - 컴포넌트 이름 변경
+    const MockIdeaMap = () => {
+      const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
 
-    const handleCreateCard = () => {
-      setIsCreateModalOpen(true);
-    };
+      const handleCreateCard = () => {
+        setIsCreateModalOpen(true);
+      };
 
-    const handleCloseModal = () => {
-      setIsCreateModalOpen(false);
-    };
+      const handleCloseModal = () => {
+        setIsCreateModalOpen(false);
+      };
 
-    const handleSubmitCard = () => {
-      // 모킹된 Zustand 상태 업데이트 함수 호출
-      mockSetCards([{ id: 'new-card', title: '테스트', content: '내용' }]);
-      setIsCreateModalOpen(false);
-    };
+      const handleSubmitCard = () => {
+        // 모킹된 Zustand 상태 업데이트 함수 호출
+        mockSetCards([{ id: 'new-card', title: '테스트', content: '내용' }]);
+        setIsCreateModalOpen(false);
+      };
 
-    const handlePaneClick = () => {
-      // 보드 영역 클릭 시 clearSelection 호출
-      mockClearSelection();
-    };
+      const handlePaneClick = () => {
+        // 보드 영역 클릭 시 clearSelection 호출
+        mockClearSelection();
+      };
 
-    return (
-      <div data-testid="ideamap-canvas" onClick={handlePaneClick}>
-        {showControls && (
-          <button data-testid="create-card-button" onClick={handleCreateCard}>
-            Create Card
+      return (
+        <div data-testid="ideamap-canvas" onClick={handlePaneClick}>
+          {showControls && (
+            <button data-testid="create-card-button" onClick={handleCreateCard}>
+              Create Card
+            </button>
+          )}
+          <button
+            data-testid="new-card-button"
+            onClick={handleCreateCard}
+          >
+            새 카드 만들기
           </button>
-        )}
-        <button
-          data-testid="new-card-button"
-          onClick={handleCreateCard}
-        >
-          새 카드 만들기
-        </button>
 
-        {isCreateModalOpen && (
-          <div data-testid="create-card-modal">
-            <button data-testid="close-modal-button" onClick={handleCloseModal}>닫기</button>
-            <button data-testid="submit-button" onClick={handleSubmitCard}>제출</button>
-          </div>
-        )}
-      </div>
-    );
+          {isCreateModalOpen && (
+            <div data-testid="create-card-modal">
+              <button data-testid="close-modal-button" onClick={handleCloseModal}>닫기</button>
+              <button data-testid="submit-button" onClick={handleSubmitCard}>제출</button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    return <MockIdeaMap />;
   }
 }));
 
@@ -165,7 +166,6 @@ const mockSetCards = vi.fn();
 const mockSetReactFlowInstance = vi.fn();
 const mockSetIdeaMapSettings = vi.fn();
 const mockSetShowControls = vi.fn();
-const mockSetNodes = vi.fn();
 
 // useAppStore 모킹 - Zustand 모킹 패턴에 맞게 수정
 vi.mock('@/store/useAppStore', () => ({
@@ -204,7 +204,7 @@ vi.mock('@/store/useAppStore', () => ({
   }),
 }));
 
-// 인증 컨텍스트 모킹 - useAuth로 수정
+// 인증 컨텍스트 모킹
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({
     isAuthenticated: true,

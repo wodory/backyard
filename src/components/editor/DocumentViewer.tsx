@@ -4,7 +4,6 @@ import React, { useMemo, useEffect } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate } from '@/lib/utils';
 
 import TiptapViewer from './TiptapViewer';
 
@@ -43,7 +42,7 @@ export default function DocumentViewer({
   }, [cards, isMultiSelection]);
 
   // 데이터 가공 로직을 컴포넌트 내부로 이동
-  const { title, content, date, tags } = useMemo(() => {
+  const { content, tags } = useMemo(() => {
     if (!cards || cards.length === 0) {
       return { title: '', content: '', date: null, tags: [] };
     }
@@ -102,14 +101,14 @@ export default function DocumentViewer({
   return (
     <div className="p-6 max-w-full">
       {/* <h1 className="text-2xl font-bold mb-2 break-words">{title}</h1> */}
-      
+
       {/* {!isMultiSelection && date && (
         <div className="text-sm text-gray-500 mb-4">
           {formatDate(date)}
         </div>
       )} */}
-      
-      
+
+
       {contentIsEmpty ? (
         <div className="text-gray-400 italic">내용이 없습니다.</div>
       ) : isMultiSelection ? (

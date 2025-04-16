@@ -1,9 +1,15 @@
+/**
+ * 파일명: src/components/cards/EditCardForm.tsx
+ * 목적: 카드 수정 폼 컴포넌트
+ * 역할: 카드 정보를 수정하기 위한 폼을 제공
+ * 작성일: 2024-05-17
+ */
+
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
-import { Card } from '@prisma/client';
-import { X, Plus } from "lucide-react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 
 import TiptapEditor from "@/components/editor/TiptapEditor";
@@ -11,13 +17,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DEFAULT_USER_ID } from "@/lib/constants";
 
+// 카드 타입 정의
+export interface CardData {
+  id: string;
+  title: string;
+  content: string;
+  cardTags?: Array<{ tag: { name: string } }>;
+  [key: string]: unknown; // 추가 속성을 위한 인덱스 시그니처
+}
 
 // 컴포넌트 props 타입 정의
 interface EditCardFormProps {
-  card: any; // 카드 데이터
-  onSuccess?: (updatedCard?: any) => void; // 수정 성공 시 호출할 콜백
+  card: CardData; // 카드 데이터
+  onSuccess?: (updatedCard?: CardData) => void; // 수정 성공 시 호출할 콜백
   onCancel?: () => void; // 취소 버튼 클릭 시 호출할 콜백
 }
 
@@ -37,7 +50,7 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
       setContent(card.content || '');
       // CardTag에서 태그 이름을 추출
       if (card.cardTags && Array.isArray(card.cardTags)) {
-        const tagNames = card.cardTags.map((cardTag: any) => cardTag.tag.name);
+        const tagNames = card.cardTags.map((cardTag) => cardTag.tag.name);
         setTags(tagNames);
       }
     }
@@ -57,7 +70,7 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTagInput(value);
-    
+
     // 쉼표가 포함되어 있으면 태그 추가
     if (value.includes(',') && !isComposing) {
       const newTag = value.replace(',', '').trim();
@@ -73,7 +86,7 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
     if (e.key === 'Enter' && !isComposing) {
       e.preventDefault();
       const newTag = tagInput.trim();
-      
+
       if (newTag && !tags.includes(newTag)) {
         setTags([...tags, newTag]);
         setTagInput('');
@@ -89,15 +102,15 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
   // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // 유효성 검사
     if (!title.trim()) {
       toast.error('제목을 입력해주세요.');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // API 호출로 카드 업데이트
       const response = await fetch(`/api/cards/${card.id}`, {
@@ -111,16 +124,16 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
           tags,
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '카드 수정 중 오류가 발생했습니다.');
       }
-      
+
       const updatedCard = await response.json();
-      
+
       toast.success('카드가 성공적으로 수정되었습니다.');
-      
+
       // 성공 콜백 호출
       if (onSuccess) {
         onSuccess(updatedCard);
@@ -147,7 +160,7 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
           required
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="content">내용</Label>
         <TiptapEditor
@@ -157,7 +170,7 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
           showToolbar={false}
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="tags">태그</Label>
         <Input
@@ -170,7 +183,7 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
           placeholder="태그 입력 후 Enter 또는 쉼표(,)로 구분"
           disabled={isSubmitting}
         />
-        
+
         {/* 태그 목록 */}
         <div className="flex flex-wrap gap-1 mt-2">
           {tags.map((tag, index) => (
@@ -187,11 +200,11 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
           ))}
         </div>
       </div>
-      
+
       <div className="flex justify-between pt-4">
-        <Button 
-          type="button" 
-          variant="outline" 
+        <Button
+          type="button"
+          variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
         >

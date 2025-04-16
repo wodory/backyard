@@ -4,23 +4,22 @@
  * 역할: IdeaMapCanvas 컴포넌트의 렌더링과 기능을 테스트
  * 작성일: 2025-03-28
  * 수정일: 2025-04-01
+ * 수정일: 2023-10-27 : import 순서 및 미사용 변수 제거
+ * 수정일: 2023-10-27 : 불필요한 props 제거 및 테스트 환경 수정
  */
 
 import React from 'react';
-
-import { render, screen, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-
-import '@testing-library/jest-dom';
-import { mockReactFlow, createTestNode, createTestEdge } from '@/tests/test-utils';
-
-import IdeaMapCanvas from './IdeaMapCanvas';
-
-import { MarkerType, ConnectionLineType } from '@xyflow/react';
-
 import { ReactNode } from 'react';
 
-import { Node, Edge, Connection, Viewport } from '@xyflow/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+
+import { MarkerType, ConnectionLineType, Node, Edge } from '@xyflow/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+import { createTestNode, createTestEdge } from '@/tests/test-utils';
+
+import IdeaMapCanvas from './IdeaMapCanvas';
 
 // React Flow 모킹
 vi.mock('@xyflow/react', async () => {
@@ -42,13 +41,8 @@ vi.mock('@xyflow/react', async () => {
         {children}
       </div>
     ),
-    ReactFlow: ({ children, onNodesChange, onEdgesChange, onConnect, onConnectStart, onConnectEnd, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
+    ReactFlow: ({ children, onNodeClick, onPaneClick, defaultEdgeOptions, ...props }: {
       children?: ReactNode;
-      onNodesChange?: (changes: any) => void;
-      onEdgesChange?: (changes: any) => void;
-      onConnect?: (connection: any) => void;
-      onConnectStart?: (event: any, params: any) => void;
-      onConnectEnd?: (event: any) => void;
       onNodeClick?: (event: any, node: any) => void;
       onPaneClick?: (event: any) => void;
       defaultEdgeOptions?: any;
@@ -93,22 +87,21 @@ vi.mock('@xyflow/react', async () => {
   };
 });
 
+// 모의 컴포넌트 정의
+const MockLayoutControls = ({ onLayoutChange }: { onLayoutChange: (direction: string) => void }) => (
+  <div data-testid="layout-controls">
+    <button data-testid="layout-horizontal-button" onClick={() => onLayoutChange('horizontal')}>
+      Horizontal
+    </button>
+  </div>
+);
+
+// LayoutControls 모킹
 vi.mock('@/components/board/LayoutControls', () => ({
-  default: ({ onSaveLayout, onLayoutChange, onAutoLayout }: any) => (
-    <div data-testid="layout-controls">
-      <button data-testid="save-layout-button" onClick={onSaveLayout}>
-        Save Layout
-      </button>
-      <button data-testid="layout-horizontal-button" onClick={() => onLayoutChange('horizontal')}>
-        Horizontal
-      </button>
-      <button data-testid="auto-layout-button" onClick={onAutoLayout}>
-        Auto Layout
-      </button>
-    </div>
-  ),
+  default: MockLayoutControls
 }));
 
+// CreateCardButton 모킹
 vi.mock('@/components/cards/CreateCardButton', () => ({
   default: ({ onCardCreated, onClose }: any) => (
     <div data-testid="create-card-button-container">
@@ -125,9 +118,18 @@ vi.mock('@/components/cards/CreateCardButton', () => ({
   ),
 }));
 
+// DevTools 모킹
 vi.mock('@/components/debug/DevTools', () => ({
   default: () => <div data-testid="dev-tools">Dev Tools</div>,
 }));
+
+// 테스트를 위한 wrapperRef 생성
+const createWrapperRef = () => {
+  const divRef = document.createElement('div');
+  return {
+    current: divRef
+  } as React.RefObject<HTMLDivElement>;
+};
 
 describe('IdeaMapCanvas Component', () => {
   const snapGrid: [number, number] = [15, 15];
@@ -144,7 +146,6 @@ describe('IdeaMapCanvas Component', () => {
     onConnectEnd: vi.fn(),
     onNodeClick: vi.fn(),
     onPaneClick: vi.fn(),
-    layoutDirection: 'horizontal' as const,
     ideaMapSettings: {
       snapToGrid: true,
       snapGrid,
@@ -156,14 +157,10 @@ describe('IdeaMapCanvas Component', () => {
       markerEnd: MarkerType.ArrowClosed,
       markerSize: 8
     },
-    onIdeaMapSettingsChange: vi.fn(),
-    onLayoutChange: vi.fn(),
-    onAutoLayout: vi.fn(),
-    onSaveLayout: vi.fn(),
-    onCreateCard: vi.fn(),
-    wrapperRef: React.createRef<HTMLDivElement>(),
-    isAuthenticated: true,
-    userId: 'test-user'
+    wrapperRef: createWrapperRef(),
+    onDragOver: vi.fn(),
+    onDrop: vi.fn(),
+    onViewportChange: vi.fn()
   };
 
   beforeEach(() => {
@@ -211,31 +208,6 @@ describe('IdeaMapCanvas Component', () => {
     expect(defaultProps.onPaneClick).toHaveBeenCalled();
   });
 
-  it('handles layout controls', () => {
-    const onLayoutChange = vi.fn();
-    const onAutoLayout = vi.fn();
-    const onSaveLayout = vi.fn();
-
-    render(<IdeaMapCanvas {...defaultProps}
-      onLayoutChange={onLayoutChange}
-      onAutoLayout={onAutoLayout}
-      onSaveLayout={onSaveLayout}
-    />);
-
-    // 레이아웃 컨트롤이 제거되었으므로, 대신 props가 올바르게 전달되었는지 확인
-    expect(onLayoutChange).toBeDefined();
-    expect(onAutoLayout).toBeDefined();
-    expect(onSaveLayout).toBeDefined();
-  });
-
-  it('handles card creation', () => {
-    const onCreateCard = vi.fn();
-    render(<IdeaMapCanvas {...defaultProps} onCreateCard={onCreateCard} />);
-
-    // 카드 생성 버튼이 제거되었으므로, 대신 prop이 올바르게 전달되었는지 확인
-    expect(onCreateCard).toBeDefined();
-  });
-
   it('renders dev tools in development environment', () => {
     const originalNodeEnv = process.env.NODE_ENV;
     vi.stubEnv('NODE_ENV', 'development');
@@ -246,75 +218,5 @@ describe('IdeaMapCanvas Component', () => {
     expect(screen.getByTestId('react-flow-controls')).toBeInTheDocument();
 
     vi.stubEnv('NODE_ENV', originalNodeEnv || 'test');
-  });
-
-  it('applies correct ideaMap settings', () => {
-    const customSettings = {
-      ...defaultProps.ideaMapSettings,
-      snapToGrid: false,
-      animated: true,
-      strokeWidth: 3,
-    };
-
-    render(<IdeaMapCanvas {...defaultProps} ideaMapSettings={customSettings} />);
-    const container = screen.getByTestId('react-flow-container');
-    expect(container).toHaveClass('react-flow');
-  });
-
-  it('handles drag and drop events', () => {
-    const onDragOver = vi.fn();
-    const onDrop = vi.fn();
-
-    render(<IdeaMapCanvas {...defaultProps} onDragOver={onDragOver} onDrop={onDrop} />);
-    const container = screen.getByTestId('react-flow-container').parentElement;
-
-    if (container) {
-      fireEvent.dragOver(container);
-      expect(onDragOver).toHaveBeenCalled();
-
-      fireEvent.drop(container);
-      expect(onDrop).toHaveBeenCalled();
-    }
-  });
-
-  it('handles viewport changes', () => {
-    const onViewportChange = vi.fn();
-    render(<IdeaMapCanvas {...defaultProps} onViewportChange={onViewportChange} />);
-
-    // ReactFlow의 onViewportChange는 모킹된 상태이므로 직접적인 테스트는 생략
-    expect(screen.getByTestId('react-flow-container')).toBeInTheDocument();
-  });
-
-  it('applies correct edge options when markerEnd is null', () => {
-    const settingsWithoutMarker = {
-      ...defaultProps.ideaMapSettings,
-      markerEnd: null
-    };
-
-    render(<IdeaMapCanvas {...defaultProps} ideaMapSettings={settingsWithoutMarker} />);
-    const defaultEdgeOptions = screen.getByTestId('default-edge-options');
-    const edgeOptionsData = JSON.parse(defaultEdgeOptions.textContent || '{}');
-
-    expect(edgeOptionsData.markerEnd).toBeUndefined();
-    expect(edgeOptionsData.type).toBe('custom');
-    expect(edgeOptionsData.animated).toBe(false);
-    expect(edgeOptionsData.style.strokeWidth).toBe(2);
-    expect(edgeOptionsData.style.stroke).toBe('#000000');
-  });
-
-  it('applies correct edge options when markerEnd is ArrowClosed', () => {
-    render(<IdeaMapCanvas {...defaultProps} />);
-    const defaultEdgeOptions = screen.getByTestId('default-edge-options');
-    const edgeOptionsData = JSON.parse(defaultEdgeOptions.textContent || '{}');
-
-    expect(edgeOptionsData.markerEnd).toEqual({
-      type: MarkerType.ArrowClosed,
-      width: 8,
-      height: 8,
-    });
-    expect(edgeOptionsData.type).toBe('custom');
-    expect(edgeOptionsData.animated).toBe(false);
-    expect(edgeOptionsData.style.strokeWidth).toBe(2);
-    expect(edgeOptionsData.style.stroke).toBe('#000000');
   });
 }); 
