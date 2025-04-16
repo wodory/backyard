@@ -95,8 +95,8 @@ describe('미들웨어 인증 테스트', () => {
     });
     
     // 대시보드 요청 시뮬레이션
-    const request = { nextUrl: { pathname: '/dashboard' } };
-    const response = await middleware(request);
+    // const request = { nextUrl: { pathname: '/dashboard' } };
+    // const response = await middleware(request);
     
     // 통과 확인
     expect(mockGetSession).toHaveBeenCalled();
@@ -123,8 +123,8 @@ describe('미들웨어 인증 테스트', () => {
     });
     
     // 대시보드 요청 시뮬레이션
-    const request = { nextUrl: { pathname: '/dashboard' } };
-    const response = await middleware(request);
+    // const request = { nextUrl: { pathname: '/dashboard' } };
+    // const response = await middleware(request);
     
     // 리디렉션 확인
     expect(mockGetSession).toHaveBeenCalled();
@@ -150,8 +150,8 @@ describe('미들웨어 인증 테스트', () => {
     });
     
     // 로그인 페이지 요청 시뮬레이션
-    const request = { nextUrl: { pathname: '/auth/login' } };
-    const response = await middleware(request);
+    // const request = { nextUrl: { pathname: '/auth/login' } };
+    // const response = await middleware(request);
     
     // 리디렉션 확인
     expect(mockGetSession).toHaveBeenCalled();
@@ -182,8 +182,8 @@ describe('미들웨어 인증 테스트', () => {
     });
     
     // 공개 API 요청 시뮬레이션
-    const request = { nextUrl: { pathname: '/api/public/status' } };
-    const response = await middleware(request);
+    // const request = { nextUrl: { pathname: '/api/public/status' } };
+    // const response = await middleware(request);
     
     // 통과 확인
     expect(mockNext).toHaveBeenCalled();
@@ -214,8 +214,8 @@ describe('미들웨어 인증 테스트', () => {
     });
     
     // 정적 자산 요청 시뮬레이션
-    const request = { nextUrl: { pathname: '/_next/static/chunks/main.js' } };
-    const response = await middleware(request);
+    // const request = { nextUrl: { pathname: '/_next/static/chunks/main.js' } };
+    // const response = await middleware(request);
     
     // 통과 확인
     expect(mockNext).toHaveBeenCalled();

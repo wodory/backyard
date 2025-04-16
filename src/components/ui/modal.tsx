@@ -7,7 +7,7 @@
 
 "use client"
 
-import * as React from "react"
+// import * as React from "react"
 
 import {
   Dialog,
@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"

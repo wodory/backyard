@@ -5,14 +5,14 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Eye, Trash2, GripVertical, Pencil, LogOut } from 'lucide-react';
+import { ChevronRight, Trash2, GripVertical, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
-import CardList from '@/components/cards/CardList';
+// import CardList from '@/components/cards/CardList';
 import { EditCardModal } from '@/components/cards/EditCardModal';
 import DocumentViewer from '@/components/editor/DocumentViewer';
 import TiptapViewer from '@/components/editor/TiptapViewer';
-import { Badge } from '@/components/ui/badge';
+// import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
+  // DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import { Portal } from '@/components/ui/portal';
@@ -58,7 +58,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const router = useRouter();
+  // const router = useRouter();
   const {
     isSidebarOpen,
     setSidebarOpen,
@@ -74,10 +74,10 @@ export function Sidebar({ className }: SidebarProps) {
   const auth = useAuth();
 
   // useIdeaMapStore에서 노드 데이터 가져오기
-  const ideaMapNodes = useIdeaMapStore(state => state.nodes);
+  // const ideaMapNodes = useIdeaMapStore(state => state.nodes);
 
   // 전역 상태의 cards를 CardItem 타입으로 캐스팅하여 사용
-  const cardsWithType = cards as CardItem[];
+  // const cardsWithType = cards as CardItem[];
 
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);

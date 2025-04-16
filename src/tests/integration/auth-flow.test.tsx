@@ -8,7 +8,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -132,7 +132,7 @@ describe('인증 흐름 통합 테스트', () => {
         expect(useRouter().push).toHaveBeenCalledWith('/login')
 
         // 11. 로그아웃 후 쿠키 및 로컬 스토리지 삭제 확인 
-        const cookiesDeleteSpy = vi.spyOn(document.cookie, 'split', 'get');
+        // const cookiesDeleteSpy = vi.spyOn(document.cookie, 'split', 'get');
         expect(document.cookie).not.toContain('sb-access-token');
         expect(document.cookie).not.toContain('sb-refresh-token');
 

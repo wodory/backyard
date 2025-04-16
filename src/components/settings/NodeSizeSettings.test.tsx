@@ -7,7 +7,7 @@
 
 import React from 'react';
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -130,14 +130,14 @@ describe('NodeSizeSettings 컴포넌트', () => {
     updateNodeInternalsMock.mockClear();
     vi.useFakeTimers();
   });
-  
+
   afterEach(() => {
     vi.useRealTimers();
   });
-  
+
   test('컴포넌트가 올바르게 렌더링되어야 함', () => {
     renderNodeSizeSettings();
-    
+
     // 기본 UI 요소 확인
     expect(screen.getByText(/노드 크기 설정/i)).toBeInTheDocument();
     expect(screen.getByText(/너비:/i)).toBeInTheDocument();
@@ -149,29 +149,29 @@ describe('NodeSizeSettings 컴포넌트', () => {
     expect(screen.getByText(/변경사항 적용/i)).toBeInTheDocument();
     expect(screen.getByText(/기본값으로 초기화/i)).toBeInTheDocument();
   });
-  
+
   test('입력 필드 값이 변경되어야 함', () => {
     renderNodeSizeSettings();
-    
+
     // 너비 입력 필드 값 변경
     const widthInput = screen.getByTestId('node-width-input');
     fireEvent.change(widthInput, { target: { value: '200' } });
     expect(widthInput).toHaveValue(200); // 숫자로 비교
-    
+
     // 헤더 높이 입력 필드 값 변경
     const heightInput = screen.getByTestId('node-height-input');
     fireEvent.change(heightInput, { target: { value: '60' } });
     expect(heightInput).toHaveValue(60); // 숫자로 비교
-    
+
     // 최대 높이 입력 필드 값 변경
     const maxHeightInput = screen.getByTestId('node-max-height-input');
     fireEvent.change(maxHeightInput, { target: { value: '250' } });
     expect(maxHeightInput).toHaveValue(250); // 숫자로 비교
   });
-  
+
   test('변경사항 적용 버튼 클릭 시 updateNodeSize가 호출되어야 함', async () => {
     renderNodeSizeSettings();
-    
+
     // 값 변경
     const widthInput = screen.getByTestId('node-width-input');
     fireEvent.change(widthInput, { target: { value: '200' } });
@@ -179,49 +179,49 @@ describe('NodeSizeSettings 컴포넌트', () => {
     fireEvent.change(heightInput, { target: { value: '60' } });
     const maxHeightInput = screen.getByTestId('node-max-height-input');
     fireEvent.change(maxHeightInput, { target: { value: '250' } });
-    
+
     // 변경사항 적용 버튼 클릭
     const applyButton = screen.getByText(/변경사항 적용/i);
     fireEvent.click(applyButton);
-    
+
     // updateNodeSize 함수 호출 확인
     expect(updateNodeSizeMock).toHaveBeenCalledWith(200, 60, 250);
-    
+
     // setTimeout 실행을 위해 타이머 진행
     vi.advanceTimersByTime(100);
-    
+
     // updateNodeInternals 함수 호출 확인
     expect(updateNodeInternalsMock).toHaveBeenCalledTimes(2); // 2개의 노드에 대해 각각 한 번씩
   });
-  
+
   test('기본값으로 초기화 버튼 클릭 시 updateNodeSize가 기본값으로 호출되어야 함', async () => {
     renderNodeSizeSettings();
-    
+
     // 값 변경
     const widthInput = screen.getByTestId('node-width-input');
     fireEvent.change(widthInput, { target: { value: '200' } });
-    
+
     // 값이 변경되었는지 확인
     expect(widthInput).toHaveValue(200); // 숫자로 비교
-    
+
     // 기본값으로 초기화 버튼 클릭
     const resetButton = screen.getByText(/기본값으로 초기화/i);
     fireEvent.click(resetButton);
-    
+
     // updateNodeSize 함수가 기본값으로 호출되었는지 확인
     expect(updateNodeSizeMock).toHaveBeenCalledWith(130, 48, 180);
-    
+
     // setTimeout 실행을 위해 타이머 진행
     vi.advanceTimersByTime(100);
-    
+
     // updateNodeInternals 함수 호출 확인
     expect(updateNodeInternalsMock).toHaveBeenCalledTimes(2);
   });
-  
+
   test('슬라이더 관련 이벤트가 처리되어야 함', () => {
     // 이 테스트는 실제 컴포넌트의 이벤트 핸들러가 동작하는지만 확인
     renderNodeSizeSettings();
-    
+
     // 슬라이더와 입력 필드가 존재해야 함
     expect(screen.getByTestId('slider-node-width')).toBeInTheDocument();
     expect(screen.getByTestId('node-width-input')).toBeInTheDocument();

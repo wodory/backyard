@@ -10,12 +10,12 @@
 
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 import { User, Session, SupabaseClient } from '@supabase/supabase-js';
 
 import { STORAGE_KEYS } from '@/lib/auth';
-import { isClient } from '@/lib/environment';
+// import { isClient } from '@/lib/environment';
 import createLogger from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
 import { Database } from '@/types/supabase';
@@ -24,7 +24,7 @@ import { Database } from '@/types/supabase';
 const logger = createLogger('AuthContext');
 
 // 클라이언트 환경 확인 (전역 변수로 미리 설정)
-const isClientEnv = typeof window !== 'undefined';
+// const isClientEnv = typeof window !== 'undefined';
 
 interface AuthContextType {
   user: User | null;
