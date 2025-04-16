@@ -1,24 +1,24 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import {
   Menu,
-  ChevronRight,
-  Palette,
+  // ChevronRight,
+  // Palette,
   Grid3X3,
-  ChevronsUpDown,
-  AlignHorizontalJustifyCenter,
-  AlignVerticalJustifyCenter,
-  LayoutGrid,
+  // ChevronsUpDown,
+  // AlignHorizontalJustifyCenter,
+  // AlignVerticalJustifyCenter,
+  // LayoutGrid,
   Save,
   Settings,
   ArrowRightIcon,
   Circle,
   SeparatorHorizontal,
   Paintbrush,
-  Layout,
+  // Layout,
   LogOut,
   FileText,
   FolderOpen
@@ -50,12 +50,12 @@ import {
   EDGE_COLOR_OPTIONS,
   EDGE_ANIMATION_OPTIONS
 } from '@/lib/ideamap-constants';
-import {
-  IDEAMAP_LAYOUT_STORAGE_KEY,
-  IDEAMAP_EDGES_STORAGE_KEY,
-  IDEAMAP_TRANSFORM_STORAGE_KEY
-} from '@/lib/ideamap-constants';
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
+// import {
+//   IDEAMAP_LAYOUT_STORAGE_KEY,
+//   IDEAMAP_EDGES_STORAGE_KEY,
+//   IDEAMAP_TRANSFORM_STORAGE_KEY
+// } from '@/lib/ideamap-constants';
+// import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import createLogger from '@/lib/logger';
 import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 
@@ -65,18 +65,18 @@ const logger = createLogger('ProjectToolbar');
 export function ProjectToolbar() {
   // useAppStore에서 프로젝트 정보와 액션을 가져옴
   const {
-    layoutDirection,
-    setLayoutDirection,
+    // layoutDirection,
+    // setLayoutDirection,
     // rename board -> ideaMap
     ideaMapSettings,
     updateIdeaMapSettings,
     saveIdeaMapLayout,
     logoutAction,
     projects,
-    activeProjectId,
+    // activeProjectId,
     fetchProjects,
     createProject,
-    setActiveProject
+    // setActiveProject
   } = useAppStore();
 
   // 활성 프로젝트 정보 가져오기
@@ -111,7 +111,7 @@ export function ProjectToolbar() {
       // API 호출을 통해 프로젝트 목록 가져오기 (아직 API 미구현)
       fetchProjects();
     } catch (error) {
-      toast.error('프로젝트 목록 로드 중 오류가 발생했습니다.');
+      console.log(error);
     }
   }, [fetchProjects]);
 

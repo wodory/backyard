@@ -7,12 +7,25 @@
  * 수정일: 2025-04-12 : Zustand 액션 기반 리팩토링에 맞게 테스트 수정
  * 수정일: 2025-04-15 : React Flow 모킹 추가 및 테스트 안정성 개선
  * 수정일: 2025-04-15 : navigator.clipboard 모킹 및 타임아웃 설정 추가
+ * 수정일: 2025-04-17 : import 순서 정렬 (린트 오류 수정)
  */
 
-// 모듈 모킹
-import { vi } from 'vitest';
+// 먼저 React 및 핵심 라이브러리
+import React from 'react';
 
+import { render, screen, cleanup } from '@testing-library/react';
+import { ConnectionLineType, MarkerType } from '@xyflow/react';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
+
+import '@testing-library/jest-dom';
+
+// 내부 모듈 및 Utilities
+import { useAppStore } from '@/store/useAppStore';
+import { server } from '@/tests/msw/server';
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
+
+// ProjectToolbar 컴포넌트 임포트
+import { ProjectToolbar } from './ProjectToolbar';
 
 // React Flow 모킹 먼저 호출
 mockReactFlow();
@@ -43,21 +56,6 @@ vi.stubGlobal('window', {
         removeItem: vi.fn()
     }
 });
-
-// 페이지 모듈 import
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
-
-import { ProjectToolbar } from './ProjectToolbar';
-
-import '@testing-library/jest-dom';
-import { ConnectionLineType, MarkerType } from '@xyflow/react';
-import { toast } from 'sonner';
-
-import { server } from '@/tests/msw/server';
-import { useAppStore } from '@/store/useAppStore';
-
-import React from 'react';
 
 // navigator.clipboard 모킹
 vi.stubGlobal('navigator', {
@@ -178,9 +176,9 @@ vi.stubGlobal('process', { env: { NODE_ENV: 'development' } });
 // 타임아웃 설정 (2초)
 const TEST_TIMEOUT = 2000;
 
-interface TestComponentProps {
-    children?: React.ReactNode;
-}
+// interface TestComponentProps {
+//     children?: React.ReactNode;
+// }
 
 describe('ProjectToolbar', () => {
     beforeAll(() => {
