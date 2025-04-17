@@ -93,7 +93,7 @@ describe('Supabase 클라이언트 초기화', () => {
   test('createClient는 브라우저 환경에서만 작동해야 함', () => {
     // 1. window 객체를 undefined로 설정
     const originalWindow = global.window;
-    // @ts-ignore
+    // @@ts-expect-error
     global.window = undefined;
     
     // 2. createClient 함수 호출 시 에러 확인

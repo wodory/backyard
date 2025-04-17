@@ -15,9 +15,9 @@ import {
   mockNextResponse,
   mockAuthContext
 } from '../mocks/additional-mocks';
-import { mockClientEnvironment, mockServerEnvironment } from '../mocks/env-mock';
+import { mockClientEnvironment } from '../mocks/env-mock';
 import { mockLocalStorage, mockSessionStorage, mockCookies, mockCrypto } from '../mocks/storage-mock';
-import { mockSupabaseBrowserClient, mockSupabaseServerClient, mockSupabaseSession } from '../mocks/supabase-mock';
+import { mockSupabaseBrowserClient, mockSupabaseServerClient } from '../mocks/supabase-mock';
 
 // 모킹 환경 설정
 let clientEnv: { restore: () => void };

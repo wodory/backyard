@@ -6,7 +6,6 @@
  */
 
 import { vi } from 'vitest';
-
 // 로거 모킹 - 파일 상단에 위치해야 함
 vi.mock('@/lib/logger', () => {
   // 모킹된 로거 인스턴스 생성

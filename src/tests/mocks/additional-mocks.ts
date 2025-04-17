@@ -3,6 +3,7 @@
  * 목적: 테스트에 필요한 추가 모킹 함수 제공
  * 역할: 기존 모킹에 포함되지 않았거나 락된 모듈을 모킹
  * 작성일: 2025-03-27
+ * 수정일: 2025-04-05 : 린터 오류 수정 - Function 타입을 구체적인 함수 시그니처로 변경 및 사용되지 않는 변수 제거
  */
 
 import { vi } from 'vitest';
@@ -15,18 +16,18 @@ export const mockEnvironment = () => {
   const mock = {
     isClient: vi.fn().mockReturnValue(true),
     isServer: vi.fn().mockReturnValue(false),
-    executeOnClient: vi.fn((fn: Function) => fn?.()),
+    executeOnClient: vi.fn((fn: () => void) => fn?.()),
     executeOnServer: vi.fn(),
     toggleEnvironment: (isClientEnvironment: boolean) => {
       mock.isClient.mockReturnValue(isClientEnvironment);
       mock.isServer.mockReturnValue(!isClientEnvironment);
       
       if (isClientEnvironment) {
-        mock.executeOnClient.mockImplementation((fn: Function) => fn?.());
+        mock.executeOnClient.mockImplementation((fn: () => void) => fn?.());
         mock.executeOnServer.mockImplementation(() => {});
       } else {
         mock.executeOnClient.mockImplementation(() => {});
-        mock.executeOnServer.mockImplementation((fn: Function) => fn?.());
+        mock.executeOnServer.mockImplementation((fn: () => void) => fn?.());
       }
     }
   };
@@ -71,7 +72,7 @@ export const mockBase64 = () => {
  */
 export const mockMiddleware = () => {
   return {
-    middleware: vi.fn().mockImplementation(async (request: any) => {
+    middleware: vi.fn().mockImplementation(async () => {
       // 기본 응답은 "next" (접근 허용)
       return { type: 'next' };
     })

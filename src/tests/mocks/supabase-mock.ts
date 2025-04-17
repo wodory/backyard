@@ -3,6 +3,7 @@
  * 목적: Supabase 클라이언트 모킹
  * 역할: 테스트 환경에서 Supabase 인증 및 API 호출 시뮬레이션
  * 작성일: 2025-03-27
+ * 수정일: 2023-10-27 : 타입 정의 개선 - Function 타입을 구체적인 함수 시그니처로 변경
  */
 
 import { User, Session } from '@supabase/supabase-js';
@@ -63,7 +64,8 @@ export function mockSupabaseBrowserClient() {
   let codeVerifier: string | null = null;
   
   // 상태 변경 콜백 저장
-  const authStateChangeCallbacks: Function[] = [];
+  // 구체적인 함수 시그니처 정의
+  const authStateChangeCallbacks: Array<(event: string, session: Session | null) => void> = [];
 
   return {
     auth: {
@@ -148,7 +150,7 @@ export function mockSupabaseBrowserClient() {
         
         return Promise.resolve(mockSupabaseResponse(null, null));
       }),
-      onAuthStateChange: vi.fn((callback: Function) => {
+      onAuthStateChange: vi.fn((callback: (event: string, session: Session | null) => void) => {
         authStateChangeCallbacks.push(callback);
         return {
           data: {

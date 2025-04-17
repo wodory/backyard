@@ -61,7 +61,7 @@ export function mockCookies() {
     getAll: vi.fn(() => {
       return Object.entries(cookies).map(([name, value]) => ({ name, value }));
     }),
-    set: vi.fn((name: string, value: string, options = {}) => {
+    set: vi.fn((name: string, value: string = {}) => {
       cookies[name] = value;
     }),
     delete: vi.fn((name: string) => {
@@ -97,6 +97,7 @@ export function mockCrypto() {
         for (let i = 0; i < 32; i++) {
           mockHash[i] = i;
         }
+        console.log(algorithm, data);
         return mockHash.buffer;
       })
     }
