@@ -11,6 +11,8 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "build:start:local": "yarn build && yarn start",
+    "build:local": "yarn env:dev && yarn db:setup:dev && next build",
+    "build:local:start": "yarn build:local && yarn start",
     "lint": "next lint",
     "test": "vitest",
     "test:run": "vitest run",
