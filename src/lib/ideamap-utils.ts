@@ -1,6 +1,20 @@
+/**
+ * 파일명: src/lib/ideamap-utils.ts
+ * 목적: 아이디어맵 관련 유틸리티 함수 모음
+ * 역할: 아이디어맵 설정 관리 및 스타일 적용 유틸리티 제공
+ * 작성일: 2024-05-22
+ * 수정일: 2024-05-29 : API URL 환경 변수를 사용하도록 수정
+ */
+
 import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
 
 import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
+
+// API URL 가져오기
+const getApiUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  return apiUrl;
+};
 
 export interface IdeaMapSettings {
   // 그리드 설정
@@ -87,7 +101,8 @@ export const saveIdeaMapSettingsToServer = async (settings: IdeaMapSettings, use
 
     console.log('[saveIdeaMapSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
     
-    const response = await fetch('/api/ideamap-settings', {
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/api/ideamap-settings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -120,7 +135,8 @@ export const loadIdeaMapSettingsFromServer = async (userId: string): Promise<Ide
 
     console.log('[loadIdeaMapSettingsFromServer] 서버에서 설정 로드 시작', { userId });
     
-    const response = await fetch(`/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
     
     if (!response.ok) {
       throw new Error('서버에서 아이디어맵 설정을 불러오는데 실패했습니다.');
@@ -160,7 +176,8 @@ export async function updateIdeaMapSettingsOnServer(userId: string, partialSetti
       settings: safeSettings
     });
     
-    const response = await fetch('/api/ideamap-settings', {
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/api/ideamap-settings`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -178,7 +195,7 @@ export async function updateIdeaMapSettingsOnServer(userId: string, partialSetti
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
       console.error('응답 오류 데이터:', errorData);
       throw new Error(
-        errorData.details || errorData.error || '서버에 아이디어맵 설정을 업데이트하는데 실패했습니다.'
+        errorData.details || errorData.error || '아이디어맵 설정을 부분 업데이트하는 데 실패했습니다.'
       );
     }
 

@@ -115,6 +115,12 @@ export interface AppState {
   resetAppState: () => void;
 }
 
+// API URL 가져오기
+const getApiUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  return apiUrl;
+};
+
 export const useAppStore = create<AppState>()(
   persist(
     subscribeWithSelector((set, get) => ({
@@ -419,7 +425,8 @@ export const useAppStore = create<AppState>()(
             return;
           }
           
-          const response = await fetch('/api/ideamap-settings', {
+          const apiUrl = getApiUrl();
+          const response = await fetch(`${apiUrl}/api/ideamap-settings`, {
              method: 'PATCH', // POST 대신 PATCH 사용 (부분 업데이트)
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify({
