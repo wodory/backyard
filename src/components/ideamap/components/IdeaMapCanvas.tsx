@@ -158,17 +158,38 @@ export default function IdeaMapCanvas({
         nodesCount: nodes.length,
         firstNode: nodes[0],
       });
+
+      // 노드 위치가 제대로 렌더링될 시간을 더 충분히 주기 위해 지연 증가
+      const fitViewDelay = 500;
+      console.log(`[IdeaMapCanvas] ${fitViewDelay}ms 후 fitView 실행 예정`);
+
       setTimeout(() => {
-        instance.fitView({
-          padding: 0.5,
-          includeHiddenNodes: false,
-          minZoom: 0.5,
-          maxZoom: 1.5,
-        });
-        console.log('[IdeaMapCanvas] fitView 실행 완료', {
-          viewport: instance.getViewport()
-        });
-      }, 300);
+        if (!reactFlowInstance.current) return;
+
+        try {
+          // 더 넓은 패딩으로 노드를 잘 볼 수 있게 함
+          reactFlowInstance.current.fitView({
+            padding: 0.8, // 패딩 증가
+            includeHiddenNodes: false,
+            minZoom: 0.5,
+            maxZoom: 1.5,
+            duration: 500, // 애니메이션 지속 시간 증가
+          });
+          console.log('[IdeaMapCanvas] fitView 실행 완료', {
+            viewport: reactFlowInstance.current.getViewport()
+          });
+        } catch (error) {
+          console.error('[IdeaMapCanvas] fitView 실행 중 오류:', error);
+        }
+
+        // 추가 지연 후 노드가 뷰포트에 모두 포함되었는지 확인
+        setTimeout(() => {
+          if (!reactFlowInstance.current) return;
+
+          const currentViewport = reactFlowInstance.current.getViewport();
+          console.log('[IdeaMapCanvas] 최종 뷰포트 확인:', currentViewport);
+        }, 600);
+      }, fitViewDelay);
     }
     else {
       console.log('[IdeaMapCanvas] 노드가 없습니다. 기본 뷰포트 설정');
@@ -187,6 +208,11 @@ export default function IdeaMapCanvas({
         (change) => change.type === 'position'
       );
 
+      // 드래그 완료된 위치 변경이 있는지 확인 (dragging이 false로 변경된 경우)
+      const hasDragCompleted = changes.some(
+        (change) => change.type === 'position' && 'dragging' in change && (change as any).dragging === false
+      );
+
       // 위치 변경이 있는 경우 로깅
       if (hasPositionChanges) {
         const positionChanges = changes.filter(c => c.type === 'position');
@@ -202,6 +228,12 @@ export default function IdeaMapCanvas({
 
       // 원래 상태 업데이트 로직 실행 (props로 받은 원래 함수 호출)
       onNodesChange(changes);
+
+      // 드래그가 완료된 경우, 노드 위치를 localStorage에 저장
+      if (hasDragCompleted) {
+        console.log('[IdeaMapCanvas] 노드 드래그 완료, 위치 저장 시도');
+        // 상위 컴포넌트의 saveLayout이 호출되므로 여기서는 추가 작업 필요 없음
+      }
 
       // 위치 변경이 있고 노드가 있는 경우, 300ms 후 뷰포트 확인
       if (hasPositionChanges && nodes.length > 0 && reactFlowInstance.current) {

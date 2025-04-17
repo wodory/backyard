@@ -370,6 +370,11 @@ export const useAppStore = create<AppState>()(
            set({ layoutDirection: direction, isLoading: false, error: null });
            toast.success(`${directionTermForToast} 레이아웃이 적용되었습니다.`);
 
+           // 레이아웃 적용 후 자동으로 저장 (추가된 부분)
+           setTimeout(() => {
+             get().saveIdeaMapLayout();
+             console.log(`[useAppStore] ${direction} 레이아웃 적용 후 위치 자동 저장`);
+           }, 300); // 상태 업데이트와 뷰 렌더링이 완료된 후 저장
          } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 레이아웃 오류';
             set({ isLoading: false, error: new Error(errorMessage) });

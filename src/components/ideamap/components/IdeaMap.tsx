@@ -91,6 +91,7 @@ export default function IdeaMap({
     saveViewport,
     loadAndApplyIdeaMapSettings,
     applyNodeChangesAction,
+    saveLayout,
   } = useIdeaMapStore();
 
   console.log('[IdeaMap] IdeaMapStore 상태:', {
@@ -403,14 +404,63 @@ export default function IdeaMap({
 
   // 노드 위치 변경 시 호출되는 React Flow의 onNodesChange 콜백을 래핑
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // 디버깅을 위한 상세 로그 추가
     console.log('[IdeaMap] 노드 변경 감지:', {
       changeCount: changes.length,
-      changeTypes: changes.map(c => c.type).join(', ')
+      changeTypes: changes.map(c => c.type).join(', '),
+      changes: changes.map(c => ({
+        type: c.type,
+        id: 'id' in c ? c.id : 'unknown',
+        dragging: 'dragging' in c ? c.dragging : 'N/A',
+        position: 'position' in c ? c.position : 'N/A'
+      }))
     });
 
-    // 노드 변경사항 적용
+    // position 타입의 변경이면서 dragging이 false인 변경 감지 (드래그 완료)
+    const positionChanges = changes.filter(
+      change => change.type === 'position'
+    );
+
+    const dragCompleted = positionChanges.some(
+      change => 'dragging' in change && (change as any).dragging === false
+    );
+
+    // 노드 변경사항 적용 (상태 업데이트)
     applyNodeChangesAction(changes);
-  }, [applyNodeChangesAction]);
+
+    // 드래그가 완료되면 레이아웃 저장
+    if (dragCompleted) {
+      console.log('[IdeaMap] 노드 드래그 완료 감지, 레이아웃 저장 시도:', {
+        노드수: ideaMapStoreNodes.length
+      });
+
+      // 약간의 딜레이 후 저장 (상태 업데이트가 완료된 후)
+      setTimeout(() => {
+        try {
+          const saved = saveLayout();
+          console.log('[IdeaMap] 레이아웃 저장 결과:', saved);
+
+          if (saved) {
+            // 성공 알림 필요 없음 (사용자 경험 개선)
+            // toast.success('노드 위치가 저장되었습니다.');
+          } else {
+            toast.error('노드 위치 저장에 실패했습니다.');
+          }
+        } catch (err) {
+          console.error('[IdeaMap] 레이아웃 저장 중 오류:', err);
+          toast.error('노드 위치 저장 중 오류가 발생했습니다.');
+        }
+      }, 200); // 200ms로 늘려 상태 업데이트가 확실히 완료된 후 저장
+    }
+
+    // 변경사항 중에 노드가 삭제된 경우에도 저장
+    const hasNodeDeleted = changes.some(change => change.type === 'remove');
+    if (hasNodeDeleted) {
+      console.log('[IdeaMap] 노드 삭제 감지, 레이아웃 저장');
+      // 약간의 딜레이 후 저장 (상태 업데이트가 완료된 후)
+      setTimeout(() => saveLayout(), 200); // 200ms로 늘림
+    }
+  }, [applyNodeChangesAction, saveLayout, ideaMapStoreNodes.length]);
 
   // 뷰포트 변경 감지 및 저장 - 디바운스 적용
   const onViewportChange = useCallback(() => {
