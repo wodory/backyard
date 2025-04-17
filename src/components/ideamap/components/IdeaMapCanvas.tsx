@@ -12,6 +12,7 @@
  * 수정일: 2024-06-27 : fitView 옵션 개선 및 defaultViewport 설정 강화
  * 수정일: 2024-06-27 : 뷰포트 관리 로직 추가 및 자동 fitView 기능 개선
  * 수정일: 2024-06-28 : 디버깅을 위한 console.log 추가
+ * 수정일: 2024-07-18 : 엣지 관련 디버깅 로그 활성화 및 데이터 확인 로직 추가
  */
 
 'use client';
@@ -103,21 +104,14 @@ export default function IdeaMapCanvas({
   onDrop,
   onViewportChange
 }: IdeaMapCanvasProps) {
-  // 컴포넌트 내부에 노드 및 엣지 타입 직접 정의 -> 제거 
-  // const nodeTypes = useMemo(() => ({
-  //   card: CardNode,
-  //   nodeInspect: NodeInspect,
-  //   default: CardNode
-  // }), []);
 
-  // const edgeTypes = useMemo(() => ({
-  //   custom: CustomEdge,
-  //   default: CustomEdge
-  // }), []);
-
-  // 로그 변경
-
-  // console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { nodeTypes, edgeTypes });
+  // 엣지 데이터 확인을 위한 로그 추가
+  useEffect(() => {
+    console.log('[IdeaMapCanvas] 엣지 데이터 확인:', {
+      edgeCount: edges.length,
+      edges: edges
+    });
+  }, [edges]);
 
   // 기본 엣지 옵션 메모이제이션
   const defaultEdgeOptions = useMemo(() => {
@@ -148,15 +142,6 @@ export default function IdeaMapCanvas({
     };
   }, [nodes.length, edges.length]);
 
-  // 노드와 엣지 변경 시 로깅
-  useEffect(() => {
-    console.log('[IdeaMapCanvas] 노드 변경 감지:', { nodeCount: nodes.length, firstNode: nodes[0] });
-  }, [nodes]);
-
-  useEffect(() => {
-    console.log('[IdeaMapCanvas] 엣지 변경 감지:', { edgeCount: edges.length });
-  }, [edges]);
-
   // ReactFlow 초기화 핸들러
   const onInit = useCallback((instance: ReactFlowInstance) => {
     console.log('[IdeaMapCanvas] ReactFlow 인스턴스 초기화 시작');
@@ -184,7 +169,8 @@ export default function IdeaMapCanvas({
           viewport: instance.getViewport()
         });
       }, 300);
-    } else {
+    }
+    else {
       console.log('[IdeaMapCanvas] 노드가 없습니다. 기본 뷰포트 설정');
     }
   }, [nodes]);
@@ -192,10 +178,10 @@ export default function IdeaMapCanvas({
   // 뷰포트 관리 기능이 추가된 노드 변경 핸들러
   const handleNodeChangesWithViewport = useCallback(
     (changes: NodeChange[]) => {
-      console.log('[IdeaMapCanvas] handleNodeChangesWithViewport 호출:', {
-        changesCount: changes.length,
-        changeTypes: changes.map(c => c.type).join(', ')
-      });
+      // console.log('[IdeaMapCanvas] handleNodeChangesWithViewport 호출:', {
+      //   changesCount: changes.length,
+      //   changeTypes: changes.map(c => c.type).join(', ')
+      // });
 
       const hasPositionChanges = changes.some(
         (change) => change.type === 'position'
@@ -254,7 +240,8 @@ export default function IdeaMapCanvas({
               minZoom: 0.5,
               maxZoom: 1.5,
             });
-          } else {
+          }
+          else {
             console.log('[IdeaMapCanvas] 모든 노드가 뷰포트 내에 있음. 조정 필요 없음');
           }
         }, 300);
@@ -320,9 +307,6 @@ export default function IdeaMapCanvas({
           onPaneClick(event);
         }}
         onViewportChange={handleViewportChange}
-        // 노드 타입 버그 수정
-        // nodeTypes={nodeTypes}
-        // edgeTypes={edgeTypes}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
         connectionMode={ConnectionMode.Loose}
@@ -351,18 +335,6 @@ export default function IdeaMapCanvas({
           <>
             <Background />
             <Controls />
-
-            {/* 삭제 3/29 */}
-            {/* <BoardControls
-              boardSettings={boardSettings}
-              onBoardSettingsChange={onBoardSettingsChange}
-              onLayoutChange={onLayoutChange}
-              onAutoLayout={onAutoLayout}
-              onSaveLayout={onSaveLayout}
-              onCreateCard={onCreateCard}
-              isAuthenticated={isAuthenticated}
-              userId={userId}
-            /> */}
           </>
         )}
       </ReactFlow>

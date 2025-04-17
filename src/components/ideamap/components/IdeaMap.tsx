@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 
 import { useReactFlow } from '@xyflow/react';
 
@@ -34,6 +35,7 @@ import {
   IdeaMapSettings,
   NodeChange
 } from '../types/ideamap-types';
+import { IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 
 /**
  * IdeaMap: 아이디어맵 메인 컨테이너 컴포넌트
@@ -100,12 +102,20 @@ export default function IdeaMap({
     hasUnsavedChanges
   });
 
+  // useIdeaMapData 훅 사용 부분 수정 (타입 오류 해결)
+  // 타입 안전성을 위해 onSelectCard를 항상 함수로 전달
+  const handleSelectCard = useCallback((cardId: string) => {
+    if (onSelectCard) {
+      onSelectCard(cardId);
+    }
+  }, [onSelectCard]);
+
   // 보드 데이터 훅 사용 (하위 호환성을 위해 유지)
   const {
     isLoading,
     error,
     loadNodesAndEdges
-  } = useIdeaMapData(onSelectCard);
+  } = useIdeaMapData(handleSelectCard);
 
   console.log('[IdeaMap] IdeaMapData 훅 상태:', { isLoading, hasError: !!error });
 
@@ -127,7 +137,8 @@ export default function IdeaMap({
     edges,
     handleEdgesChange,
     onConnect,
-    hasUnsavedChanges: hasUnsavedEdgesChanges
+    hasUnsavedChanges: hasUnsavedEdgesChanges,
+    setEdges
   } = useEdges({
     ideaMapSettings,
     nodes: ideaMapStoreNodes,
@@ -139,6 +150,12 @@ export default function IdeaMap({
     hasUnsavedEdgesChanges
   });
 
+  // loadNodesAndEdges 함수를 안전하게 래핑
+  const fetchCards = useCallback(async () => {
+    await loadNodesAndEdges();
+    return { nodes: ideaMapStoreNodes, edges: ideaMapStoreEdges };
+  }, [loadNodesAndEdges, ideaMapStoreNodes, ideaMapStoreEdges]);
+
   // useIdeaMapHandlers 훅 사용
   const {
     onDragOver,
@@ -148,7 +165,7 @@ export default function IdeaMap({
   } = useIdeaMapHandlers({
     reactFlowWrapper,
     reactFlowInstance,
-    fetchCards: loadNodesAndEdges
+    fetchCards // loadNodesAndEdges 대신 래핑한 fetchCards 사용
   });
 
   // 엣지에 새 노드 추가 기능
@@ -425,6 +442,36 @@ export default function IdeaMap({
     handleCardCreated(card);
     setIsCreateModalOpen(false);
   }, [handleCardCreated]);
+
+  // useEffect를 사용하여 초기 엣지 데이터 검증 및 로딩
+  useEffect(() => {
+    console.log('[IdeaMap] 엣지 데이터 검증 시작:', { edgesLength: edges.length });
+
+    // 엣지가 비어있는 경우 로컬 스토리지에서 직접 로드 시도
+    if (edges.length === 0) {
+      console.log('[IdeaMap] 엣지 배열이 비어있음. 로컬 스토리지에서 직접 로드 시도');
+      try {
+        const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
+        if (savedEdgesStr) {
+          const savedEdges = JSON.parse(savedEdgesStr);
+          console.log('[IdeaMap] 로컬 스토리지에서 엣지 로드 성공:', { edgesCount: savedEdges.length });
+
+          // 로컬 스토리지에 엣지가 있으면 스토어에 설정
+          if (savedEdges.length > 0) {
+            // 타입 오류 해결: 명시적으로 Edge[] 타입으로 캐스팅
+            setEdges(savedEdges);
+            toast.success(`엣지 데이터 ${savedEdges.length}개를 복구했습니다.`);
+          } else {
+            console.log('[IdeaMap] 로컬 스토리지에 저장된 엣지가 없음');
+          }
+        } else {
+          console.log('[IdeaMap] 로컬 스토리지에 저장된 엣지 데이터 없음');
+        }
+      } catch (err) {
+        console.error('[IdeaMap] 로컬 스토리지에서 엣지 로드 중 오류:', err);
+      }
+    }
+  }, [edges.length, setEdges]);
 
   // 오류 메시지가 있으면 표시
   if (error) {
