@@ -145,7 +145,18 @@ function CustomEdge({
       data-component-id={COMPONENT_ID}
       {...(() => {
         // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
-        const { ...cleanProps } = restProps;
+        const {
+          selectable,
+          deletable,
+          sourceHandleId,
+          targetHandleId,
+          pathOptions,
+          source,
+          target,
+          id,
+          type,
+          ...cleanProps
+        } = restProps;
         return cleanProps;
       })()}
     />

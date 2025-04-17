@@ -145,6 +145,8 @@ export const loadIdeaMapSettingsFromServer = async (userId: string): Promise<Ide
     const data = await response.json();
     
     if (!data.settings) {
+      // 낙관적 업데이트 구현 후, 기본값을 로컬 스토리지에 저장하고 바로 DB에도 저장하는 로직 구현 (추가 예정)
+      // TODO: 처음 사용자의 경우 기본 설정값을 바로 DB에 저장하여 이후 요청 시 불필요한 처리 방지
       return null; // 설정이 없는 경우
     }
 

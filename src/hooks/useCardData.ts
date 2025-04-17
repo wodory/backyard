@@ -3,6 +3,7 @@
  * 목적: 카드 데이터를 API에서 로드하고 관리하는 훅
  * 역할: API 호출 및 응답 처리, 데이터 캐싱, 전역 상태 업데이트 담당
  * 작성일: 2025-03-28
+ * 수정일: 2024-05-30 : 카드 로드 후 노드와 동기화 로직 추가
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -90,6 +91,17 @@ export function useCardData({
       // 마지막 로드 시간 업데이트
       setLastLoadedAt(new Date());
       
+      // 카드 로드 후 노드와 동기화
+      try {
+        console.log('[useCardData] 카드 로드 후 노드 동기화 시도');
+        // 동적 모듈 임포트로 순환 참조 방지
+        const { useIdeaMapStore } = await import('@/store/useIdeaMapStore');
+        useIdeaMapStore.getState().syncCardsWithNodes(true);
+        console.log('[useCardData] 노드 동기화 완료');
+      } catch (syncError) {
+        console.error('[useCardData] 노드 동기화 실패:', syncError);
+      }
+      
       return data;
     } catch (error) {
       console.error('[useCardData] 카드 로드 오류:', error);
@@ -161,6 +173,16 @@ export function useCardData({
       
       // 직접 업데이트된 배열을 전달
       setCards(updatedCards);
+      
+      // 카드 상세 로드 후 노드와 동기화
+      try {
+        console.log('[useCardData] 카드 상세 로드 후 노드 동기화 시도');
+        const { useIdeaMapStore } = await import('@/store/useIdeaMapStore');
+        useIdeaMapStore.getState().syncCardsWithNodes(true);
+        console.log('[useCardData] 노드 동기화 완료');
+      } catch (syncError) {
+        console.error('[useCardData] 노드 동기화 실패:', syncError);
+      }
       
       return cardData;
     } catch (error) {

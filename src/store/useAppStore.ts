@@ -269,6 +269,11 @@ export const useAppStore = create<AppState>()(
               error: null
             };
           });
+          
+          // 아이디어맵 노드와 동기화 (카드 업데이트 후)
+          const { useIdeaMapStore } = await import('./useIdeaMapStore');
+          useIdeaMapStore.getState().syncCardsWithNodes();
+          
           toast.success('카드가 성공적으로 업데이트되었습니다.');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -299,6 +304,11 @@ export const useAppStore = create<AppState>()(
             cards: [...state.cards, newCard],
             isLoading: false
           }));
+          
+          // 아이디어맵 노드와 동기화 (새 카드 생성 후)
+          const { useIdeaMapStore } = await import('./useIdeaMapStore');
+          useIdeaMapStore.getState().syncCardsWithNodes();
+          
           toast.success('카드가 성공적으로 생성되었습니다.');
           return newCard; // Return the created card
         } catch (error) {
@@ -774,16 +784,20 @@ export const selectIsProjectActive = (projectId: string) => (state: AppState) =>
 
 // 콘솔 명령 노출 (개발 환경 전용)
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  if (!window.appCommands) {
-    window.appCommands = {};
-  }
+  // 타입스크립트에서 window.appCommands가 없는 경우 빈 객체 할당
+  window.appCommands = {} as Window['appCommands'];
+  
   const state = useAppStore.getState();
   window.appCommands.selectCard = state.selectCard;
   window.appCommands.selectCards = state.selectCards;
   window.appCommands.toggleExpandCard = state.toggleExpandCard;
   window.appCommands.clearSelectedCards = state.clearSelectedCards;
   window.appCommands.updateIdeaMapSettings = state.updateIdeaMapSettings;
-  window.appCommands.applyLayout = state.applyLayout;
+  window.appCommands.applyLayout = (layout: string) => {
+    // direction 타입('horizontal' | 'vertical' | 'auto')에 맞게 변환
+    const direction = layout as 'horizontal' | 'vertical' | 'auto';
+    return state.applyLayout(direction);
+  };
   window.appCommands.saveLayout = state.saveIdeaMapLayout;
   window.appCommands.logout = state.logoutAction; // Expose logout action
   window.appCommands.getState = () => useAppStore.getState(); // Expose getState for debugging
@@ -795,6 +809,69 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   window.appCommands.updateProject = state.updateProject;
   window.appCommands.deleteProject = state.deleteProject;
   window.appCommands.resetAppState = state.resetAppState; // 앱 상태 초기화 명령 추가
+  
+  // 카드와 노드 상태 확인을 위한 명령 추가
+  window.appCommands.getCards = () => {
+    return useAppStore.getState().cards; // 카드 목록 가져오기
+  };
+  window.appCommands.getCardNodes = async () => {
+    const { useIdeaMapStore } = await import('./useIdeaMapStore');
+    return useIdeaMapStore.getState().nodes; // 카드 노드 목록 가져오기
+  };
+  
+  // 노드 동기화 수동 실행 명령 추가
+  window.appCommands.syncCardsWithNodes = async (forceRefresh: boolean = true) => {
+    const { useIdeaMapStore } = await import('./useIdeaMapStore');
+    useIdeaMapStore.getState().syncCardsWithNodes(forceRefresh);
+    return useIdeaMapStore.getState().nodes;
+  };
+  
+  // 디버깅 유틸리티 함수 추가
+  window.appCommands.debugFlow = async () => {
+    const cards = useAppStore.getState().cards;
+    const { useIdeaMapStore } = await import('./useIdeaMapStore');
+    const nodes = useIdeaMapStore.getState().nodes;
+    const rfInstance = useAppStore.getState().reactFlowInstance;
+    
+    console.group('🔍 아이디어맵 디버깅 정보');
+    console.log('📄 카드 수:', cards.length);
+    console.log('🔄 노드 수:', nodes.length);
+    console.log('⚙️ ReactFlow 인스턴스 존재:', !!rfInstance);
+    
+    // 카드 ID와 노드 ID 비교
+    const cardIds = cards.map(card => card.id);
+    const nodeIds = nodes.map(node => node.id);
+    
+    console.log('🔄 카드 ID와 노드 ID 일치 여부:', 
+      JSON.stringify(cardIds.sort()) === JSON.stringify(nodeIds.sort()));
+    
+    // 카드에 있지만 노드에 없는 항목 확인
+    const missingNodes = cardIds.filter(id => !nodeIds.includes(id));
+    if (missingNodes.length > 0) {
+      console.warn('⚠️ 노드가 없는 카드 ID:', missingNodes);
+      console.log('🔎 해당 카드 정보:', cards.filter(card => missingNodes.includes(card.id)));
+    }
+    
+    // 노드에 있지만 카드에 없는 항목 확인
+    const orphanNodes = nodeIds.filter(id => !cardIds.includes(id));
+    if (orphanNodes.length > 0) {
+      console.warn('⚠️ 카드가 없는 노드 ID:', orphanNodes);
+      console.log('🔎 해당 노드 정보:', nodes.filter(node => orphanNodes.includes(node.id)));
+    }
+    
+    console.groupEnd();
+    
+    return {
+      cardsCount: cards.length,
+      nodesCount: nodes.length,
+      hasRfInstance: !!rfInstance,
+      syncStatus: {
+        inSync: JSON.stringify(cardIds.sort()) === JSON.stringify(nodeIds.sort()),
+        missingNodes,
+        orphanNodes
+      }
+    };
+  };
 
   console.log('App commands registered to window.appCommands');
 }
@@ -803,23 +880,35 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 declare global {
   interface Window {
     appCommands: {
-      selectCard?: (cardId: string | null) => void;
-      selectCards?: (cardIds: string[]) => void;
-      toggleExpandCard?: (cardId: string) => void;
-      clearSelectedCards?: () => void;
-      updateIdeaMapSettings?: (settings: Partial<IdeaMapSettings>) => Promise<void>;
-      applyLayout?: (direction: 'horizontal' | 'vertical' | 'auto') => void;
-      saveLayout?: () => Promise<boolean>;
-      logout?: () => Promise<void>; // Add logout command type
-      getState?: () => AppState;
-      getRfInstance?: () => ReactFlowInstance | null;
-      // 프로젝트 관련 명령 타입 추가
-      fetchProjects?: () => Promise<void>;
-      setActiveProject?: (projectId: string | null) => void;
-      createProject?: (projectData: Partial<Project>) => Promise<Project | null>;
-      updateProject?: (projectId: string, projectData: Partial<Project>) => Promise<Project | null>;
-      deleteProject?: (projectId: string) => Promise<boolean>;
-      resetAppState?: () => void; // 앱 상태 초기화 명령 타입 추가
+      selectCard: (id: string) => void;
+      selectCards: (ids: string[]) => void;
+      toggleExpandCard: (id: string) => void;
+      clearSelectedCards: () => void;
+      updateIdeaMapSettings: (settings: Partial<IdeaMapSettings>) => void;
+      applyLayout: (layout: string) => void;
+      saveLayout: () => Promise<boolean>;
+      logout: () => Promise<void>;
+      getState: () => AppState;
+      getRfInstance: () => ReactFlowInstance | null;
+      fetchProjects: () => Promise<void>;
+      setActiveProject: (id: string | null) => void;
+      createProject: (projectData: Partial<Project>) => Promise<Project | null>;
+      updateProject: (projectId: string, projectData: Partial<Project>) => Promise<Project | null>;
+      deleteProject: (projectId: string) => Promise<boolean>;
+      resetAppState: () => void;
+      getCards: () => Card[];
+      getCardNodes: () => Promise<any[]>;
+      syncCardsWithNodes: (forceRefresh?: boolean) => Promise<any[]>;
+      debugFlow: () => Promise<{
+        cardsCount: number;
+        nodesCount: number;
+        hasRfInstance: boolean;
+        syncStatus: {
+          inSync: boolean;
+          missingNodes: string[];
+          orphanNodes: string[];
+        }
+      }>;
     };
   }
 }

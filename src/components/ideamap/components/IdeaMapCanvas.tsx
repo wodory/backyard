@@ -8,10 +8,14 @@
  * 수정일: 2023-10-27 : wrapperRef 타입을 SafeRef로 수정
  * 수정일: 2023-10-27 : import 순서 수정 및 미사용 변수(ConnectionLineType) 제거
  * 수정일: 2023-10-27 : connectionLineType 타입을 ConnectionLineType으로 수정
+ * 수정일: 2024-05-30 : fitView 옵션을 개선하여 노드가 항상 보이도록 수정
+ * 수정일: 2024-06-27 : fitView 옵션 개선 및 defaultViewport 설정 강화
+ * 수정일: 2024-06-27 : 뷰포트 관리 로직 추가 및 자동 fitView 기능 개선
+ * 수정일: 2024-06-28 : 디버깅을 위한 console.log 추가
  */
 
 'use client';
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useCallback, useEffect } from 'react';
 
 import {
   ReactFlow,
@@ -27,7 +31,8 @@ import {
   OnConnectEnd,
   MarkerType,
   Viewport,
-  ConnectionLineType
+  ConnectionLineType,
+  ReactFlowInstance
 } from '@xyflow/react';
 
 import { SafeRef } from '@/components/ideamap/types/ideamap-types';
@@ -115,19 +120,175 @@ export default function IdeaMapCanvas({
   // console.log('[BoardCanvas] 노드 및 엣지 타입 사용:', { nodeTypes, edgeTypes });
 
   // 기본 엣지 옵션 메모이제이션
-  const defaultEdgeOptions = useMemo(() => ({
-    type: 'custom',
-    animated: ideaMapSettings.animated,
-    style: {
-      strokeWidth: ideaMapSettings.strokeWidth,
-      stroke: ideaMapSettings.edgeColor
+  const defaultEdgeOptions = useMemo(() => {
+    const options = {
+      type: 'custom',
+      animated: ideaMapSettings.animated,
+      style: {
+        strokeWidth: ideaMapSettings.strokeWidth,
+        stroke: ideaMapSettings.edgeColor
+      },
+      markerEnd: ideaMapSettings.markerEnd ? {
+        type: MarkerType.ArrowClosed,
+        width: ideaMapSettings.markerSize,
+        height: ideaMapSettings.markerSize,
+      } : undefined
+    };
+    console.log('[IdeaMapCanvas] 기본 엣지 옵션 생성:', options);
+    return options;
+  }, [ideaMapSettings]);
+
+  const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+
+  // 컴포넌트 마운트/언마운트 로깅
+  useEffect(() => {
+    console.log('[IdeaMapCanvas] 컴포넌트 마운트, 노드 수:', nodes.length, '엣지 수:', edges.length);
+    return () => {
+      console.log('[IdeaMapCanvas] 컴포넌트 언마운트');
+    };
+  }, [nodes.length, edges.length]);
+
+  // 노드와 엣지 변경 시 로깅
+  useEffect(() => {
+    console.log('[IdeaMapCanvas] 노드 변경 감지:', { nodeCount: nodes.length, firstNode: nodes[0] });
+  }, [nodes]);
+
+  useEffect(() => {
+    console.log('[IdeaMapCanvas] 엣지 변경 감지:', { edgeCount: edges.length });
+  }, [edges]);
+
+  // ReactFlow 초기화 핸들러
+  const onInit = useCallback((instance: ReactFlowInstance) => {
+    console.log('[IdeaMapCanvas] ReactFlow 인스턴스 초기화 시작');
+    reactFlowInstance.current = instance;
+    console.log('[IdeaMapCanvas] ReactFlow 인스턴스 초기화 완료', {
+      viewport: instance.getViewport(),
+      nodes: instance.getNodes().length,
+      edges: instance.getEdges().length
+    });
+
+    // 노드가 있는 경우 자동으로 뷰에 맞추기
+    if (nodes.length > 0) {
+      console.log('[IdeaMapCanvas] 노드가 있습니다. 뷰에 맞추기 실행', {
+        nodesCount: nodes.length,
+        firstNode: nodes[0],
+      });
+      setTimeout(() => {
+        instance.fitView({
+          padding: 0.5,
+          includeHiddenNodes: false,
+          minZoom: 0.5,
+          maxZoom: 1.5,
+        });
+        console.log('[IdeaMapCanvas] fitView 실행 완료', {
+          viewport: instance.getViewport()
+        });
+      }, 300);
+    } else {
+      console.log('[IdeaMapCanvas] 노드가 없습니다. 기본 뷰포트 설정');
+    }
+  }, [nodes]);
+
+  // 뷰포트 관리 기능이 추가된 노드 변경 핸들러
+  const handleNodeChangesWithViewport = useCallback(
+    (changes: NodeChange[]) => {
+      console.log('[IdeaMapCanvas] handleNodeChangesWithViewport 호출:', {
+        changesCount: changes.length,
+        changeTypes: changes.map(c => c.type).join(', ')
+      });
+
+      const hasPositionChanges = changes.some(
+        (change) => change.type === 'position'
+      );
+
+      // 위치 변경이 있는 경우 로깅
+      if (hasPositionChanges) {
+        const positionChanges = changes.filter(c => c.type === 'position');
+        console.log('[IdeaMapCanvas] 노드 위치 변경:', {
+          count: positionChanges.length,
+          changes: positionChanges.map(c => ({
+            id: c.id,
+            dragging: (c as any).dragging,
+            position: (c as any).position
+          }))
+        });
+      }
+
+      // 원래 상태 업데이트 로직 실행 (props로 받은 원래 함수 호출)
+      onNodesChange(changes);
+
+      // 위치 변경이 있고 노드가 있는 경우, 300ms 후 뷰포트 확인
+      if (hasPositionChanges && nodes.length > 0 && reactFlowInstance.current) {
+        // 노드 위치 변경 후 뷰포트에서 벗어난 노드 확인을 위한 딜레이
+        setTimeout(() => {
+          if (!reactFlowInstance.current) return;
+
+          // 현재 뷰포트 영역 계산
+          const { x, y, zoom } = reactFlowInstance.current.getViewport();
+          const viewportWidth = window.innerWidth / zoom;
+          const viewportHeight = window.innerHeight / zoom;
+
+          // 뷰포트 경계 계산
+          const viewportBounds = {
+            minX: -x / zoom,
+            minY: -y / zoom,
+            maxX: (-x + viewportWidth) / zoom,
+            maxY: (-y + viewportHeight) / zoom,
+          };
+
+          console.log('[IdeaMapCanvas] 현재 뷰포트 경계:', viewportBounds);
+
+          // 노드가 뷰포트를 벗어났는지 확인
+          const nodesOutsideViewport = nodes.some(node =>
+            node.position.x < viewportBounds.minX ||
+            node.position.y < viewportBounds.minY ||
+            node.position.x > viewportBounds.maxX ||
+            node.position.y > viewportBounds.maxY
+          );
+
+          if (nodesOutsideViewport) {
+            console.log('[IdeaMapCanvas] 노드가 뷰포트를 벗어남. 뷰에 맞추기 재실행');
+            reactFlowInstance.current.fitView({
+              padding: 0.3,
+              includeHiddenNodes: false,
+              minZoom: 0.5,
+              maxZoom: 1.5,
+            });
+          } else {
+            console.log('[IdeaMapCanvas] 모든 노드가 뷰포트 내에 있음. 조정 필요 없음');
+          }
+        }, 300);
+      }
     },
-    markerEnd: ideaMapSettings.markerEnd ? {
-      type: MarkerType.ArrowClosed,
-      width: ideaMapSettings.markerSize,
-      height: ideaMapSettings.markerSize,
-    } : undefined
-  }), [ideaMapSettings]);
+    [onNodesChange, nodes]
+  );
+
+  // 엣지 변경 핸들러에 로깅 추가
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    console.log('[IdeaMapCanvas] 엣지 변경 감지:', {
+      changesCount: changes.length,
+      changes: changes.map(c => ({
+        type: c.type,
+        // type-safe한 방식으로 id에 접근
+        id: 'id' in c ? c.id : '알 수 없음'
+      }))
+    });
+    onEdgesChange(changes);
+  }, [onEdgesChange]);
+
+  // 연결 핸들러에 로깅 추가
+  const handleConnect = useCallback((connection: Connection) => {
+    console.log('[IdeaMapCanvas] 연결 생성:', connection);
+    onConnect(connection);
+  }, [onConnect]);
+
+  // 뷰포트 변경 핸들러
+  const handleViewportChange = useCallback((viewport: Viewport) => {
+    console.log('[IdeaMapCanvas] 뷰포트 변경:', viewport);
+    if (onViewportChange) {
+      onViewportChange(viewport);
+    }
+  }, [onViewportChange]);
 
   return (
     <div
@@ -139,14 +300,26 @@ export default function IdeaMapCanvas({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onViewportChange={onViewportChange}
+        onNodesChange={handleNodeChangesWithViewport}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
+        onConnectStart={(event, params) => {
+          console.log('[IdeaMapCanvas] 연결 시작:', params);
+          onConnectStart(event, params);
+        }}
+        onConnectEnd={(event, params) => {
+          console.log('[IdeaMapCanvas] 연결 종료:', params);
+          onConnectEnd(event, params);
+        }}
+        onNodeClick={(event, node) => {
+          console.log('[IdeaMapCanvas] 노드 클릭:', node.id);
+          onNodeClick(event, node);
+        }}
+        onPaneClick={(event) => {
+          console.log('[IdeaMapCanvas] 빈 공간 클릭');
+          onPaneClick(event);
+        }}
+        onViewportChange={handleViewportChange}
         // 노드 타입 버그 수정
         // nodeTypes={nodeTypes}
         // edgeTypes={edgeTypes}
@@ -156,9 +329,23 @@ export default function IdeaMapCanvas({
         connectionLineType={ideaMapSettings.connectionLineType as ConnectionLineType}
         snapToGrid={ideaMapSettings.snapToGrid}
         snapGrid={ideaMapSettings.snapGrid}
-        fitView
+        fitView={nodes.length > 0}
+        fitViewOptions={{
+          padding: 0.3,
+          includeHiddenNodes: false,
+          minZoom: 0.5,
+          maxZoom: 1.5
+        }}
+        minZoom={0.1}
+        maxZoom={2.5}
+        defaultViewport={{
+          x: 0,
+          y: 0,
+          zoom: 1
+        }}
         attributionPosition="bottom-right"
         defaultEdgeOptions={defaultEdgeOptions}
+        onInit={onInit}
       >
         {showControls && (
           <>

@@ -4,6 +4,10 @@
  * 역할: 아이디어맵의 노드, 엣지, 설정 등 모든 상태를 중앙 관리
  * 작성일: 2025-03-28
  * 수정일: 2023-10-27 : 미사용 함수 제거, any 타입 구체화
+ * 수정일: 2024-05-09 : loadIdeaMapData 함수 개선 및 syncCardsWithNodes 함수 추가
+ * 수정일: 2024-05-30 : loadIdeaMapData 함수에 노드-카드 동기화 로직 추가
+ * 수정일: 2024-06-27 : 노드 생성 관련 디버깅 로깅 강화
+ * 수정일: 2024-06-28 : React Flow 초기화 및 노드/엣지 정보 주입 관련 디버깅 로깅 추가
  */
 
 import { 
@@ -34,7 +38,7 @@ import {
   saveIdeaMapSettingsToServer
 } from '@/lib/ideamap-utils';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
-
+import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
 import { useAppStore } from './useAppStore';
 
 // 확장된 Viewport 타입 (width, height 속성 포함)
@@ -128,6 +132,9 @@ interface IdeaMapState {
 
   // 추가된 함수: 드래그 앤 드롭으로 새 노드 추가하기
   onDrop: (event: React.DragEvent, position: XYPosition) => void;
+
+  // 새로 추가한 액션
+  syncCardsWithNodes: (forceRefresh?: boolean) => void;
 }
 
 // 아이디어맵 스토어 생성
@@ -136,8 +143,16 @@ export const useIdeaMapStore = create<IdeaMapState>()(
     (set, get) => ({
       // 노드 관련 초기 상태 및 함수
       nodes: [],
-      setNodes: (nodes) => set({ nodes, hasUnsavedChanges: true }),
+      setNodes: (nodes) => {
+        console.log('[useIdeaMapStore] setNodes 호출:', { nodeCount: nodes.length });
+        set({ nodes, hasUnsavedChanges: true });
+      },
       onNodesChange: (changes) => {
+        console.log('[useIdeaMapStore] onNodesChange 호출:', { 
+          changeCount: changes.length,
+          changeTypes: changes.map(c => c.type).join(', ')
+        });
+        
         // 삭제된 노드가 있는지 확인
         const deleteChanges = changes.filter(
           (change) => change.type === 'remove'
@@ -147,6 +162,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         const deletedNodeIds = deleteChanges.map(
           (change) => (change as NodeChange & { id: string }).id
         );
+        
+        if (deletedNodeIds.length > 0) {
+          console.log('[useIdeaMapStore] 노드 삭제 감지:', { deletedNodeIds });
+        }
         
         // 엣지 업데이트 (삭제된 노드와 연결된 엣지 제거)
         if (deletedNodeIds.length > 0) {
@@ -159,6 +178,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           
           // 엣지 변경이 있는 경우만 setEdges 호출
           if (currentEdges.length !== updatedEdges.length) {
+            console.log('[useIdeaMapStore] 연결된 엣지 제거:', { 
+              이전엣지수: currentEdges.length, 
+              제거후엣지수: updatedEdges.length 
+            });
             set({ edges: updatedEdges, hasUnsavedChanges: true });
           }
         }
@@ -168,28 +191,49 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           (change) => change.type === 'position' && change.dragging === false
         );
         
+        if (positionChanges.length > 0) {
+          console.log('[useIdeaMapStore] 노드 위치 확정 감지:', { 
+            positionChangesCount: positionChanges.length 
+          });
+        }
+        
         if (positionChanges.length > 0 || deleteChanges.length > 0) {
           set({ hasUnsavedChanges: true });
         }
         
         // 노드 변경 적용
-        set(state => ({
-          nodes: applyNodeChanges(changes, state.nodes) as Node<CardData>[]
-        }));
+        set(state => {
+          const updatedNodes = applyNodeChanges(changes, state.nodes) as Node<CardData>[];
+          console.log('[useIdeaMapStore] 노드 변경 적용 완료:', { 
+            이전노드수: state.nodes.length,
+            변경후노드수: updatedNodes.length
+          });
+          return { nodes: updatedNodes };
+        });
       },
       
       // 엣지 관련 초기 상태 및 함수
       edges: [],
-      setEdges: (edges) => set({ edges, hasUnsavedChanges: true }),
+      setEdges: (edges) => {
+        console.log('[useIdeaMapStore] setEdges 호출:', { edgeCount: edges.length });
+        set({ edges, hasUnsavedChanges: true });
+      },
       onEdgesChange: (changes) => {
+        console.log('[useIdeaMapStore] onEdgesChange 호출:', { 
+          changeCount: changes.length,
+          changeTypes: changes.map(c => c.type).join(', ')
+        });
+        
         set(state => ({
           edges: applyEdgeChanges(changes, state.edges),
           hasUnsavedChanges: true
         }));
       },
       onConnect: (connection) => {
-        set(state => ({
-          edges: addEdge({
+        console.log('[useIdeaMapStore] onConnect 호출:', connection);
+        
+        set(state => {
+          const newEdge = addEdge({
             ...connection,
             type: 'custom',
             animated: state.ideaMapSettings.animated,
@@ -213,9 +257,18 @@ export const useIdeaMapStore = create<IdeaMapState>()(
                 selectedEdgeColor: state.ideaMapSettings.selectedEdgeColor,
               }
             }
-          }, state.edges),
-          hasUnsavedChanges: true
-        }));
+          }, state.edges);
+          
+          console.log('[useIdeaMapStore] 새 엣지 생성 완료:', { 
+            엣지ID: newEdge[newEdge.length - 1]?.id,
+            총엣지수: newEdge.length
+          });
+          
+          return {
+            edges: newEdge,
+            hasUnsavedChanges: true
+          };
+        });
       },
       
       // 아이디어맵 설정 관련 초기 상태 및 함수
@@ -266,6 +319,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       loadIdeaMapData: async () => {
         // 이미 로딩 중이면 중복 호출 방지
         if (get().isIdeaMapLoading) {
+          console.log('[useIdeaMapStore] 이미 데이터 로딩 중, 중복 호출 방지');
           return;
         }
         
@@ -275,37 +329,55 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           loadedViewport: null, 
           needsFitView: false 
         });
-        console.log('[loadIdeaMapData Action] 아이디어맵 데이터 로딩 시작');
+        console.log('[useIdeaMapStore] 아이디어맵 데이터 로딩 시작');
         try {
           // 1. API 호출
+          console.log('[useIdeaMapStore] 카드 데이터 API 호출');
           const response = await fetch('/api/cards');
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || `데이터 불러오기 실패 (상태: ${response.status})`);
           }
           const cards = await response.json();
-          console.log('[loadIdeaMapData Action] API 카드 데이터:', cards);
+          console.log('[useIdeaMapStore] API 카드 데이터 로드 완료:', { 카드수: cards.length });
 
           // 2. 로컬 스토리지에서 노드 위치, 엣지, 뷰포트 정보 읽기
+          console.log('[useIdeaMapStore] 로컬 스토리지에서 레이아웃 데이터 로드 시작');
           let nodePositions: Record<string, { position: XYPosition }> = {};
           let savedEdges: Edge[] = [];
           let savedViewport: Viewport | null = null;
 
           try {
             const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-            if (savedPositionsStr) nodePositions = JSON.parse(savedPositionsStr);
+            if (savedPositionsStr) {
+              nodePositions = JSON.parse(savedPositionsStr);
+              console.log('[useIdeaMapStore] 저장된 노드 위치 로드 완료:', { 노드수: Object.keys(nodePositions).length });
+            } else {
+              console.log('[useIdeaMapStore] 저장된 노드 위치 없음, 기본 위치 사용 예정');
+            }
 
             const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
-            if (savedEdgesStr) savedEdges = JSON.parse(savedEdgesStr);
+            if (savedEdgesStr) {
+              savedEdges = JSON.parse(savedEdgesStr);
+              console.log('[useIdeaMapStore] 저장된 엣지 로드 완료:', { 엣지수: savedEdges.length });
+            } else {
+              console.log('[useIdeaMapStore] 저장된 엣지 없음, 빈 배열 사용');
+            }
 
             const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_STORAGE_KEY);
-            if (transformString) savedViewport = JSON.parse(transformString);
+            if (transformString) {
+              savedViewport = JSON.parse(transformString);
+              console.log('[useIdeaMapStore] 저장된 뷰포트 로드 완료:', savedViewport);
+            } else {
+              console.log('[useIdeaMapStore] 저장된 뷰포트 없음, fitView 필요 설정');
+            }
           } catch (err) {
-            console.error('[loadIdeaMapData Action] 로컬 스토리지 읽기 오류:', err);
+            console.error('[useIdeaMapStore] 로컬 스토리지 읽기 오류:', err);
             toast.error('저장된 아이디어맵 레이아웃을 불러오는 중 문제가 발생했습니다.');
           }
 
           // 3. 노드 데이터 생성 및 위치 적용
+          console.log('[useIdeaMapStore] 카드 데이터를 노드로 변환 시작');
           const nodes: Node<CardData>[] = cards.map((card: CardData, index: number) => {
             const savedPosition = nodePositions[card.id]?.position;
             const position = savedPosition || { 
@@ -320,7 +392,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               
             return {
               id: card.id,
-              type: 'card',
+              type: NODE_TYPES_KEYS.card,
               position,
               data: {
                 ...card,
@@ -328,12 +400,22 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               },
             };
           });
+          console.log('[useIdeaMapStore] 노드 데이터 생성 완료:', { 노드수: nodes.length });
 
           // 4. 엣지 데이터 설정 (저장된 엣지 사용 및 설정 적용)
           const boardSettings = get().ideaMapSettings;
           const finalEdges = applyIdeaMapEdgeSettings(savedEdges, boardSettings);
+          console.log('[useIdeaMapStore] 엣지 스타일 적용 완료:', { 
+            엣지수: finalEdges.length,
+            스타일: {
+              animated: boardSettings.animated,
+              strokeWidth: boardSettings.strokeWidth,
+              edgeColor: boardSettings.edgeColor
+            }
+          });
 
           // 5. 스토어 상태 업데이트
+          console.log('[useIdeaMapStore] 스토어 상태 업데이트');
           set({
             nodes,
             edges: finalEdges,
@@ -363,17 +445,27 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             });
 
           if (hasCardsChanged) {
-            console.log('[loadIdeaMapData Action] 카드 데이터가 변경되어 상태를 업데이트합니다');
+            console.log('[useIdeaMapStore] 카드 데이터가 변경되어 AppStore 상태 업데이트:', {
+              이전카드수: currentCards.length,
+              새카드수: cards.length
+            });
             useAppStore.getState().setCards(cards);
           } else {
-            console.log('[loadIdeaMapData Action] 카드 데이터가 변경되지 않아 상태 업데이트를 건너뜁니다');
+            console.log('[useIdeaMapStore] 카드 데이터가 변경되지 않아 AppStore 상태 업데이트 건너뜀');
           }
+          
+          // 7. 카드-노드 동기화 강제 실행 (데이터 로드 후 추가 안전 장치)
+          // 약간의 지연 후 실행하여 다른 상태 업데이트와 충돌하지 않도록 함
+          setTimeout(() => {
+            console.log('[useIdeaMapStore] 데이터 로드 후 카드-노드 동기화 실행');
+            get().syncCardsWithNodes(true);
+          }, 200);
 
           toast.success('아이디어맵 데이터를 성공적으로 불러왔습니다.');
 
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          console.error('[loadIdeaMapData Action] 아이디어맵 데이터 로딩 실패:', errorMessage);
+          console.error('[useIdeaMapStore] 아이디어맵 데이터 로딩 실패:', errorMessage);
           set({ 
             isIdeaMapLoading: false, 
             ideaMapError: errorMessage,
@@ -574,6 +666,8 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             
             toast.success('아이디어맵 설정이 로드되었습니다');
           } else {
+            // 낙관적 업데이트 구현 후, 기본값을 로컬 스토리지에 저장하고 바로 DB에도 저장하는 로직 구현 (추가 예정)
+            // TODO: 여기서 DEFAULT_IDEAMAP_SETTINGS를 서버에 바로 저장하여 새 사용자 경험 개선 필요
             toast.info('저장된 아이디어맵 설정이 없어 기본값을 사용합니다');
           }
           
@@ -790,12 +884,18 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        * @param changes 노드 변경 사항 배열
        */
       applyNodeChangesAction: (changes: NodeChange[]) => {
+        console.log('[useIdeaMapStore] applyNodeChangesAction 호출:', { 
+          변경수: changes.length,
+          변경유형: changes.map(c => c.type).join(', ')
+        });
+        
         // 삭제된 노드가 있는지 확인
         const deleteChanges = changes.filter(change => change.type === 'remove');
         
         // 삭제된 노드가 있으면 로컬 스토리지에서도 해당 노드 정보를 제거
         if (deleteChanges.length > 0) {
           const deletedNodeIds = deleteChanges.map(change => change.id);
+          console.log('[useIdeaMapStore] 노드 삭제 감지:', { deletedNodeIds });
           get().removeNodesAndRelatedEdgesFromStorage(deletedNodeIds);
         }
         
@@ -804,14 +904,25 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           change => change.type === 'position' && change.dragging === false
         );
         
+        if (positionChanges.length > 0) {
+          console.log('[useIdeaMapStore] 노드 위치 변경 확정 감지:', { 
+            변경노드수: positionChanges.length 
+          });
+        }
+        
         if (positionChanges.length > 0 || deleteChanges.length > 0) {
           set({ hasUnsavedChanges: true });
         }
         
         // 노드 변경 적용
-        set(state => ({
-          nodes: applyNodeChanges(changes, state.nodes) as Node<CardData>[]
-        }));
+        set(state => {
+          const updatedNodes = applyNodeChanges(changes, state.nodes) as Node<CardData>[];
+          console.log('[useIdeaMapStore] 노드 변경 적용 완료:', { 
+            이전노드수: state.nodes.length,
+            변경후노드수: updatedNodes.length
+          });
+          return { nodes: updatedNodes };
+        });
       },
       
       /**
@@ -1162,6 +1273,130 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           toast.error(`카드 추가 실패: ${errorMessage}`);
         }
       },
+
+      // 새로 추가한 액션
+      syncCardsWithNodes: (forceRefresh = false) => {
+        const appStoreCards = useAppStore.getState().cards;
+        const currentNodes = get().nodes;
+        
+        console.log('[useIdeaMapStore] ⭐️ syncCardsWithNodes 시작 ⭐️', {
+          강제실행: forceRefresh,
+          카드개수: appStoreCards.length,
+          현재노드개수: currentNodes.length
+        });
+        
+        // 변경이 필요한지 확인
+        let needsUpdate = forceRefresh;
+        
+        if (!needsUpdate) {
+          // 카드 수와 노드 수가 다르면 업데이트 필요
+          if (appStoreCards.length !== currentNodes.length) {
+            needsUpdate = true;
+            console.log('[useIdeaMapStore] 카드 수와 노드 수가 달라 업데이트 필요:', 
+              { 카드: appStoreCards.length, 노드: currentNodes.length });
+          } else {
+            // 각 카드가 노드에 제대로 반영되어 있는지 확인
+            needsUpdate = appStoreCards.some(card => {
+              const matchingNode = currentNodes.find(node => node.id === card.id);
+              
+              // 노드가 없거나 노드 데이터가 최신이 아니면 업데이트 필요
+              if (!matchingNode) {
+                console.log(`[useIdeaMapStore] 카드 ID ${card.id}에 대한 노드가 없음`);
+                return true;
+              }
+              
+              const needsContentUpdate = (
+                matchingNode.data.title !== card.title ||
+                matchingNode.data.content !== card.content
+              );
+              
+              if (needsContentUpdate) {
+                console.log(`[useIdeaMapStore] 카드 ID ${card.id}의 내용이 노드와 다름`, {
+                  카드제목: card.title,
+                  노드제목: matchingNode.data.title,
+                  내용일치: matchingNode.data.content === card.content
+                });
+              }
+              
+              return needsContentUpdate;
+            });
+          }
+        }
+        
+        // 업데이트가 필요하면 노드 배열 업데이트
+        if (needsUpdate) {
+          console.log('[useIdeaMapStore] 카드와 노드 동기화 수행 시작');
+          
+          if (appStoreCards.length === 0) {
+            console.warn('[useIdeaMapStore] 카드가 없습니다. 빈 노드 배열로 업데이트합니다.');
+            set({ nodes: [] });
+            return;
+          }
+          
+          try {
+            // 기존 노드 위치 저장
+            const nodePositions: Record<string, XYPosition> = {};
+            currentNodes.forEach(node => {
+              nodePositions[node.id] = node.position;
+            });
+            console.log('[useIdeaMapStore] 기존 노드 위치 캐싱 완료:', { 
+              노드수: Object.keys(nodePositions).length 
+            });
+            
+            // 새 노드 배열 생성
+            const updatedNodes = appStoreCards.map((card, index) => {
+              // 기존 위치 사용 또는 새 위치 할당
+              const position = nodePositions[card.id] || calculateNodePosition(index, appStoreCards.length);
+              
+              if (!nodePositions[card.id]) {
+                console.debug(`[useIdeaMapStore] 새 노드 위치 계산 (ID: ${card.id}):`, position);
+              }
+
+              // 태그 처리
+              const tags = card.cardTags && card.cardTags.length > 0
+                ? card.cardTags.map(cardTag => cardTag.tag.name)
+                : (card.tags || []);
+              
+              const node = {
+                id: card.id,
+                type: NODE_TYPES_KEYS.card, // 명시적으로 카드 타입 지정
+                position,
+                data: {
+                  ...card,
+                  tags,
+                  // 클라이언트 측 사용을 위한 추가 메타데이터
+                  _syncedAt: new Date().toISOString(),
+                  _nodeType: NODE_TYPES_KEYS.card
+                },
+              };
+              
+              console.debug(`[useIdeaMapStore] 노드 생성 완료 (ID: ${card.id})`, {
+                position,
+                data: { title: card.title, content: card.content?.substring(0, 30) + '...' }
+              });
+              
+              return node;
+            });
+            
+            if (updatedNodes.length === 0) {
+              console.warn('[useIdeaMapStore] 생성된 노드가 없습니다!');
+              return;
+            }
+            
+            // 노드 상태 업데이트
+            set({ nodes: updatedNodes as Node<CardData>[] });
+            console.log('[useIdeaMapStore] ✅ 노드 업데이트 완료', {
+              totalNodes: updatedNodes.length,
+              viewportBounds: calculateViewportBounds(updatedNodes)
+            });
+          } catch (error) {
+            console.error('[useIdeaMapStore] 노드 생성 중 오류 발생:', error);
+            toast.error('노드 업데이트 중 오류가 발생했습니다.');
+          }
+        } else {
+          console.log('[useIdeaMapStore] 카드와 노드가 이미 동기화 상태입니다. 업데이트 건너뜀');
+        }
+      },
     }),
     {
       name: 'ideamap-store',
@@ -1170,4 +1405,41 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       })
     }
   )
-); 
+);
+
+/**
+ * calculateViewportBounds: 노드들의 뷰포트 경계를 계산
+ * @param nodes - 노드 배열
+ * @returns 뷰포트 경계 값 (최소/최대 x,y 좌표)
+ */
+const calculateViewportBounds = (nodes: Node[]) => {
+  if (nodes.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  
+  const bounds = nodes.reduce(
+    (acc, node) => {
+      return {
+        minX: Math.min(acc.minX, node.position.x),
+        minY: Math.min(acc.minY, node.position.y),
+        maxX: Math.max(acc.maxX, node.position.x + 250), // 노드 너비 대략 250px로 가정
+        maxY: Math.max(acc.maxY, node.position.y + 150), // 노드 높이 대략 150px로 가정
+      };
+    },
+    { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+  );
+  
+  return bounds;
+};
+
+/**
+ * calculateNodePosition: 노드의 위치를 계산
+ * @param index - 노드 인덱스
+ * @param totalNodes - 전체 노드 수
+ * @returns 노드 좌표 {x, y}
+ */
+const calculateNodePosition = (index: number, totalNodes: number) => {
+  const angle = (index / totalNodes) * 2 * Math.PI;
+  const radius = Math.min(200, totalNodes * 30); // 노드 수에 따라 반지름 조정
+  const x = 400 + radius * Math.cos(angle);
+  const y = 300 + radius * Math.sin(angle);
+  return { x, y };
+}; 
