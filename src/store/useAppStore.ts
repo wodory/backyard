@@ -348,12 +348,15 @@ export const useAppStore = create<AppState>()(
          set({ isLoading: true });
          try {
            let finalLayoutedNodes: Node[]; // Define type explicitly
+           let finalLayoutedEdges: Edge[] = edges; // 기본적으로 기존 엣지 사용
+           
            if (direction === 'auto') {
               finalLayoutedNodes = getGridLayout(nodes);
            } else {
              // getLayoutedElements returns { nodes, edges }
-             const { nodes: layoutedNodesFromElk } = getLayoutedElements(nodes, edges, direction);
+             const { nodes: layoutedNodesFromElk, edges: layoutedEdgesFromElk } = getLayoutedElements(nodes, edges, direction);
              finalLayoutedNodes = layoutedNodesFromElk;
+             finalLayoutedEdges = layoutedEdgesFromElk; // 엣지도 업데이트
            }
 
            // Only update positions, keep other node data intact
@@ -364,6 +367,8 @@ export const useAppStore = create<AppState>()(
            });
 
            rfInstance.setNodes(updatedNodes);
+           rfInstance.setEdges(finalLayoutedEdges); // 엣지도 업데이트
+           
            // Optional: Fit view after layout
            // rfInstance.fitView({ padding: 0.1 });
            const directionTermForToast = direction === 'horizontal' ? '가로' : direction === 'vertical' ? '세로' : '자동';

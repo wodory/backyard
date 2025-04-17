@@ -508,26 +508,29 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         
         try {
           let layoutedNodes;
+          let layoutedEdges = edges; // 기본적으로 기존 엣지 사용
           
           if (direction === 'auto') {
             // 자동 레이아웃 (그리드)
             layoutedNodes = getGridLayout(nodes);
           } else {
             // 방향 기반 레이아웃
-            const { nodes: newNodes } = getLayoutedElements(nodes, edges, direction);
+            const { nodes: newNodes, edges: newEdges } = getLayoutedElements(nodes, edges, direction);
             layoutedNodes = newNodes;
+            layoutedEdges = newEdges; // 엣지도 업데이트
           }
           
-          // 노드 업데이트
+          // 노드와 엣지 업데이트
           set({ 
             nodes: layoutedNodes as Node<CardData>[],
+            edges: layoutedEdges as Edge[],
             hasUnsavedChanges: true
           });
           
           // 레이아웃 적용 후 바로 저장 (추가된 부분)
           setTimeout(() => {
-            const result = get().saveLayout();
-            console.log(`[useIdeaMapStore] ${direction} 레이아웃 적용 후 위치 저장:`, result ? '성공' : '실패');
+            const result = get().saveAllLayoutData(); // saveLayout 대신 saveAllLayoutData 호출
+            console.log(`[useIdeaMapStore] ${direction} 레이아웃 적용 후 위치 및 엣지 저장:`, result ? '성공' : '실패');
             
             if (result) {
               set({ hasUnsavedChanges: false });
