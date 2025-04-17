@@ -3,6 +3,7 @@
  * 목적: 로그인 및 회원가입 서버 액션 제공
  * 역할: 사용자 인증 처리
  * 작성일: 2025-03-27
+ * 수정일: 2025-04-05 : OAuth 리다이렉션 URL 환경변수 수정
  */
 
 'use server'
@@ -40,7 +41,7 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL || 'http://localhost:3000'}/auth/callback`,
     },
   })
 
@@ -57,11 +58,13 @@ export async function signInWithGoogle() {
   // Supabase 클라이언트 생성
   const supabase = await createClient()
   
-  // 현재 앱 도메인 (기본값 localhost:3000)
-  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  // 현재 앱 도메인 (NEXT_PUBLIC_OAUTH_REDIRECT_URL 사용)
+  const origin = process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL || 'http://localhost:3000'
   
   // 콜백 URL 설정
   const redirectUrl = `${origin}/auth/callback`
+  
+  console.log('[GoogleSignIn] Using redirect URL:', redirectUrl)
   
   // Google OAuth 로그인 프로세스 시작
   const { data, error } = await supabase.auth.signInWithOAuth({

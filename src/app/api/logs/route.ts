@@ -4,6 +4,7 @@
  * 역할: 로그 데이터를 받아 서버 로그에 기록하고 필요시 데이터베이스에 저장
  * 작성일: 2025-03-27
  * 수정일: 2024-05-22 : import 순서 수정, any 타입 구체화
+ * 수정일: 2025-04-05 : Vercel 환경에서 파일 시스템 접근 제한 문제 해결
  */
 
 import fs from 'fs';
@@ -17,6 +18,8 @@ import { createClient } from '@supabase/supabase-js';
 // 로그 파일 경로 설정
 const LOG_DIR = process.env.LOG_DIR || 'logs';
 const LOG_FILE = path.join(process.cwd(), LOG_DIR, 'client-logs.json');
+// Vercel 환경 확인
+const IS_VERCEL = process.env.VERCEL === '1';
 
 // 서버 전용 Supabase 클라이언트 생성 함수
 const createServerSupabaseClient = () => {
@@ -35,6 +38,9 @@ const createServerSupabaseClient = () => {
  * ensureLogDir: 로그 디렉토리가 존재하는지 확인하고, 없으면 생성
  */
 const ensureLogDir = () => {
+  // Vercel 환경에서는 실행하지 않음
+  if (IS_VERCEL) return;
+  
   const logDirPath = path.join(process.cwd(), LOG_DIR);
   if (!fs.existsSync(logDirPath)) {
     fs.mkdirSync(logDirPath, { recursive: true });
@@ -54,6 +60,14 @@ const saveLogToFile = (logData: {
   timestamp?: string;
 }) => {
   try {
+    // 서버 콘솔에 로그 출력
+    console.log(`[CLIENT-LOG][${logData.module}][${logData.level}] ${logData.message}`, logData.data || '');
+    
+    // Vercel 환경에서는 파일 저장 건너뜀
+    if (IS_VERCEL) {
+      return true;
+    }
+    
     ensureLogDir();
     
     // 기존 로그 파일 읽기
@@ -76,9 +90,6 @@ const saveLogToFile = (logData: {
     
     // 파일에 저장
     fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2));
-    
-    // 서버 콘솔에도 로그 출력
-    console.log(`[SERVER-LOG][${logData.module}][${logData.level}] ${logData.message}`, logData.data || '');
     
     return true;
   } catch (error) {
@@ -103,7 +114,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 로그 파일에 저장
+    // 로그 처리
     saveLogToFile(logData);
     
     // 서버 전용 Supabase 클라이언트 생성 (오류 발생 시 로그만 저장)
@@ -116,7 +127,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (supabaseError) {
       console.error('Supabase 클라이언트 생성 오류:', supabaseError);
-      // 오류가 발생해도 API 응답은 성공으로 처리 (파일에는 저장됨)
+      // 오류가 발생해도 API 응답은 성공으로 처리 (로그는 기록됨)
     }
     
     return NextResponse.json({ success: true });
