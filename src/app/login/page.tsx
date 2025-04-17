@@ -6,15 +6,17 @@
  * 수정일: 2025-03-27
  * 수정일: 2024-05-29 : 이미지 표시 방식 변경 (object-cover)
  * 수정일: 2024-05-30 : 이미지 캐싱 및 애니메이션 효과 추가 (지연 없는 동시 로딩)
+ * 수정일: 2025-05-30 : LoginForm을 Suspense로 감싸서 useSearchParams 오류 해결
  */
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 
 import Image from 'next/image';
 
 import LoginForm from '@/components/login/loginForm';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // 배경 이미지 배열 (v0 디자인에서 가져온 이미지)
 const backgroundImages = [
@@ -47,6 +49,33 @@ const getCachedImagePath = () => {
   localStorage.setItem('loginBackgroundImage', newImagePath);
   return newImagePath;
 };
+
+// 로그인 폼 로딩 상태를 위한 스켈레톤 컴포넌트
+function LoginFormSkeleton() {
+  return (
+    <div className="w-full max-w-md p-6 md:p-12 space-y-6">
+      <div className="mb-4 text-center">
+        <Skeleton className="h-8 w-40 mx-auto mb-2" />
+        <Skeleton className="h-4 w-32 mx-auto" />
+      </div>
+      <div className="border rounded-lg p-6 space-y-4">
+        <Skeleton className="h-8 w-1/2 mb-6" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <Skeleton className="h-10 w-full mt-4" />
+        <Skeleton className="h-4 w-full mx-auto" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-4 w-3/4 mx-auto" />
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   // 이미지 상태 관리
@@ -92,7 +121,9 @@ export default function LoginPage() {
 
       {/* 오른쪽 로그인 폼 섹션 */}
       <div className="w-full lg:w-1/2 flex items-center justify-center">
-        <LoginForm />
+        <Suspense fallback={<LoginFormSkeleton />}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

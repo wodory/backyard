@@ -4,6 +4,7 @@
  * 역할: 카드 목록 페이지의 레이아웃과 컴포넌트 구성
  * 작성일: 2025-03-05
  * 수정일: 2025-04-08
+ * 수정일: 2025-05-30 : TagFilter를 Suspense로 감싸 useSearchParams 오류 해결
  */
 
 import { Suspense } from 'react';
@@ -40,6 +41,18 @@ function CardListSkeleton() {
   );
 }
 
+// 태그 필터 로딩 스켈레톤
+function TagFilterSkeleton() {
+  return (
+    <div className="space-y-2 p-3 border rounded-md">
+      <Skeleton className="h-6 w-1/2" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+    </div>
+  );
+}
+
 export default function CardsPage() {
   return (
     <div className="container mx-auto py-8">
@@ -65,7 +78,9 @@ export default function CardsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 사이드바 - 태그 필터 */}
         <div className="lg:col-span-1">
-          <TagFilter />
+          <Suspense fallback={<TagFilterSkeleton />}>
+            <TagFilter />
+          </Suspense>
         </div>
 
         {/* 카드 목록 */}
