@@ -261,7 +261,7 @@ export function ProjectToolbar() {
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Settings className="mr-1.5 h-4 w-4" />
-              보드 설정
+              아이디어맵 설정
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>

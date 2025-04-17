@@ -3878,5 +3878,29 @@
     "message": "code_verifier를 찾을 수 없음",
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-17T10:41:52.240Z"
+  },
+  {
+    "timestamp": "2025-04-17T10:53:12.286Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-17T10:53:14.118Z"
+  },
+  {
+    "timestamp": "2025-04-17T10:53:45.761Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-17T10:53:45.909Z"
+  },
+  {
+    "timestamp": "2025-04-17T10:53:51.872Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-17T10:53:51.975Z"
   }
 ]

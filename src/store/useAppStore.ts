@@ -434,6 +434,11 @@ export const useAppStore = create<AppState>()(
           const user = JSON.parse(localStorage.getItem('user') || '{}');
           const userId = user.id;
           
+          // useIdeaMapStore에도 설정 업데이트
+          const { useIdeaMapStore } = await import('./useIdeaMapStore');
+          const isAuthenticated = !!userId;
+          await useIdeaMapStore.getState().updateIdeaMapSettings(partialSettings, isAuthenticated, userId);
+          
           // 로그인된 사용자가 없는 경우 로컬 업데이트만 수행
           if (!userId) {
             console.warn('로그인된 사용자 정보가 없습니다. 로컬 설정만 업데이트합니다.');
