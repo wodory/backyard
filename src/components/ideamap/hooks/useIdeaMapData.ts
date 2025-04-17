@@ -4,11 +4,11 @@
  * 역할: useIdeaMapStore에서 아이디어맵 데이터와 로딩 상태를 가져오는 래퍼 훅
  * 작성일: 2025-03-28
  * 수정일: 2025-04-10
+ * 수정일: 2025-04-17 : 렌더링 최적화 (불필요한 리렌더링 방지)
  */
 
 import { Edge } from '@xyflow/react';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useToast } from '@/components/ui/use-toast';
 import { Node } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
@@ -30,7 +30,7 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   // 초기 데이터 로드 완료 여부 추적
   const initialLoadCompleteRef = useRef(false);
   
-  // 아이디어맵 스토어에서 필요한 상태와 액션 가져오기
+  // 아이디어맵 스토어에서 필요한 상태와 액션만 선택적으로 가져오기
   const nodes = useIdeaMapStore(state => state.nodes);
   const edges = useIdeaMapStore(state => state.edges);
   const isIdeaMapLoading = useIdeaMapStore(state => state.isIdeaMapLoading);
@@ -39,7 +39,7 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   const loadedViewport = useIdeaMapStore(state => state.loadedViewport);
   const needsFitView = useIdeaMapStore(state => state.needsFitView);
   
-  // 앱 스토어에서 필요한 상태와 액션 가져오기
+  // 앱 스토어에서 필요한 액션만 선택적으로 가져오기
   const setCards = useAppStore(state => state.setCards);
   
   /**
@@ -47,6 +47,12 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
    */
   const loadNodesAndEdges = useCallback(async () => {
     console.log('[useIdeaMapData] loadNodesAndEdges 함수 호출');
+    
+    // 이미 로드 완료된 상태면 중복 호출 방지
+    if (initialLoadCompleteRef.current && !isLoading) {
+      console.log('[useIdeaMapData] 이미 데이터 로드 완료, 중복 호출 방지');
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -82,9 +88,9 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
       setError(err instanceof Error ? err : new Error('데이터 로드 중 오류가 발생했습니다'));
       setIsLoading(false);
     }
-  }, [loadIdeaMapData, setCards, nodes, edges]);
+  }, [setCards, loadIdeaMapData, isLoading]);
   
-  // 컴포넌트 마운트 시 데이터 로드
+  // 컴포넌트 마운트 시 데이터 로드 (의존성 배열에 모든 변수를 명시)
   useEffect(() => {
     console.log('[useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태:', initialLoadCompleteRef.current);
     
@@ -101,7 +107,7 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
       console.log('[useIdeaMapData] 노드가 로드됨, 로딩 상태 false로 변경');
       setIsLoading(false);
     }
-  }, [nodes, isLoading]);
+  }, [nodes.length, isLoading]);
   
   // 노드 클릭 핸들러
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {

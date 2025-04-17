@@ -1,0 +1,1370 @@
+Hydration finished for app-storage
+useAppStore.ts:774 Hydration completed for app-storage
+useAppStore.ts:891 App commands registered to window.appCommands
+CardNode.tsx:27 [CardNode_from_nodes_directory] 모듈이 로드됨 - 경로: @/components/ideamap/nodes/CardNode
+CustomEdge.tsx:20 [CustomEdge_from_nodes_directory] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge
+CustomEdge.tsx:37 [CustomEdge] 컴포넌트 정의 전: 함수 형태의 컴포넌트 생성
+flow-constants.ts:34 [flow-constants] 컴포넌트 유효성 검증: {cardNode: 'OK', customEdge: 'OK', nodeInspect: 'OK'}
+flow-constants.ts:59 [flow-constants] 노드 및 엣지 타입 등록 완료: {NODE_TYPES_KEYS: Array(3), EDGE_TYPES_KEYS: Array(2), NODE_TYPES: Array(3), EDGE_TYPES: Array(2)}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: undefined, isAuthLoading: true}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 0, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 0, hasUnsavedEdgesChanges: false}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: undefined, isAuthLoading: true}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 0, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 0, hasUnsavedEdgesChanges: false}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+logger.ts:135 [11:13:39][ProjectToolbar][INFO] 프로젝트 정보 로딩 
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: false
+useIdeaMapData.ts:49 [useIdeaMapData] loadNodesAndEdges 함수 호출
+useIdeaMapData.ts:55 [useIdeaMapData] 아이디어맵 데이터 로드 시작
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 0
+IdeaMap.tsx:192 [IdeaMap] ReactFlow 인스턴스 저장
+IdeaMap.tsx:199 [IdeaMap] 초기 데이터 로드 Effect 실행, 로드 상태: false
+IdeaMap.tsx:202 [IdeaMap] 아이디어맵 데이터 초기 로딩 시작
+useIdeaMapStore.ts:323 [useIdeaMapStore] 이미 데이터 로딩 중, 중복 호출 방지
+IdeaMap.tsx:218 [IdeaMap] 뷰포트 복원 Effect 실행, 상태: {hasLoadedViewport: false, needsFitView: false, viewportToRestore: null}
+IdeaMap.tsx:252 [IdeaMap] fitView 보장 Effect, 상태: {hasReactFlowInstance: true, nodeCount: 0}
+IdeaMap.tsx:282 [IdeaMap] viewportToRestore 감시 Effect, 상태: {hasReactFlowInstance: true, viewportToRestore: null}
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 0, nodeCount: 0, hasReactFlowInstance: true}
+IdeaMap.tsx:357 [IdeaMap] 사용자 변경 감지 Effect, 상태: {currentUserId: undefined, previousUserId: undefined, isAuthLoading: true}
+IdeaMap.tsx:498 [IdeaMap] 엣지 데이터 검증 시작: {edgesLength: 0}
+IdeaMap.tsx:502 [IdeaMap] 엣지 배열이 비어있음. 로컬 스토리지에서 직접 로드 시도
+IdeaMap.tsx:507 [IdeaMap] 로컬 스토리지에서 엣지 로드 성공: {edgesCount: 5}
+useIdeaMapStore.ts:219 [useIdeaMapStore] setEdges 호출: {edgeCount: 5}
+DashboardLayout.tsx:22 DashboardLayout 마운트됨
+ThemeContext.tsx:168 테마 변경됨: 200 48
+logger.ts:135 [11:13:39][AuthContext][INFO] 인증 컨텍스트 초기화 시작 
+logger.ts:138 [11:13:39][AuthContext][WARN] code_verifier를 찾을 수 없음 
+overrideMethod @ hook.js:608
+logger @ logger.ts:138
+warn @ logger.ts:190
+initializeAuth @ AuthContext.tsx:97
+AuthProvider.useEffect @ AuthContext.tsx:157
+react-stack-bottom-frame @ react-dom-client.development.js:23055
+runWithFiberInDEV @ react-dom-client.development.js:845
+commitHookEffectListMount @ react-dom-client.development.js:11978
+commitHookPassiveMountEffects @ react-dom-client.development.js:12099
+commitPassiveMountOnFiber @ react-dom-client.development.js:13929
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13941
+flushPassiveEffects @ react-dom-client.development.js:15869
+flushPendingEffects @ react-dom-client.development.js:15830
+performSyncWorkOnRoot @ react-dom-client.development.js:16362
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16211
+flushSpawnedWork @ react-dom-client.development.js:15805
+commitRoot @ react-dom-client.development.js:15529
+commitRootWhenReady @ react-dom-client.development.js:14759
+performWorkOnRoot @ react-dom-client.development.js:14682
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+ClientLayout @ ClientLayout.tsx:64
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10505
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15252
+renderRootConcurrent @ react-dom-client.development.js:15227
+performWorkOnRoot @ react-dom-client.development.js:14525
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+"use client"
+RootLayout @ layout.tsx:31
+eval @ react-server-dom-webpack-client.browser.development.js:2355
+initializeModelChunk @ react-server-dom-webpack-client.browser.development.js:1054
+getOutlinedModel @ react-server-dom-webpack-client.browser.development.js:1327
+parseModelString @ react-server-dom-webpack-client.browser.development.js:1540
+eval @ react-server-dom-webpack-client.browser.development.js:2294
+initializeModelChunk @ react-server-dom-webpack-client.browser.development.js:1054
+resolveModelChunk @ react-server-dom-webpack-client.browser.development.js:1031
+resolveModel @ react-server-dom-webpack-client.browser.development.js:1599
+processFullStringRow @ react-server-dom-webpack-client.browser.development.js:2288
+processFullBinaryRow @ react-server-dom-webpack-client.browser.development.js:2233
+progress @ react-server-dom-webpack-client.browser.development.js:2479
+<RootLayout>
+buildFakeTask @ react-server-dom-webpack-client.browser.development.js:2040
+initializeFakeTask @ react-server-dom-webpack-client.browser.development.js:2027
+resolveDebugInfo @ react-server-dom-webpack-client.browser.development.js:2063
+processFullStringRow @ react-server-dom-webpack-client.browser.development.js:2261
+processFullBinaryRow @ react-server-dom-webpack-client.browser.development.js:2233
+progress @ react-server-dom-webpack-client.browser.development.js:2479
+"use server"
+ResponseInstance @ react-server-dom-webpack-client.browser.development.js:1587
+createResponseFromOptions @ react-server-dom-webpack-client.browser.development.js:2396
+exports.createFromReadableStream @ react-server-dom-webpack-client.browser.development.js:2717
+eval @ app-index.js:132
+(app-pages-browser)/./node_modules/next/dist/client/app-index.js @ main-app.js?v=1744888418560:160
+options.factory @ webpack.js?v=1744888418560:712
+__webpack_require__ @ webpack.js?v=1744888418560:37
+fn @ webpack.js?v=1744888418560:369
+eval @ app-next-dev.js:11
+eval @ app-bootstrap.js:62
+loadScriptsInSequence @ app-bootstrap.js:23
+appBootstrap @ app-bootstrap.js:56
+eval @ app-next-dev.js:10
+(app-pages-browser)/./node_modules/next/dist/client/app-next-dev.js @ main-app.js?v=1744888418560:182
+options.factory @ webpack.js?v=1744888418560:712
+__webpack_require__ @ webpack.js?v=1744888418560:37
+__webpack_exec__ @ main-app.js?v=1744888418560:2824
+(익명) @ main-app.js?v=1744888418560:2825
+webpackJsonpCallback @ webpack.js?v=1744888418560:1388
+(익명) @ main-app.js?v=1744888418560:9이 경고 이해하기AI
+logger.ts:135 [11:13:39][ClientLayout][INFO] 클라이언트 레이아웃 마운트 
+logger.ts:135 [11:13:39][ClientLayout][INFO] 브라우저 환경 확인 
+logger.ts:135 [11:13:39][ClientLayout][INFO] localStorage 접근 가능 
+ClientLayout.tsx:47 === 로컬 스토리지에 저장된 사용자 ID ===
+ClientLayout.tsx:48 user_id: 787043b3-3996-4121-b650-404c7bd6fdcc
+ClientLayout.tsx:49 ==================
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: undefined, isAuthLoading: true}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: undefined, isAuthLoading: true}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+logger.ts:135 [11:13:39][ProjectToolbar][INFO] 프로젝트 정보 로딩 
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: false
+useIdeaMapData.ts:49 [useIdeaMapData] loadNodesAndEdges 함수 호출
+useIdeaMapData.ts:55 [useIdeaMapData] 아이디어맵 데이터 로드 시작
+IdeaMap.tsx:498 [IdeaMap] 엣지 데이터 검증 시작: {edgesLength: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: undefined, isAuthLoading: true}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: undefined, isAuthLoading: true}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+hot-reloader-client.js:197 [Fast Refresh] rebuilding
+CreateCardModal.tsx:84 사용자 ID 가져옴: 13ce1b15-aa4e-452b-af81-124d06413662
+auth.ts:310 [인증 상태] 로그인됨 {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', email: 'wodory@gmail.com'}
+logger.ts:135 [11:13:39][AuthContext][INFO] 현재 세션 복원 성공 {user_id: '787043b3...', provider: 'google'}
+AuthContext.tsx:129 === 로그인 성공: 사용자 정보 ===
+AuthContext.tsx:130 ID: 787043b3-3996-4121-b650-404c7bd6fdcc
+AuthContext.tsx:131 이메일: wodory@gmail.com
+AuthContext.tsx:132 이름: 우둘투둘
+AuthContext.tsx:133 로그인 제공자: google
+AuthContext.tsx:134 마지막 로그인: 2025. 4. 17. 오후 7:41:39
+AuthContext.tsx:135 사용자 메타데이터: {avatar_url: 'https://lh3.googleusercontent.com/a/ACg8ocKdt4sfSIfasEhDgcjFjtk3RchrxG3KNSjoDWSsGgQJai0wOA=s96-c', email: 'wodory@gmail.com', email_verified: true, full_name: '우둘투둘', iss: 'https://accounts.google.com', …}
+AuthContext.tsx:136 앱 메타데이터: {provider: 'google', providers: Array(1)}
+AuthContext.tsx:137 ==================
+logger.ts:135 [11:13:39][AuthContext][INFO] 인증 컨텍스트 초기화 완료 
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:357 [IdeaMap] 사용자 변경 감지 Effect, 상태: {currentUserId: '787043b3-3996-4121-b650-404c7bd6fdcc', previousUserId: undefined, isAuthLoading: false}
+IdeaMap.tsx:369 [IdeaMap] 사용자 변경 감지, 레이아웃 데이터 로드: 787043b3-3996-4121-b650-404c7bd6fdcc
+useIdeaMapStore.ts:323 [useIdeaMapStore] 이미 데이터 로딩 중, 중복 호출 방지
+ideamap-utils.ts:136 [loadIdeaMapSettingsFromServer] 서버에서 설정 로드 시작 {userId: '787043b3-3996-4121-b650-404c7bd6fdcc'}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+logger.ts:135 [11:13:39][AuthContext][INFO] Supabase 인증 상태 변경 감지 {event: 'INITIAL_SESSION'}
+IdeaMap.tsx:208 [IdeaMap] 컴포넌트 마운트 후 카드-노드 동기화 실행
+useIdeaMapStore.ts:1380 [useIdeaMapStore] ⭐️ syncCardsWithNodes 시작 ⭐️ {강제실행: true, 카드개수: 0, 현재노드개수: 0}
+useIdeaMapStore.ts:1421 [useIdeaMapStore] 카드와 노드 동기화 수행 시작
+useIdeaMapStore.ts:1424 [useIdeaMapStore] 카드가 없습니다. 빈 노드 배열로 업데이트합니다.
+overrideMethod @ hook.js:608
+syncCardsWithNodes @ useIdeaMapStore.ts:1424
+IdeaMap.useEffect @ IdeaMap.tsx:210
+setTimeout
+IdeaMap.useEffect @ IdeaMap.tsx:207
+react-stack-bottom-frame @ react-dom-client.development.js:23055
+runWithFiberInDEV @ react-dom-client.development.js:845
+commitHookEffectListMount @ react-dom-client.development.js:11978
+commitHookPassiveMountEffects @ react-dom-client.development.js:12099
+commitPassiveMountOnFiber @ react-dom-client.development.js:13929
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13941
+flushPassiveEffects @ react-dom-client.development.js:15869
+flushPendingEffects @ react-dom-client.development.js:15830
+performSyncWorkOnRoot @ react-dom-client.development.js:16362
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16211
+flushSpawnedWork @ react-dom-client.development.js:15805
+commitRoot @ react-dom-client.development.js:15529
+commitRootWhenReady @ react-dom-client.development.js:14759
+performWorkOnRoot @ react-dom-client.development.js:14682
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<IdeaMap>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+MainCanvas @ MainCanvas.tsx:16
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10556
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15252
+renderRootConcurrent @ react-dom-client.development.js:15227
+performWorkOnRoot @ react-dom-client.development.js:14525
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<MainCanvas>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+DashboardLayout @ DashboardLayout.tsx:42
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10505
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15252
+renderRootConcurrent @ react-dom-client.development.js:15227
+performWorkOnRoot @ react-dom-client.development.js:14525
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+"use client"
+Home @ page.tsx:4
+eval @ react-server-dom-webpack-client.browser.development.js:2355
+initializeModelChunk @ react-server-dom-webpack-client.browser.development.js:1054
+getOutlinedModel @ react-server-dom-webpack-client.browser.development.js:1327
+parseModelString @ react-server-dom-webpack-client.browser.development.js:1540
+eval @ react-server-dom-webpack-client.browser.development.js:2294
+initializeModelChunk @ react-server-dom-webpack-client.browser.development.js:1054
+resolveModelChunk @ react-server-dom-webpack-client.browser.development.js:1031
+resolveModel @ react-server-dom-webpack-client.browser.development.js:1599
+processFullStringRow @ react-server-dom-webpack-client.browser.development.js:2288
+processFullBinaryRow @ react-server-dom-webpack-client.browser.development.js:2233
+progress @ react-server-dom-webpack-client.browser.development.js:2479
+<Home>
+buildFakeTask @ react-server-dom-webpack-client.browser.development.js:2040
+initializeFakeTask @ react-server-dom-webpack-client.browser.development.js:2027
+resolveDebugInfo @ react-server-dom-webpack-client.browser.development.js:2063
+processFullStringRow @ react-server-dom-webpack-client.browser.development.js:2261
+processFullBinaryRow @ react-server-dom-webpack-client.browser.development.js:2233
+progress @ react-server-dom-webpack-client.browser.development.js:2479
+"use server"
+ResponseInstance @ react-server-dom-webpack-client.browser.development.js:1587
+createResponseFromOptions @ react-server-dom-webpack-client.browser.development.js:2396
+exports.createFromReadableStream @ react-server-dom-webpack-client.browser.development.js:2717
+eval @ app-index.js:132
+(app-pages-browser)/./node_modules/next/dist/client/app-index.js @ main-app.js?v=1744888418560:160
+options.factory @ webpack.js?v=1744888418560:712
+__webpack_require__ @ webpack.js?v=1744888418560:37
+fn @ webpack.js?v=1744888418560:369
+eval @ app-next-dev.js:11
+eval @ app-bootstrap.js:62
+loadScriptsInSequence @ app-bootstrap.js:23
+appBootstrap @ app-bootstrap.js:56
+eval @ app-next-dev.js:10
+(app-pages-browser)/./node_modules/next/dist/client/app-next-dev.js @ main-app.js?v=1744888418560:182
+options.factory @ webpack.js?v=1744888418560:712
+__webpack_require__ @ webpack.js?v=1744888418560:37
+__webpack_exec__ @ main-app.js?v=1744888418560:2824
+(익명) @ main-app.js?v=1744888418560:2825
+webpackJsonpCallback @ webpack.js?v=1744888418560:1388
+(익명) @ main-app.js?v=1744888418560:9이 경고 이해하기AI
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: false
+useIdeaMapData.ts:49 [useIdeaMapData] loadNodesAndEdges 함수 호출
+useIdeaMapData.ts:55 [useIdeaMapData] 아이디어맵 데이터 로드 시작
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 0
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 0, nodeCount: 0, hasReactFlowInstance: true}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 0}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+useIdeaMapData.ts:64 [useIdeaMapData] API에서 카드 데이터 로드 완료: {카드수: 6}
+useIdeaMapData.ts:70 [useIdeaMapData] 아이디어맵 스토어의 loadIdeaMapData 함수 호출
+useIdeaMapStore.ts:323 [useIdeaMapStore] 이미 데이터 로딩 중, 중복 호출 방지
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: true, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:547 [IdeaMap] 로딩 중, 로딩 UI 렌더링
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 0, hasReactFlowInstance: true}
+IdeaMap.tsx:323 [IdeaMap] 카드-노드 동기화가 필요: {cardCount: 6, nodeCount: 0}
+useIdeaMapData.ts:74 [useIdeaMapData] 데이터 로드 완료 {노드수: 0, 엣지수: 0}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 0, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 0, edgeCount: 5}
+IdeaMapCanvas.tsx:131 [IdeaMapCanvas] 기본 엣지 옵션 생성: {type: 'custom', animated: true, style: {…}, markerEnd: undefined}
+IdeaMapCanvas.tsx:131 [IdeaMapCanvas] 기본 엣지 옵션 생성: {type: 'custom', animated: true, style: {…}, markerEnd: undefined}
+IdeaMapCanvas.tsx:319 [React Flow]: It seems that you haven't loaded the styles. Please import '@xyflow/react/dist/style.css' or base.css to make sure everything is working properly. Help: https://reactflow.dev/error#013
+overrideMethod @ hook.js:608
+devWarn @ index.js:697
+useStylesLoadedWarning.useEffect @ index.js:4622
+react-stack-bottom-frame @ react-dom-client.development.js:23055
+runWithFiberInDEV @ react-dom-client.development.js:845
+commitHookEffectListMount @ react-dom-client.development.js:11978
+commitHookPassiveMountEffects @ react-dom-client.development.js:12099
+commitPassiveMountOnFiber @ react-dom-client.development.js:13929
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13932
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13922
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:14048
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13902
+commitPassiveMountOnFiber @ react-dom-client.development.js:13941
+flushPassiveEffects @ react-dom-client.development.js:15869
+flushPendingEffects @ react-dom-client.development.js:15830
+performSyncWorkOnRoot @ react-dom-client.development.js:16362
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16211
+flushSpawnedWork @ react-dom-client.development.js:15805
+commitRoot @ react-dom-client.development.js:15529
+commitRootWhenReady @ react-dom-client.development.js:14759
+performWorkOnRoot @ react-dom-client.development.js:14682
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<GraphView>
+exports.jsx @ react-jsx-runtime.development.js:339
+ReactFlow @ index.js:5294
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateForwardRef @ react-dom-client.development.js:8679
+beginWork @ react-dom-client.development.js:10895
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopSync @ react-dom-client.development.js:15078
+renderRootSync @ react-dom-client.development.js:15058
+performWorkOnRoot @ react-dom-client.development.js:14526
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<ForwardRef(ReactFlow)>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+IdeaMapCanvas @ IdeaMapCanvas.tsx:319
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10556
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopSync @ react-dom-client.development.js:15078
+renderRootSync @ react-dom-client.development.js:15058
+performWorkOnRoot @ react-dom-client.development.js:14526
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<IdeaMapCanvas>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+IdeaMap @ IdeaMap.tsx:567
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10556
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopSync @ react-dom-client.development.js:15078
+renderRootSync @ react-dom-client.development.js:15058
+performWorkOnRoot @ react-dom-client.development.js:14526
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<IdeaMap>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+MainCanvas @ MainCanvas.tsx:16
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10556
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15252
+renderRootConcurrent @ react-dom-client.development.js:15227
+performWorkOnRoot @ react-dom-client.development.js:14525
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+<MainCanvas>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+DashboardLayout @ DashboardLayout.tsx:42
+react-stack-bottom-frame @ react-dom-client.development.js:22974
+renderWithHooksAgain @ react-dom-client.development.js:6767
+renderWithHooks @ react-dom-client.development.js:6679
+updateFunctionComponent @ react-dom-client.development.js:8931
+beginWork @ react-dom-client.development.js:10505
+runWithFiberInDEV @ react-dom-client.development.js:845
+performUnitOfWork @ react-dom-client.development.js:15258
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15252
+renderRootConcurrent @ react-dom-client.development.js:15227
+performWorkOnRoot @ react-dom-client.development.js:14525
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16350
+performWorkUntilDeadline @ scheduler.development.js:45
+"use client"
+Home @ page.tsx:4
+eval @ react-server-dom-webpack-client.browser.development.js:2355
+initializeModelChunk @ react-server-dom-webpack-client.browser.development.js:1054
+getOutlinedModel @ react-server-dom-webpack-client.browser.development.js:1327
+parseModelString @ react-server-dom-webpack-client.browser.development.js:1540
+eval @ react-server-dom-webpack-client.browser.development.js:2294
+initializeModelChunk @ react-server-dom-webpack-client.browser.development.js:1054
+resolveModelChunk @ react-server-dom-webpack-client.browser.development.js:1031
+resolveModel @ react-server-dom-webpack-client.browser.development.js:1599
+processFullStringRow @ react-server-dom-webpack-client.browser.development.js:2288
+processFullBinaryRow @ react-server-dom-webpack-client.browser.development.js:2233
+progress @ react-server-dom-webpack-client.browser.development.js:2479
+<Home>
+buildFakeTask @ react-server-dom-webpack-client.browser.development.js:2040
+initializeFakeTask @ react-server-dom-webpack-client.browser.development.js:2027
+resolveDebugInfo @ react-server-dom-webpack-client.browser.development.js:2063
+processFullStringRow @ react-server-dom-webpack-client.browser.development.js:2261
+processFullBinaryRow @ react-server-dom-webpack-client.browser.development.js:2233
+progress @ react-server-dom-webpack-client.browser.development.js:2479
+"use server"
+ResponseInstance @ react-server-dom-webpack-client.browser.development.js:1587
+createResponseFromOptions @ react-server-dom-webpack-client.browser.development.js:2396
+exports.createFromReadableStream @ react-server-dom-webpack-client.browser.development.js:2717
+eval @ app-index.js:132
+(app-pages-browser)/./node_modules/next/dist/client/app-index.js @ main-app.js?v=1744888418560:160
+options.factory @ webpack.js?v=1744888418560:712
+__webpack_require__ @ webpack.js?v=1744888418560:37
+fn @ webpack.js?v=1744888418560:369
+eval @ app-next-dev.js:11
+eval @ app-bootstrap.js:62
+loadScriptsInSequence @ app-bootstrap.js:23
+appBootstrap @ app-bootstrap.js:56
+eval @ app-next-dev.js:10
+(app-pages-browser)/./node_modules/next/dist/client/app-next-dev.js @ main-app.js?v=1744888418560:182
+options.factory @ webpack.js?v=1744888418560:712
+__webpack_require__ @ webpack.js?v=1744888418560:37
+__webpack_exec__ @ main-app.js?v=1744888418560:2824
+(익명) @ main-app.js?v=1744888418560:2825
+webpackJsonpCallback @ webpack.js?v=1744888418560:1388
+(익명) @ main-app.js?v=1744888418560:9이 경고 이해하기AI
+IdeaMapCanvas.tsx:110 [IdeaMapCanvas] 엣지 데이터 확인: {edgeCount: 5, edges: Array(5)}
+IdeaMapCanvas.tsx:139 [IdeaMapCanvas] 컴포넌트 마운트, 노드 수: 0 엣지 수: 5
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 0
+IdeaMapCanvas.tsx:141 [IdeaMapCanvas] 컴포넌트 언마운트
+IdeaMapCanvas.tsx:110 [IdeaMapCanvas] 엣지 데이터 확인: {edgeCount: 5, edges: Array(5)}
+IdeaMapCanvas.tsx:139 [IdeaMapCanvas] 컴포넌트 마운트, 노드 수: 0 엣지 수: 5
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 0, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 0, edgeCount: 5}
+IdeaMap.tsx:192 [IdeaMap] ReactFlow 인스턴스 저장
+IdeaMap.tsx:218 [IdeaMap] 뷰포트 복원 Effect 실행, 상태: {hasLoadedViewport: false, needsFitView: false, viewportToRestore: null}
+IdeaMap.tsx:252 [IdeaMap] fitView 보장 Effect, 상태: {hasReactFlowInstance: true, nodeCount: 0}
+IdeaMap.tsx:282 [IdeaMap] viewportToRestore 감시 Effect, 상태: {hasReactFlowInstance: true, viewportToRestore: null}
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 0, hasReactFlowInstance: true}
+IdeaMap.tsx:323 [IdeaMap] 카드-노드 동기화가 필요: {cardCount: 6, nodeCount: 0}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 0, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 0, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 0, edgeCount: 5}
+IdeaMapCanvas.tsx:147 [IdeaMapCanvas] ReactFlow 인스턴스 초기화 시작
+IdeaMapCanvas.tsx:149 [IdeaMapCanvas] ReactFlow 인스턴스 초기화 완료 {viewport: {…}, nodes: 0, edges: 5}
+IdeaMapCanvas.tsx:195 [IdeaMapCanvas] 노드가 없습니다. 기본 뷰포트 설정
+IdeaMap.tsx:308 [IdeaMap] 카드-노드 동기화 실행: 카드: 6 노드: 0
+useIdeaMapStore.ts:1380 [useIdeaMapStore] ⭐️ syncCardsWithNodes 시작 ⭐️ {강제실행: true, 카드개수: 6, 현재노드개수: 0}
+useIdeaMapStore.ts:1421 [useIdeaMapStore] 카드와 노드 동기화 수행 시작
+useIdeaMapStore.ts:1445 [useIdeaMapStore] 저장된 노드 위치 정보 로드 성공: {노드수: 6}
+useIdeaMapStore.ts:1460 [useIdeaMapStore] 현재 노드 위치 정보 백업 완료: {백업노드수: 0}
+useIdeaMapStore.ts:1504 [useIdeaMapStore] 노드-카드 동기화 완료, 업데이트된 노드: {이전노드수: 0, 새노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:141 [IdeaMapCanvas] 컴포넌트 언마운트
+IdeaMapCanvas.tsx:139 [IdeaMapCanvas] 컴포넌트 마운트, 노드 수: 6 엣지 수: 5
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:252 [IdeaMap] fitView 보장 Effect, 상태: {hasReactFlowInstance: true, nodeCount: 6}
+IdeaMap.tsx:259 [IdeaMap] 노드와 ReactFlow 인스턴스 모두 준비됨, fitView 실행
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+Sidebar.tsx:243 [fetchCards] data :  (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -683, y: 512, zoom: 1.5}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 1, changeTypes: 'dimensions', changes: Array(1)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 1, 변경유형: 'dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 1, changeTypes: 'dimensions', changes: Array(1)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 1, 변경유형: 'dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 1, changeTypes: 'dimensions', changes: Array(1)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 1, 변경유형: 'dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 1, changeTypes: 'dimensions', changes: Array(1)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 1, 변경유형: 'dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 1, changeTypes: 'dimensions', changes: Array(1)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 1, 변경유형: 'dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 1, changeTypes: 'dimensions', changes: Array(1)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 1, 변경유형: 'dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+useIdeaMapData.ts:64 [useIdeaMapData] API에서 카드 데이터 로드 완료: {카드수: 6}
+useIdeaMapData.ts:70 [useIdeaMapData] 아이디어맵 스토어의 loadIdeaMapData 함수 호출
+useIdeaMapStore.ts:323 [useIdeaMapStore] 이미 데이터 로딩 중, 중복 호출 방지
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+useIdeaMapData.ts:74 [useIdeaMapData] 데이터 로드 완료 {노드수: 0, 엣지수: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+logger.ts:135 [11:13:40][ProjectToolbar][INFO] 프로젝트 정보 로딩 
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:308 [IdeaMap] 카드-노드 동기화 실행: 카드: 6 노드: 0
+useIdeaMapStore.ts:1380 [useIdeaMapStore] ⭐️ syncCardsWithNodes 시작 ⭐️ {강제실행: true, 카드개수: 6, 현재노드개수: 6}
+useIdeaMapStore.ts:1421 [useIdeaMapStore] 카드와 노드 동기화 수행 시작
+useIdeaMapStore.ts:1445 [useIdeaMapStore] 저장된 노드 위치 정보 로드 성공: {노드수: 6}
+useIdeaMapStore.ts:1460 [useIdeaMapStore] 현재 노드 위치 정보 백업 완료: {백업노드수: 0}
+useIdeaMapStore.ts:1504 [useIdeaMapStore] 노드-카드 동기화 완료, 업데이트된 노드: {이전노드수: 6, 새노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:408 [IdeaMap] 노드 변경 감지: {changeCount: 6, changeTypes: 'dimensions, dimensions, dimensions, dimensions, dimensions, dimensions', changes: Array(6)}
+useIdeaMapStore.ts:974 [useIdeaMapStore] applyNodeChangesAction 호출: {변경수: 6, 변경유형: 'dimensions, dimensions, dimensions, dimensions, dimensions, dimensions'}
+useIdeaMapStore.ts:1007 [useIdeaMapStore] 노드 변경 적용 완료: {이전노드수: 6, 변경후노드수: 6}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useIdeaMapData.ts:98 [useIdeaMapData] 노드 변경 감지 Effect, 노드 수: 6
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:110 [IdeaMapCanvas] 엣지 데이터 확인: {edgeCount: 5, edges: Array(5)}
+useIdeaMapData.ts:89 [useIdeaMapData] 초기 데이터 로드 Effect 실행, 로드 완료 상태: true
+useAppStore.ts:752 [AppStore] 앱 초기화: 로그인 상태입니다. {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', email: 'wodory@gmail.com'}
+useIdeaMapData.ts:64 [useIdeaMapData] API에서 카드 데이터 로드 완료: {카드수: 6}
+useIdeaMapData.ts:70 [useIdeaMapData] 아이디어맵 스토어의 loadIdeaMapData 함수 호출
+useIdeaMapStore.ts:323 [useIdeaMapStore] 이미 데이터 로딩 중, 중복 호출 방지
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:300 [IdeaMap] 카드-노드 동기화 Effect, 상태: {cardCount: 6, nodeCount: 6, hasReactFlowInstance: true}
+useIdeaMapData.ts:74 [useIdeaMapData] 데이터 로드 완료 {노드수: 0, 엣지수: 5}
+4CreateCardModal.tsx:84 사용자 ID 가져옴: 13ce1b15-aa4e-452b-af81-124d06413662
+IdeaMap.tsx:270 [IdeaMap] fitView 실행 완료, 노드 수: 6
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -682.8559466091841, y: 512.002545531973, zoom: 1.4997943799306297}
+report-hmr-latency.js:14 [Fast Refresh] done in 706ms
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -680.03417817402, y: 512.052210204748, zoom: 1.4957671302184437}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -670.9901457793038, y: 512.2088222131912, zoom: 1.4828660082297418}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -640.9207283657963, y: 512.7002818576507, zoom: 1.4400476672085125}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -606.2046652870328, y: 513.20781500235, zoom: 1.3907662511310324}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMap.tsx:51 [IdeaMap] 컴포넌트 렌더링 시작 {showControls: true}
+IdeaMap.tsx:67 [IdeaMap] 인증 상태: {userId: '787043b3-3996-4121-b650-404c7bd6fdcc', isAuthLoading: false}
+IdeaMap.tsx:72 [IdeaMap] ReactFlow 인스턴스 확인: true
+IdeaMap.tsx:80 [IdeaMap] 전역 상태 카드 목록: {cardCount: 6}
+IdeaMap.tsx:97 [IdeaMap] IdeaMapStore 상태: {nodeCount: 6, edgeCount: 5, hasLoadedViewport: false, needsFitView: false, hasViewportToRestore: false, …}
+useIdeaMapData.ts:24 [useIdeaMapData] 훅 초기화
+IdeaMap.tsx:121 [IdeaMap] IdeaMapData 훅 상태: {isLoading: false, hasError: false}
+IdeaMap.tsx:149 [IdeaMap] useEdges 훅 상태: {edgeCount: 5, hasUnsavedEdgesChanges: true}
+IdeaMap.tsx:559 [IdeaMap] 메인 UI 렌더링, 노드/엣지 상태: {nodeCount: 6, edgeCount: 5}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -560.5158402424844, y: 513.7672083130079, zoom: 1.3261870036778456}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -482.0877134089901, y: 514.3909283275136, zoom: 1.2161958392113037}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -393.55553269829113, y: 514.4578137945712, zoom: 1.0936697235061428}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -285.2891831888162, y: 513.2954277796854, zoom: 0.9470254138570195}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -168.0768874808315, y: 509.7975072721827, zoom: 0.7940119679817267}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -80.31539218711197, y: 504.93064231572714, zoom: 0.6852140957957218}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: -20.789882008524614, y: 500.0993860141697, zoom: 0.615347908366331}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 23.207602294741548, y: 495.5167479008461, zoom: 0.5663038620386595}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 52.52677422571071, y: 491.9015154538554, zoom: 0.5350627600236734}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 70.62164401066016, y: 489.4211057977035, zoom: 0.5164213458154459}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 80.81103652535614, y: 487.9351317296588, zoom: 0.5061532145778761}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 85.4676317608355, y: 487.2338637215622, zoom: 0.5015175418151713}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 86.9210072752497, y: 487.01209323648004, zoom: 0.5000781316878601}
+IdeaMapCanvas.tsx:306 [IdeaMapCanvas] 뷰포트 변경: {x: 87, y: 487, zoom: 0.5}
+IdeaMap.tsx:476 [IdeaMap] 뷰포트 변경 감지, 저장: {x: 87, y: 487, zoom: 0.5}

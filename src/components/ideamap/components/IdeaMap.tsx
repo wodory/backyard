@@ -3,11 +3,12 @@
  * 목적: 보드 메인 컨테이너 컴포넌트
  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
  * 작성일: 2025-03-28
+ * 수정일: 2025-04-17 : 렌더링 최적화 (불필요한 리렌더링 방지)
  */
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { toast } from 'sonner';
 
 import { useReactFlow } from '@xyflow/react';
@@ -36,6 +37,7 @@ import {
   NodeChange
 } from '../types/ideamap-types';
 import { IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { Node } from '@xyflow/react';
 
 /**
  * IdeaMap: 아이디어맵 메인 컨테이너 컴포넌트
@@ -43,7 +45,7 @@ import { IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
  * @param className 추가 CSS 클래스
  * @param showControls 컨트롤 표시 여부
  */
-export default function IdeaMap({
+function IdeaMap({
   onSelectCard,
   className = "",
   showControls = true
@@ -71,7 +73,7 @@ export default function IdeaMap({
   const reactFlowInstance = useReactFlow();
   console.log('[IdeaMap] ReactFlow 인스턴스 확인:', !!reactFlowInstance);
 
-  // useAppStore에서 상태 가져오기
+  // useAppStore에서 필요한 상태만 선택적으로 가져오기
   const ideaMapSettings = useAppStore(state => state.ideaMapSettings) as IdeaMapSettings;
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
 
@@ -79,20 +81,18 @@ export default function IdeaMap({
   const storeCards = useAppStore(state => state.cards);
   console.log('[IdeaMap] 전역 상태 카드 목록:', { cardCount: storeCards.length });
 
-  // useIdeaMapStore에서 보드 데이터 관련 상태와 액션 가져오기
-  const {
-    nodes: ideaMapStoreNodes,
-    edges: ideaMapStoreEdges,
-    loadIdeaMapData,
-    loadedViewport,
-    needsFitView,
-    viewportToRestore,
-    hasUnsavedChanges,
-    saveViewport,
-    loadAndApplyIdeaMapSettings,
-    applyNodeChangesAction,
-    saveLayout,
-  } = useIdeaMapStore();
+  // useIdeaMapStore에서 필요한 상태와 액션만 선택적으로 가져오기
+  const ideaMapStoreNodes = useIdeaMapStore(state => state.nodes);
+  const ideaMapStoreEdges = useIdeaMapStore(state => state.edges);
+  const loadIdeaMapData = useIdeaMapStore(state => state.loadIdeaMapData);
+  const loadedViewport = useIdeaMapStore(state => state.loadedViewport);
+  const needsFitView = useIdeaMapStore(state => state.needsFitView);
+  const viewportToRestore = useIdeaMapStore(state => state.viewportToRestore);
+  const hasUnsavedChanges = useIdeaMapStore(state => state.hasUnsavedChanges);
+  const saveViewport = useIdeaMapStore(state => state.saveViewport);
+  const loadAndApplyIdeaMapSettings = useIdeaMapStore(state => state.loadAndApplyIdeaMapSettings);
+  const applyNodeChangesAction = useIdeaMapStore(state => state.applyNodeChangesAction);
+  const saveLayout = useIdeaMapStore(state => state.saveLayout);
 
   console.log('[IdeaMap] IdeaMapStore 상태:', {
     nodeCount: ideaMapStoreNodes.length,
@@ -126,10 +126,10 @@ export default function IdeaMap({
     handlePaneClick
   } = useNodeClickHandlers({
     onSelectCard,
-    onNodeDoubleClick: (node) => {
+    onNodeDoubleClick: useCallback((node: Node) => {
       // 노드 더블 클릭 처리 로직 (필요한 경우)
       console.log('[IdeaMap] 노드 더블 클릭:', node.id);
-    }
+    }, [])
   });
 
   // 기존 useEdges 훅 사용 (하위 호환성 유지를 위해 일단 남겨둠)
@@ -171,14 +171,14 @@ export default function IdeaMap({
 
   // 엣지에 새 노드 추가 기능
   const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
-    onCreateNode: (position, connectingNodeId, handleType) => {
+    onCreateNode: useCallback((position, connectingNodeId, handleType) => {
       console.log('[IdeaMap] 엣지에 새 노드 추가 요청:', { position, connectingNodeId, handleType });
       // 모달을 열기 위한 상태 설정
       setEdgeDropPosition(position);
       setEdgeDropNodeId(connectingNodeId);
       setEdgeDropHandleType(handleType);
       setIsEdgeDropModalOpen(true);
-    }
+    }, [])
   });
 
   // 데이터 로드 추적을 위한 ref
@@ -204,11 +204,13 @@ export default function IdeaMap({
       initialDataLoadedRef.current = true;
 
       // 컴포넌트 마운트 시 카드-노드 동기화 강제 실행
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         console.log('[IdeaMap] 컴포넌트 마운트 후 카드-노드 동기화 실행');
         const { useIdeaMapStore } = require('@/store/useIdeaMapStore');
         useIdeaMapStore.getState().syncCardsWithNodes(true);
       }, 300); // ReactFlow 인스턴스가 초기화된 후 실행하기 위해 약간의 지연 추가
+
+      return () => clearTimeout(timeoutId);
     }
   }, [loadIdeaMapData]);
 
@@ -325,10 +327,11 @@ export default function IdeaMap({
           nodeCount: ideaMapStoreNodes.length
         });
         // 약간의 지연 후 동기화 실행 (다른 상태 변경과의 충돌 방지)
-        setTimeout(syncCardsAndNodes, 100);
+        const timeoutId = setTimeout(syncCardsAndNodes, 100);
+        return () => clearTimeout(timeoutId);
       }
     }
-  }, [storeCards, ideaMapStoreNodes, reactFlowInstance]);
+  }, [storeCards.length, ideaMapStoreNodes.length, reactFlowInstance]);
 
   // 저장되지 않은 변경사항이 있을 때 페이지 이탈 경고
   useEffect(() => {
@@ -600,4 +603,7 @@ export default function IdeaMap({
       />
     </div>
   );
-} 
+}
+
+// React.memo로 컴포넌트 감싸기
+export default memo(IdeaMap); 
