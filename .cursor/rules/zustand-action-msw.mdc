@@ -4,52 +4,91 @@ globs:
 alwaysApply: true
 ---
 # --- START OF FILE: .cursor/rules/zustand-action-msw.mdc ---
-description: Enforces Zustand action-based architecture with MSW testing.
-globs: 
+description: Zustand 액션 기반 아키텍처와 MSW 테스팅을 강제합니다.
+globs:
   - src/**/*.{ts,tsx}
   - src/tests/**/*.{ts,tsx}
 alwaysApply: true
 ---
 
-# Rule: Zustand Action & MSW Pattern
+# 규칙: Zustand 액션 & MSW 패턴
 
-## 1. Core Principle: Action-Centric State Management
-- **MUST:** All application state modifications **MUST** go through explicitly defined actions within the Zustand store (`src/store/useAppStore.ts`).
-- **FORBIDDEN:** Direct state manipulation (using `set` directly within components or hooks outside the store's defined actions, or mutating state objects) is strictly forbidden.
-- **MUST:** Actions should represent specific user intents or system events (e.g., `selectCard`, `fetchBoardData`, `updateSettings`).
+## 1. 핵심 원칙: 액션 중심의 상태 관리
 
-## 2. UI Component Responsibility
-- **MUST:** UI components (React components in `src/components/` or `src/app/`) **MUST NOT** contain business logic or direct state modification logic related to the global application state managed by `useAppStore`.
-- **MUST:** The primary roles of UI components are:
-    1.  Displaying data derived from the Zustand store or local UI state.
-    2.  Calling appropriate Zustand actions in response to user interactions (e.g., button clicks, input changes).
-- **SHOULD:** Local UI state (e.g., input field values, modal open/close status) can be managed within components using `useState` if it doesn't affect the global application state.
+*   **필수:** 모든 애플리케이션 상태 변경은 **반드시** Zustand 스토어 (`src/store/` 내 관련 스토어 파일) 내에 명시적으로 정의된 **액션**을 통해서만 이루어져야 합니다.
+*   **금지:** 스토어의 정의된 액션 외부(예: 컴포넌트, 훅)에서 직접 상태를 조작하거나(`set` 직접 사용) 상태 객체를 변경하는 것은 **엄격히 금지**됩니다.
+*   **필수:** 액션은 특정 사용자 의도나 시스템 이벤트를 나타내야 합니다 (예: `selectCard`, `fetchBoardData`, `updateSettings`).
 
-## 3. Zustand Action Implementation
-- **MUST:** Actions defined in `useAppStore.ts` **MUST** contain all the logic necessary to handle the corresponding event, including state updates using `set` or `get().someAction(...)`.
-- **MUST:** Asynchronous operations (like API calls using `fetch`) related to global state changes **SHOULD** be initiated and managed *within* Zustand actions.
-    - **MUST:** Use `try...catch` blocks for robust error handling in asynchronous actions.
-    - **SHOULD:** Update relevant loading and error states within the store during the lifecycle of asynchronous actions (e.g., `isLoading: true` before fetch, `isLoading: false, error: null` on success, `isLoading: false, error: err.message` on failure).
-    - **SHOULD:** Use `toast` notifications *within* the action handlers (or call a dedicated notification action) upon success or failure of operations.
+## 2. UI 컴포넌트 책임
 
-## 4. API Interaction & Testing with MSW
-- **MUST:** When implementing or modifying Zustand actions that involve API calls (`fetch`), corresponding MSW handlers **MUST** be added or updated in `src/tests/msw/handlers.ts`.
-- **MUST:** Unit tests for Zustand actions involving API calls **MUST** utilize the configured MSW server (`src/tests/msw/server.ts`) to mock API responses.
-- **MUST:** Tests should cover both successful API responses and potential error scenarios (e.g., network errors, server errors) by configuring MSW handlers accordingly using `server.use()`.
+*   **필수:** UI 컴포넌트(React 컴포넌트, `src/components/` 또는 `src/app/` 내)는 Zustand 스토어가 관리하는 전역 애플리케이션 상태와 관련된 비즈니스 로직이나 직접적인 상태 수정 로직을 **포함해서는 안 됩니다.**
+*   **필수:** UI 컴포넌트의 주요 역할은 다음과 같습니다:
+    1.  Zustand 스토어 또는 로컬 UI 상태에서 파생된 데이터 표시.
+    2.  사용자 상호작용(예: 버튼 클릭, 입력 변경)에 응답하여 적절한 Zustand 액션 호출.
+*   **권장:** 전역 애플리케이션 상태에 영향을 미치지 않는 로컬 UI 상태(예: 입력 필드 값, 모달 열림/닫힘 상태)는 컴포넌트 내에서 `useState`를 사용하여 관리할 수 있습니다.
 
-## 5. Console API for Debugging
-- **MUST:** In development mode (`process.env.NODE_ENV === 'development'`), key Zustand actions **MUST** be exposed via the global `window.appCommands` object. This setup should be located in a client-side entry point (e.g., `ClientLayout.tsx`).
-    - *Example:* `window.appCommands.selectCard = useAppStore.getState().selectCard;`
-- **MUST:** Ensure this `window.appCommands` assignment is properly excluded from production builds (using the environment variable check).
-- **MUST:** Maintain the `docs/console-api.md` file, documenting all exposed commands, their parameters, and usage examples whenever new commands are added or existing ones change.
+## 3. Zustand 액션 구현
 
-## 6. Refactoring Guidance
-- When refactoring existing code to adhere to this pattern:
-    1.  Identify state update logic within components or hooks.
-    2.  Define a corresponding action in `useAppStore.ts`.
-    3.  Move the logic into the newly defined action.
-    4.  Update the component/hook to call the new action instead of manipulating state directly.
-    5.  If the logic involved API calls, ensure MSW handlers and tests are created/updated.
+*   **필수:** 스토어 파일(예: `useAppStore.ts`)에 정의된 액션은 `set` 또는 `get().someAction(...)`을 사용한 상태 업데이트를 포함하여, 해당 이벤트를 처리하는 데 필요한 **모든 로직**을 포함해야 합니다.
+*   **필수:** 전역 상태 변경과 관련된 비동기 작업(예: `fetch`를 사용한 API 호출)은 Zustand 액션 **내에서** 시작되고 관리되어야 합니다.
+    *   **필수:** 비동기 액션에서 강력한 오류 처리를 위해 `try...catch` 블록을 사용해야 합니다.
+    *   **권장:** 비동기 액션의 생명주기 동안 스토어 내 관련 로딩 및 오류 상태를 업데이트해야 합니다 (예: fetch 전 `isLoading: true`, 성공 시 `isLoading: false, error: null`, 실패 시 `isLoading: false, error: err.message`).
+    *   **권장:** 작업 성공 또는 실패 시 액션 핸들러 **내에서** `toast` 알림을 사용하거나 전용 알림 액션을 호출해야 합니다.
 
-**By strictly following this rule, we ensure a consistent, maintainable, and testable architecture centered around Zustand actions and MSW.**
+## 4. API 상호작용 및 MSW 테스팅
+
+*   **필수:** API 호출(`fetch`)을 포함하는 Zustand 액션을 구현하거나 수정할 때, 해당 **MSW 핸들러**를 **반드시** `src/tests/msw/handlers.ts`에 추가하거나 업데이트해야 합니다.
+*   **필수:** API 호출을 포함하는 Zustand 액션에 대한 단위 테스트는 API 응답을 모킹하기 위해 설정된 **MSW 서버** (`src/tests/msw/server.ts`)를 **반드시** 활용해야 합니다.
+*   **필수:** 테스트는 MSW 핸들러를 `server.use()`를 사용하여 적절히 구성함으로써 성공적인 API 응답과 잠재적 오류 시나리오(예: 네트워크 오류, 서버 오류)를 **모두 포함**해야 합니다.
+
+## 5. 디버깅을 위한 콘솔 API
+
+*   **필수:** 개발 모드(`process.env.NODE_ENV === 'development'`)에서는 주요 Zustand 액션이 **반드시** 전역 `window.appCommands` 객체를 통해 노출되어야 합니다. 이 설정은 클라이언트 측 진입점(예: `ClientLayout.tsx`)에 위치해야 합니다.
+    *   *예시:* `window.appCommands.selectCard = useAppStore.getState().selectCard;`
+*   **필수:** 이 `window.appCommands` 할당이 프로덕션 빌드에서 올바르게 **제외되도록 보장**해야 합니다 (환경 변수 확인 사용).
+*   **필수:** 새로운 명령이 추가되거나 기존 명령이 변경될 때마다, 노출된 모든 명령, 해당 매개변수 및 사용 예제를 문서화하는 `docs/console-api.md` 파일을 **유지 관리**해야 합니다.
+
+## 6. 리팩토링 가이드라인
+
+*   기존 코드를 이 패턴에 맞게 리팩토링할 때:
+    1.  컴포넌트 또는 훅 내의 상태 업데이트 로직 식별.
+    2.  관련 스토어 파일에 해당 액션 정의.
+    3.  새로 정의된 액션으로 로직 이동.
+    4.  컴포넌트/훅이 상태를 직접 조작하는 대신 새 액션을 호출하도록 업데이트.
+    5.  로직에 API 호출이 포함된 경우 MSW 핸들러 및 테스트가 생성/업데이트되었는지 확인.
+
+## 7. 서버 컴포넌트에서의 클라이언트 측 훅 사용
+
+*   **필수:** 브라우저 특정 API나 컨텍스트에 의존하는 훅(예: `useState`, `useEffect`, `useSearchParams`, `usePathname`, 클라이언트 측 탐색/상태에 사용되는 `next/navigation`의 `useRouter`)은 **서버 컴포넌트**(일반적으로 `src/app/` 아래에 `'use client';` 지시문이 없는 파일) 내에서 **직접 호출해서는 안 됩니다.**
+*   **필수:** 서버 컴포넌트가 클라이언트 측 훅에서 제공하는 기능이 필요한 경우:
+    1.  **새로운 클라이언트 컴포넌트**를 생성합니다 (파일 상단에 `'use client';` 추가).
+    2.  클라이언트 측 훅을 사용하는 로직을 이 새 클라이언트 컴포넌트로 **이동**합니다.
+    3.  원래 서버 컴포넌트 내에서 새 클라이언트 컴포넌트를 **import하여 사용**합니다.
+*   **필수:** 서버 컴포넌트 내에서 클라이언트 컴포넌트(특히 초기 서버 렌더링/사전 렌더링 시 사용 불가능할 수 있는 `useSearchParams` 같은 훅을 사용하는 컴포넌트)를 렌더링할 때는, 해당 클라이언트 컴포넌트를 적절한 `fallback` UI와 함께 **`<Suspense>` 경계로 감싸야 합니다.**
+    *   *예시:*
+      ```tsx
+      // 서버 컴포넌트 내 (예: src/app/some/page.tsx)
+      import { Suspense } from 'react';
+      import ClientSideComponentUsingHooks from '@/components/ClientSideComponentUsingHooks';
+
+      function LoadingFallback() {
+        return <p>동적 콘텐츠 로딩 중...</p>;
+      }
+
+      export default function ServerPage() {
+        return (
+          <div>
+            <h1>서버 렌더링된 제목</h1>
+            <Suspense fallback={<LoadingFallback />}>
+              <ClientSideComponentUsingHooks />
+            </Suspense>
+          </div>
+        );
+      }
+      ```
+*   **필수:** 클라이언트 컴포넌트를 생성한 이유(예: "useSearchParams 훅 사용")를 컴포넌트의 파일 레벨 주석이나 문서에 **명확하게 기록**해야 합니다.
+
+**근거:** 이 규칙은 서버 렌더링 또는 사전 렌더링 중에 클라이언트 전용 API나 훅을 사용하려고 할 때 발생하는 빌드 오류 및 런타임 문제를 방지합니다. 이는 Next.js App Router 아키텍처 내에서 클라이언트 측 상호작용 및 데이터 가져오기를 통합하는 올바른 패턴을 강제하며, 클라이언트 컴포넌트 로딩 중 더 나은 사용자 경험을 위해 Suspense를 활용합니다.
+
+**이 규칙들을 엄격히 준수함으로써, 우리는 Zustand 액션과 MSW를 중심으로 일관되고 유지 관리 가능하며 테스트 가능한 아키텍처를 보장합니다.**
 # --- END OF FILE ---
