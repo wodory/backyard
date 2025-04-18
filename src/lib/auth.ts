@@ -6,6 +6,7 @@
  * 수정일: 2025-04-09
  * 수정일: 2023-10-31 : Supabase 로그아웃 함수 개선 및 쿠키 삭제 기능 추가
  * 수정일: 2024-05-08 : signOut 함수 간소화 - @supabase/ssr 기반 세션 관리와 호환되도록 개선
+ * 수정일: 2024-04-19 : sessionStorage 기반 code_verifier 관리 코드 제거 - @supabase/ssr의 쿠키 메커니즘 활용
  */
 
 'use client';
@@ -28,7 +29,7 @@ const OAUTH_CONFIG = {
 
 // 스토리지 키 정의
 export const STORAGE_KEYS = {
-  CODE_VERIFIER: 'code_verifier', // sessionStorage에서 사용
+  CODE_VERIFIER: 'code_verifier', // 더 이상 sessionStorage에서 사용하지 않음 (@supabase/ssr 쿠키 사용)
   ACCESS_TOKEN: 'access_token',   // localStorage에서 사용
   REFRESH_TOKEN: 'refresh_token', // localStorage에서 사용
   USER_ID: 'user_id',             // localStorage에서 사용
@@ -201,25 +202,12 @@ export const signInWithGoogle = async (): Promise<{ success: boolean; url?: stri
     
     logger.info('Google 로그인 시작');
     
-    // code_verifier가 이미 존재하는지 확인
-    const existingVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
-    
-    let codeVerifier: string;
-    if (existingVerifier) {
-      logger.debug('기존 code_verifier 사용');
-      codeVerifier = existingVerifier;
-    } else {
-      // 새로운 코드 검증기 생성
-      codeVerifier = await generateCodeVerifier();
-      logger.info('새 code_verifier 생성됨', {
-        길이: codeVerifier.length,
-        첫_5글자: codeVerifier.substring(0, 5)
-      });
-      
-      // 코드 검증기를 sessionStorage에 저장
-      sessionStorage.setItem(STORAGE_KEYS.CODE_VERIFIER, codeVerifier);
-      logger.debug('코드 검증기 저장 성공');
-    }
+    // code_verifier 직접 생성 (Supabase가 내부적으로 관리)
+    const codeVerifier = await generateCodeVerifier();
+    logger.info('새 code_verifier 생성됨', {
+      길이: codeVerifier.length,
+      첫_5글자: codeVerifier.substring(0, 5)
+    });
     
     // 코드 챌린지 생성
     const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -274,11 +262,6 @@ export async function signOut(): Promise<void> {
       logger.error('로그아웃 실패:', error);
       console.log('[인증 상태] 로그아웃 실패:', error.message);
       throw error;
-    }
-    
-    // sessionStorage의 code_verifier 제거
-    if (isClient()) {
-      sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
     }
     
     logger.info('로그아웃 완료 (Supabase 세션 종료)');
@@ -347,16 +330,6 @@ export async function getUser() {
  * @returns {Promise<any>} 세션 정보
  */
 export const exchangeCodeForSession = async (code: string): Promise<any> => {
-  // 코드 검증기 가져오기
-  const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
-  
-  if (!codeVerifier) {
-    throw new Error('코드 검증기를 찾을 수 없습니다. 로그인 과정이 중단되었을 수 있습니다.');
-  }
-  
-  // 사용 후에는 sessionStorage에서 제거
-  sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
-  
   // Supabase 클라이언트로 코드 교환
   const client = getAuthClient();
   const { data, error } = await client.auth.exchangeCodeForSession(code);

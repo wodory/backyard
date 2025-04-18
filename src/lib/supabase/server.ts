@@ -3,6 +3,8 @@
  * 목적: 서버 환경에서 Supabase 클라이언트 제공
  * 역할: 서버 컴포넌트, 서버 액션, 라우트 핸들러에서 Supabase에 접근할 때 사용
  * 작성일: 2025-04-09
+ * 수정일: 2024-04-19 : 쿠키 속성 조정 - Vercel 배포 환경 호환성 개선
+ * 수정일: 2024-04-19 : code_verifier 쿠키 관련 진단 로그 추가
  */
 
 import { cookies } from 'next/headers'
@@ -37,7 +39,15 @@ export async function createClient() {
         cookies: {
           async get(name: string) {
             const cookieStore = await cookies()
-            return cookieStore.get(name)?.value
+            const value = cookieStore.get(name)?.value;
+            // code_verifier 쿠키 진단 로그
+            if (name.includes('code_verifier')) {
+              console.log('[Server Cookie Get] Getting code_verifier cookie:', { 
+                name, 
+                value: value ? value.substring(0, 10) + '...' : 'Not Found' 
+              });
+            }
+            return value;
           },
           async set(name: string, value: string, options: CookieOptions) {
             try {
@@ -47,6 +57,25 @@ export async function createClient() {
                 logger.debug('서버: 코드 검증기 쿠키 설정:', name.substring(0, 12) + '...')
                 // 쿠키 수명을 10분으로 설정
                 options.maxAge = 60 * 10
+                
+                // code_verifier 쿠키 진단 로그
+                console.log('[Server Cookie Set] Setting code_verifier cookie:', { 
+                  name, 
+                  value: value.substring(0, 10) + '...', 
+                  options 
+                });
+              }
+              
+              // 프로덕션 환경에서는 secure 속성 설정
+              options.secure = process.env.NODE_ENV === 'production';
+              
+              // 항상 sameSite='lax'와 path='/' 설정
+              options.sameSite = 'lax';
+              options.path = '/';
+              
+              // domain 속성 명시적 설정 제거 (자동 설정 사용)
+              if (options.domain) {
+                delete options.domain;
               }
               
               cookieStore.set(name, value, options)
@@ -57,6 +86,24 @@ export async function createClient() {
           async remove(name: string, options: CookieOptions) {
             try {
               const cookieStore = await cookies()
+              
+              // code_verifier 쿠키 진단 로그
+              if (name.includes('code_verifier')) {
+                console.log('[Server Cookie Remove] Removing code_verifier cookie:', { name });
+              }
+              
+              // 프로덕션 환경에서는 secure 속성 설정
+              options.secure = process.env.NODE_ENV === 'production';
+              
+              // 항상 sameSite='lax'와 path='/' 설정
+              options.sameSite = 'lax';
+              options.path = '/';
+              
+              // domain 속성 명시적 설정 제거 (자동 설정 사용)
+              if (options.domain) {
+                delete options.domain;
+              }
+              
               cookieStore.delete({ name, ...options })
             } catch (error) {
               logger.error('서버: 쿠키 삭제 중 오류:', error)

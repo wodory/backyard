@@ -6,6 +6,7 @@
  * 수정일: 2025-04-09
  * 수정일: 2024-05-08 : localStorage 관련 코드 제거 - @supabase/ssr의 쿠키 기반 세션 관리와 호환되도록 수정
  * 수정일: 2023-10-27 : 불필요한 서버 환경 체크 로직 제거 ('use client' 지시문이 있으므로 항상 클라이언트에서 실행됨)
+ * 수정일: 2024-04-19 : sessionStorage 관련 code_verifier 관리 코드 제거 - @supabase/ssr의 쿠키 기반 세션 관리와 충돌 방지
  */
 
 'use client';
@@ -84,18 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         logger.info('인증 컨텍스트 초기화 시작');
 
-        // code_verifier 복원 시도 (세션 스토리지에서만 확인)
-        const storedVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
-
-        if (storedVerifier) {
-          setCodeVerifier(storedVerifier);
-          logger.info('code_verifier 복원됨', {
-            길이: storedVerifier.length,
-            첫_5글자: storedVerifier.substring(0, 5)
-          });
-        } else {
-          logger.warn('code_verifier를 찾을 수 없음');
-        }
+        // @supabase/ssr이 쿠키를 통해 code_verifier를 관리하므로 수동 관리 코드 제거
+        logger.warn('code_verifier를 찾을 수 없음');
 
         // 현재 세션 가져오기
         try {
@@ -203,9 +194,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (storageError) {
             logger.error('사용자 정보 제거 중 오류', storageError);
           }
-
-          // code_verifier 제거 (세션 스토리지만 사용)
-          sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
         } else if (event === 'TOKEN_REFRESHED' && newSession) {
           logger.info('토큰 갱신 이벤트 발생');
           setUser(newSession.user);
@@ -236,9 +224,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
 
-      // code_verifier 제거 (세션 스토리지만 사용)
-      sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
-
       logger.info('로그아웃 성공');
     } catch (error) {
       logger.error('로그아웃 오류', error);
@@ -257,11 +242,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error: authError,
         setCodeVerifier: (value) => {
           setCodeVerifier(value);
-          if (value) {
-            sessionStorage.setItem(STORAGE_KEYS.CODE_VERIFIER, value);
-          } else {
-            sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
-          }
         },
       }}
     >
