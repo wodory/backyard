@@ -4,6 +4,7 @@
  * 역할: 브라우저와 서버 양쪽에서 로그를 기록하고 필요시 서버로 로그를 전송
  * 작성일: 2025-03-27
  * 수정일: 2025-04-07
+ * 수정일: 2025-04-19 : 디버그 로그 정리 - 개발 환경에서만 출력하도록 개선
  */
 
 // 로그 레벨 정의
@@ -124,6 +125,11 @@ export const logger = (
   // 로그 저장
   logStorage.addLog(logData);
   
+  // DEBUG 레벨 로그는 개발 환경에서만 콘솔에 출력
+  if ((level === LogLevel.DEBUG || level === LogLevel.ERROR) && process.env.NODE_ENV !== 'development') {
+    return; // 개발 환경이 아니면 DEBUG 로그는 콘솔에 출력하지 않음
+  }
+  
   // 콘솔에 출력
   const formattedMessage = `[${timestamp.split('T')[1].split('.')[0]}][${module}][${level.toUpperCase()}] ${message}`;
   
@@ -185,7 +191,11 @@ const sendLogToServer = async (logData: LogData): Promise<void> => {
  */
 export const createLogger = (module: string) => {
   return {
-    debug: (message: string, data?: any) => logger(module, LogLevel.DEBUG, message, data),
+    debug: (message: string, data?: any) => {
+      // DEBUG 레벨 로그는 개발 환경에서만 처리
+      if (process.env.NODE_ENV !== 'development') return;
+      logger(module, LogLevel.DEBUG, message, data);
+    },
     info: (message: string, data?: any) => logger(module, LogLevel.INFO, message, data),
     warn: (message: string, data?: any) => logger(module, LogLevel.WARN, message, data),
     error: (message: string, data?: any) => logger(module, LogLevel.ERROR, message, data)

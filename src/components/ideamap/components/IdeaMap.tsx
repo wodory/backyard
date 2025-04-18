@@ -4,6 +4,7 @@
  * 역할: 보드 기능의 메인 UI 컴포넌트로, React Flow와 관련 훅을 조합하여 완전한 보드 환경 제공
  * 작성일: 2025-03-28
  * 수정일: 2025-04-17 : 렌더링 최적화 (불필요한 리렌더링 방지)
+ * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
  */
 
 'use client';
@@ -19,6 +20,7 @@ import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { useAppStore } from '@/store/useAppStore';
 import { Card } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import createLogger from '@/lib/logger';
 
 // 보드 관련 컴포넌트 임포트
 import IdeaMapCanvas from './IdeaMapCanvas';
@@ -39,6 +41,9 @@ import {
 import { IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { Node } from '@xyflow/react';
 
+// 로거 생성
+const logger = createLogger('IdeaMap');
+
 /**
  * IdeaMap: 아이디어맵 메인 컨테이너 컴포넌트
  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
@@ -50,7 +55,7 @@ function IdeaMap({
   className = "",
   showControls = true
 }: IdeaMapComponentProps) {
-  // console.log('[IdeaMap] 컴포넌트 렌더링 시작', { showControls });
+  // logger.debug('컴포넌트 렌더링 시작', { showControls });
 
   // 상태 관리
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -66,12 +71,12 @@ function IdeaMap({
 
   // 인증 상태 가져오기
   const { user, isLoading: isAuthLoading } = useAuth();
-  console.log('[IdeaMap] 인증 상태:', { userId: user?.id, isAuthLoading });
+  logger.debug('인증 상태:', { userId: user?.id, isAuthLoading });
 
   // 레퍼런스 및 기타 훅
   const reactFlowWrapper = useRef<HTMLDivElement>(null) as SafeRef<HTMLDivElement>;
   const reactFlowInstance = useReactFlow();
-  console.log('[IdeaMap] ReactFlow 인스턴스 확인:', !!reactFlowInstance);
+  logger.debug('ReactFlow 인스턴스 확인:', !!reactFlowInstance);
 
   // useAppStore에서 필요한 상태만 선택적으로 가져오기
   const ideaMapSettings = useAppStore(state => state.ideaMapSettings) as IdeaMapSettings;
@@ -79,7 +84,7 @@ function IdeaMap({
 
   // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
   const storeCards = useAppStore(state => state.cards);
-  console.log('[IdeaMap] 전역 상태 카드 목록:', { cardCount: storeCards.length });
+  logger.debug('전역 상태 카드 목록:', { cardCount: storeCards.length });
 
   // useIdeaMapStore에서 필요한 상태와 액션만 선택적으로 가져오기
   const ideaMapStoreNodes = useIdeaMapStore(state => state.nodes);
@@ -94,7 +99,7 @@ function IdeaMap({
   const applyNodeChangesAction = useIdeaMapStore(state => state.applyNodeChangesAction);
   const saveLayout = useIdeaMapStore(state => state.saveLayout);
 
-  console.log('[IdeaMap] IdeaMapStore 상태:', {
+  logger.debug('IdeaMapStore 상태:', {
     nodeCount: ideaMapStoreNodes.length,
     edgeCount: ideaMapStoreEdges.length,
     hasLoadedViewport: !!loadedViewport,
@@ -118,7 +123,7 @@ function IdeaMap({
     loadNodesAndEdges
   } = useIdeaMapData(handleSelectCard);
 
-  console.log('[IdeaMap] IdeaMapData 훅 상태:', { isLoading, hasError: !!error });
+  logger.debug('IdeaMapData 훅 상태:', { isLoading, hasError: !!error });
 
   // 커스텀 훅 사용
   const {
@@ -128,7 +133,7 @@ function IdeaMap({
     onSelectCard,
     onNodeDoubleClick: useCallback((node: Node) => {
       // 노드 더블 클릭 처리 로직 (필요한 경우)
-      console.log('[IdeaMap] 노드 더블 클릭:', node.id);
+      logger.debug('노드 더블 클릭:', node.id);
     }, [])
   });
 
@@ -145,11 +150,6 @@ function IdeaMap({
     nodes: ideaMapStoreNodes,
     initialEdges: ideaMapStoreEdges
   });
-
-  // console.log('[IdeaMap] useEdges 훅 상태:', {
-  //   edgeCount: edges.length,
-  //   hasUnsavedEdgesChanges
-  // });
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {
@@ -172,7 +172,7 @@ function IdeaMap({
   // 엣지에 새 노드 추가 기능
   const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
     onCreateNode: useCallback((position, connectingNodeId, handleType) => {
-      // console.log('[IdeaMap] 엣지에 새 노드 추가 요청:', { position, connectingNodeId, handleType });
+      // logger.debug('엣지에 새 노드 추가 요청:', { position, connectingNodeId, handleType });
       // 모달을 열기 위한 상태 설정
       setEdgeDropPosition(position);
       setEdgeDropNodeId(connectingNodeId);
@@ -189,23 +189,23 @@ function IdeaMap({
   // ReactFlow 인스턴스 저장
   useEffect(() => {
     if (reactFlowInstance) {
-      console.log('[IdeaMap] ReactFlow 인스턴스 저장');
+      logger.debug('ReactFlow 인스턴스 저장');
       setReactFlowInstance(reactFlowInstance);
     }
   }, [reactFlowInstance, setReactFlowInstance]);
 
   // 초기 데이터 로드 - 한 번만 실행되도록 의존성 배열 비움
   useEffect(() => {
-    console.log('[IdeaMap] 초기 데이터 로드 Effect 실행, 로드 상태:', initialDataLoadedRef.current);
+    logger.debug('초기 데이터 로드 Effect 실행, 로드 상태:', initialDataLoadedRef.current);
 
     if (!initialDataLoadedRef.current) {
-      console.log('[IdeaMap] 아이디어맵 데이터 초기 로딩 시작');
+      logger.info('아이디어맵 데이터 초기 로딩 시작');
       loadIdeaMapData();
       initialDataLoadedRef.current = true;
 
       // 컴포넌트 마운트 시 카드-노드 동기화 강제 실행
       const timeoutId = setTimeout(() => {
-        console.log('[IdeaMap] 컴포넌트 마운트 후 카드-노드 동기화 실행');
+        logger.debug('컴포넌트 마운트 후 카드-노드 동기화 실행');
         const { useIdeaMapStore } = require('@/store/useIdeaMapStore');
         useIdeaMapStore.getState().syncCardsWithNodes(true);
       }, 300); // ReactFlow 인스턴스가 초기화된 후 실행하기 위해 약간의 지연 추가
@@ -217,7 +217,7 @@ function IdeaMap({
   // 뷰포트 복원 Effect - 최적화
   useEffect(() => {
     if (!reactFlowInstance) return;
-    console.log('[IdeaMap] 뷰포트 복원 Effect 실행, 상태:', {
+    logger.debug('뷰포트 복원 Effect 실행, 상태:', {
       hasLoadedViewport: !!loadedViewport,
       needsFitView,
       viewportToRestore
@@ -227,7 +227,7 @@ function IdeaMap({
       if (loadedViewport) {
         // 저장된 뷰포트가 있으면 복원
         reactFlowInstance.setViewport(loadedViewport, { duration: 0 });
-        console.log('[IdeaMap] 저장된 뷰포트 복원:', loadedViewport);
+        logger.debug('저장된 뷰포트 복원:', loadedViewport);
 
         // 복원 후 상태 초기화 - setState 직접 호출 대신 함수형 업데이트 사용
         // null 체크 후 사용
@@ -239,7 +239,7 @@ function IdeaMap({
       } else if (needsFitView) {
         // fitView 실행 필요
         reactFlowInstance.fitView({ duration: 200, padding: 0.2 });
-        console.log('[IdeaMap] 뷰에 맞게 화면 조정');
+        logger.debug('뷰에 맞게 화면 조정');
       }
     };
 
@@ -251,14 +251,14 @@ function IdeaMap({
 
   // ReactFlow 인스턴스 및 노드가 준비되었을 때 fitView 보장
   useEffect(() => {
-    console.log('[IdeaMap] fitView 보장 Effect, 상태:', {
+    logger.debug('fitView 보장 Effect, 상태:', {
       hasReactFlowInstance: !!reactFlowInstance,
       nodeCount: ideaMapStoreNodes.length
     });
 
     // ReactFlow 인스턴스와 노드가 모두 있는 경우에만 실행
     if (reactFlowInstance && ideaMapStoreNodes.length > 0) {
-      console.log('[IdeaMap] 노드와 ReactFlow 인스턴스 모두 준비됨, fitView 실행');
+      logger.debug('노드와 ReactFlow 인스턴스 모두 준비됨, fitView 실행');
 
       // 약간의 지연 후 fitView 호출 (DOM이 완전히 업데이트된 후)
       const timeoutId = setTimeout(() => {
@@ -269,9 +269,9 @@ function IdeaMap({
             minZoom: 0.5,
             duration: 300
           });
-          console.log('[IdeaMap] fitView 실행 완료, 노드 수:', ideaMapStoreNodes.length);
+          logger.debug('fitView 실행 완료, 노드 수:', ideaMapStoreNodes.length);
         } catch (error) {
-          console.error('[IdeaMap] fitView 실행 중 오류:', error);
+          logger.error('fitView 실행 중 오류:', error);
         }
       }, 300);
 
@@ -281,7 +281,7 @@ function IdeaMap({
 
   // viewportToRestore가 변경되면 뷰포트 복원
   useEffect(() => {
-    console.log('[IdeaMap] viewportToRestore 감시 Effect, 상태:', {
+    logger.debug('viewportToRestore 감시 Effect, 상태:', {
       hasReactFlowInstance: !!reactFlowInstance,
       viewportToRestore
     });
@@ -290,7 +290,7 @@ function IdeaMap({
       // 지연 적용으로 여러 번 호출되는 것을 방지
       const timeoutId = setTimeout(() => {
         reactFlowInstance.setViewport(viewportToRestore);
-        console.log('[IdeaMap] 저장된 뷰포트로 복원:', viewportToRestore);
+        logger.debug('저장된 뷰포트로 복원:', viewportToRestore);
       }, 100);
 
       return () => clearTimeout(timeoutId);
@@ -299,7 +299,7 @@ function IdeaMap({
 
   // 카드 목록 변경 감지 및 노드 업데이트 - 기존 코드 개선
   useEffect(() => {
-    console.log('[IdeaMap] 카드-노드 동기화 Effect, 상태:', {
+    logger.debug('카드-노드 동기화 Effect, 상태:', {
       cardCount: storeCards.length,
       nodeCount: ideaMapStoreNodes.length,
       hasReactFlowInstance: !!reactFlowInstance
@@ -307,9 +307,10 @@ function IdeaMap({
 
     // 카드와 노드 동기화 함수
     const syncCardsAndNodes = () => {
-      console.log('[IdeaMap] 카드-노드 동기화 실행:',
-        '카드:', storeCards.length,
-        '노드:', ideaMapStoreNodes.length);
+      logger.debug('카드-노드 동기화 실행:', {
+        카드: storeCards.length,
+        노드: ideaMapStoreNodes.length
+      });
 
       const { useIdeaMapStore } = require('@/store/useIdeaMapStore');
       useIdeaMapStore.getState().syncCardsWithNodes(true);
@@ -322,7 +323,7 @@ function IdeaMap({
         storeCards.length !== ideaMapStoreNodes.length;
 
       if (needsSync) {
-        console.log('[IdeaMap] 카드-노드 동기화가 필요:', {
+        logger.debug('카드-노드 동기화가 필요:', {
           cardCount: storeCards.length,
           nodeCount: ideaMapStoreNodes.length
         });
@@ -337,7 +338,7 @@ function IdeaMap({
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (hasUnsavedChanges || hasUnsavedEdgesChanges) {
-        console.log('[IdeaMap] 저장되지 않은 변경사항이 있음:', {
+        logger.debug('저장되지 않은 변경사항이 있음:', {
           hasUnsavedChanges,
           hasUnsavedEdgesChanges
         });
@@ -357,7 +358,7 @@ function IdeaMap({
   // 사용자 변경 감지 - DB에서 해당 사용자의 레이아웃 데이터 가져오기
   useEffect(() => {
     const currentUserId = user?.id;
-    console.log('[IdeaMap] 사용자 변경 감지 Effect, 상태:', {
+    logger.debug('사용자 변경 감지 Effect, 상태:', {
       currentUserId,
       previousUserId: previousUserIdRef.current,
       isAuthLoading
@@ -369,7 +370,7 @@ function IdeaMap({
       previousUserIdRef.current !== currentUserId &&
       !isAuthLoading
     ) {
-      console.log('[IdeaMap] 사용자 변경 감지, 레이아웃 데이터 로드:', currentUserId);
+      logger.info('사용자 변경 감지, 레이아웃 데이터 로드:', currentUserId);
       loadIdeaMapData();
       loadAndApplyIdeaMapSettings(currentUserId);
       previousUserIdRef.current = currentUserId;
@@ -378,7 +379,7 @@ function IdeaMap({
 
   // 엣지 드롭 후 카드 생성 처리
   const handleEdgeDropCardCreated = useCallback((card: Card) => {
-    console.log('[IdeaMap] 엣지 드롭 후 카드 생성:', {
+    logger.debug('엣지 드롭 후 카드 생성:', {
       cardId: card.id,
       position: edgeDropPosition,
       nodeId: edgeDropNodeId,
@@ -386,7 +387,7 @@ function IdeaMap({
     });
 
     if (!edgeDropPosition || !edgeDropNodeId || !edgeDropHandleType) {
-      console.error('[IdeaMap] 엣지 드롭 정보가 누락되었습니다.');
+      logger.error('엣지 드롭 정보가 누락되었습니다.');
       return;
     }
 
@@ -408,7 +409,7 @@ function IdeaMap({
   // 노드 위치 변경 시 호출되는 React Flow의 onNodesChange 콜백을 래핑
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
     // 디버깅을 위한 상세 로그 추가
-    console.log('[IdeaMap] 노드 변경 감지:', {
+    logger.debug('노드 변경 감지:', {
       changeCount: changes.length,
       changeTypes: changes.map(c => c.type).join(', '),
       changes: changes.map(c => ({
@@ -433,7 +434,7 @@ function IdeaMap({
 
     // 드래그가 완료되면 레이아웃 저장
     if (dragCompleted) {
-      console.log('[IdeaMap] 노드 드래그 완료 감지, 레이아웃 저장 시도:', {
+      logger.debug('노드 드래그 완료 감지, 레이아웃 저장 시도:', {
         노드수: ideaMapStoreNodes.length
       });
 
@@ -441,7 +442,7 @@ function IdeaMap({
       setTimeout(() => {
         try {
           const saved = saveLayout();
-          console.log('[IdeaMap] 레이아웃 저장 결과:', saved);
+          logger.debug('레이아웃 저장 결과:', saved);
 
           if (saved) {
             // 성공 알림 필요 없음 (사용자 경험 개선)
@@ -450,7 +451,7 @@ function IdeaMap({
             toast.error('노드 위치 저장에 실패했습니다.');
           }
         } catch (err) {
-          console.error('[IdeaMap] 레이아웃 저장 중 오류:', err);
+          logger.error('레이아웃 저장 중 오류:', err);
           toast.error('노드 위치 저장 중 오류가 발생했습니다.');
         }
       }, 200); // 200ms로 늘려 상태 업데이트가 확실히 완료된 후 저장
@@ -459,7 +460,7 @@ function IdeaMap({
     // 변경사항 중에 노드가 삭제된 경우에도 저장
     const hasNodeDeleted = changes.some(change => change.type === 'remove');
     if (hasNodeDeleted) {
-      console.log('[IdeaMap] 노드 삭제 감지, 레이아웃 저장');
+      logger.debug('노드 삭제 감지, 레이아웃 저장');
       // 약간의 딜레이 후 저장 (상태 업데이트가 완료된 후)
       setTimeout(() => saveLayout(), 200); // 200ms로 늘림
     }
@@ -476,7 +477,7 @@ function IdeaMap({
     viewportChangeTimer.current = setTimeout(() => {
       if (reactFlowInstance) {
         const viewport = reactFlowInstance.getViewport();
-        console.log('[IdeaMap] 뷰포트 변경 감지, 저장:', viewport);
+        logger.debug('뷰포트 변경 감지, 저장:', viewport);
         saveViewport();
       }
       viewportChangeTimer.current = null;
@@ -485,29 +486,29 @@ function IdeaMap({
 
   // 카드 생성 모달 토글
   const toggleCreateModal = useCallback(() => {
-    console.log('[IdeaMap] 카드 생성 모달 토글');
+    logger.debug('카드 생성 모달 토글');
     setIsCreateModalOpen(prev => !prev);
   }, []);
 
   // 카드 생성 후 처리
   const handleModalCardCreated = useCallback((card: Card) => {
-    console.log('[IdeaMap] 모달에서 카드 생성:', { cardId: card.id, title: card.title });
+    logger.debug('모달에서 카드 생성:', { cardId: card.id, title: card.title });
     handleCardCreated(card);
     setIsCreateModalOpen(false);
   }, [handleCardCreated]);
 
   // useEffect를 사용하여 초기 엣지 데이터 검증 및 로딩
   useEffect(() => {
-    console.log('[IdeaMap] 엣지 데이터 검증 시작:', { edgesLength: edges.length });
+    logger.debug('엣지 데이터 검증 시작:', { edgesLength: edges.length });
 
     // 엣지가 비어있는 경우 로컬 스토리지에서 직접 로드 시도
     if (edges.length === 0) {
-      console.log('[IdeaMap] 엣지 배열이 비어있음. 로컬 스토리지에서 직접 로드 시도');
+      logger.debug('엣지 배열이 비어있음. 로컬 스토리지에서 직접 로드 시도');
       try {
         const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
         if (savedEdgesStr) {
           const savedEdges = JSON.parse(savedEdgesStr);
-          console.log('[IdeaMap] 로컬 스토리지에서 엣지 로드 성공:', { edgesCount: savedEdges.length });
+          logger.debug('로컬 스토리지에서 엣지 로드 성공:', { edgesCount: savedEdges.length });
 
           // 로컬 스토리지에 엣지가 있으면 스토어에 설정
           if (savedEdges.length > 0) {
@@ -515,20 +516,20 @@ function IdeaMap({
             setEdges(savedEdges);
             toast.success(`엣지 데이터 ${savedEdges.length}개를 복구했습니다.`);
           } else {
-            console.log('[IdeaMap] 로컬 스토리지에 저장된 엣지가 없음');
+            logger.debug('로컬 스토리지에 저장된 엣지가 없음');
           }
         } else {
-          console.log('[IdeaMap] 로컬 스토리지에 저장된 엣지 데이터 없음');
+          logger.debug('로컬 스토리지에 저장된 엣지 데이터 없음');
         }
       } catch (err) {
-        console.error('[IdeaMap] 로컬 스토리지에서 엣지 로드 중 오류:', err);
+        logger.error('로컬 스토리지에서 엣지 로드 중 오류:', err);
       }
     }
   }, [edges.length, setEdges]);
 
   // 오류 메시지가 있으면 표시
   if (error) {
-    console.log('[IdeaMap] 오류 발생, 오류 UI 렌더링');
+    logger.info('오류 발생, 오류 UI 렌더링');
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="bg-destructive text-white p-4 rounded shadow-lg">
@@ -547,7 +548,7 @@ function IdeaMap({
 
   // 로딩 중이면 로딩 표시
   if (isLoading) {
-    console.log('[IdeaMap] 로딩 중, 로딩 UI 렌더링');
+    logger.info('로딩 중, 로딩 UI 렌더링');
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="bg-card p-6 rounded-md shadow-lg animate-pulse">
@@ -559,7 +560,7 @@ function IdeaMap({
     );
   }
 
-  console.log('[IdeaMap] 메인 UI 렌더링, 노드/엣지 상태:', {
+  logger.debug('메인 UI 렌더링, 노드/엣지 상태:', {
     nodeCount: ideaMapStoreNodes.length,
     edgeCount: edges.length
   });
