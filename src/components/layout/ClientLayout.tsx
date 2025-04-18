@@ -18,7 +18,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import createLogger from '@/lib/logger';
 
 // Supabase 클라이언트 초기화 (클라이언트에서만 실행)
-import { createClient } from "@/lib/supabase/client";
+// import { createClient } from "@/lib/supabase/client";
 
 // 모듈별 로거 생성
 const logger = createLogger('ClientLayout');

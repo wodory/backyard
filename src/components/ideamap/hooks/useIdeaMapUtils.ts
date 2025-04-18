@@ -125,7 +125,7 @@ export function useIdeaMapUtils({
       
       // 뷰포트 저장
       localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
-      console.log('[useIdeaMapUtils] 뷰포트 저장 완료:', viewport);
+      // console.log('[useIdeaMapUtils] 뷰포트 저장 완료:', viewport);
       
       return true;
     } catch (err) {
@@ -161,9 +161,11 @@ export function useIdeaMapUtils({
    */
   const handleSaveLayout = useCallback(() => {
     if (saveAllLayoutData()) {
-      toast.success('레이아웃이 저장되었습니다');
+      // toast.success('레이아웃이 저장되었습니다');
+      console.log('[useIdeaMapUtils] 레이아웃이 저장되었습니다');
     } else {
-      toast.error('레이아웃 저장에 실패했습니다');
+      // toast.error('레이아웃 저장에 실패했습니다');
+      console.error('[useIdeaMapUtils] 레이아웃 저장에 실패했습니다');
     }
   }, [saveAllLayoutData]);
 
@@ -182,7 +184,7 @@ export function useIdeaMapUtils({
     
     // 1. 전역 상태 업데이트
     setIdeaMapSettings(newSettings);
-    console.log('[useIdeaMapUtils] 전역 상태 업데이트 완료');
+    // console.log('[useIdeaMapUtils] 전역 상태 업데이트 완료');
     
     // 2. 새 설정을 엣지에 적용
     const updatedEdges = applyIdeaMapEdgeSettings(edges, newSettings);
@@ -191,18 +193,18 @@ export function useIdeaMapUtils({
     
     // 3. 인증된 사용자인 경우 서버에도 저장
     if (isAuthenticated && userId) {
-      console.log('[useIdeaMapUtils] 서버에 아이디어맵 설정 저장 시도');
+      // console.log('[useIdeaMapUtils] 서버에 아이디어맵 설정 저장 시도');
       saveIdeaMapSettingsToServer(newSettings, userId)
         .then(() => {
-          console.log('[useIdeaMapUtils] 서버 저장 성공');
-          toast.success('아이디어맵 설정이 저장되었습니다');
+          console.log('[useIdeaMapUtils] 설정 저장 성공');
+          // toast.success('아이디어맵 설정이 저장되었습니다');
         })
         .catch(err => {
-          console.error('[useIdeaMapUtils] 서버 저장 실패:', err);
-          toast.error('서버에 설정 저장 실패');
+          console.error('[useIdeaMapUtils] 설정 저장 실패:', err);
+          // toast.error('서버에 설정 저장 실패');
         });
     } else {
-      console.log('[useIdeaMapUtils] 비인증 사용자, 서버 저장 생략');
+      console.error('[useIdeaMapUtils] 비인증 사용자, 서버 저장 생략');
     }
   }, [edges, setEdges, setIdeaMapSettings, applyIdeaMapEdgeSettings]);
 

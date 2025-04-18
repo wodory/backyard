@@ -274,11 +274,11 @@ export const useAppStore = create<AppState>()(
           const { useIdeaMapStore } = await import('./useIdeaMapStore');
           useIdeaMapStore.getState().syncCardsWithNodes();
           
-          toast.success('카드가 성공적으로 업데이트되었습니다.');
+          // toast.success('카드가 성공적으로 업데이트되었습니다.');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ error: new Error(errorMessage), isLoading: false }); // Ensure error is an Error object
-          toast.error(`카드 업데이트 실패: ${errorMessage}`);
+          console.error(`카드 업데이트 실패: ${errorMessage}`);
         }
       },
       createCard: async (input) => {
@@ -309,12 +309,12 @@ export const useAppStore = create<AppState>()(
           const { useIdeaMapStore } = await import('./useIdeaMapStore');
           useIdeaMapStore.getState().syncCardsWithNodes();
           
-          toast.success('카드가 성공적으로 생성되었습니다.');
+          // toast.success('카드가 성공적으로 생성되었습니다.');
           return newCard; // Return the created card
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류 발생';
           set({ error: new Error(errorMessage), isLoading: false });
-          toast.error(`카드 생성 실패: ${errorMessage}`);
+          console.error(`카드 생성 실패: ${errorMessage}`);
           return null; // Return null on failure
         }
       },
@@ -333,7 +333,7 @@ export const useAppStore = create<AppState>()(
          // Implementation likely needs access to reactFlowInstance, nodes, edges
          const rfInstance = get().reactFlowInstance;
          if (!rfInstance) {
-           toast.error("레이아웃 적용 실패: React Flow 인스턴스가 없습니다.");
+           console.error("레이아웃 적용 실패: React Flow 인스턴스가 없습니다.");
            return;
          }
 
@@ -341,7 +341,7 @@ export const useAppStore = create<AppState>()(
          const edges = rfInstance.getEdges();
 
          if (!nodes || nodes.length === 0) {
-            toast.info("레이아웃할 노드가 없습니다.");
+            console.error("레이아웃할 노드가 없습니다.");
             return;
          }
 
@@ -373,17 +373,17 @@ export const useAppStore = create<AppState>()(
            // rfInstance.fitView({ padding: 0.1 });
            const directionTermForToast = direction === 'horizontal' ? '가로' : direction === 'vertical' ? '세로' : '자동';
            set({ layoutDirection: direction, isLoading: false, error: null });
-           toast.success(`${directionTermForToast} 레이아웃이 적용되었습니다.`);
+          //  toast.success(`${directionTermForToast} 레이아웃이 적용되었습니다.`);
 
            // 레이아웃 적용 후 자동으로 저장 (추가된 부분)
            setTimeout(() => {
              get().saveIdeaMapLayout();
-             console.log(`[useAppStore] ${direction} 레이아웃 적용 후 위치 자동 저장`);
+            //  console.log(`[useAppStore] ${direction} 레이아웃 적용 후 위치 자동 저장`);
            }, 300); // 상태 업데이트와 뷰 렌더링이 완료된 후 저장
          } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 레이아웃 오류';
             set({ isLoading: false, error: new Error(errorMessage) });
-            toast.error(`레이아웃 적용 실패: ${errorMessage}`);
+            console.error(`레이아웃 적용 실패: ${errorMessage}`);
          }
       },
       
@@ -391,7 +391,7 @@ export const useAppStore = create<AppState>()(
       saveIdeaMapLayout: async () => {
           const rfInstance = get().reactFlowInstance;
           if (!rfInstance) {
-            toast.error("레이아웃 저장 실패: React Flow 인스턴스가 없습니다.");
+            console.error("레이아웃 저장 실패: React Flow 인스턴스가 없습니다.");
             return false; // Indicate failure
           }
 
@@ -401,12 +401,12 @@ export const useAppStore = create<AppState>()(
             const edges = rfInstance.getEdges();
             await saveAllLayoutData(nodes, edges); // Assuming this now handles potential API calls/errors
             set({ isLoading: false });
-            toast.success('보드 레이아웃이 저장되었습니다.');
+            // toast.success('보드 레이아웃이 저장되었습니다.');
             return true; // Indicate success
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
             set({ isLoading: false, error: new Error(errorMessage) });
-            toast.error(`레이아웃 저장 실패: ${errorMessage}`);
+            console.error(`레이아웃 저장 실패: ${errorMessage}`);
             return false; // Indicate failure
           }
       },
@@ -474,7 +474,7 @@ export const useAppStore = create<AppState>()(
             isLoading: false,
             error: null
           });
-          toast.success('설정이 업데이트되었습니다.');
+          // toast.success('설정이 업데이트되었습니다.');
 
         } catch (error) {
           console.error('설정 업데이트 오류:', error);
@@ -496,8 +496,7 @@ export const useAppStore = create<AppState>()(
           } else if (!navigator.onLine) {
             userMessage = '인터넷 연결이 끊겼습니다. 연결 상태를 확인하고 다시 시도하세요.';
           }
-          
-          toast.error(userMessage);
+          console.error(userMessage);
         }
       },
       
@@ -534,7 +533,7 @@ export const useAppStore = create<AppState>()(
             // reactFlowInstance: null,
           });
 
-          toast.success('로그아웃 되었습니다.');
+          // toast.success('로그아웃 되었습니다.');
           // 로그인 페이지로 리다이렉션
           if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
             console.log('[AppStore] 로그아웃 상태에서 로그인 페이지로 리다이렉션');
@@ -544,7 +543,7 @@ export const useAppStore = create<AppState>()(
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ isLoading: false, error: new Error(errorMessage) });
-          toast.error(`로그아웃 실패: ${errorMessage}`);
+          console.error(`로그아웃 실패: ${errorMessage}`);
           // Re-throw or handle error as needed
           // throw error;
         }
@@ -557,7 +556,8 @@ export const useAppStore = create<AppState>()(
       fetchProjects: async () => {
         set({ isLoading: true, error: null });
         try {
-          // API 호출 대신 가상 데이터 반환
+          // API 호출 대신 가상 데이터 반환. 
+          // 프로젝트 리펙토링에서 API로 반드시 전환해야 함. 
           const mockProjects = [
             {
               id: 'project-1',
@@ -578,14 +578,14 @@ export const useAppStore = create<AppState>()(
             isLoading: false 
           });
           
-          toast.success('가상 프로젝트 로드 완료');
+          // toast.success('가상 프로젝트 로드 완료');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ 
             isLoading: false, 
             error: new Error(errorMessage),
           });
-          toast.error(`프로젝트 로드 실패: ${errorMessage}`);
+          console.error(`프로젝트 로드 실패: ${errorMessage}`);
         }
       },
       
@@ -597,10 +597,10 @@ export const useAppStore = create<AppState>()(
         set({ activeProjectId: projectId });
         // 활성 프로젝트 변경 시 해당 프로젝트의 카드만 표시하도록 필터링하는 로직이 필요할 수 있음
         // 나중에 구현 예정
-        const project = get().projects.find(p => p.id === projectId);
-        if (project) {
-          toast.success(`'${project.name}' 프로젝트로 전환되었습니다.`);
-        }
+        // const project = get().projects.find(p => p.id === projectId);
+        // if (project) {
+        //   toast.success(`'${project.name}' 프로젝트로 전환되었습니다.`);
+        // }
       },
       
       createProject: async (projectData) => {
@@ -625,12 +625,12 @@ export const useAppStore = create<AppState>()(
             isLoading: false 
           }));
           
-          toast.success(`'${newProject.name}' 프로젝트가 생성되었습니다.`);
+          // toast.success(`'${newProject.name}' 프로젝트가 생성되었습니다.`);
           return newProject;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ isLoading: false, error: new Error(errorMessage) });
-          toast.error(`프로젝트 생성 실패: ${errorMessage}`);
+          console.error(`프로젝트 생성 실패: ${errorMessage}`);
           return null;
         }
       },
@@ -656,12 +656,12 @@ export const useAppStore = create<AppState>()(
             isLoading: false 
           }));
           
-          toast.success(`'${updatedProject.name}' 프로젝트가 업데이트되었습니다.`);
+          // toast.success(`'${updatedProject.name}' 프로젝트가 업데이트되었습니다.`);
           return updatedProject;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ isLoading: false, error: new Error(errorMessage) });
-          toast.error(`프로젝트 업데이트 실패: ${errorMessage}`);
+          console.error(`프로젝트 업데이트 실패: ${errorMessage}`);
           return null;
         }
       },
@@ -692,12 +692,12 @@ export const useAppStore = create<AppState>()(
             isLoading: false 
           });
           
-          toast.success(`'${deletedProject?.name || '프로젝트'}' 가 삭제되었습니다.`);
+          // toast.success(`'${deletedProject?.name || '프로젝트'}' 가 삭제되었습니다.`);
           return true;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
           set({ isLoading: false, error: new Error(errorMessage) });
-          toast.error(`프로젝트 삭제 실패: ${errorMessage}`);
+          console.error(`프로젝트 삭제 실패: ${errorMessage}`);
           return false;
         }
       },
@@ -744,34 +744,12 @@ export const useAppStore = create<AppState>()(
       onRehydrateStorage: (state) => {
         console.log("Hydration finished for app-storage");
         
-        // 앱 시작 시 로그인 상태 확인
-        (async () => {
-          try {
-            const currentUser = await getCurrentUser();
-            if (currentUser) {
-              console.log('[AppStore] 앱 초기화: 로그인 상태입니다.', { 
-                userId: currentUser.id,
-                email: currentUser.email 
-              });
-            } else {
-              console.log('[AppStore] 앱 초기화: 로그아웃 상태입니다.');
-              // 로그아웃 상태면 여기서 로그인 페이지로 리다이렉션을 추가할 수 있음
-              if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-                console.log('[AppStore] 로그아웃 상태에서 로그인 페이지로 리다이렉션');
-                window.location.href = '/login';
-              }
-            }
-          } catch (error) {
-            console.error('[AppStore] 로그인 상태 확인 중 오류 발생:', error);
-          }
-        })();
-        
         return (state, error) => {
           if (error) {
             console.error("An error happened during hydration", error);
             toast.error('앱 상태 로딩 중 오류 발생');
           } else {
-            console.log("Hydration completed for app-storage");
+            console.log("[onRehydrateStorage] Hydration completed for app-storage");
             // 복원 후 초기 로직 (예: 서버에서 최신 설정 가져오기)
             // useAppStore.getState().fetchInitialSettings?.(); // 예시: 초기 데이터 로딩 액션 호출
           }
@@ -848,30 +826,30 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     const nodes = useIdeaMapStore.getState().nodes;
     const rfInstance = useAppStore.getState().reactFlowInstance;
     
-    console.group('🔍 아이디어맵 디버깅 정보');
-    console.log('📄 카드 수:', cards.length);
-    console.log('🔄 노드 수:', nodes.length);
-    console.log('⚙️ ReactFlow 인스턴스 존재:', !!rfInstance);
+    console.group('[debugFlow] 아이디어맵 디버깅 정보');
+    console.log('카드 수:', cards.length);
+    console.log('노드 수:', nodes.length);
+    console.log('ReactFlow 인스턴스 존재:', !!rfInstance);
     
     // 카드 ID와 노드 ID 비교
     const cardIds = cards.map(card => card.id);
     const nodeIds = nodes.map(node => node.id);
     
-    console.log('🔄 카드 ID와 노드 ID 일치 여부:', 
-      JSON.stringify(cardIds.sort()) === JSON.stringify(nodeIds.sort()));
+    // console.log('🔄 카드 ID와 노드 ID 일치 여부:', 
+    //   JSON.stringify(cardIds.sort()) === JSON.stringify(nodeIds.sort()));
     
     // 카드에 있지만 노드에 없는 항목 확인
     const missingNodes = cardIds.filter(id => !nodeIds.includes(id));
     if (missingNodes.length > 0) {
-      console.warn('⚠️ 노드가 없는 카드 ID:', missingNodes);
-      console.log('🔎 해당 카드 정보:', cards.filter(card => missingNodes.includes(card.id)));
+      console.warn('노드가 없는 카드 ID:', missingNodes);
+      console.log('해당 카드 정보:', cards.filter(card => missingNodes.includes(card.id)));
     }
     
     // 노드에 있지만 카드에 없는 항목 확인
     const orphanNodes = nodeIds.filter(id => !cardIds.includes(id));
     if (orphanNodes.length > 0) {
-      console.warn('⚠️ 카드가 없는 노드 ID:', orphanNodes);
-      console.log('🔎 해당 노드 정보:', nodes.filter(node => orphanNodes.includes(node.id)));
+      console.warn('카드가 없는 노드 ID:', orphanNodes);
+      console.log('해당 노드 정보:', nodes.filter(node => orphanNodes.includes(node.id)));
     }
     
     console.groupEnd();
@@ -888,7 +866,7 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     };
   };
 
-  console.log('App commands registered to window.appCommands');
+  console.log('[debugFlow] App commands registered to window.appCommands');
 }
 
 // 타입스크립트용 글로벌 타입 확장

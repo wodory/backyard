@@ -50,7 +50,7 @@ function IdeaMap({
   className = "",
   showControls = true
 }: IdeaMapComponentProps) {
-  console.log('[IdeaMap] 컴포넌트 렌더링 시작', { showControls });
+  // console.log('[IdeaMap] 컴포넌트 렌더링 시작', { showControls });
 
   // 상태 관리
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -146,10 +146,10 @@ function IdeaMap({
     initialEdges: ideaMapStoreEdges
   });
 
-  console.log('[IdeaMap] useEdges 훅 상태:', {
-    edgeCount: edges.length,
-    hasUnsavedEdgesChanges
-  });
+  // console.log('[IdeaMap] useEdges 훅 상태:', {
+  //   edgeCount: edges.length,
+  //   hasUnsavedEdgesChanges
+  // });
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {
@@ -172,7 +172,7 @@ function IdeaMap({
   // 엣지에 새 노드 추가 기능
   const { onConnectStart, onConnectEnd } = useAddNodeOnEdgeDrop({
     onCreateNode: useCallback((position, connectingNodeId, handleType) => {
-      console.log('[IdeaMap] 엣지에 새 노드 추가 요청:', { position, connectingNodeId, handleType });
+      // console.log('[IdeaMap] 엣지에 새 노드 추가 요청:', { position, connectingNodeId, handleType });
       // 모달을 열기 위한 상태 설정
       setEdgeDropPosition(position);
       setEdgeDropNodeId(connectingNodeId);

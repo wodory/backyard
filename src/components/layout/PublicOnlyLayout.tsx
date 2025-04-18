@@ -4,6 +4,7 @@
  * 역할: 이미 인증된 사용자를 홈으로 리디렉션
  * 작성일: 2024-05-08
  * 수정일: 2024-05-08 : 하이드레이션 오류 해결을 위한 수정
+ * 수정일: 2024-04-22 : 깜빡임 현상 제거를 위한 로딩 UI 수정
  */
 
 'use client';
@@ -47,26 +48,13 @@ export function PublicOnlyLayout({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    // 클라이언트에서 마운트된 후에만 로딩 UI 또는 리디렉션 UI 표시
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="flex flex-col items-center">
-                    <div className="mb-4">
-                        <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-                    </div>
-                    <p className="text-gray-600">인증 상태 확인 중...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // 사용자가 인증되지 않았을 때만 자식 컴포넌트 렌더링
+    // 인증 상태에 관계없이 항상 자식 컴포넌트 렌더링
+    // 로딩 상태에서도 해당 페이지를 계속 보여주어 깜빡임 방지
     if (!user) {
         return <>{children}</>;
     }
 
-    // 리디렉션이 발생하기 전 빈 UI 표시 (깜빡임 방지)
+    // 사용자가 이미 인증되어 있고 리디렉션 중인 경우에만 로딩 UI 표시
     return (
         <div className="flex justify-center items-center min-h-screen">
             <div className="flex flex-col items-center">
