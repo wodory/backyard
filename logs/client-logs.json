@@ -4511,5 +4511,61 @@
     "message": "code_verifier를 찾을 수 없음",
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-18T09:34:44.531Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:36:14.135Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:36:15.153Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:39:46.212Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:39:46.991Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:40:50.099Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:40:51.197Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:41:02.867Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:41:03.730Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:41:02.569Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:41:03.732Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:41:48.342Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:41:48.540Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:42:00.190Z",
+    "level": "warn",
+    "module": "AuthContext",
+    "message": "code_verifier를 찾을 수 없음",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:42:00.324Z"
   }
 ]

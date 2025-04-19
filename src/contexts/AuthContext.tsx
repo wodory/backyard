@@ -1,12 +1,13 @@
 /**
  * 파일명: AuthContext.tsx
  * 목적: 전역 인증 상태 관리
- * 역할: 인증 상태, code_verifier 등의 인증 관련 데이터를 전역적으로 관리
+ * 역할: 인증 상태 등의 인증 관련 데이터를 전역적으로 관리
  * 작성일: 2025-03-08
  * 수정일: 2025-04-09
  * 수정일: 2024-05-08 : localStorage 관련 코드 제거 - @supabase/ssr의 쿠키 기반 세션 관리와 호환되도록 수정
  * 수정일: 2023-10-27 : 불필요한 서버 환경 체크 로직 제거 ('use client' 지시문이 있으므로 항상 클라이언트에서 실행됨)
  * 수정일: 2024-04-19 : sessionStorage 관련 code_verifier 관리 코드 제거 - @supabase/ssr의 쿠키 기반 세션 관리와 충돌 방지
+ * 수정일: 2024-04-22 : codeVerifier 관련 상태 및 로직 완전히 제거
  */
 
 'use client';
@@ -32,9 +33,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
-  codeVerifier: string | null;
   error: Error | null;
-  setCodeVerifier: (value: string | null) => void;
 }
 
 // 기본 컨텍스트 값
@@ -43,9 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isLoading: true,
   signOut: async () => { },
-  codeVerifier: null,
   error: null,
-  setCodeVerifier: () => { },
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -54,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [codeVerifier, setCodeVerifier] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [authError, setAuthError] = useState<Error | null>(null);
 
@@ -69,9 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session: null,
       isLoading: false,
       signOut: async () => { },
-      codeVerifier: null,
       error: error instanceof Error ? error : new Error('Supabase 초기화 실패'),
-      setCodeVerifier: () => { },
     }}>{children}</AuthContext.Provider>;
   }
 
@@ -84,9 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function initializeAuth() {
       try {
         logger.info('인증 컨텍스트 초기화 시작');
-
-        // @supabase/ssr이 쿠키를 통해 code_verifier를 관리하므로 수동 관리 코드 제거
-        logger.warn('code_verifier를 찾을 수 없음');
 
         // 현재 세션 가져오기
         try {
@@ -238,11 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         isLoading,
         signOut,
-        codeVerifier,
         error: authError,
-        setCodeVerifier: (value) => {
-          setCodeVerifier(value);
-        },
       }}
     >
       {children}
