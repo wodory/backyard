@@ -4567,5 +4567,13 @@
     "message": "code_verifier를 찾을 수 없음",
     "sessionId": "47qmnwuvxz418ky8jrquy4",
     "serverTimestamp": "2025-04-19T08:42:00.324Z"
+  },
+  {
+    "timestamp": "2025-04-19T08:56:55.115Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-19T08:56:56.479Z"
   }
 ]
