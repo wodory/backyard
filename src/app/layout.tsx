@@ -6,6 +6,7 @@
  * 수정일: 2025-03-28
  * 수정일: 2024-05-08 : 메타데이터 추가
  * 수정일: 2024-05-28 : import 순서 정렬
+ * 수정일: 2024-05-18 : ReactQueryProvider 추가
  */
 
 import "@/app/globals.css";
@@ -14,6 +15,7 @@ import "@xyflow/react/dist/style.css";
 import { Metadata } from "next";
 
 import { ClientLayout } from "@/components/layout/ClientLayout";
+import { ReactQueryProvider } from "@/app/ReactQueryProvider";
 
 export const metadata: Metadata = {
   title: "Backyard - 생각을 관리하는 새로운 방법",
@@ -28,9 +30,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="antialiased" suppressHydrationWarning>
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <ReactQueryProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </ReactQueryProvider>
       </body>
     </html>
   );

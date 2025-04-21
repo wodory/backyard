@@ -7,12 +7,13 @@
  * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수 제거)
  */
 
-import React, { ReactElement } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
 
 import { render as rtlRender, RenderOptions, RenderResult, screen as rtlScreen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Node, Edge, ReactFlowInstance, MarkerType } from '@xyflow/react';
 import { vi, expect as vitestExpect } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { CardData } from '@/components/ideamap/types/ideamap-types';
 
@@ -250,4 +251,35 @@ export const expectElement = (element: Element | null) => {
 // 테스트 유틸리티 export
 export * from '@testing-library/react';
 export { userEvent };
-export const mockNextRouter = mockRouter; 
+export const mockNextRouter = mockRouter;
+
+/**
+ * renderWithProviders: 테스트에서 필요한 Provider들과 함께 컴포넌트를 렌더링
+ * @param ui - 렌더링할 React 컴포넌트
+ * @param options - 테스트 렌더링 옵션
+ * @returns 렌더링 결과
+ */
+export function renderWithProviders(
+    ui: React.ReactElement,
+    options?: Omit<RenderOptions, 'wrapper'>
+) {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: {
+                retry: false,
+                staleTime: 0,
+                gcTime: 0,
+            },
+        },
+    })
+
+    function Wrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={queryClient}>
+                {children}
+            </QueryClientProvider>
+        )
+    }
+
+    return rtlRender(ui, { wrapper: Wrapper as React.ComponentType, ...options })
+} 

@@ -5,6 +5,7 @@
  * 작성일: 2025-03-30
  * 수정일: 2025-04-08
  * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수 제거)
+ * 수정일: 2024-05-01 : 통합 테스트를 위한 추가 핸들러 구현
  */
 
 import { http, HttpResponse } from 'msw';
@@ -77,6 +78,32 @@ export function createMockCard(id: string = 'test-card-123'): CardData {
   };
 }
 
+/**
+ * 태그 데이터 생성 함수
+ * @param id - 태그 ID
+ * @param name - 태그 이름
+ * @returns 태그 데이터 객체
+ */
+export function createMockTag(id: string = 'test-tag-123', name: string = '테스트 태그') {
+  return {
+    id,
+    name
+  };
+}
+
+// 모의 데이터
+let mockCards = [
+  createMockCard('card-1'),
+  { ...createMockCard('card-2'), title: '중요 카드', cardTags: [{ id: 'tag-1', name: '중요' }] },
+  { ...createMockCard('card-3'), title: '작업 카드', cardTags: [{ id: 'tag-2', name: '작업' }] }
+];
+
+const mockTags = [
+  createMockTag('tag-1', '중요'),
+  createMockTag('tag-2', '작업'),
+  createMockTag('tag-3', '아이디어')
+];
+
 // Supabase 인증 API 엔드포인트 핸들러
 export const handlers = [
   // Supabase 세션 교환 API 모킹
@@ -147,6 +174,32 @@ export const handlers = [
     });
   }),
 
+  // 카드 목록 조회 - 필터링 지원
+  http.get('/api/cards', ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q');
+    const tag = url.searchParams.get('tag');
+    
+    let filteredCards = [...mockCards];
+    
+    // 검색어 필터링
+    if (q) {
+      filteredCards = filteredCards.filter(card => 
+        card.title.toLowerCase().includes(q.toLowerCase()) || 
+        card.content.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+    
+    // 태그 필터링
+    if (tag) {
+      filteredCards = filteredCards.filter(card => 
+        card.cardTags.some(t => t.name.toLowerCase() === tag.toLowerCase())
+      );
+    }
+    
+    return HttpResponse.json(filteredCards);
+  }),
+
   // 카드 조회 API - 성공 케이스
   http.get('/api/cards/:id', ({ params }) => {
     const { id } = params;
@@ -166,8 +219,17 @@ export const handlers = [
       });
     }
 
+    const card = mockCards.find(c => c.id === id);
+    
+    if (!card) {
+      return new HttpResponse(null, {
+        status: 404,
+        statusText: 'Not Found'
+      });
+    }
+
     // 성공 응답
-    return HttpResponse.json(createMockCard(id as string));
+    return HttpResponse.json(card);
   }),
 
   // 카드 수정 API
@@ -187,11 +249,21 @@ export const handlers = [
         });
       }
 
+      // 카드 찾기 및 업데이트
+      const index = mockCards.findIndex(c => c.id === id);
+      if (index === -1) {
+        return new HttpResponse(JSON.stringify({ error: '카드를 찾을 수 없습니다' }), {
+          status: 404,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+      
+      mockCards[index] = { ...mockCards[index], ...requestData };
+
       // 성공 응답
-      return HttpResponse.json({
-        ...createMockCard(id as string),
-        ...requestData
-      });
+      return HttpResponse.json(mockCards[index]);
     } catch {
       return new HttpResponse(JSON.stringify({ error: '잘못된 요청 형식입니다' }), {
         status: 400,
@@ -221,9 +293,81 @@ export const handlers = [
         updatedAt: new Date().toISOString(),
         cardTags: (newCardData.tags || []).map((tag: string) => ({ id: tag, name: tag })) // cardTags 형식 맞추기
       };
+      
+      // 모의 데이터에 추가
+      mockCards.push(createdCard);
+      
       return HttpResponse.json(createdCard, { status: 201 });
     } catch {
       return HttpResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
     }
   }),
+  
+  // 카드 삭제 API
+  http.delete('/api/cards/:id', ({ params }) => {
+    const { id } = params;
+    
+    const index = mockCards.findIndex(c => c.id === id);
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    
+    // 모의 데이터에서 제거
+    mockCards.splice(index, 1);
+    
+    return new HttpResponse(null, { status: 200 });
+  }),
+  
+  // 태그 목록 조회 API
+  http.get('/api/tags', () => {
+    return HttpResponse.json(mockTags);
+  }),
+  
+  // 태그 생성 API
+  http.post('/api/tags', async ({ request }) => {
+    try {
+      const data = await request.json() as { name: string };
+      if (!data.name) {
+        return HttpResponse.json({ error: '태그 이름은 필수입니다.' }, { status: 400 });
+      }
+      
+      // 중복 체크
+      if (mockTags.some(t => t.name.toLowerCase() === data.name.toLowerCase())) {
+        return HttpResponse.json({ error: '이미 존재하는 태그입니다.' }, { status: 400 });
+      }
+      
+      const newTag = {
+        id: `tag-${Date.now()}`,
+        name: data.name
+      };
+      
+      // 모의 데이터에 추가
+      mockTags.push(newTag);
+      
+      return HttpResponse.json(newTag, { status: 201 });
+    } catch {
+      return HttpResponse.json({ error: '잘못된 요청 형식입니다.' }, { status: 400 });
+    }
+  }),
+  
+  // 태그 삭제 API
+  http.delete('/api/tags/:id', ({ params }) => {
+    const { id } = params;
+    
+    const index = mockTags.findIndex(t => t.id === id);
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    
+    // 모의 데이터에서 제거
+    mockTags.splice(index, 1);
+    
+    // 관련 카드에서도 태그 제거
+    mockCards = mockCards.map(card => ({
+      ...card,
+      cardTags: card.cardTags.filter(t => t.id !== id)
+    }));
+    
+    return new HttpResponse(null, { status: 200 });
+  })
 ]; 

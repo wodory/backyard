@@ -62,7 +62,7 @@ export default mergeConfig(
         '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,storybook,eslint,prettier}.config.*', // 각종 설정 파일
         '**/prisma/seed/**', // Prisma Seed 파일
         '**/scripts/**', // 스크립트 폴더
-        '**/src/tests/**', // 테스트 관련 폴더
+        // '**/src/tests/**', // 테스트 관련 폴더
         '**/src/components/board/nodes/NodeInspect*.tsx', //디버깅용 NodeInspector
         // src/lib
         '**/src/lib/debug-utils.ts',  // 디버깅 유틸리티 
