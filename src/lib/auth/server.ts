@@ -1,52 +1,17 @@
 /**
- * 파일명: auth-server.ts
- * 목적: 서버 측 인증 기능 및 세션 처리
- * 역할: API 라우트에서 사용할 서버 측 인증 함수 제공
- * 작성일: 2025-03-27
- * 수정일: 2025-04-09
- * 수정일: 2024-05-19 : serverSignInWithGoogle 함수 추가
- * 
- * @rule   three-layer-standard
- * @layer  service
- * @tag    @service-msw serverSignInWithGoogle
- * 설명    서버에서 Google OAuth 인증 URL을 생성하는 서비스 함수 (Supabase API 호출, HTTP 경계 MSW로 테스트)
+ * 파일명: /Users/wodory/Development/apps/backyard/src/lib/auth/server.ts
+ * 목적: 서버 환경에서 사용할 인증 관련 유틸리티 함수 제공
+ * 역할: 서버 액션에서 안전하게 호출할 수 있는 인증 기능 제공
+ * 작성일: 2025-04-24
  */
 
-import createLogger from './logger';
-import { createClient } from './supabase/server';
+'use server';
+
+import createLogger from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 // 로거 생성
 const logger = createLogger('AuthServer');
-
-/**
- * auth: 서버 컴포넌트와 API 라우트에서 사용할 인증 함수
- * @returns 현재 인증된 세션 정보
- */
-export const auth = async () => {
-  try {
-    const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    return session;
-  } catch (error) {
-    logger.error('서버 인증 오류:', error);
-    return null;
-  }
-};
-
-/**
- * getCurrentUser: 현재 인증된 사용자 정보를 반환
- * @returns 현재 인증된 사용자 또는 null
- */
-export const getCurrentUser = async () => {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
-  } catch (error) {
-    logger.error('사용자 정보 조회 오류:', error);
-    return null;
-  }
-};
 
 /**
  * serverSignInWithGoogle: 서버에서 Google OAuth 로그인 URL 생성

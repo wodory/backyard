@@ -4,6 +4,9 @@
  * 역할: 이메일/비밀번호 로그인 및 Google 소셜 로그인 폼 제공
  * 작성일: 2024-06-28
  * 수정일: 2024-05-30 : 서버 액션 및 상태 관리 연동 추가
+ * 수정일: 2025-04-24 : 액션 함수명 업데이트 및 Supabase 직접 연동
+ * 수정일: 2025-04-24 : 구글 로그인 핸들러 수정 - 클라이언트 측 리다이렉션 처리
+ * 수정일: 2025-04-24 : AuthContext 제거 및 상태 관리 단순화
  */
 
 "use client"
@@ -11,11 +14,12 @@
 import React, { useState, useEffect } from 'react'
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useSearchParams } from 'next/navigation' // 에러/메시지 표시 위해 추가
 
 import { ArrowRight, Mail, Lock } from "lucide-react"
 
-import { login, signInWithGoogle } from '@/app/login/actions' // 서버 액션 import
+import { loginAction, googleSignInAction } from '@/app/login/actions' // 서버 액션 import
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,6 +27,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 
 export default function LoginForm() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isEmailPending, setIsEmailPending] = useState(false); // 이메일 로그인 로딩
@@ -47,13 +52,14 @@ export default function LoginForm() {
         formData.append('email', email);
         formData.append('password', password);
         try {
-            await login(formData);
+            // 서버 액션 직접 호출 - 성공시 자동 리다이렉션됨
+            await loginAction(formData);
         } catch (err) {
             console.error("Login action failed:", err);
             setError("로그인 처리 중 오류가 발생했습니다.");
-        } finally {
             setIsEmailPending(false);
         }
+        // 성공 시에는 서버 액션이 리다이렉트하므로 여기서 상태를 변경할 필요 없음
     };
 
     const handleGoogleLogin = async () => {
@@ -61,10 +67,32 @@ export default function LoginForm() {
         setMessage(null);
         setIsGooglePending(true);
         try {
-            await signInWithGoogle();
+            // 서버 액션 호출하여 URL 획득
+            const result = await googleSignInAction();
+
+            if (result.error) {
+                // 오류가 있는 경우 표시
+                console.error("Google signin error:", result.error);
+                setError(result.error);
+                setIsGooglePending(false);
+                return;
+            }
+
+            if (result.url) {
+                // 클라이언트 측에서 URL로 리다이렉션
+                console.log("Redirecting to Google OAuth URL...");
+                // Supabase SSR을 이용한 로그인 처리 시 window.location.href 사용 권장
+                window.location.href = result.url;
+                return;
+            }
+
+            // URL이 없는 경우 오류 표시
+            setError("구글 로그인 URL을 획득하지 못했습니다.");
+            setIsGooglePending(false);
         } catch (err) {
             console.error("Google Sign in action failed:", err);
             setError("Google 로그인 처리 중 오류가 발생했습니다.");
+            setIsGooglePending(false);
         }
     };
 

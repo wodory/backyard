@@ -1,0 +1,166 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## **Rule Title**  
+Three-Layer-Standard
+
+> “**Zustand → MSW → TanStack Query** 3-계층 표준”  
+> ─ UI 명령, HTTP 경계 Mock, Server State Sync를 **명확히 분리**하고  
+> ─ 테스트·코드 작성 시 Cursor Agent가 따라야 할 **단일 지침서**
+
+---
+
+### 0. 이 룰이 해결하려는 문제
+1. 리팩토링 후 **Zustand**·**TanStack Query** 역할이 뒤섞여 발생하는 책임 혼란 방지  
+2. “어디에서 무엇을 모킹해야 하나?”를 명확히 규정 → **테스트 경계** 불일치 제거  
+3. Cursor Agent가 **파일 생성/수정·테스트 작성**을 할 때 항상 같은 패턴으로 동작하게 함
+
+---
+
+### 1. 3-계층 책임 정의
+
+| Layer | 코드 범위 | 책임 | **금지 사항** |
+|-------|-----------|------|---------------|
+| **Zustand Slice (UI command)** | `/src/store/*Slice.ts` | 버튼 클릭·토글·모달 열기 등 **순수 UI state** | **fetch/axios 사용 금지**, DB I/O 금지 |
+| **Service 함수 (+ API Route)** | `/src/services/*.ts` & `/src/app/api/**` | HTTP 요청, Zod validate, 오류 매핑 | React state 조작 금지 |
+| **TanStack Query 훅** | `/src/hooks/use*.ts` | 서버 state Fetch/Mutation, 캐시, 낙관적 업데이트 | 직접 DOM 조작 금지, UI state 저장 금지 |
+
+> **MSW**는 Service 함수가 내보내는 HTTP 경계를 **가장 바깥**에서 Stub 하는 전용 도구.
+
+---
+
+### 2. 룰 태그 4종 (테스트·코드 작성 시 선택)
+
+| 태그 | 테스트 대상 | Mock 전략 | 핵심 검증 |
+|------|-------------|-----------|-----------|
+| `@zustand-action-msw` | Zustand 액션 | 실제 Store + spy (MSW 필요 없음) | 상태 변화 확인 |
+| `@service-msw` | Service 함수 | **MSW** 로 REST 경계 stub | fetch 호출, 응답 매핑, 오류 처리 |
+| `@tanstack-query-msw` | `useQuery` 훅 | QueryClient 실제 + MSW stub | 데이터 캐시, 로딩/에러 플래그 |
+| `@tanstack-mutation-msw` | `useMutation` 훅 | Mutation + MSW | 캐시 무효화, optimistic update |
+
+---
+
+### 3. 파일·폴더 컨벤션
+
+| 코드 | 위치 |
+|------|------|
+| Zustand slice | `src/store/{sliceName}Slice.ts` |
+| Service 함수 | `src/services/{domain}Service.ts` |
+| React Query 훅 | `src/hooks/use{Domain}.ts(x)` |
+| 테스트 | `src/{store|services|hooks}/__tests__/*.test.tsx` |
+| MSW 핸들러 | `src/tests/msw/{domain}Handlers.ts` |
+
+---
+
+### 4. 테스트 작성 체크리스트
+
+1. **Zustand 액션 단위 테스트**  
+   ```mdc
+   @zustand-action-msw toggleSidebar
+   steps:
+     1. import real useAppStore
+     2. act() => store.toggleSidebar()
+     3. expect(store.isSidebarOpen).toBe(true)
+   ```
+
+2. **Service 함수 통합 테스트**  
+   ```mdc
+   @service-msw fetchCards
+   msw:
+     - GET /api/cards → 200 [mockCards]
+   steps:
+     1. const data = await fetchCards()
+     2. expect(data).toEqual(mockCards)
+   ```
+
+3. **Mutation 훅 테스트**  
+   ```mdc
+   @tanstack-mutation-msw useCreateCard
+   msw:
+     - POST /api/cards → 201 [mockCard]
+   steps:
+     1. renderHook(useCreateCard) within QueryClientProvider
+     2. act() => mutate({ title:'t' })
+     3. waitFor cache['cards'] length +1
+   ```
+
+---
+
+### 5. Cursor Agent가 따라야 할 코딩 규칙
+
+| 규칙 코드 | 내용 |
+|-----------|------|
+| `[layer-separation]` | 각 계층 파일에서 **다른 계층 책임**을 침범하면 안 된다. |
+| `[msw-last]` | 네트워크 mock은 MSW로만 한다. `vi.spyOn(global, 'fetch')` 금지. |
+| `[query-key]` | React Query `queryKey`는 `'[domain]', params` 형식을 지킨다. |
+| `[cache-inval]` | Mutation onSuccess 시 관련 Query invalidate 필수. |
+| `[store-pure-ui]` | Zustand slice는 **UI 전용 상태**만 가진다. fetch·async 없음. |
+
+---
+
+### 6. 규칙 적용 예시 (End-to-End)
+
+```mermaid
+sequenceDiagram
+  participant UI
+  participant Store
+  participant Mutation
+  participant Service
+  participant MSW as ⇢ MSW (STUB)
+
+  UI->>Store: toggleSidebar()
+  Store-->>UI: isSidebarOpen = true
+
+  UI->>Mutation: mutate(newCard)
+  Mutation->>Service: createCardAPI()
+  Service->>MSW: POST /api/cards
+  MSW-->>Service: 201 mockCard
+  Service-->>Mutation: resolve(mockCard)
+  Mutation-->>QueryCache: invalidate(['cards'])
+  UI-->>QueryCache: useCards() re-fetch
+```
+
+```mermaid
+graph TD
+  UI[React Component] -->|dispatch| ZS[Zustand Slice<br>(UI command)]
+  ZS -->|call| MUT[useCreateCard<br>(TanStack Mutation)]
+  MUT -->|uses| SVC[cardService.createCardAPI]
+  SVC -->|fetch| API[/api/cards (route)]
+  API -->|DB| Prisma>Supabase
+  
+  classDef store fill:#f6d365,stroke:#555;
+  classDef svc fill:#cdeffd,stroke:#555;
+  class ZS store; class SVC svc;
+```
+
+---
+
+### 7. 파일 헤더 샘플 (자동 생성시 Cursor Agent가 넣을 주석)
+
+```ts
+/**
+ * @rule   three-ayer-Standard
+ * @layer  service
+ * @tag    @service-msw fetchCards
+ * 설명    카드 목록을 fetch + Zod 검증 (HTTP 경계는 MSW)
+ */
+```
+
+---
+
+### 8. 도입 가이드 (팀 공유용)
+
+1. **새 기능** 추가 시 체크  
+   - UI → Zustand slice 액션? ✅  
+   - 서버 데이터 필요? → Service fn + Query 훅? ✅  
+   - 테스트 태그 4 종 중 하나 이상 선택? ✅  
+2. **리팩토링** 시 체크  
+   - 서버 state 로직이 Zustand에 남아있으면? → Query 훅으로 이동  
+   - fetch 중복? → Service 함수 재사용  
+   - 테스트가 HTTP 모킹 없이 실제 서버 때리면? → MSW로 교체
+
+
+### 9. 기타
+- Server Side/Client Side 구분을 명확히 할 것. 

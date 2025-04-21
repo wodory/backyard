@@ -10,6 +10,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import createLogger from '@/lib/logger'
+
+// 로거 생성
+const logger = createLogger('AuthErrorDisplay')
 
 // 오류 메시지 매핑
 const ERROR_MESSAGES: Record<string, string> = {
@@ -35,7 +39,7 @@ export default function AuthErrorDisplay() {
         setDescription(errorDescription)
 
         // 오류 로깅
-        console.error('인증 오류:', {
+        logger.error('인증 오류:', {
             error: errorParam,
             description: errorDescription
         })

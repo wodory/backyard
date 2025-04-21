@@ -1,210 +1,160 @@
 /**
- * 파일명: actions.test.ts
- * 목적: 로그인 관련 서버 액션 테스트
- * 역할: 로그인/회원가입 함수의 동작을 검증
- * 작성일: 2025-03-27
+ * 파일명: src/app/login/actions.test.ts
+ * 목적: 로그인 및 회원가입 서버 액션 테스트
+ * 역할: 로그인, 회원가입, 소셜 로그인 서버 액션의 동작 검증
+ * 작성일: 2025-03-29
+ * 수정일: 2025-04-24 : 새로운 액션 함수명 및 시그니처에 맞게 테스트 업데이트
+ * 수정일: 2024-05-19 : Google OAuth 서버 함수 모킹으로 변경
+ * 수정일: 2024-05-19 : Google OAuth 함수 모킹 경로 변경 (auth/server → auth-server)
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { loginAction, signupAction, googleSignInAction } from './actions'
+import { signIn } from '@/lib/auth'
+import { serverSignInWithGoogle } from '@/lib/auth-server'
+import { redirect } from 'next/navigation'
+import createLogger from '@/lib/logger'
 
-import { login, signup, signInWithGoogle } from './actions';
-
-// 모킹 객체 생성
-const mocks = vi.hoisted(() => ({
-  auth: {
-    signInWithPassword: vi.fn(),
-    signUp: vi.fn(),
-    signInWithOAuth: vi.fn()
-  },
-  redirectFn: vi.fn((url) => ({ redirectUrl: url }))
-}));
-
-// Supabase와 Next.js 모듈 모킹
-vi.mock('@/utils/supabase/server', () => ({
-  createClient: () => ({
-    auth: mocks.auth
-  })
-}));
-
+// Next.js의 redirect를 모킹
 vi.mock('next/navigation', () => ({
-  redirect: mocks.redirectFn
-}));
+  redirect: vi.fn(),
+}))
 
-// process.env 모킹
-const originalEnv = process.env;
+// 로그인, 회원가입 함수 모킹
+vi.mock('@/lib/auth', () => ({
+  signIn: vi.fn(),
+}))
 
-describe('인증 액션 테스트', () => {
-  let formData: FormData;
-  
+// 서버용 Google OAuth 함수 모킹
+vi.mock('@/lib/auth-server', () => ({
+  serverSignInWithGoogle: vi.fn(),
+}))
+
+// 로거 모킹
+vi.mock('@/lib/logger', () => ({
+  default: vi.fn(() => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  })),
+}))
+
+describe('Login Actions', () => {
+  let formData: FormData
+
   beforeEach(() => {
-    // FormData 초기화
-    formData = new FormData();
-    formData.append('email', 'test@example.com');
-    formData.append('password', 'password123');
-    
-    // 콘솔 에러 모킹
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    // process.env 모킹
-    process.env = {
-      ...originalEnv,
-      NEXT_PUBLIC_APP_URL: 'https://example.com'
-    };
-  });
-  
+    formData = new FormData()
+    vi.resetAllMocks()
+  })
+
   afterEach(() => {
-    vi.clearAllMocks();
-    process.env = originalEnv;
-  });
-  
-  describe('login()', () => {
-    it('로그인 성공 시 홈페이지로 리다이렉트 해야 함', async () => {
-      // 성공 응답 모킹
-      mocks.auth.signInWithPassword.mockResolvedValue({ error: null });
+    vi.clearAllMocks()
+  })
+
+  describe('loginAction()', () => {
+    it('이메일이나 비밀번호가 제공되지 않으면 오류 메시지와 함께 로그인 페이지로 리디렉션해야 한다', async () => {
+      // 테스트 준비: 비어있는 formData
       
-      // 로그인 함수 호출
-      await login(formData);
+      // 테스트 실행
+      await loginAction(formData)
       
-      // 인증 함수가 올바른 인자로 호출되었는지 확인
-      expect(mocks.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123'
-      });
+      // 결과 검증
+      expect(redirect).toHaveBeenCalledWith('/login?error=Missing+credentials')
+    })
+
+    it('로그인 성공 시 홈페이지로 리디렉션해야 한다', async () => {
+      // 테스트 준비
+      formData.append('email', 'user@example.com')
+      formData.append('password', 'password123')
       
-      // 성공 시 홈페이지로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith('/');
-    });
-    
-    it('로그인 실패 시 오류 메시지와 함께 로그인 페이지로 리다이렉트 해야 함', async () => {
-      // 오류 응답 모킹
-      const mockError = { message: '이메일 또는 비밀번호가 잘못되었습니다.' };
-      mocks.auth.signInWithPassword.mockResolvedValue({ error: mockError });
+      const mockSignInResponse = { /* 성공 응답 객체 */}
+      ;(signIn as any).mockResolvedValue(mockSignInResponse)
       
-      // 로그인 함수 호출
-      await login(formData);
+      // 테스트 실행
+      await loginAction(formData)
       
-      // 오류 시 로그인 페이지로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith(
-        `/login?error=${encodeURIComponent(mockError.message)}`
-      );
-    });
-  });
-  
-  describe('signup()', () => {
-    it('회원가입 성공 시 성공 메시지와 함께 로그인 페이지로 리다이렉트 해야 함', async () => {
-      // 성공 응답 모킹
-      mocks.auth.signUp.mockResolvedValue({ error: null });
+      // 결과 검증
+      expect(signIn).toHaveBeenCalledWith('user@example.com', 'password123')
+      expect(redirect).toHaveBeenCalledWith('/')
+    })
+
+    it('로그인 실패 시 오류 메시지와 함께 로그인 페이지로 리디렉션해야 한다', async () => {
+      // 테스트 준비
+      formData.append('email', 'user@example.com')
+      formData.append('password', 'wrong-password')
       
-      // 회원가입 함수 호출
-      await signup(formData);
+      const error = new Error('Invalid credentials')
+      ;(signIn as any).mockRejectedValue(error)
       
-      // 인증 함수가 올바른 인자로 호출되었는지 확인
-      expect(mocks.auth.signUp).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123',
-        options: {
-          emailRedirectTo: 'https://example.com/auth/callback'
-        }
-      });
+      // 테스트 실행
+      await loginAction(formData)
       
-      // 성공 시 메시지와 함께 로그인 페이지로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith(
-        '/login?message=확인 이메일을 발송했습니다. 이메일을 확인해주세요.'
-      );
-    });
-    
-    it('회원가입 실패 시 오류 메시지와 함께 로그인 페이지로 리다이렉트 해야 함', async () => {
-      // 오류 응답 모킹
-      const mockError = { message: '이미 사용 중인 이메일입니다.' };
-      mocks.auth.signUp.mockResolvedValue({ error: mockError });
+      // 결과 검증
+      expect(signIn).toHaveBeenCalledWith('user@example.com', 'wrong-password')
+      expect(redirect).toHaveBeenCalledWith('/login?error=Invalid%20credentials')
+    })
+  })
+
+  describe('signupAction()', () => {
+    it('필수 필드가 누락되면 오류 메시지와 함께 회원가입 페이지로 리디렉션해야 한다', async () => {
+      // 테스트 준비: 일부 필드 누락
+      formData.append('email', 'newuser@example.com')
+      // 비밀번호와 이름 필드 누락
       
-      // 회원가입 함수 호출
-      await signup(formData);
+      // 테스트 실행
+      await signupAction(formData)
       
-      // 오류 시 로그인 페이지로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith(
-        `/login?error=${encodeURIComponent(mockError.message)}`
-      );
-    });
-    
-    it('NEXT_PUBLIC_APP_URL이 없을 때 기본값으로 localhost:3000을 사용해야 함', async () => {
-      // NEXT_PUBLIC_APP_URL 제거
-      process.env.NEXT_PUBLIC_APP_URL = undefined;
+      // 결과 검증
+      expect(redirect).toHaveBeenCalledWith('/signup?error=Missing+required+fields')
+    })
+
+    // 회원가입 성공 및 실패 테스트 케이스는 회원가입 로직 구현 시 추가
+  })
+
+  describe('googleSignInAction()', () => {
+    it('Google 로그인이 성공하면 OAuth URL을 반환해야 한다', async () => {
+      // 테스트 준비
+      const mockOAuthUrl = 'https://accounts.google.com/oauth/v2/auth?...'
+      ;(serverSignInWithGoogle as any).mockResolvedValue({
+        success: true,
+        url: mockOAuthUrl,
+      })
       
-      // 성공 응답 모킹
-      mocks.auth.signUp.mockResolvedValue({ error: null });
+      // 테스트 실행
+      const result = await googleSignInAction()
       
-      // 회원가입 함수 호출
-      await signup(formData);
+      // 결과 검증
+      expect(serverSignInWithGoogle).toHaveBeenCalled()
+      expect(result).toEqual({ url: mockOAuthUrl })
+    })
+
+    it('Google 로그인 실패 시 오류 메시지와 함께 로그인 페이지로 리디렉션해야 한다', async () => {
+      // 테스트 준비
+      const errorMessage = 'Google OAuth 실패'
+      ;(serverSignInWithGoogle as any).mockResolvedValue({
+        success: false,
+        error: errorMessage,
+      })
       
-      // 기본 URL이 사용되는지 확인
-      expect(mocks.auth.signUp).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123',
-        options: {
-          emailRedirectTo: 'http://localhost:3000/auth/callback'
-        }
-      });
-    });
-  });
-  
-  describe('signInWithGoogle()', () => {
-    it('구글 로그인 성공 시 반환된 URL로 리다이렉트 해야 함', async () => {
-      // 성공 응답 모킹
-      const mockUrl = 'https://accounts.google.com/o/oauth2/auth?...';
-      mocks.auth.signInWithOAuth.mockResolvedValue({
-        data: { url: mockUrl },
-        error: null
-      });
+      // 테스트 실행
+      await googleSignInAction()
       
-      // 구글 로그인 함수 호출
-      await signInWithGoogle();
+      // 결과 검증
+      expect(serverSignInWithGoogle).toHaveBeenCalled()
+      expect(redirect).toHaveBeenCalledWith(`/login?error=${encodeURIComponent(errorMessage)}`)
+    })
+
+    it('예외 발생 시 오류 객체를 반환해야 한다', async () => {
+      // 테스트 준비
+      const error = new Error('네트워크 오류')
+      ;(serverSignInWithGoogle as any).mockRejectedValue(error)
       
-      // OAuth 함수가 올바른 인자로 호출되었는지 확인
-      expect(mocks.auth.signInWithOAuth).toHaveBeenCalledWith({
-        provider: 'google',
-        options: {
-          redirectTo: 'https://example.com/auth/callback',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
+      // 테스트 실행
+      const result = await googleSignInAction()
       
-      // 반환된 URL로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith(mockUrl);
-    });
-    
-    it('구글 로그인 실패 시 오류 메시지와 함께 로그인 페이지로 리다이렉트 해야 함', async () => {
-      // 오류 응답 모킹
-      const mockError = { message: '인증 요청 실패' };
-      mocks.auth.signInWithOAuth.mockResolvedValue({
-        data: null,
-        error: mockError
-      });
-      
-      // 구글 로그인 함수 호출
-      await signInWithGoogle();
-      
-      // 오류 시 로그인 페이지로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith(
-        `/login?error=${encodeURIComponent(mockError.message)}`
-      );
-    });
-    
-    it('URL이 없는 경우 홈페이지로 리다이렉트 해야 함', async () => {
-      // URL이 없는 성공 응답 모킹
-      mocks.auth.signInWithOAuth.mockResolvedValue({
-        data: { url: null },
-        error: null
-      });
-      
-      // 구글 로그인 함수 호출
-      await signInWithGoogle();
-      
-      // 홈페이지로 리다이렉트되는지 확인
-      expect(mocks.redirectFn).toHaveBeenCalledWith('/');
-    });
-  });
-}); 
+      // 결과 검증
+      expect(serverSignInWithGoogle).toHaveBeenCalled()
+      expect(result).toEqual({ error: '네트워크 오류' })
+    })
+  })
+}) 

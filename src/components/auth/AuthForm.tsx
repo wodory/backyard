@@ -9,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signIn, signUp, signInWithGoogle } from '@/lib/auth';
+import createLogger from '@/lib/logger';
+
+// 로거 생성
+const logger = createLogger('AuthForm');
 
 type AuthMode = 'login' | 'register';
 
@@ -89,9 +93,11 @@ export default function AuthForm() {
       // 성공 후 리디렉션 또는 상태 업데이트
       window.location.href = '/';
     } catch (error: unknown) {
-      console.error('인증 오류:', error);
       const errorMessage = error instanceof Error ? error.message : '인증 중 오류가 발생했습니다.';
-      toast.error(errorMessage);
+      logger.error('인증 오류:', {
+        에러메시지: errorMessage,
+        스택: error instanceof Error ? error.stack : ''
+      });
     } finally {
       setIsLoading(false);
     }

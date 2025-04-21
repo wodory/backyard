@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Trash2, GripVertical, Pencil } from 'lucide-react';
@@ -25,13 +26,15 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Portal } from '@/components/ui/portal';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useResizable } from '@/hooks/useResizable';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import type { Card } from '@/types/card';
+import { signOut } from '@/lib/auth';
+import Image from 'next/image';
 
 
 // 카드 인터페이스 정의
@@ -574,14 +577,12 @@ export function Sidebar({ className }: SidebarProps) {
   // 로그아웃 처리 함수
   const handleLogout = async () => {
     try {
-      console.log('[로그아웃] 로그아웃 버튼 클릭됨, AuthContext 사용');
-
       // AuthContext의 signOut 함수 사용
-      await auth.signOut();
+      await signOut();
       toast.success('로그아웃되었습니다.');
     } catch (error) {
-      console.error('[로그아웃] 오류 발생:', error);
-      toast.error('로그아웃 중 문제가 발생했습니다.');
+      console.error('로그아웃 오류:', error);
+      toast.error('로그아웃 중 오류가 발생했습니다.');
     }
   };
 

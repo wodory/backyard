@@ -4,6 +4,7 @@
  * 역할: 인증 상태, 토스트 메시지 등 클라이언트 컴포넌트 래핑
  * 작성일: 2025-03-27
  * 수정일: 2025-04-09
+ * 수정일: 2024-05-13 : AuthProvider 제거하고 useAuth 훅 사용으로 변경
  */
 
 'use client';
@@ -13,9 +14,10 @@ import { ReactNode, useEffect } from 'react';
 import { Toaster } from "sonner";
 
 import InitDatabase from "@/components/debug/InitDatabase";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useAuth } from '@/hooks/useAuth';
 import createLogger from '@/lib/logger';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // Supabase 클라이언트 초기화 (클라이언트에서만 실행)
 // import { createClient } from "@/lib/supabase/client";
@@ -29,6 +31,12 @@ const logger = createLogger('ClientLayout');
  * @returns 클라이언트 레이아웃 컴포넌트
  */
 export function ClientLayout({ children }: { children: ReactNode }) {
+  // Supabase 인증 상태 변경 구독
+  const { user, isLoading, error } = useAuth();
+
+  // Zustand 스토어에서 userId 가져오기 (디버깅용)
+  const userId = useAuthStore(state => state.userId);
+
   useEffect(() => {
     logger.info('클라이언트 레이아웃 마운트');
 
@@ -40,37 +48,30 @@ export function ClientLayout({ children }: { children: ReactNode }) {
         localStorage.setItem('client_layout_test', 'test');
         localStorage.removeItem('client_layout_test');
         logger.info('localStorage 접근 가능');
-
-        // 저장된 사용자 ID 확인 (디버깅용)
-        const userId = localStorage.getItem('user_id');
-        if (userId) {
-          console.log('=== 로컬 스토리지에 저장된 사용자 ID ===');
-          console.log('user_id:', userId);
-          console.log('==================');
-        } else {
-          console.log('로컬 스토리지에 user_id가 없습니다.');
-        }
       } catch (error) {
         logger.warn('localStorage 접근 불가', error);
       }
     }
 
+    // 개발 환경에서 인증 상태 콘솔 출력 (디버깅용)
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('인증 상태:', { userId, isLoading, error: error?.message });
+    }
+
     return () => {
       logger.info('클라이언트 레이아웃 언마운트');
     };
-  }, []);
+  }, [userId, isLoading, error]);
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <main>
-          {children}
+    <ThemeProvider>
+      <main>
+        {children}
 
-          {/* DB 초기화 스크립트 */}
-          <InitDatabase />
-        </main>
-        <Toaster position="top-center" />
-      </ThemeProvider>
-    </AuthProvider>
+        {/* DB 초기화 스크립트 */}
+        <InitDatabase />
+      </main>
+      <Toaster position="top-center" />
+    </ThemeProvider>
   );
 } 

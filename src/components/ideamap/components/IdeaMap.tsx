@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { useReactFlow } from '@xyflow/react';
 
 import CreateCardModal from '@/components/cards/CreateCardModal';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { useAppStore } from '@/store/useAppStore';
 import { Card } from '@/store/useAppStore';

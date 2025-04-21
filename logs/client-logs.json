@@ -4615,5 +4615,99 @@
     "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-21T01:38:08.871Z"
+  },
+  {
+    "timestamp": "2025-04-21T01:55:32.646Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T01:55:33.542Z"
+  },
+  {
+    "timestamp": "2025-04-21T02:03:25.940Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T02:03:26.671Z"
+  },
+  {
+    "timestamp": "2025-04-21T02:20:15.074Z",
+    "level": "error",
+    "module": "AuthStore",
+    "message": "인증 오류 설정",
+    "data": {},
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T02:20:15.458Z"
+  },
+  {
+    "timestamp": "2025-04-21T02:20:15.071Z",
+    "level": "error",
+    "module": "useAuth",
+    "message": "인증 초기화 오류",
+    "data": {},
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T02:20:15.461Z"
+  },
+  {
+    "timestamp": "2025-04-21T02:35:40.484Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T02:35:41.950Z"
+  },
+  {
+    "timestamp": "2025-04-21T02:42:22.551Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T02:42:23.975Z"
+  },
+  {
+    "timestamp": "2025-04-21T02:49:47.334Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T02:49:48.041Z"
+  },
+  {
+    "timestamp": "2025-04-21T05:38:52.404Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T05:38:52.856Z"
+  },
+  {
+    "timestamp": "2025-04-21T05:42:27.266Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T05:42:28.366Z"
+  },
+  {
+    "timestamp": "2025-04-21T06:20:39.362Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T06:20:39.890Z"
+  },
+  {
+    "timestamp": "2025-04-21T06:23:10.804Z",
+    "level": "error",
+    "module": "AuthErrorDisplay",
+    "message": "인증 오류:",
+    "data": {
+      "error": "default",
+      "description": ""
+    },
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T06:23:11.086Z"
   }
 ]
