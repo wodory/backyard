@@ -255,43 +255,97 @@
     ---
 
 *   ## B. 서비스 계층 구축 + 카드 모듈 React Query 적용
+
     ### Task 11: 카드 API 서비스 모듈 생성
     - 관련 파일: `/src/services/cardService.ts`
     - 변경 유형: [✅코드 추가]
-    - 설명: 카드 관련 서버 통신 로직을 한 곳으로 모읍니다. `fetch`로 API Routes를 호출하거나 Supabase 클라이언트를 직접 사용할 수 있습니다. 우선 Next API Route (`/api/cards`)를 활용한다고 가정하고, 다음 함수를 구현합니다:
-    - `fetchCards(params?: { q?: string; tag?: string })`: GET `/api/cards` - 카드 목록 조회. 검색어 `q`나 `tag` 필터를 옵션으로 받아 쿼리스트링에 추가.
-    - `fetchCardById(id: string)`: GET `/api/cards/[id]` - 특정 카드 상세 조회.
-    - `createCardAPI(data: { title: string; content?: string; ... })`: POST `/api/cards` - 카드 생성.
-    - `updateCardAPI(id: string, data: Partial<Card>)`: PATCH `/api/cards/[id]` - 카드 부분 업데이트 (제목/내용 등).
-    - `deleteCardAPI(id: string)`: DELETE `/api/cards/[id]` - 카드 삭제.
+    - 설명: 
+        - 카드 관련 모든 서버 통신을 한 모듈로 집약한다.
+        - 단건 + 소배치 작업은 기존 /api/cards 엔드포인트, 대량(비동기) 작업은 /api/cards/bulk (202 Accepted) 패턴을 따른다.
+        - 상위(Hooks·Components)는 이 Service 함수를 통해서만 네트워크를 호출한다.
     
-    각 함수는 `await fetch(...)` 호출 후 JSON을 파싱하여 결과를 리턴합니다. 에러 발생 시 throw하여 상위에서 처리할 수 있게 합니다. (Optional: Zod로 응답 검증하거나 표준 `{ success, data, error }` 포맷으로 처리할 수 있으나, 우선 간단히 구현)
-    - 함수 시그니처:
+    - 구현 함수 목록 & 시그니처
     ```ts
     // /src/services/cardService.ts
-    import { Card } from '@/types'; // Card 타입 정의 사용
+    import { Card, CardInput, CardPatch } from '@/types';
 
-    export async function fetchCards(params?: { q?: string; tag?: string }): Promise<Card[]> {
-        const query = params ? '?' + new URLSearchParams(params).toString() : '';
-        const res = await fetch(`/api/cards${query}`);
-        if (!res.ok) throw new Error('Failed to fetch cards');
-        return res.json();
-    }
+    /* ---------------- 조회 ---------------- */
+    export async function fetchCards(
+    params?: { q?: string; tag?: string }
+    ): Promise<Card[]> { /* ... */ }
+
     export async function fetchCardById(id: string): Promise<Card> { /* ... */ }
-    export async function createCardAPI(data: Partial<Card>): Promise<Card> { /* ... */ }
-    export async function updateCardAPI(id: string, data: Partial<Card>): Promise<Card> { /* ... */ }
+
+    /* ---------------- 생성 ---------------- */
+    /** 단건 또는 소배치(≤50) */
+    export async function createCardsAPI(
+    input: CardInput | CardInput[]
+    ): Promise<Card[]> { /* ... */ }
+
+    /** 대량(>50) 비동기 생성 → 202 + 토큰 */
+    export async function createCardsBulkAPI(
+    batch: CardInput[]
+    ): Promise<{ token: string }> { /* ... */ }
+
+    /* ---------------- 수정 ---------------- */
+    /** 단건(부분 수정) */
+    export async function updateCardAPI(
+    id: string,
+    patch: CardPatch
+    ): Promise<Card> { /* ... */ }
+
+    /** 대량(비동기) 부분 수정 */
+    export async function updateCardsBulkAPI(
+    patches: CardPatch[]
+    ): Promise<{ token: string }> { /* ... */ }
+
+    /* ---------------- 삭제 ---------------- */
+    /** 단건 삭제 */
     export async function deleteCardAPI(id: string): Promise<void> { /* ... */ }
+
+    /** 다건(≤100) 동기 삭제 */
+    export async function deleteCardsAPI(ids: string[]): Promise<void> { /* ... */ }
+
+    /** 대량(비동기) 삭제 */
+    export async function deleteCardsBulkAPI(
+    ids: string[]
+    ): Promise<{ token: string }> { /* ... */ }
     ```
-    - import 경로 변경: (이 모듈을 사용할 때) 
+    - 에러 처리 
+        - res.ok 가 false 면 throw new Error(res.statusText).<br>응답 파싱 — return res.json() (필요 시 Zod 검증).
+        - Bulk API 는 202 Accepted + Location 헤더(URL /api/bulk-status/{token})를 기대.
+
+    - 앤드 포인트 매핑
+        함수 | Method / URI | Body 예시
+        fetchCards | GET /api/cards?tag=... | —
+        fetchCardById | GET /api/cards/{id} | —
+        createCardsAPI | POST /api/cards | {…} or [{…},{…}]
+        createCardsBulkAPI | POST /api/cards/bulk | [{…}, …]
+        updateCardAPI | PATCH /api/cards/{id} | { title?: … }
+        updateCardsBulkAPI | PATCH /api/cards/bulk | [ {id, patch}, … ]
+        deleteCardAPI | DELETE /api/cards/{id} | —
+        deleteCardsAPI | DELETE /api/cards?ids=1,2 | —
+        deleteCardsBulkAPI | POST /api/cards/bulk-delete | { ids: [...] }
+
+    - 사용 예시 (import 경로 변경)
     ```ts
     import * as cardService from '@/services/cardService';
+
+    const cards = await cardService.createCardsAPI({ title: 'New' });
+    await cardService.createCardsBulkAPI(manyCards);        // 202 flow
+
     ```
-    - 적용 규칙: [api-service-layer]
-    - 예상 결과: 컴포넌트나 훅에서 직접 `fetch`를 호출하지 않고, 모두 이 `cardService` 모듈의 함수를 사용하게 됩니다. 이를 통해 API 호출 로직이 재사용 가능해지고 유지보수가 쉬워집니다. 
-    - 테스트 포인트: 
-    - `cardService.fetchCards()` 호출 시 `/api/cards` 엔드포인트로 요청이 나가고 예상된 카드 리스트 데이터를 반환하는지 확인.
-    - 잘못된 요청(예: 없는 ID로 `fetchCardById`) 시 함수가 에러를 throw하는지 확인.
-    - (API 라우트 구현이 되어있다는 전제 하에) 네트워크 탭에서 해당 함수들이 올바른 HTTP 요청을 보내는지, 응답을 제대로 파싱하는지 확인.
+    - 테스트 포인트 (@service-msw 태그)
+        - **단건 / 배열 POST:** MSW 로 POST /api/cards 핸들러 작성, createCardsAPI([{…},{…}]).length === 2 검사.
+        - **Bulk 202:** POST /api/cards/bulk → 202 + Location 헤더 mock, 반환 토큰이 예상 형식인지 확인.
+        - **오류 케이스:** 404 응답 시 함수가 throw 하는지 검증.
+        - 테스트 파일 위치 /src/services/cardService.test.ts
+        - MSW 핸들러 /src/tests/msw/cardHandlers.ts 에 엔드포인트 추가.
+
+    - 예상 결과
+        - 컴포넌트·훅은 직접 fetch 하지 않고 cardService.*만 사용.
+        - Bulk 작업은 토큰→폴링 패턴으로 비동기 진행.
+        - API URI·스키마가 중앙 집중되어 유지보수성이 향상된다.
 
     ### Task 12: `useCards` 목록 조회 훅 생성
     - 관련 파일: `/src/hooks/useCards.ts`
@@ -424,104 +478,209 @@
     ---
 
     ### Task 16: `useCreateCard` 카드 생성 Mutation 훅 생성
-    - 관련 파일: `/src/hooks/useCreateCard.ts`
-    - 변경 유형: [✅코드 추가]
-    - 설명: 새 카드를 생성하는 Mutation 훅을 구현합니다. `useMutation`을 사용하고, `mutationFn`으로 `cardService.createCardAPI`를 호출합니다. 카드 생성이 성공하면, **카드 목록 쿼리**를 최신화하기 위해 React Query의 `queryClient.invalidateQueries(['cards'])`를 호출합니다. 이렇게 하면 기존 `useCards`로 받아둔 목록이 stale 상태가 되어 다시 fetch하거나, backgroun ([Query Invalidation | TanStack Query React Docs](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation#:~:text=%2F%2F%20Invalidate%20every%20query%20with,queryKey%3A%20%5B%27todos%27%5D))†L323-L330】. (Optional: 낙관적 업데이트나 응답 데이터를 곧바로 리스트에 반영하는 방법도 있지만, 초기 단계에서는 invalidate로 간단히 처리합니다.)
+    - 관련 파일: `/src/hooks/useCreateCard.ts` (🛠 기존 useCreateCard.ts → 이름·시그니처 변경)
+    - 변경 유형: [✅ 코드 추가] + [🛠 기존 코드 수정]
+    - 설명: 
+        - TanStack React Query의 useMutation 훅으로 단일 객체 또는 50 개 이하 배열을 처리한다.
+        - 서비스 함수 cardService.createCardsAPI 를 호출해 /api/cards POST 요청을 보낸다.
+        - 성공 시 queryClient.invalidateQueries({ queryKey: ['cards'] }) 로 카드 목록을 무효화하여 자동 새로고침한다. (추후 낙관적 업데이트나 캐시 직접 조정으로 성능을 높일 수 있지만 1차 리팩터에서는 간단 invalidate 전략 사용.)
     - 함수 시그니처:
     ```ts
-    import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-    import { createCardAPI } from '@/services/cardService';
+    /**
+     * @rule   Backyard-ThreeLayer-Standard
+    * @layer  hook
+    * @tag    @tanstack-mutation-msw useCreateCards
+    */
 
-    export function useCreateCard(): UseMutationResult<Card, Error, Partial<Card>> {
-        const queryClient = useQueryClient();
-        return useMutation({
-        mutationFn: (newCard) => createCardAPI(newCard),
-        onSuccess: (createdCard) => {
-            queryClient.invalidateQueries({ queryKey: ['cards'] });
+    'use client';
+
+    import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+    import { Card, CardInput } from '@/types';
+    import { createCardsAPI } from '@/services/cardService';
+
+    export function useCreateCards(): UseMutationResult<Card[], Error, CardInput | CardInput[]> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload) => createCardsAPI(payload),
+        onSuccess: () => {
+        // 단건·배열 모두 목록 캐시를 무효화
+        queryClient.invalidateQueries({ queryKey: ['cards'] });
         },
-        });
+    });
     }
+
     ```
     - import 경로 변경:
     ```ts
-    import { useCreateCard } from '@/hooks/useCreateCard';
+    import { useCreateCards } from '@/hooks/useCreateCards';
     ```
-    - 적용 규칙: [tanstack-query-hook]
-    - 예상 결과: 이 훅을 사용하면 폼 데이터로 카드 생성 API를 호출하고, 성공 시 `['cards']` 쿼리 키를 가진 캐시를 무효화하여 카드 목록을 자동 갱신합니다. 따라서 별도 `setCards` 호출 없이도 `CardList` 등이 최신 목록을 보여주게 됩니다.
-    - 테스트 포인트: 
-    - `useCreateCard`를 호출한 컴포넌트에서 `mutate`를 실행하면 `/api/cards` POST 요청이 발생하고, 응답 성공 시 `CardList`에 새로운 카드가 나타나는지 확인.
-    - 실패 시 `error` 객체에 적절한 메시지가 담기고 UI에 표시되는지(예: toast 에러).
-    - React Query DevTools에서 mutation 상태(예: isLoading)와 `cards` 쿼리의 상태 변화를 확인 (invalidate 후 `cards` 쿼리가 다시 fetching 되는지).
+    - 적용 규칙: [tanstack-query-hook] + [cache-inval]
+    - 예상 결과
+        - 폼에서 mutate를 호출하면 /api/cards에 POST가 발생한다.
+        - 성공 시 ['cards'] 쿼리가 invalidated → CardList가 자동으로 최신 목록을 다시 가져온다.
+    - 테스트 포인트 (@tanstack-mutation-msw)
+        - 단건 payload → MSW 201 응답 → cards 캐시 길이 +1 확인
+        - 배열 2 건 payload → 캐시 +2 확인
+        - 실패(500) 시 error 객체 노출 및 UI 에러 표시(예: Toast)
+        - React Query DevTools에서 mutation 상태(isLoading 등) 및 cards 쿼리 재‑fetch 여부 확인
+        - 주의: 50 개 초과 배치는 Task 17 useCreateCardsBulk 를 사용해야 하며, 이 훅 내부에서 createCardsBulkAPI(202) 로 자동 전환되도록 구현한다.
 
     ### Task 17: `useUpdateCard` 카드 수정 Mutation 훅 생성
     - 관련 파일: `/src/hooks/useUpdateCard.ts`
     - 변경 유형: [✅코드 추가]
-    - 설명: 카드 내용을 수정하는 Mutation 훅입니다. `mutationFn`으로 `cardService.updateCardAPI`를 호출합니다. onSuccess에서는 변경된 카드가 목록 및 상세 조회에 반영되도록 캐시를 무효화합니다:
-    - `queryClient.invalidateQueries(['cards'])`: 카드 **목록** 데이터를 stale 처리
-    - `queryClient.invalidateQueries(['card', cardId])`: 해당 카드 **상세** 데이터도 stale 처리 (만약 상세 쿼리를 사용 중이라면)
-    
-    이렇게 두 곳을 무효화하면 목록과 상세화면 모두 최신 데이터를 다시 가져오도록 유도합니다.
+    - 설명: 
+        - TanStack React Query의 useMutation 훅으로 단일 카드를 부분 수정한다.
+        - 서비스 함수 cardService.updateCardAPI 를 호출하고, 성공 시 목록·상세 캐시를 모두 무효화해 UI를 자동 갱신한다.
     - 함수 시그니처:
     ```ts
-    import { useMutation, useQueryClient } from '@tanstack/react-query';
+    /**
+    * @rule   Backyard-ThreeLayer-Standard
+    * @layer  hook
+    * @tag    @tanstack-mutation-msw useUpdateCard
+    */
+
+    'use client';
+
+    import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+    import { Card, CardPatch } from '@/types';
     import { updateCardAPI } from '@/services/cardService';
 
-    export function useUpdateCard(cardId: string): UseMutationResult<Card, Error, Partial<Card>> {
+    export function useUpdateCard(
+    cardId: string
+    ): UseMutationResult<Card, Error, CardPatch> {
         const queryClient = useQueryClient();
+
         return useMutation({
-        mutationFn: (updatedFields) => updateCardAPI(cardId, updatedFields),
-        onSuccess: (updatedCard) => {
+            mutationKey: ['updateCard', cardId],
+            mutationFn: (patch) => updateCardAPI(cardId, patch),
+
+            onSuccess: (updated) => {
+            // 1) 목록 캐시
             queryClient.invalidateQueries({ queryKey: ['cards'] });
+            // 2) 상세 캐시 (존재할 경우)
             queryClient.invalidateQueries({ queryKey: ['card', cardId] });
-        },
+            },
         });
     }
     ```
+    ```ts
+    CardPatch = Partial<Card> /* title, content, tag 등 선택 필드 */
+    ```
+
     - import 경로 변경:
     ```ts
     import { useUpdateCard } from '@/hooks/useUpdateCard';
     ```
-    - 적용 규칙: [tanstack-query-hook]
-    - 예상 결과: 이 훅을 사용하여 카드를 수정하면, 변경사항이 자동으로 UI에 반영됩니다. 예를 들어 카드 제목을 변경한 경우, `CardList`는 invalidate된 후 refetch하여 새로운 제목을 표시하고, 카드 상세 페이지(만약 있다면)도 refetch하여 최신 내용으로 업데이트됩니다.
+    - 적용 규칙: [tanstack-mutation-msw], [cache-inval], [query-key]
+    - 예상 결과
+        - 편집 폼에서 mutate({ title: '새 제목' }) 호출 → PATCH /api/cards/{id}
+        - 성공 시 ['cards'], ['card', id] 쿼리가 stale → 자동 refetch
+        - 리스트와 상세 화면 모두 새 제목으로 갱신됨
     - 테스트 포인트:
-    - 카드 편집 폼에서 `useUpdateCard(card.id)`를 호출하고 mutate 실행 → `/api/cards/[id]`에 PATCH 요청이 나가고, 성공 후 `CardList`의 해당 카드 아이템 내용이 변경되는지 확인.
-    - 편집이 실패하도록 (예: 제목을 빈 값으로 보내어 validation 에러) 테스트하여, `error` 상태로 에러 메시지를 표시하는지 확인.
-    - React Query DevTools에서 `['card', id]` 캐시와 `['cards']` 캐시가 성공 후 stale -> refetch 되는 흐름을 확인.
+        케이스 | 검증 내용
+        정상 수정 | MSW PATCH /api/cards/{id} → 200 mockCard, waitFor → queryClient.getQueryData(['card',id]).title === '새 제목'
+        목록 invalidate | getQueryState(['cards']).isInvalidated === true
+        검증 실패 | MSW 400 응답 시 error 객체 전달, UI 에러 토스트 표시
+        ~~~
+        Bulk(여러 카드) 수정은 Task 18 useUpdateCardsBulk 에서 처리하므로, 이 훅은 단건 전용입니다.
+        ~~~
 
     ### Task 18: `useDeleteCard` 카드 삭제 Mutation 훅 생성
-    - 관련 파일: `/src/hooks/useDeleteCard.ts`
+    - 관련 파일: `/src/hooks/useDeleteCard.ts`, '/src/hooks/useDeleteCardsBulk.ts'
     - 변경 유형: [✅코드 추가]
-    - 설명: 카드를 삭제하는 Mutation 훅입니다. `mutationFn`으로 `cardService.deleteCardAPI`를 호출합니다. onSuccess에서는:
-    - `queryClient.invalidateQueries(['cards'])`: 카드 목록 갱신
-    - `queryClient.removeQueries(['card', cardId])`: 해당 카드의 상세 쿼리를 캐시에서 제거 (상세 페이지 등을 보고 있었다면 캐시 제거로 데이터가 없음을 표시하거나, 필요시 redirect 가능)
-    
-    목록을 refetch하여 제거된 카드가 빠진 최신 리스트를 가져오고, 상세 캐시는 아예 삭제하여 잘못된 데이터 접근을 방지합니다.
-    - 함수 시그니처:
+    - 쿼리 키 정책
+        - ['cards'] invalidate
+        - ['card', id] remove
+    - 설명
+        - 단건 삭제는 리스트/상세 캐시를 즉시 정리한다.
+        - 대량 삭제는 토큰 기반 폴링(useBulkStatus)으로 완료를 감지한 뒤 캐시를 무효화한다.
+
+    - 함수 시그니처: 단건 삭제 useDeleteCard
     ```ts
-    import { useMutation, useQueryClient } from '@tanstack/react-query';
+    /**
+     * @rule   Backyard-ThreeLayer-Standard
+    * @layer  hook
+    * @tag    @tanstack-mutation-msw useDeleteCard
+    */
+
+    'use client';
+
+    import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
     import { deleteCardAPI } from '@/services/cardService';
 
-    export function useDeleteCard(cardId: string): UseMutationResult<void, Error, void> {
+    export function useDeleteCard(
+    cardId: string
+    ): UseMutationResult<void, Error, void> {
         const queryClient = useQueryClient();
+
         return useMutation({
-        mutationFn: () => deleteCardAPI(cardId),
-        onSuccess: () => {
+            mutationKey: ['deleteCard', cardId],
+            mutationFn: () => deleteCardAPI(cardId),
+            onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cards'] });
             queryClient.removeQueries({ queryKey: ['card', cardId] });
-        },
+            },
         });
+    }
+    ```
+    - 함수 시그니처 : 대량 삭제 useDeleteCardsBulk
+    ```ts
+    /**
+     * @rule   Backyard-ThreeLayer-Standard
+    * @layer  hook
+    * @tag    @tanstack-mutation-msw useDeleteCardsBulk
+    */
+
+    'use client';
+
+    import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+    import { deleteCardsBulkAPI } from '@/services/cardService';
+    import { useBulkStatus } from '@/hooks/useBulkStatus';
+
+    export function useDeleteCardsBulk(): UseMutationResult<
+    { token: string },
+    Error,
+    string[]
+    > {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ['deleteCardsBulk'],
+        mutationFn: (ids) => deleteCardsBulkAPI(ids), // POST /api/cards/bulk-delete → 202
+        onSuccess: ({ token }) => {
+        // 1) 상태 폴링
+        useBulkStatus(token, {
+            onCompleted: () => {
+            // 2) 완료 시 목록 캐시 무효화
+            queryClient.invalidateQueries({ queryKey: ['cards'] });
+            },
+        });
+        },
+    });
     }
     ```
     - import 경로 변경:
     ```ts
-    import { useDeleteCard } from '@/hooks/useDeleteCard';
+    /* /src/hooks/useDeleteCard.ts */
+    import { deleteCardAPI } from '@/services/cardService';     // 서비스 함수
+    import { useDeleteCard } from '@/hooks/useDeleteCard';      // 훅 사용시 컴포넌트 + 다른 훅에서 
+
+    /* /src/hooks/useDeleteCardsBulk.ts */
+    import { deleteCardsBulkAPI } from '@/services/cardService';    // 서비스 함수 
+    import { useBulkStatus } from '@/hooks/useBulkStatus';     // 상태 폴링 훅
+    import { useDeleteCardsBulk } from '@/hooks/useDeleteCardsBulk';    // 훅 사용시
     ```
+    - MSW 핸들러 : /src/tests/msw/cardHandlers.ts
     - 적용 규칙: [tanstack-query-hook]
-    - 예상 결과: 이 훅으로 카드 삭제를 수행하면, `CardList` 등이 자동으로 갱신되어 해당 카드가 빠진 목록이 보여집니다. 상세 화면에서 삭제를 수행했다면, 상세 쿼리가 캐시에서 제거되어 더 이상 유효하지 않음을 나타낼 것입니다.
+    - 예상 결과:
+        - 단건 삭제 버튼 : useDeleteCard(card.id).mutate() → 리스트에서 즉시 사라짐, 상세 캐시 제거.
+        - 다건 선택 후 “Delete” : useDeleteCardsBulk(ids).mutate() → 작업 진행률 표시, 완료 후 리스트 새로 고침.
     - 테스트 포인트:
-    - 카드 항목 옆의 삭제 버튼 클릭 시 `useDeleteCard(card.id)` mutation 실행 → `/api/cards/[id]` DELETE 요청 후 `CardList`에서 해당 카드 아이템이 사라지는지 확인.
-    - 이미 삭제된 카드에 대해 또 삭제를 시도하는 등의 경우 에러를 처리하는지 확인.
-    - React Query DevTools로 `['cards']` 쿼리가 invalidate되어 refetch 되는지 확인.
+        케이스 | 단건(useDeleteCard) | 대량(useDeleteCardsBulk)
+        정상 | MSW DELETE /api/cards/{id} → 204, 캐시 invalidate·remove 확인 | MSW POST /api/cards/bulk-delete → 202 + Location, useBulkStatus 폴링 후 ['cards'] invalidate
+        에러 | 404 응답 → error 노출, UI 에러 토스트 | 400 응답 → error 노출
+        DevTools | cards 쿼리 stale → re‑fetch | bulk 쿼리 polling 확인
 
 *   ## C. 태그 관리 리팩터링
 

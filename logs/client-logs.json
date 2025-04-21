@@ -4709,5 +4709,21 @@
     },
     "sessionId": "b1o3bwaza6dd0hzdndijvw",
     "serverTimestamp": "2025-04-21T06:23:11.086Z"
+  },
+  {
+    "timestamp": "2025-04-21T06:45:44.958Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T06:45:46.013Z"
+  },
+  {
+    "timestamp": "2025-04-21T06:52:43.285Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "b1o3bwaza6dd0hzdndijvw",
+    "serverTimestamp": "2025-04-21T06:52:44.477Z"
   }
 ]
