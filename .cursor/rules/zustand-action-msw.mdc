@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # --- START OF FILE: .cursor/rules/zustand-action-msw.mdc ---
 description: Zustand 액션 기반 아키텍처와 MSW 테스팅을 강제합니다.
