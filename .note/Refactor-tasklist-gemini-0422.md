@@ -571,38 +571,37 @@
 ---
 
 *   ## C. 태그 관리 기능 React Query 적용
+    이 섹션 완료 후, 태그 목록 조회, 생성, 삭제 및 태그 필터 기능이 React Query 기반으로 동작해야 합니다.
 
-*이 섹션 완료 후, 태그 목록 조회, 생성, 삭제 및 태그 필터 기능이 React Query 기반으로 동작해야 합니다.*
+    ### Task 22: 태그 API 서비스 모듈 생성 (`/src/services/tagService.ts`)
+    - 관련 파일: `/src/services/tagService.ts`
+    - 변경 유형: [✅코드 추가]
+    - 설명: 태그 관련 API 호출 함수(`fetchTags`, `createTagAPI`, `deleteTagAPI`)를 포함하는 서비스 모듈을 생성합니다.
+    - 함수 시그니처: (Task 23 내용 참고)
+    - import 경로 변경: N/A (신규 파일)
+    - 적용 규칙: [api-service-layer]
+    - 예상 결과: 태그 관련 API 호출 로직이 중앙화됩니다.
+    - 테스트 포인트: 각 서비스 함수가 예상된 API 엔드포인트로 요청을 보내고 응답을 처리하는지 단위 테스트 또는 MSW로 검증.
 
-### Task 22: 태그 API 서비스 모듈 생성 (`/src/services/tagService.ts`)
-- 관련 파일: `/src/services/tagService.ts`
-- 변경 유형: [✅코드 추가]
-- 설명: 태그 관련 API 호출 함수(`fetchTags`, `createTagAPI`, `deleteTagAPI`)를 포함하는 서비스 모듈을 생성합니다.
-- 함수 시그니처: (Task 23 내용 참고)
-- import 경로 변경: N/A (신규 파일)
-- 적용 규칙: [api-service-layer]
-- 예상 결과: 태그 관련 API 호출 로직이 중앙화됩니다.
-- 테스트 포인트: 각 서비스 함수가 예상된 API 엔드포인트로 요청을 보내고 응답을 처리하는지 단위 테스트 또는 MSW로 검증.
+    ### Task 23: `useTags` 태그 목록 조회 훅 생성
+    - 관련 파일: `/src/hooks/useTags.ts`
+    - 변경 유형: [✅코드 추가]
+    - 설명: 모든 태그 목록을 가져오는 `useQuery` 훅을 구현합니다. `queryKey`는 `['tags']`, `queryFn`은 `tagService.fetchTags`를 사용합니다.
+    - 함수 시그니처: (Task 24 내용 참고)
+    - import 경로 변경: `import { useTags } from '@/hooks/useTags';`
+    - 적용 규칙: [tanstack-query-hook], [query-key-structure]
+    - 예상 결과: 앱 전체에서 태그 목록을 일관되게 가져오고 캐싱할 수 있습니다.
+    - 테스트 포인트: `useTags()` 호출 시 `/api/tags` GET 요청 확인, 반환 데이터 확인.
 
-### Task 23: `useTags` 태그 목록 조회 훅 생성
-- 관련 파일: `/src/hooks/useTags.ts`
-- 변경 유형: [✅코드 추가]
-- 설명: 모든 태그 목록을 가져오는 `useQuery` 훅을 구현합니다. `queryKey`는 `['tags']`, `queryFn`은 `tagService.fetchTags`를 사용합니다.
-- 함수 시그니처: (Task 24 내용 참고)
-- import 경로 변경: `import { useTags } from '@/hooks/useTags';`
-- 적용 규칙: [tanstack-query-hook], [query-key-structure]
-- 예상 결과: 앱 전체에서 태그 목록을 일관되게 가져오고 캐싱할 수 있습니다.
-- 테스트 포인트: `useTags()` 호출 시 `/api/tags` GET 요청 확인, 반환 데이터 확인.
-
-### Task 24: `useCreateTag` 태그 생성 Mutation 훅 생성
-- 관련 파일: `/src/hooks/useCreateTag.ts`
-- 변경 유형: [✅코드 추가]
-- 설명: 새 태그 생성을 위한 `useMutation` 훅을 구현합니다. `mutationFn`으로 `tagService.createTagAPI`를 호출하고, 성공 시 `['tags']` 쿼리를 무효화합니다.
-- 함수 시그니처: (Task 25 내용 참고)
-- import 경로 변경: `import { useCreateTag } from '@/hooks/useCreateTag';`
-- 적용 규칙: [tanstack-query-hook], [cache-inval]
-- 예상 결과: 태그 생성 성공 시 태그 목록이 자동으로 갱신됩니다.
-- 테스트 포인트: `mutate('태그명')` 호출 시 `/api/tags` POST 요청 확인, 성공 시 `['tags']` 쿼리 invalidated 확인.
+    ### Task 24: `useCreateTag` 태그 생성 Mutation 훅 생성
+    - 관련 파일: `/src/hooks/useCreateTag.ts`
+    - 변경 유형: [✅코드 추가]
+    - 설명: 새 태그 생성을 위한 `useMutation` 훅을 구현합니다. `mutationFn`으로 `tagService.createTagAPI`를 호출하고, 성공 시 `['tags']` 쿼리를 무효화합니다.
+    - 함수 시그니처: (Task 25 내용 참고)
+    - import 경로 변경: `import { useCreateTag } from '@/hooks/useCreateTag';`
+    - 적용 규칙: [tanstack-query-hook], [cache-inval]
+    - 예상 결과: 태그 생성 성공 시 태그 목록이 자동으로 갱신됩니다.
+    - 테스트 포인트: `mutate('태그명')` 호출 시 `/api/tags` POST 요청 확인, 성공 시 `['tags']` 쿼리 invalidated 확인.
 
 ### Task 25: `useDeleteTag` 태그 삭제 Mutation 훅 생성
 - 관련 파일: `/src/hooks/useDeleteTag.ts`
