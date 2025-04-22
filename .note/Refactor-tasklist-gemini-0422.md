@@ -603,50 +603,50 @@
     - 예상 결과: 태그 생성 성공 시 태그 목록이 자동으로 갱신됩니다.
     - 테스트 포인트: `mutate('태그명')` 호출 시 `/api/tags` POST 요청 확인, 성공 시 `['tags']` 쿼리 invalidated 확인.
 
-### Task 25: `useDeleteTag` 태그 삭제 Mutation 훅 생성
-- 관련 파일: `/src/hooks/useDeleteTag.ts`
-- 변경 유형: [✅코드 추가]
-- 설명: 태그 삭제를 위한 `useMutation` 훅을 구현합니다. `mutationFn`으로 `tagService.deleteTagAPI`를 호출하고, 성공 시 `['tags']` 쿼리를 무효화합니다.
-- 함수 시그니처: (Task 26 내용 참고)
-- import 경로 변경: `import { useDeleteTag } from '@/hooks/useDeleteTag';`
-- 적용 규칙: [tanstack-query-hook], [cache-inval]
-- 예상 결과: 태그 삭제 성공 시 태그 목록이 자동으로 갱신됩니다.
-- 테스트 포인트: `mutate('태그ID')` 호출 시 `/api/tags/[id]` DELETE 요청 확인, 성공 시 `['tags']` 쿼리 invalidated 확인.
+    ### Task 25: `useDeleteTag` 태그 삭제 Mutation 훅 생성
+    - 관련 파일: `/src/hooks/useDeleteTag.ts`
+    - 변경 유형: [✅코드 추가]
+    - 설명: 태그 삭제를 위한 `useMutation` 훅을 구현합니다. `mutationFn`으로 `tagService.deleteTagAPI`를 호출하고, 성공 시 `['tags']` 쿼리를 무효화합니다.
+    - 함수 시그니처: (Task 26 내용 참고)
+    - import 경로 변경: `import { useDeleteTag } from '@/hooks/useDeleteTag';`
+    - 적용 규칙: [tanstack-query-hook], [cache-inval]
+    - 예상 결과: 태그 삭제 성공 시 태그 목록이 자동으로 갱신됩니다.
+    - 테스트 포인트: `mutate('태그ID')` 호출 시 `/api/tags/[id]` DELETE 요청 확인, 성공 시 `['tags']` 쿼리 invalidated 확인.
 
-### Task 26: `TagList` 컴포넌트 리팩토링
-- 관련 파일: `/src/components/tags/TagList.tsx`
-- 변경 유형: [🔁리팩토링]
-- 설명: 태그 목록을 표시하는 컴포넌트에서 `useTags` 훅을 사용하도록 변경합니다. 로딩/에러 상태를 처리하고, 태그 삭제 버튼이 있다면 `useDeleteTag` 훅을 사용하도록 수정합니다.
-- 함수 시그니처: (Task 27 내용 참고 - 일부)
-  ```tsx
-  import { useTags } from '@/hooks/useTags';
-  import { useDeleteTag } from '@/hooks/useDeleteTag'; // 삭제 기능이 있다면
+    ### Task 26: `TagList` 컴포넌트 리팩토링
+    - 관련 파일: `/src/components/tags/TagList.tsx`
+    - 변경 유형: [🔁리팩토링]
+    - 설명: 태그 목록을 표시하는 컴포넌트에서 `useTags` 훅을 사용하도록 변경합니다. 로딩/에러 상태를 처리하고, 태그 삭제 버튼이 있다면 `useDeleteTag` 훅을 사용하도록 수정합니다.
+    - 함수 시그니처: (Task 27 내용 참고 - 일부)
+    ```tsx
+    import { useTags } from '@/hooks/useTags';
+    import { useDeleteTag } from '@/hooks/useDeleteTag'; // 삭제 기능이 있다면
 
-  function TagList() {
-      const { data: tags, isLoading, error } = useTags();
-      const { mutate: deleteTag } = useDeleteTag(); // 삭제 기능 hook
+    function TagList() {
+        const { data: tags, isLoading, error } = useTags();
+        const { mutate: deleteTag } = useDeleteTag(); // 삭제 기능 hook
 
-      const handleDelete = (tagId: string) => {
-          // 확인 절차 후
-          // deleteTag(tagId);
-      };
-      // ... 렌더링 로직 ...
-  }
-  ```
-- import 경로 변경: `useTags`, `useDeleteTag` 추가, `useAppStore` 제거.
-- 적용 규칙: [tanstack-query-hook]
-- 예상 결과: 태그 목록 UI가 React Query 기반으로 동작하며, 태그 추가/삭제 시 자동으로 업데이트됩니다.
-- 테스트 포인트: 태그 목록 정상 렌더링 확인, 태그 삭제 버튼 클릭 시 동작 및 목록 갱신 확인.
+        const handleDelete = (tagId: string) => {
+            // 확인 절차 후
+            // deleteTag(tagId);
+        };
+        // ... 렌더링 로직 ...
+    }
+    ```
+    - import 경로 변경: `useTags`, `useDeleteTag` 추가, `useAppStore` 제거.
+    - 적용 규칙: [tanstack-query-hook]
+    - 예상 결과: 태그 목록 UI가 React Query 기반으로 동작하며, 태그 추가/삭제 시 자동으로 업데이트됩니다.
+    - 테스트 포인트: 태그 목록 정상 렌더링 확인, 태그 삭제 버튼 클릭 시 동작 및 목록 갱신 확인.
 
-### Task 27: 태그 생성 폼 컴포넌트 리팩토링
-- 관련 파일: `/src/components/tags/TagForm.tsx`
-- 변경 유형: [🔁리팩토링]
-- 설명: 태그 생성 폼에서 `useCreateTag` 훅을 사용하도록 변경합니다. 폼 제출 시 `mutate` 함수를 호출하고, 로딩/에러/성공 상태를 UI에 반영합니다.
-- 함수 시그니처: (Task 28 내용 참고)
-- import 경로 변경: `useCreateTag` 추가, `useAppStore` 제거.
-- 적용 규칙: [tanstack-query-hook]
-- 예상 결과: 태그 생성 폼이 React Query 기반으로 동작하며, 성공 시 자동으로 태그 목록이 갱신됩니다.
-- 테스트 포인트: 태그 추가 시 `/api/tags` POST 요청 및 `TagList` 업데이트 확인, 로딩/에러 상태 UI 확인.
+    ### Task 27: 태그 생성 폼 컴포넌트 리팩토링
+    - 관련 파일: `/src/components/tags/TagForm.tsx`
+    - 변경 유형: [🔁리팩토링]
+    - 설명: 태그 생성 폼에서 `useCreateTag` 훅을 사용하도록 변경합니다. 폼 제출 시 `mutate` 함수를 호출하고, 로딩/에러/성공 상태를 UI에 반영합니다.
+    - 함수 시그니처: (Task 28 내용 참고)
+    - import 경로 변경: `useCreateTag` 추가, `useAppStore` 제거.
+    - 적용 규칙: [tanstack-query-hook]
+    - 예상 결과: 태그 생성 폼이 React Query 기반으로 동작하며, 성공 시 자동으로 태그 목록이 갱신됩니다.
+    - 테스트 포인트: 태그 추가 시 `/api/tags` POST 요청 및 `TagList` 업데이트 확인, 로딩/에러 상태 UI 확인.
 
 ### Task 28: 태그 필터 컴포넌트 리팩토링
 - 관련 파일: `/src/components/tags/TagFilter.tsx`

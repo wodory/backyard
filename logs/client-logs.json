@@ -4970,5 +4970,13 @@
     "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
     "sessionId": "47qmnwuvxz418ky8jrquy4",
     "serverTimestamp": "2025-04-22T16:56:41.721Z"
+  },
+  {
+    "timestamp": "2025-04-22T17:04:33.371Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-22T17:04:33.794Z"
   }
 ]
