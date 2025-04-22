@@ -36,10 +36,10 @@ export default mergeConfig(
       pool: 'threads',
       poolOptions: {
         threads: {
-          singleThread: false,
+          singleThread: true,
         },
       },
-      isolate: true,
+      // isolate: true,
       
       // Node.js v20의 Undici 타임아웃 문제 처리
       environmentOptions: {

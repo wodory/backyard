@@ -7,6 +7,9 @@
  */
 
 import { Card, CreateCardInput as CardInput, UpdateCardInput as CardPatch } from "@/types/card";
+import createLogger from '@/lib/logger';
+
+const logger = createLogger('cardService');
 
 /**
  * fetchCards: 카드 목록을 조회하는 함수
@@ -32,7 +35,7 @@ export async function fetchCards(params?: { q?: string; tag?: string; userId?: s
     
     return await response.json();
   } catch (error) {
-    console.error('카드 목록 조회 오류:', error);
+    logger.error('카드 목록 조회 오류:', error);
     throw error;
   }
 }
@@ -52,7 +55,7 @@ export async function fetchCardById(id: string): Promise<Card> {
     
     return await response.json();
   } catch (error) {
-    console.error(`카드 상세 조회 오류 (ID=${id}):`, error);
+    logger.error(`카드 상세 조회 오류 (ID=${id}):`, error);
     throw error;
   }
 }
@@ -78,7 +81,7 @@ export async function createCardsAPI(input: CardInput | CardInput[]): Promise<Ca
     
     return await response.json();
   } catch (error) {
-    console.error('카드 생성 오류:', error);
+    logger.error('카드 생성 오류:', error);
     throw error;
   }
 }
@@ -111,7 +114,7 @@ export async function createCardsBulkAPI(batch: CardInput[]): Promise<{ token: s
     const token = locationHeader.split('/').pop() || '';
     return { token };
   } catch (error) {
-    console.error('대량 카드 생성 오류:', error);
+    logger.error('대량 카드 생성 오류:', error);
     throw error;
   }
 }
@@ -138,7 +141,7 @@ export async function updateCardAPI(id: string, patch: CardPatch): Promise<Card>
     
     return await response.json();
   } catch (error) {
-    console.error(`카드 업데이트 오류 (ID=${id}):`, error);
+    logger.error(`카드 업데이트 오류 (ID=${id}):`, error);
     throw error;
   }
 }
@@ -171,7 +174,7 @@ export async function updateCardsBulkAPI(patches: Array<{id: string, patch: Card
     const token = locationHeader.split('/').pop() || '';
     return { token };
   } catch (error) {
-    console.error('대량 카드 업데이트 오류:', error);
+    logger.error('대량 카드 업데이트 오류:', error);
     throw error;
   }
 }
@@ -191,7 +194,7 @@ export async function deleteCardAPI(id: string): Promise<void> {
       throw new Error(response.statusText || '카드 삭제 중 오류가 발생했습니다.');
     }
   } catch (error) {
-    console.error(`카드 삭제 오류 (ID=${id}):`, error);
+    logger.error(`카드 삭제 오류 (ID=${id}):`, error);
     throw error;
   }
 }
@@ -214,7 +217,7 @@ export async function deleteCardsAPI(ids: string[]): Promise<void> {
       throw new Error(response.statusText || '다수 카드 삭제 중 오류가 발생했습니다.');
     }
   } catch (error) {
-    console.error('다수 카드 삭제 오류:', error);
+    logger.error('다수 카드 삭제 오류:', error);
     throw error;
   }
 }
@@ -247,7 +250,7 @@ export async function deleteCardsBulkAPI(ids: string[]): Promise<{ token: string
     const token = locationHeader.split('/').pop() || '';
     return { token };
   } catch (error) {
-    console.error('대량 카드 삭제 오류:', error);
+    logger.error('대량 카드 삭제 오류:', error);
     throw error;
   }
 } 

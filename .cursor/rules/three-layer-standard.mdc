@@ -150,17 +150,8 @@ graph TD
 
 ---
 
-### 8. 도입 가이드 (팀 공유용)
+### 8. 코드 추가 이후 반드시 해야 할 일
 
-1. **새 기능** 추가 시 체크  
-   - UI → Zustand slice 액션? ✅  
-   - 서버 데이터 필요? → Service fn + Query 훅? ✅  
-   - 테스트 태그 4 종 중 하나 이상 선택? ✅  
-2. **리팩토링** 시 체크  
-   - 서버 state 로직이 Zustand에 남아있으면? → Query 훅으로 이동  
-   - fetch 중복? → Service 함수 재사용  
-   - 테스트가 HTTP 모킹 없이 실제 서버 때리면? → MSW로 교체
-
-
-### 9. 기타
-- Server Side/Client Side 구분을 명확히 할 것. 
+- 파일 헤더에 rule, layer, tag를 주석으로 추가.
+- Server Side/Client Side 구분을 명확히 해서 설명에 추가
+- React Componet부터 시작하는 end-to-end 다이어그램을 mermaid 포멧으로 문서 맨 끝에 주석으로 첨부할 것. 

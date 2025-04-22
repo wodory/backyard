@@ -1,88 +1,71 @@
-/**
- * 파일명: src/hooks/useCreateCard.test.tsx
- * 목적: useCreateCard 훅 테스트
- * 역할: useCreateCard 훅의 기능을 검증하는 테스트
- * 작성일: 2025-04-21
- */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+// src/hooks/useCreateCard.test.tsx
+import React from 'react';
+import { http } from 'msw';
+import { setupServer } from 'msw/node';
+import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useCreateCard } from './useCreateCard';
-import * as cardService from '../services/cardService';
-import { CreateCardInput } from '../types/card';
-import React from 'react';
+import { vi } from 'vitest';
+import { CreateCardInput, Card } from '../types/card';
 
-// 테스트를 위한 wrapper 컴포넌트
-const createWrapper = () => {
-    const queryClient = new QueryClient({
-        defaultOptions: {
-            queries: {
-                retry: false,
-            },
-            mutations: {
-                retry: false,
-            },
-        },
-    });
+// MSW 서버를 테스트 파일 내에서 직접 설정
+const server = setupServer();
 
-    return ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+describe('@tanstack-mutation-msw useCreateCard', () => {
+    // 테스트 전후 서버 라이프사이클
+    beforeAll(() => server.listen());
+    afterEach(() => server.resetHandlers());
+    afterAll(() => server.close());
+
+    // QueryClient Provider wrapper 생성 헬퍼
+    const createWrapper = (qc: QueryClient) => ({ children }: { children: React.ReactNode }) => (
+        <QueryClientProvider client={qc}>{children}</QueryClientProvider>
     );
-};
 
-const mockCardResponse = [{
-    id: 'test-id',
-    title: 'Test Card',
-    content: 'Test Content',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    userId: 'user-1'
-}];
-
-describe('useCreateCard', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    it('invalidateQueries 테스트', () => {
-        // 테스트 데이터로 성공 콜백 직접 호출
-        const mockQueryClient = new QueryClient();
-        const invalidateQueriesSpy = vi.spyOn(mockQueryClient, 'invalidateQueries');
-
-        // useCreateCard 내에서 호출되는 onSuccess 콜백 직접 생성 및 호출
-        const onSuccess = () => {
-            mockQueryClient.invalidateQueries({ queryKey: ['cards'] });
+    it('성공 시 invalidateQueries 호출 및 데이터 반환', async () => {
+        // MSW v2: http.post 사용
+        const mockCard: Card = {
+            id: 'test-1',
+            title: 'Title',
+            content: 'Content',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            userId: 'user-1',
         };
+        server.use(
+            http.post('/api/cards', (req, res, ctx) => res(ctx.status(201), ctx.json(mockCard)))
+        );
 
-        // onSuccess 콜백 호출
-        onSuccess();
+        // 실제 QueryClient + spy
+        const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+        const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+        const wrapper = createWrapper(qc);
 
-        // invalidateQueries가 적절한 쿼리 키로 호출되었는지 확인
-        expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['cards'] });
+        // 훅 실행 및 mutateAsync 호출
+        const { result } = renderHook(() => useCreateCard(), { wrapper });
+        const input: CreateCardInput = { title: 'Title', content: 'Content', userId: 'user-1' };
+        await result.current.mutateAsync(input);
+
+        // onSuccess 처리 기다리기
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        // 데이터 반환 및 invalidate 호출 검증
+        expect(result.current.data).toEqual(mockCard);
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['cards'] });
     });
 
-    it('mutationFn 테스트', () => {
-        // createCardsAPI 목킹
-        const mockCreateCards = vi.fn().mockResolvedValue(mockCardResponse);
-        vi.spyOn(cardService, 'createCardsAPI').mockImplementation(mockCreateCards);
+    it('실패 시 isError 플래그 활성화', async () => {
+        server.use(
+            http.post('/api/cards', (req, res, ctx) => res(ctx.status(500)))
+        );
 
-        // 테스트 데이터
-        const cardInput: CreateCardInput = {
-            title: '새 카드',
-            content: '카드 내용',
-            userId: 'user-1'
-        };
+        const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+        const wrapper = createWrapper(qc);
 
-        // mutation 함수 직접 테스트
-        const mutationFn = (payload: CreateCardInput | CreateCardInput[]) =>
-            cardService.createCardsAPI(payload);
+        const { result } = renderHook(() => useCreateCard(), { wrapper });
 
-        mutationFn(cardInput);
-        expect(mockCreateCards).toHaveBeenCalledWith(cardInput);
+        // 실패 처리 실행 및 에러 상태 대기
+        await result.current.mutateAsync({ title: 'Fail', content: 'Fail', userId: 'user-2' }).catch(() => { });
+        await waitFor(() => expect(result.current.isError).toBe(true));
     });
-}); 
+});
