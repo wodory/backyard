@@ -18,7 +18,6 @@ import CreateCardModal from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { useAppStore } from '@/store/useAppStore';
-import { Card } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import createLogger from '@/lib/logger';
 
@@ -81,10 +80,6 @@ function IdeaMap({
   // useAppStore에서 필요한 상태만 선택적으로 가져오기
   const ideaMapSettings = useAppStore(state => state.ideaMapSettings) as IdeaMapSettings;
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
-
-  // 전역 상태의 카드 목록 가져오기 (노드와 동기화를 위해)
-  const storeCards = useAppStore(state => state.cards);
-  logger.debug('전역 상태 카드 목록:', { cardCount: storeCards.length });
 
   // useIdeaMapStore에서 필요한 상태와 액션만 선택적으로 가져오기
   const ideaMapStoreNodes = useIdeaMapStore(state => state.nodes);
@@ -297,42 +292,28 @@ function IdeaMap({
     }
   }, [reactFlowInstance, viewportToRestore]);
 
-  // 카드 목록 변경 감지 및 노드 업데이트 - 기존 코드 개선
+  // 카드-노드 동기화 - 기존 코드 개선
   useEffect(() => {
     logger.debug('카드-노드 동기화 Effect, 상태:', {
-      cardCount: storeCards.length,
       nodeCount: ideaMapStoreNodes.length,
       hasReactFlowInstance: !!reactFlowInstance
     });
 
-    // 카드와 노드 동기화 함수
-    const syncCardsAndNodes = () => {
-      logger.debug('카드-노드 동기화 실행:', {
-        카드: storeCards.length,
-        노드: ideaMapStoreNodes.length
-      });
+    // 초기 마운트시 노드 동기화
+    if (reactFlowInstance && ideaMapStoreNodes.length === 0) {
+      logger.debug('노드가 없음 - 데이터 동기화 시도');
 
-      const { useIdeaMapStore } = require('@/store/useIdeaMapStore');
-      useIdeaMapStore.getState().syncCardsWithNodes(true);
-    };
+      // 동기화 함수
+      const syncNodesFromStore = () => {
+        const { useIdeaMapStore } = require('@/store/useIdeaMapStore');
+        useIdeaMapStore.getState().syncCardsWithNodes(true);
+      };
 
-    // 컴포넌트가 마운트된 후 reactFlowInstance가 준비되었고 카드가 있는 경우
-    if (reactFlowInstance && storeCards.length > 0) {
-      // 동기화가 필요한 조건 확인
-      const needsSync = ideaMapStoreNodes.length === 0 ||
-        storeCards.length !== ideaMapStoreNodes.length;
-
-      if (needsSync) {
-        logger.debug('카드-노드 동기화가 필요:', {
-          cardCount: storeCards.length,
-          nodeCount: ideaMapStoreNodes.length
-        });
-        // 약간의 지연 후 동기화 실행 (다른 상태 변경과의 충돌 방지)
-        const timeoutId = setTimeout(syncCardsAndNodes, 100);
-        return () => clearTimeout(timeoutId);
-      }
+      // 약간의 지연 후 동기화 실행
+      const timeoutId = setTimeout(syncNodesFromStore, 100);
+      return () => clearTimeout(timeoutId);
     }
-  }, [storeCards.length, ideaMapStoreNodes.length, reactFlowInstance]);
+  }, [ideaMapStoreNodes.length, reactFlowInstance]);
 
   // 저장되지 않은 변경사항이 있을 때 페이지 이탈 경고
   useEffect(() => {
@@ -378,7 +359,7 @@ function IdeaMap({
   }, [user?.id, isAuthLoading, loadIdeaMapData, loadAndApplyIdeaMapSettings]);
 
   // 엣지 드롭 후 카드 생성 처리
-  const handleEdgeDropCardCreated = useCallback((card: Card) => {
+  const handleEdgeDropCardCreated = useCallback((card: any) => {
     logger.debug('엣지 드롭 후 카드 생성:', {
       cardId: card.id,
       position: edgeDropPosition,
@@ -491,7 +472,7 @@ function IdeaMap({
   }, []);
 
   // 카드 생성 후 처리
-  const handleModalCardCreated = useCallback((card: Card) => {
+  const handleModalCardCreated = useCallback((card: any) => {
     logger.debug('모달에서 카드 생성:', { cardId: card.id, title: card.title });
     handleCardCreated(card);
     setIsCreateModalOpen(false);

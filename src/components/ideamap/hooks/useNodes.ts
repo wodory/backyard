@@ -115,11 +115,11 @@ export function useNodeClickHandlers({
     if (!(event.ctrlKey || event.metaKey)) {
       // 선택된 카드가 있을 때만 토스트 표시 및 선택 해제
       if (selectedCardIds.length > 0) {
-        if (selectedCardIds.length > 1) {
-          toast.info(`${selectedCardIds.length}개 카드 선택이 해제되었습니다.`);
-        } else {
-          toast.info('카드 선택이 해제되었습니다.');
-        }
+        // if (selectedCardIds.length > 1) {
+        //   toast.info(`${selectedCardIds.length}개 카드 선택이 해제되었습니다.`);
+        // } else {
+        //   toast.info('카드 선택이 해제되었습니다.');
+        // }
         
         // 선택 해제
         clearSelectedCards();

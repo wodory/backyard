@@ -3,25 +3,18 @@
  * 목적: 카드 삭제 버튼 컴포넌트 테스트
  * 역할: 카드 삭제 기능을 테스트
  * 작성일: 2025-03-29
- * 수정일: 2024-05-07 : Triple-slash 참조 제거 및 import 문으로 변경
- * 수정일: 2025-04-09
- * 수정일: 2025-04-01
- * 수정일: 2025-04-10 : API 호출 테스트를 위한 구현 방식 변경 및 안정적인 테스트 구현
- * 수정일: 2025-04-11 : 컴포넌트 UI 상호작용 테스트 추가로 코드 커버리지 개선
- * 수정일: 2025-04-12 : 비동기 테스트 안정성 개선 및 타임아웃 설정 추가
- * 수정일: 2025-04-12 : 다이얼로그 상호작용 문제 해결 및 테스트 방식 리팩토링
- * 수정일: 2025-04-12 : act 경고 해결 및 테스트 안정성 개선을 위해 테스트 전략 변경
- * 수정일: 2025-05-16 : triple-slash reference를 import 문으로 변경
- * 수정일: 2025-05-19 : 린터 오류 수정 (사용하지 않는 import 제거, import 순서 변경)
+ * 수정일: 2025-04-23 : React Query 리팩토링으로 인한 테스트 업데이트
  */
 import React from 'react';
 
-import { render, screen } from '@testing-library/react';
-import { toast } from 'sonner';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+// import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
 import DeleteButton, { callIfExists } from './DeleteButton';
+import { useDeleteCard } from '@/hooks/useDeleteCard';
 
 // 모킹 설정
 const mockPush = vi.fn();
@@ -31,52 +24,56 @@ vi.mock('next/navigation', () => ({
   })
 }));
 
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn()
-  }
+// vi.mock('sonner', () => ({
+//   toast: {
+//     success: vi.fn(),
+//     error: vi.fn()
+//   }
+// }));
+
+// useDeleteCard 훅 모킹
+const mockMutate = vi.fn();
+let mockIsPending = false;
+let mockIsError = false;
+let mockIsSuccess = false;
+
+vi.mock('@/hooks/useDeleteCard', () => ({
+  useDeleteCard: vi.fn()
 }));
 
-// Dialog 모킹으로 테스트 안정성 확보
+// Dialog 컴포넌트 모킹 개선
 vi.mock('@/components/ui/dialog', () => {
   return {
-    Dialog: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog">{children}</div>,
-    DialogContent: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog-content">{children}</div>,
-    DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogFooter: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog-footer">{children}</div>,
-    DialogTrigger: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog-trigger">{children}</div>,
-    DialogClose: ({ children }: { children: React.ReactNode }) => <div data-testid="dialog-close">{children}</div>,
+    Dialog: ({ children, open, onOpenChange }: { children: React.ReactNode, open?: boolean, onOpenChange?: (open: boolean) => void }) => (
+      <div data-testid="dialog" data-open={open}>{children}</div>
+    ),
+    DialogTrigger: ({ children, asChild }: { children: React.ReactNode, asChild?: boolean }) => (
+      <div data-testid="dialog-trigger" onClick={() => document.dispatchEvent(new Event('dialog-open'))}>
+        {children}
+      </div>
+    ),
+    DialogContent: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="dialog-content">{children}</div>
+    ),
+    DialogHeader: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="dialog-header">{children}</div>
+    ),
+    DialogTitle: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="dialog-title">{children}</div>
+    ),
+    DialogDescription: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="dialog-description">{children}</div>
+    ),
+    DialogFooter: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="dialog-footer">{children}</div>
+    ),
+    DialogClose: ({ children, asChild }: { children: React.ReactNode, asChild?: boolean }) => (
+      <div data-testid="dialog-close" onClick={() => document.dispatchEvent(new Event('dialog-close'))}>
+        {children}
+      </div>
+    ),
   };
 });
-
-// 테스트 유틸리티 함수
-// 각각의 모킹 fetch 응답 패턴
-const mockFetchSuccess = () => {
-  global.fetch = vi.fn().mockImplementation(() =>
-    Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({ message: '카드가 성공적으로 삭제되었습니다.' })
-    })
-  );
-};
-
-const mockFetchError = (errorMessage = '카드 삭제에 실패했습니다.') => {
-  global.fetch = vi.fn().mockImplementation(() =>
-    Promise.resolve({
-      ok: false,
-      json: () => Promise.resolve({ error: errorMessage })
-    })
-  );
-};
-
-const mockFetchNetworkError = () => {
-  global.fetch = vi.fn().mockImplementation(() =>
-    Promise.reject(new Error('네트워크 오류'))
-  );
-};
 
 // 테스트를 위한 유틸리티 함수
 describe('callIfExists', () => {
@@ -94,15 +91,59 @@ describe('callIfExists', () => {
 describe('DeleteButton', () => {
   const cardId = '123abc';
 
+  // Dialog 이벤트 핸들러 함수
+  let dialogOpenHandler: (event: Event) => void;
+  let dialogCloseHandler: (event: Event) => void;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // fetch 기본 모킹
-    mockFetchSuccess();
+
+    // 이벤트 리스너 핸들러 구현
+    dialogOpenHandler = (event: Event) => {
+      const dialogElement = document.querySelector('[data-testid="dialog"]');
+      if (dialogElement) {
+        dialogElement.setAttribute('data-open', 'true');
+      }
+    };
+
+    dialogCloseHandler = (event: Event) => {
+      const dialogElement = document.querySelector('[data-testid="dialog"]');
+      if (dialogElement) {
+        dialogElement.setAttribute('data-open', 'false');
+      }
+    };
+
+    // 다이얼로그 이벤트 리스너 등록
+    document.addEventListener('dialog-open', dialogOpenHandler);
+    document.addEventListener('dialog-close', dialogCloseHandler);
+
+    vi.mocked(useDeleteCard).mockReturnValue({
+      mutate: mockMutate,
+      isPending: mockIsPending,
+      isError: mockIsError,
+      isSuccess: mockIsSuccess,
+      isIdle: true,
+      isPaused: false,
+      data: undefined,
+      error: null,
+      failureCount: 0,
+      failureReason: null,
+      mutateAsync: vi.fn(),
+      reset: vi.fn(),
+      status: 'idle',
+      variables: undefined,
+      context: undefined,
+      submittedAt: 0
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.resetAllMocks();
+
+    // 이벤트 리스너 정리
+    document.removeEventListener('dialog-open', dialogOpenHandler);
+    document.removeEventListener('dialog-close', dialogCloseHandler);
   });
 
   describe('렌더링 테스트', () => {
@@ -113,176 +154,117 @@ describe('DeleteButton', () => {
     });
   });
 
-  describe('API 호출 테스트', () => {
-    // 직접 DeleteButton 컴포넌트의 handleDelete 함수에 접근할 수 없으므로
-    // 테스트 목적으로 비슷한 로직을 구현하여 테스트
-    it('성공 응답 시 올바른 함수들이 호출되어야 함', async () => {
-      // 성공 응답 모킹
-      mockFetchSuccess();
+  describe('삭제 기능 테스트', () => {
+    it('삭제 버튼 클릭 시 다이얼로그가 열려야 함', async () => {
+      render(<DeleteButton cardId={cardId} />);
 
-      const mockSuccessCallback = vi.fn();
-      const mockSetIsDeleting = vi.fn();
-      const mockSetOpen = vi.fn();
+      // 삭제 버튼 클릭
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      fireEvent.click(deleteButton);
 
-      // DeleteButton 컴포넌트의 handleDelete 함수와 유사한 로직 구현
-      const handleDelete = async () => {
-        mockSetIsDeleting(true);
+      // 다이얼로그 컨텐츠 검증
+      expect(screen.getByTestId('dialog-content')).toBeInTheDocument();
+      expect(screen.getByTestId('dialog-description')).toBeInTheDocument();
+      expect(screen.getByText('이 카드를 정말로 삭제하시겠습니까?')).toBeInTheDocument();
+    });
 
-        try {
-          // API 호출
-          const response = await fetch(`/api/cards/${cardId}`, {
-            method: "DELETE",
-          });
+    it('확인 버튼 클릭 시 useDeleteCard.mutate가 호출되어야 함', async () => {
+      render(<DeleteButton cardId={cardId} />);
 
-          // 실패 응답 처리
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "카드 삭제에 실패했습니다.");
-          }
+      // 삭제 버튼 클릭하여 다이얼로그 열기
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      fireEvent.click(deleteButton);
 
-          mockSetOpen(false);
-          toast.success("카드가 성공적으로 삭제되었습니다.");
-          mockPush("/cards");
-          mockSuccessCallback();
+      // 삭제 확인 버튼 클릭
+      const confirmDeleteButton = screen.getByRole('button', { name: '삭제' });
+      fireEvent.click(confirmDeleteButton);
 
-        } catch (error) {
-          console.error("Error deleting card:", error);
+      // mutate 호출 확인
+      expect(mockMutate).toHaveBeenCalled();
+    });
 
-          toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
-          mockSetOpen(false);
+    it('삭제 성공 시 성공 콜백이 실행되어야 함', () => {
+      const mockOnSuccessfulDelete = vi.fn();
 
-        } finally {
-          mockSetIsDeleting(false);
-        }
-      };
+      // 성공 콜백 시뮬레이션
+      render(<DeleteButton cardId={cardId} onSuccessfulDelete={mockOnSuccessfulDelete} />);
 
-      // 함수 직접 호출
-      await handleDelete();
+      // mutate의 onSuccess 콜백 수동 실행 시뮬레이션
+      const onSuccess = mockMutate.mock.calls[0]?.[1]?.onSuccess;
+      if (onSuccess) onSuccess();
 
-      // 단언
-      expect(global.fetch).toHaveBeenCalledWith(`/api/cards/${cardId}`, {
-        method: "DELETE",
-      });
-      expect(mockSetIsDeleting).toHaveBeenCalledWith(true);
-      expect(mockSetIsDeleting).toHaveBeenCalledWith(false);
-      expect(mockSetOpen).toHaveBeenCalledWith(false);
-      expect(toast.success).toHaveBeenCalledWith("카드가 성공적으로 삭제되었습니다.");
+      // 성공 시의 동작 검증
       expect(mockPush).toHaveBeenCalledWith("/cards");
-      expect(mockSuccessCallback).toHaveBeenCalled();
+      expect(mockOnSuccessfulDelete).toHaveBeenCalled();
     });
 
-    it('API 오류 응답 시 에러 처리가 올바르게 동작해야 함', async () => {
-      const errorMessage = '카드 삭제에 실패했습니다';
-      // 에러 응답 모킹
-      mockFetchError(errorMessage);
+    it('삭제 실패 시 에러 처리가 올바르게 동작해야 함', () => {
+      const testError = new Error('테스트 에러');
 
-      const mockSetIsDeleting = vi.fn();
-      const mockSetOpen = vi.fn();
+      render(<DeleteButton cardId={cardId} />);
 
-      // DeleteButton 컴포넌트의 handleDelete 함수와 유사한 로직 구현
-      const handleDelete = async () => {
-        mockSetIsDeleting(true);
+      // 삭제 버튼 클릭하여 다이얼로그 열기
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      fireEvent.click(deleteButton);
 
-        try {
-          // API 호출
-          const response = await fetch(`/api/cards/${cardId}`, {
-            method: "DELETE",
-          });
+      // 삭제 확인 버튼 클릭
+      const confirmDeleteButton = screen.getByRole('button', { name: '삭제' });
+      fireEvent.click(confirmDeleteButton);
 
-          // 실패 응답 처리
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "카드 삭제에 실패했습니다.");
-          }
+      // onError 콜백 수동 실행 시뮬레이션
+      const onError = mockMutate.mock.calls[0]?.[1]?.onError;
+      if (onError) onError(testError);
 
-          mockSetOpen(false);
-          toast.success("카드가 성공적으로 삭제되었습니다.");
-          mockPush("/cards");
-
-        } catch (error) {
-          console.error("Error deleting card:", error);
-
-          toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
-          mockSetOpen(false);
-
-        } finally {
-          mockSetIsDeleting(false);
-        }
-      };
-
-      // spy를 사용하여 console.error 호출을 확인
-      const consoleSpy = vi.spyOn(console, 'error');
-
-      // 함수 직접 호출
-      await handleDelete();
-
-      // 단언
-      expect(global.fetch).toHaveBeenCalledWith(`/api/cards/${cardId}`, {
-        method: "DELETE",
-      });
-      expect(mockSetIsDeleting).toHaveBeenCalledWith(true);
-      expect(mockSetIsDeleting).toHaveBeenCalledWith(false);
-      expect(mockSetOpen).toHaveBeenCalledWith(false);
-      expect(toast.error).toHaveBeenCalledWith(errorMessage);
-      expect(mockPush).not.toHaveBeenCalled(); // 오류 시 리디렉션 없음
-      expect(consoleSpy).toHaveBeenCalled();
-
-      // 스파이 복원
-      consoleSpy.mockRestore();
+      // 에러 처리 검증
+      expect(mockPush).not.toHaveBeenCalled(); // 에러 시 리디렉션 없음
     });
 
-    it('네트워크 오류 발생 시 오류 처리가 올바르게 동작해야 함', async () => {
-      // 네트워크 오류 모킹
-      mockFetchNetworkError();
-
-      const mockSetIsDeleting = vi.fn();
-      const mockSetOpen = vi.fn();
-
-      // DeleteButton 컴포넌트의 handleDelete 함수와 유사한 로직 구현
-      const handleDelete = async () => {
-        mockSetIsDeleting(true);
-
-        try {
-          // API 호출
-          const response = await fetch(`/api/cards/${cardId}`, {
-            method: "DELETE",
-          });
-
-          // 실패 응답 처리
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "카드 삭제에 실패했습니다.");
-          }
-
-          mockSetOpen(false);
-          toast.success("카드가 성공적으로 삭제되었습니다.");
-          mockPush("/cards");
-
-        } catch (error) {
-          console.error("Error deleting card:", error);
-
-          toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
-          mockSetOpen(false);
-
-        } finally {
-          mockSetIsDeleting(false);
-        }
-      };
-
-      // 함수 직접 호출
-      await handleDelete();
-
-      // 단언
-      expect(global.fetch).toHaveBeenCalledWith(`/api/cards/${cardId}`, {
-        method: "DELETE",
+    it('로딩 상태일 때 삭제 버튼이 비활성화되어야 함', () => {
+      // 로딩 상태로 훅 모킹 재설정
+      vi.mocked(useDeleteCard).mockReturnValue({
+        mutate: mockMutate,
+        isPending: true,
+        isError: false,
+        isSuccess: false,
+        isIdle: false,
+        isPaused: false,
+        data: undefined,
+        error: null,
+        failureCount: 0,
+        failureReason: null,
+        mutateAsync: vi.fn(),
+        reset: vi.fn(),
+        status: 'pending',
+        variables: undefined,
+        context: undefined,
+        submittedAt: 0
       });
-      expect(mockSetIsDeleting).toHaveBeenCalledWith(true);
-      expect(mockSetIsDeleting).toHaveBeenCalledWith(false);
-      expect(mockSetOpen).toHaveBeenCalledWith(false);
-      expect(toast.error).toHaveBeenCalledWith('네트워크 오류');
-      expect(mockPush).not.toHaveBeenCalled(); // 오류 시 리디렉션 없음
+
+      render(<DeleteButton cardId={cardId} />);
+
+      // 삭제 버튼 클릭하여 다이얼로그 열기
+      const deleteButton = screen.getByRole('button', { name: '카드 삭제' });
+      fireEvent.click(deleteButton);
+
+      // 다이얼로그 내부의 로딩 상태의 버튼 확인
+      const loadingButton = screen.getByText('삭제 중...');
+      expect(loadingButton).toBeInTheDocument();
+      expect(loadingButton.closest('button')).toHaveAttribute('disabled');
+    });
+
+    it('특정 ID를 가진 카드를 삭제하는 기능이 있어야 함', () => {
+      // given
+      render(<DeleteButton cardId={cardId} />);
+
+      // when
+      const deleteButton = screen.getByRole('button', { name: /삭제/ });
+      fireEvent.click(deleteButton);
+
+      const confirmButton = screen.getByRole('button', { name: /확인/ });
+      fireEvent.click(confirmButton);
+
+      // then
+      expect(mockMutate).toHaveBeenCalled();
     });
   });
-
-  // 여기서부터 UI 상호작용 테스트가 이어질 수 있음
 }); 

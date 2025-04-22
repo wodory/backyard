@@ -7,6 +7,7 @@
  * 수정일: 2025-04-17 : 렌더링 최적화 (불필요한 리렌더링 방지)
  * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
  * 수정일: 2025-04-19 : 개발 환경에서 useEffect 이중 실행 방지 로직 추가
+ * 수정일: 2025-05-07 : setCards 호출 시 안전하게 처리하도록 수정
  */
 
 import { Edge } from '@xyflow/react';
@@ -77,8 +78,14 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
       const cardData = await response.json();
       logger.debug('API에서 카드 데이터 로드 완료:', { 카드수: cardData.length });
       
-      // 전역 상태에 카드 데이터 저장
-      setCards(cardData);
+      // 전역 상태에 카드 데이터 저장 - 안전하게 처리
+      if (cardData) {
+        setCards(cardData);
+      } else {
+        // 데이터가 null이거나 undefined인 경우 빈 배열로 처리
+        setCards([]);
+        logger.warn('API에서 반환된 카드 데이터가 없거나 유효하지 않습니다. 빈 배열로 설정합니다.');
+      }
       
       // 아이디어맵 스토어에서 노드/엣지 데이터 로드
       logger.debug('아이디어맵 스토어의 loadIdeaMapData 함수 호출');

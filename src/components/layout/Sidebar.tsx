@@ -27,6 +27,10 @@ import {
 } from '@/components/ui/dialog';
 import { Portal } from '@/components/ui/portal';
 import { useAuth } from '@/hooks/useAuth';
+import { useCards } from '@/hooks/useCards';
+import { useCard } from '@/hooks/useCard';
+import { useUpdateCard } from '@/hooks/useUpdateCard';
+import { useDeleteCard } from '@/hooks/useDeleteCard';
 import { useResizable } from '@/hooks/useResizable';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
@@ -35,6 +39,8 @@ import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import type { Card } from '@/types/card';
 import { signOut } from '@/lib/auth';
 import Image from 'next/image';
+import { useQueryClient } from '@tanstack/react-query';
+import { deleteCardAPI } from '@/services/cardService';
 
 
 // 카드 인터페이스 정의
@@ -70,17 +76,20 @@ export function Sidebar({ className }: SidebarProps) {
     selectCard,
     sidebarWidth,
     setSidebarWidth,
-    reactFlowInstance,
-    cards
+    reactFlowInstance
   } = useAppStore();
 
+  // 라인 60-75: useCards 훅 사용
   const auth = useAuth();
 
-  // useIdeaMapStore에서 노드 데이터 가져오기
-  // const ideaMapNodes = useIdeaMapStore(state => state.nodes);
+  // React Query를 사용하여 카드 데이터 가져오기
+  const { data: cards = [], isLoading: cardsLoading, refetch: refetchCards } = useCards();
 
-  // 전역 상태의 cards를 CardItem 타입으로 캐스팅하여 사용
-  // const cardsWithType = cards as CardItem[];
+  // updateCard 훅 가져오기
+  const updateCardMutation = useUpdateCard();
+
+  // deleteCard 훅 가져오기 (필요할 때 내부적으로 호출)
+  const queryClient = useQueryClient();
 
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);
@@ -110,10 +119,10 @@ export function Sidebar({ className }: SidebarProps) {
 
   // 카드 목록 불러오기
   useEffect(() => {
-    if (isSidebarOpen && cards.length === 0) {
-      fetchCards();
+    if (isSidebarOpen) {
+      refetchCards();
     }
-  }, [isSidebarOpen, cards.length]);
+  }, [isSidebarOpen, refetchCards]);
 
   // 선택된 카드 정보 불러오기
   useEffect(() => {
@@ -234,24 +243,6 @@ export function Sidebar({ className }: SidebarProps) {
       setSelectedCardsInfo([]);
     }
   }, [selectedCardIds, reactFlowInstance]);
-
-  async function fetchCards() {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/cards');
-      if (!response.ok) {
-        throw new Error('카드 목록을 불러오는데 실패했습니다.');
-      }
-      const data = await response.json();
-      console.log('[fetchCards] data : ', data);
-      useAppStore.getState().setCards(data);
-    } catch (error) {
-      console.error('Error fetching cards:', error);
-      toast.error('카드 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function fetchCardDetails(cardId: string) {
     try {
@@ -451,18 +442,16 @@ export function Sidebar({ className }: SidebarProps) {
   const handleDeleteCard = async (cardId: string) => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/cards/${cardId}`, {
-        method: "DELETE",
-      });
+      // deleteCardAPI 함수를 직접 사용
+      await deleteCardAPI(cardId);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "카드 삭제에 실패했습니다.");
-      }
+      // 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.removeQueries({ queryKey: ['card', cardId] });
 
       toast.success("카드가 성공적으로 삭제되었습니다.");
-      // 삭제 후 목록 갱신
-      fetchCards();
+
+      // 삭제된 카드가 현재 선택된 카드라면 선택 해제
       if (selectedCardId === cardId) {
         selectCard(null);
       }
@@ -504,7 +493,7 @@ export function Sidebar({ className }: SidebarProps) {
     startResize(e);
   };
 
-  // DocumentViewer 컴포넌트에 전달할 데이터 처리 - 이제 간소화됨
+  // DocumentViewer 컴포넌트에 전달할 데이터 처리 - 타입 안전성 보장
   const documentViewerProps = useMemo(() => {
     if (selectedCardIds.length > 1) {
       // 다중 선택 모드
@@ -514,11 +503,13 @@ export function Sidebar({ className }: SidebarProps) {
         loading: hierarchyLoading
       };
     } else if (selectedCardIds.length === 1 && selectedCard) {
-      // 단일 선택 모드
+      // 단일 선택 모드 - content가 null인 경우 빈 문자열로 처리
+      const cardContent = selectedCard.content || ''; // null인 경우 빈 문자열로 처리
       return {
         cards: [{
-          ...selectedCard,
-          content: selectedCard.content || '' // null인 경우 빈 문자열로 처리
+          id: selectedCard.id,
+          title: selectedCard.title,
+          content: cardContent,
         }],
         isMultiSelection: false,
         loading: false
@@ -547,8 +538,15 @@ export function Sidebar({ className }: SidebarProps) {
   const handleCardUpdated = (updatedCard: any) => {
     console.log('카드 업데이트 완료:', updatedCard);
     if (updatedCard) {
-      // 전역 상태 업데이트 (Canvas 노드도 업데이트되도록)
-      useAppStore.getState().updateCard(updatedCard);
+      // React Query 캐시 업데이트를 위한 뮤테이션 호출
+      updateCardMutation.mutate({
+        id: updatedCard.id,
+        patch: {
+          title: updatedCard.title,
+          content: updatedCard.content,
+          // 필요한 다른 필드들 추가
+        }
+      });
 
       // 현재 선택된 카드가 업데이트된 카드인 경우 로컬 상태도 즉시 업데이트
       if (selectedCardId === updatedCard.id) {
@@ -566,8 +564,6 @@ export function Sidebar({ className }: SidebarProps) {
         );
       }
 
-      // 카드 목록 갱신
-      fetchCards();
       toast.success("카드가 성공적으로 수정되었습니다.");
     }
     setIsEditModalOpen(false);
@@ -680,7 +676,11 @@ export function Sidebar({ className }: SidebarProps) {
             {/* DocumentViewer를 사용하여 단일 카드 내용 표시 */}
             <div className="flex-1 overflow-y-auto">
               <DocumentViewer
-                cards={[selectedCard]}
+                cards={[{
+                  id: selectedCard.id,
+                  title: selectedCard.title,
+                  content: selectedCard.content || ''
+                }]}
                 isMultiSelection={false}
                 loading={loading}
               />

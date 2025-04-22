@@ -13,20 +13,6 @@ import {
   saveIdeaMapSettings
 } from '@/lib/ideamap-utils'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
-import type { CreateCardInput } from '@/types/card'
-
-// 카드 타입 정의 (src/types/card.ts와 일치하도록 수정, API 응답 고려)
-export interface Card {
-  id: string;
-  title: string;
-  content: string | null;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  user?: import('@/types/card').User;
-  cardTags?: Array<{ tag: { id: string; name: string; } }>;
-  [key: string]: any;
-}
 
 // 프로젝트 정보 인터페이스
 export interface Project {
@@ -47,6 +33,10 @@ export interface AppState {
   // 확장된 카드 ID
   expandedCardId: string | null;
   
+  // 카드 데이터 관련 상태
+  cards: any[]; // 전체 카드 목록
+  setCards: (cards: any[]) => void; // 카드 목록 설정 함수
+  
   // 선택 관련 액션들
   selectCard: (cardId: string | null) => void; // 단일 카드 선택 (내부적으로 selectCards 사용)
   selectCards: (cardIds: string[]) => void; // 다중 카드 선택 (주요 액션)
@@ -56,12 +46,6 @@ export interface AppState {
   clearSelectedCards: () => void; // 모든 선택 해제
   // 카드 확장 액션
   toggleExpandCard: (cardId: string) => void; // 카드 확장 토글
-  
-  // 카드 데이터 상태
-  cards: Card[]; // 현재 로드된 카드 목록
-  setCards: (cards: Card[]) => void; // 카드 목록 설정
-  updateCard: (updatedCard: Card) => void; // 단일 카드 업데이트
-  createCard: (input: CreateCardInput) => Promise<Card | null>; // 카드 생성 액션 추가
   
   // 사이드바 상태
   isSidebarOpen: boolean;
@@ -132,6 +116,10 @@ export const useAppStore = create<AppState>()(
       
       // 확장된 카드 ID 초기값
       expandedCardId: null,
+      
+      // 카드 데이터 관련 상태
+      cards: [],
+      setCards: (cards) => set({ cards }),
       
       // 선택 관련 액션들
       selectCards: (cardIds) => {
@@ -231,91 +219,6 @@ export const useAppStore = create<AppState>()(
           // 새로운 카드를 펼침
           set({ expandedCardId: cardId, selectedCardId: cardId, selectedCardIds: [cardId] });
           console.log('[AppStore] 카드 확장:', cardId);
-        }
-      },
-      
-      // 카드 데이터 상태 초기값 및 액션
-      cards: [],
-      setCards: (cards) => set({ cards }),
-      updateCard: async (updatedCard) => {
-        set({ isLoading: true });
-        try {
-          const response = await fetch(`/api/cards/${updatedCard.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedCard)
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(errorData.message || response.statusText);
-          }
-
-          const savedCard = await response.json(); // Assuming API returns the updated card
-
-          set((state) => {
-            const updatedCards = state.cards.map(card =>
-              card.id === savedCard.id ? savedCard : card // Use savedCard from API response
-            );
-            // Also update selection if the updated card was selected
-            const newSelectedCardIds = state.selectedCardIds.includes(savedCard.id) ? [...state.selectedCardIds] : state.selectedCardIds;
-            const newSelectedCardId = state.selectedCardId === savedCard.id ? savedCard.id : state.selectedCardId;
-
-            return {
-              cards: updatedCards,
-              selectedCardIds: newSelectedCardIds,
-              selectedCardId: newSelectedCardId,
-              isLoading: false,
-              error: null
-            };
-          });
-          
-          // 아이디어맵 노드와 동기화 (카드 업데이트 후)
-          const { useIdeaMapStore } = await import('./useIdeaMapStore');
-          useIdeaMapStore.getState().syncCardsWithNodes();
-          
-          // toast.success('카드가 성공적으로 업데이트되었습니다.');
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          set({ error: new Error(errorMessage), isLoading: false }); // Ensure error is an Error object
-          console.error(`카드 업데이트 실패: ${errorMessage}`);
-        }
-      },
-      createCard: async (input) => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await fetch('/api/cards', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(input),
-          });
-
-          if (!response.ok) {
-            let errorMsg = '카드 생성에 실패했습니다.';
-            try {
-              const errorData = await response.json();
-              errorMsg = errorData.error || errorMsg;
-            } catch (e) { /* JSON 파싱 실패 무시 */ }
-            throw new Error(errorMsg);
-          }
-
-          const newCard = await response.json();
-          set((state) => ({
-            cards: [...state.cards, newCard],
-            isLoading: false
-          }));
-          
-          // 아이디어맵 노드와 동기화 (새 카드 생성 후)
-          const { useIdeaMapStore } = await import('./useIdeaMapStore');
-          useIdeaMapStore.getState().syncCardsWithNodes();
-          
-          // toast.success('카드가 성공적으로 생성되었습니다.');
-          return newCard; // Return the created card
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류 발생';
-          set({ error: new Error(errorMessage), isLoading: false });
-          console.error(`카드 생성 실패: ${errorMessage}`);
-          return null; // Return null on failure
         }
       },
       
@@ -522,7 +425,6 @@ export const useAppStore = create<AppState>()(
             selectedCardIds: [],
             selectedCardId: null,
             expandedCardId: null,
-            cards: [], // Optionally clear cards or fetch fresh ones on next login
             projects: [], // 프로젝트 데이터도 초기화
             activeProjectId: null, // 활성 프로젝트 ID도 초기화
             // Reset other relevant states if necessary
@@ -729,7 +631,7 @@ export const useAppStore = create<AppState>()(
         layoutDirection: state.layoutDirection, // Persist layout direction
         activeProjectId: state.activeProjectId, // 활성 프로젝트 ID 저장
         projects: state.projects, // 프로젝트 목록 저장
-        // Do NOT persist: cards, isLoading, error, reactFlowInstance
+        // Do NOT persist: isLoading, error, reactFlowInstance
       }),
       // 버전 관리 (마이그레이션 로직 추가 가능)
       version: 1,
@@ -803,66 +705,21 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   window.appCommands.deleteProject = state.deleteProject;
   window.appCommands.resetAppState = state.resetAppState; // 앱 상태 초기화 명령 추가
   
-  // 카드와 노드 상태 확인을 위한 명령 추가
-  window.appCommands.getCards = () => {
-    return useAppStore.getState().cards; // 카드 목록 가져오기
-  };
-  window.appCommands.getCardNodes = async () => {
-    const { useIdeaMapStore } = await import('./useIdeaMapStore');
-    return useIdeaMapStore.getState().nodes; // 카드 노드 목록 가져오기
-  };
-  
-  // 노드 동기화 수동 실행 명령 추가
-  window.appCommands.syncCardsWithNodes = async (forceRefresh: boolean = true) => {
-    const { useIdeaMapStore } = await import('./useIdeaMapStore');
-    useIdeaMapStore.getState().syncCardsWithNodes(forceRefresh);
-    return useIdeaMapStore.getState().nodes;
-  };
-  
   // 디버깅 유틸리티 함수 추가
   window.appCommands.debugFlow = async () => {
-    const cards = useAppStore.getState().cards;
     const { useIdeaMapStore } = await import('./useIdeaMapStore');
     const nodes = useIdeaMapStore.getState().nodes;
     const rfInstance = useAppStore.getState().reactFlowInstance;
     
     console.group('[debugFlow] 아이디어맵 디버깅 정보');
-    console.log('카드 수:', cards.length);
     console.log('노드 수:', nodes.length);
     console.log('ReactFlow 인스턴스 존재:', !!rfInstance);
-    
-    // 카드 ID와 노드 ID 비교
-    const cardIds = cards.map(card => card.id);
-    const nodeIds = nodes.map(node => node.id);
-    
-    // console.log('🔄 카드 ID와 노드 ID 일치 여부:', 
-    //   JSON.stringify(cardIds.sort()) === JSON.stringify(nodeIds.sort()));
-    
-    // 카드에 있지만 노드에 없는 항목 확인
-    const missingNodes = cardIds.filter(id => !nodeIds.includes(id));
-    if (missingNodes.length > 0) {
-      console.warn('노드가 없는 카드 ID:', missingNodes);
-      console.log('해당 카드 정보:', cards.filter(card => missingNodes.includes(card.id)));
-    }
-    
-    // 노드에 있지만 카드에 없는 항목 확인
-    const orphanNodes = nodeIds.filter(id => !cardIds.includes(id));
-    if (orphanNodes.length > 0) {
-      console.warn('카드가 없는 노드 ID:', orphanNodes);
-      console.log('해당 노드 정보:', nodes.filter(node => orphanNodes.includes(node.id)));
-    }
     
     console.groupEnd();
     
     return {
-      cardsCount: cards.length,
       nodesCount: nodes.length,
-      hasRfInstance: !!rfInstance,
-      syncStatus: {
-        inSync: JSON.stringify(cardIds.sort()) === JSON.stringify(nodeIds.sort()),
-        missingNodes,
-        orphanNodes
-      }
+      hasRfInstance: !!rfInstance
     };
   };
 
@@ -889,18 +746,9 @@ declare global {
       updateProject: (projectId: string, projectData: Partial<Project>) => Promise<Project | null>;
       deleteProject: (projectId: string) => Promise<boolean>;
       resetAppState: () => void;
-      getCards: () => Card[];
-      getCardNodes: () => Promise<any[]>;
-      syncCardsWithNodes: (forceRefresh?: boolean) => Promise<any[]>;
       debugFlow: () => Promise<{
-        cardsCount: number;
         nodesCount: number;
         hasRfInstance: boolean;
-        syncStatus: {
-          inSync: boolean;
-          missingNodes: string[];
-          orphanNodes: string[];
-        }
       }>;
     };
   }

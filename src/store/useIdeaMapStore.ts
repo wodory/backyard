@@ -627,8 +627,8 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           
           return true;
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('레이아웃 저장 실패:', errorMessage, error);
+          // const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+          logger.error('레이아웃 저장 실패:', error);
           return false;
         }
       },
@@ -763,7 +763,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           } else {
             // 낙관적 업데이트 구현 후, 기본값을 로컬 스토리지에 저장하고 바로 DB에도 저장하는 로직 구현 (추가 예정)
             // TODO: 여기서 DEFAULT_IDEAMAP_SETTINGS를 서버에 바로 저장하여 새 사용자 경험 개선 필요
-            log.warn('저장된 아이디어맵 설정이 없어 기본값을 사용합니다');
+            logger.warn('저장된 아이디어맵 설정이 없어 기본값을 사용합니다');
           }
           
           set({ isSettingsLoading: false });
