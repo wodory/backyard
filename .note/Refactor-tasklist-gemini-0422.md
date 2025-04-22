@@ -648,25 +648,25 @@
     - 예상 결과: 태그 생성 폼이 React Query 기반으로 동작하며, 성공 시 자동으로 태그 목록이 갱신됩니다.
     - 테스트 포인트: 태그 추가 시 `/api/tags` POST 요청 및 `TagList` 업데이트 확인, 로딩/에러 상태 UI 확인.
 
-### Task 28: 태그 필터 컴포넌트 리팩토링
-- 관련 파일: `/src/components/tags/TagFilter.tsx`
-- 변경 유형: [🔁리팩토링]
-- 설명: 태그 필터 UI에서 `useTags` 훅으로 태그 목록을 가져오고, 태그 선택 시 URL 파라미터(`?tag=`)를 변경하여 `CardList`와 연동되도록 수정합니다 (`useRouter` 또는 `Link` 사용).
-- 함수 시그니처: (Task 29 내용 참고)
-- import 경로 변경: `useTags` 추가, `useAppStore` 제거.
-- 적용 규칙: [tanstack-query-hook], [query-key-structure]
-- 예상 결과: 태그 필터가 URL 상태 기반으로 동작하며, 선택 시 `CardList`가 자동으로 해당 태그의 카드만 보여줍니다.
-- 테스트 포인트: 필터 버튼 클릭 시 URL 파라미터 변경 및 `CardList` 필터링 확인.
+    ### Task 28: 태그 필터 컴포넌트 리팩토링
+    - 관련 파일: `/src/components/tags/TagFilter.tsx`
+    - 변경 유형: [🔁리팩토링]
+    - 설명: 태그 필터 UI에서 `useTags` 훅으로 태그 목록을 가져오고, 태그 선택 시 URL 파라미터(`?tag=`)를 변경하여 `CardList`와 연동되도록 수정합니다 (`useRouter` 또는 `Link` 사용).
+    - 함수 시그니처: (Task 29 내용 참고)
+    - import 경로 변경: `useTags` 추가, `useAppStore` 제거.
+    - 적용 규칙: [tanstack-query-hook], [query-key-structure]
+    - 예상 결과: 태그 필터가 URL 상태 기반으로 동작하며, 선택 시 `CardList`가 자동으로 해당 태그의 카드만 보여줍니다.
+    - 테스트 포인트: 필터 버튼 클릭 시 URL 파라미터 변경 및 `CardList` 필터링 확인.
 
-### Task 29: `useAppStore`에서 태그 상태 제거 (있는 경우)
-- 관련 파일: `/src/store/useAppStore.ts`
-- 변경 유형: [🗑️코드 삭제]
-- 설명: `useAppStore`에 태그 관련 상태(`tags`, `selectedTag`)나 액션이 있었다면 제거합니다.
-- 함수 시그니처: (Task 30 내용 참고)
-- import 경로 변경: N/A
-- 적용 규칙: [zustand-slice]
-- 예상 결과: 태그 관련 상태는 전역 store에서 완전히 제거됩니다.
-- 테스트 포인트: 앱 빌드 및 실행 시 오류 없는지 확인, `useAppStore.getState()` 결과에 태그 관련 상태 없는지 확인.
+    ### Task 29: `useAppStore`에서 태그 상태 제거 (있는 경우)
+    - 관련 파일: `/src/store/useAppStore.ts`
+    - 변경 유형: [🗑️코드 삭제]
+    - 설명: `useAppStore`에 태그 관련 상태(`tags`, `selectedTag`)나 액션이 있었다면 제거합니다.
+    - 함수 시그니처: (Task 30 내용 참고)
+    - import 경로 변경: N/A
+    - 적용 규칙: [zustand-slice]
+    - 예상 결과: 태그 관련 상태는 전역 store에서 완전히 제거됩니다.
+    - 테스트 포인트: 앱 빌드 및 실행 시 오류 없는지 확인, `useAppStore.getState()` 결과에 태그 관련 상태 없는지 확인.
 
 **(섹션 C 완료 후)** 애플리케이션을 실행하여 태그 목록 조회, 생성, 삭제 및 카드 필터링 기능이 모두 정상적으로 동작하는지 수동으로 테스트합니다.
 

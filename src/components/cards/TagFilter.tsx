@@ -3,6 +3,9 @@
  * 목적: 카드 목록에서 태그 기반 필터링 제공
  * 역할: 선택 가능한 태그 목록을 표시하고 태그 필터링 기능 제공
  * 작성일: 2025-03-27
+ * @rule   three-layer-standard
+ * @layer  tanstack-query-hook
+ * @tag    @tanstack-query-msw fetchTags
  */
 
 'use client';
@@ -18,49 +21,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-
-interface Tag {
-  id: string;
-  name: string;
-  count: number;
-}
+import { useTags } from '@/hooks/useTags';
+import { Tag } from '@/services/tagService';
 
 export function TagFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // React Query 훅을 사용하여 태그 목록 가져오기
+  const { data: tags = [], isLoading, error } = useTags();
 
   // URL에서 현재 선택된 태그 가져오기
   useEffect(() => {
     const tagParam = searchParams.get('tag');
     setSelectedTag(tagParam);
   }, [searchParams]);
-
-  // 태그 목록 가져오기
-  useEffect(() => {
-    async function fetchTags() {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/tags?includeCount=true');
-        if (!response.ok) {
-          throw new Error('태그 목록을 불러오는데 실패했습니다');
-        }
-        
-        const data = await response.json();
-        setTags(data.sort((a: Tag, b: Tag) => b.count - a.count)); // 사용 빈도순 정렬
-      } catch (error) {
-        console.error('태그 로딩 오류:', error);
-        toast.error('태그 목록을 불러오는데 실패했습니다');
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    fetchTags();
-  }, []);
 
   // 태그 클릭 핸들러
   const handleTagClick = (tagName: string) => {
@@ -75,9 +52,14 @@ export function TagFilter() {
     }
   };
 
+  // 에러 처리
+  if (error) {
+    toast.error('태그 목록을 불러오는데 실패했습니다');
+  }
+
   return (
     <div className="mb-4 border rounded-md">
-      <div 
+      <div
         className="p-3 flex justify-between items-center cursor-pointer bg-muted/30"
         onClick={() => setExpanded(!expanded)}
       >
@@ -87,14 +69,14 @@ export function TagFilter() {
         </h3>
         {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </div>
-      
+
       {expanded && (
         <div className="p-3">
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center p-2">
               <Loader2 className="animate-spin" size={18} />
             </div>
-          ) : tags.length === 0 ? (
+          ) : (!tags || tags.length === 0) ? (
             <p className="text-sm text-muted-foreground text-center py-2">
               태그가 없습니다
             </p>
@@ -102,9 +84,9 @@ export function TagFilter() {
             <>
               {selectedTag && (
                 <div className="mb-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="text-xs"
                     onClick={() => handleTagClick(selectedTag)}
                   >
@@ -115,7 +97,7 @@ export function TagFilter() {
               <ScrollArea className="h-[180px] pr-3">
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <Badge 
+                    <Badge
                       key={tag.id}
                       variant={selectedTag === tag.name ? "default" : "outline"}
                       className={cn(
@@ -125,7 +107,7 @@ export function TagFilter() {
                       onClick={() => handleTagClick(tag.name)}
                     >
                       #{tag.name}
-                      <span className="ml-1 opacity-70">({tag.count})</span>
+                      <span className="ml-1 opacity-70">({tag.count || 0})</span>
                     </Badge>
                   ))}
                 </div>
