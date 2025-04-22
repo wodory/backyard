@@ -4,7 +4,7 @@
   - ['three-layer-standard'] 아키텍처를 준수하고 
   - ['three-layer-standard'] 룰에 맞추어 파일 최상단에 @rule, @layer, @tag를 추가한다. 
 
-*   ## A. 인증 개선 & React Query 기본 세팅
+*   ## A. 인증 개선 & React Query 기본 세팅
 
     ### Task 1: 통합 테스트 시나리오 점검 및 보강
     - 관련 파일: (테스트 파일 전반)
@@ -254,17 +254,17 @@
 
     ---
 
-*   ## B. 서비스 계층 구축 + 카드 모듈 React Query 적용
+*   ## B. 서비스 계층 구축 + 카드 모듈 React Query 적용
 
     ### Task 11: 카드 API 서비스 모듈 생성
-    - 관련 파일: `/src/services/cardService.ts`
-    - 변경 유형: [✅코드 추가]
+        - 관련 파일: `/src/services/cardService.ts`
+        - 변경 유형: [✅코드 추가]
     - 설명: 
         - 카드 관련 모든 서버 통신을 한 모듈로 집약한다.
-        - 단건 + 소배치 작업은 기존 /api/cards 엔드포인트, 대량(비동기) 작업은 /api/cards/bulk (202 Accepted) 패턴을 따른다.
-        - 상위(Hooks·Components)는 이 Service 함수를 통해서만 네트워크를 호출한다.
+        - 단건 + 소배치 작업은 기존 /api/cards 엔드포인트, 대량(비동기) 작업은 /api/cards/bulk (202 Accepted) 패턴을 따른다.
+        - 상위(Hooks·Components)는 이 Service 함수를 통해서만 네트워크를 호출한다.
     
-    - 구현 함수 목록 & 시그니처
+    - 구현 함수 목록 & 시그니처
     ```ts
     // /src/services/cardService.ts
     import { Card, CardInput, CardPatch } from '@/types';
@@ -311,21 +311,21 @@
     ids: string[]
     ): Promise<{ token: string }> { /* ... */ }
     ```
-    - 에러 처리 
-        - res.ok 가 false 면 throw new Error(res.statusText).<br>응답 파싱 — return res.json() (필요 시 Zod 검증).
-        - Bulk API 는 202 Accepted + Location 헤더(URL /api/bulk-status/{token})를 기대.
+    - 에러 처리 
+        - res.ok 가 false 면 throw new Error(res.statusText).<br>응답 파싱 — return res.json() (필요 시 Zod 검증).
+        - Bulk API 는 202 Accepted + Location 헤더(URL /api/bulk-status/{token})를 기대.
 
     - 앤드 포인트 매핑
-        함수 | Method / URI | Body 예시
-        fetchCards | GET /api/cards?tag=... | —
-        fetchCardById | GET /api/cards/{id} | —
-        createCardsAPI | POST /api/cards | {…} or [{…},{…}]
-        createCardsBulkAPI | POST /api/cards/bulk | [{…}, …]
-        updateCardAPI | PATCH /api/cards/{id} | { title?: … }
-        updateCardsBulkAPI | PATCH /api/cards/bulk | [ {id, patch}, … ]
-        deleteCardAPI | DELETE /api/cards/{id} | —
-        deleteCardsAPI | DELETE /api/cards?ids=1,2 | —
-        deleteCardsBulkAPI | POST /api/cards/bulk-delete | { ids: [...] }
+        함수 | Method / URI | Body 예시
+        fetchCards | GET /api/cards?tag=... | —
+        fetchCardById | GET /api/cards/{id} | —
+        createCardsAPI | POST /api/cards | {…} or [{…},{…}]
+        createCardsBulkAPI | POST /api/cards/bulk | [{…}, …]
+        updateCardAPI | PATCH /api/cards/{id} | { title?: … }
+        updateCardsBulkAPI | PATCH /api/cards/bulk | [ {id, patch}, … ]
+        deleteCardAPI | DELETE /api/cards/{id} | —
+        deleteCardsAPI | DELETE /api/cards?ids=1,2 | —
+        deleteCardsBulkAPI | POST /api/cards/bulk-delete | { ids: [...] }
 
     - 사용 예시 (import 경로 변경)
     ```ts
@@ -335,17 +335,17 @@
     await cardService.createCardsBulkAPI(manyCards);        // 202 flow
 
     ```
-    - 테스트 포인트 (@service-msw 태그)
-        - **단건 / 배열 POST:** MSW 로 POST /api/cards 핸들러 작성, createCardsAPI([{…},{…}]).length === 2 검사.
-        - **Bulk 202:** POST /api/cards/bulk → 202 + Location 헤더 mock, 반환 토큰이 예상 형식인지 확인.
-        - **오류 케이스:** 404 응답 시 함수가 throw 하는지 검증.
-        - 테스트 파일 위치 /src/services/cardService.test.ts
-        - MSW 핸들러 /src/tests/msw/cardHandlers.ts 에 엔드포인트 추가.
+    - 테스트 포인트 (@service-msw 태그)
+        - **단건 / 배열 POST:** MSW 로 POST /api/cards 핸들러 작성, createCardsAPI([{…},{…}]).length === 2 검사.
+        - **Bulk 202:** POST /api/cards/bulk → 202 + Location 헤더 mock, 반환 토큰이 예상 형식인지 확인.
+        - **오류 케이스:** 404 응답 시 함수가 throw 하는지 검증.
+        - 테스트 파일 위치 /src/services/cardService.test.ts
+        - MSW 핸들러 /src/tests/msw/cardHandlers.ts 에 엔드포인트 추가.
 
     - 예상 결과
-        - 컴포넌트·훅은 직접 fetch 하지 않고 cardService.*만 사용.
-        - Bulk 작업은 토큰→폴링 패턴으로 비동기 진행.
-        - API URI·스키마가 중앙 집중되어 유지보수성이 향상된다.
+        - 컴포넌트·훅은 직접 fetch 하지 않고 cardService.*만 사용.
+        - Bulk 작업은 토큰→폴링 패턴으로 비동기 진행.
+        - API URI·스키마가 중앙 집중되어 유지보수성이 향상된다.
 
     ### Task 12: `useCards` 목록 조회 훅 생성
     - 관련 파일: `/src/hooks/useCards.ts`
@@ -478,12 +478,12 @@
     ---
 
     ### Task 16: `useCreateCard` 카드 생성 Mutation 훅 생성
-    - 관련 파일: `/src/hooks/useCreateCard.ts` (🛠 기존 useCreateCard.ts → 이름·시그니처 변경)
-    - 변경 유형: [✅ 코드 추가] + [🛠 기존 코드 수정]
+    - 관련 파일: `/src/hooks/useCreateCard.ts` (🛠 기존 useCreateCard.ts → 이름·시그니처 변경)
+    - 변경 유형: [✅ 코드 추가] + [🛠 기존 코드 수정]
     - 설명: 
-        - TanStack React Query의 useMutation 훅으로 단일 객체 또는 50 개 이하 배열을 처리한다.
-        - 서비스 함수 cardService.createCardsAPI 를 호출해 /api/cards POST 요청을 보낸다.
-        - 성공 시 queryClient.invalidateQueries({ queryKey: ['cards'] }) 로 카드 목록을 무효화하여 자동 새로고침한다. (추후 낙관적 업데이트나 캐시 직접 조정으로 성능을 높일 수 있지만 1차 리팩터에서는 간단 invalidate 전략 사용.)
+        - TanStack React Query의 useMutation 훅으로 단일 객체 또는 50 개 이하 배열을 처리한다.
+        - 서비스 함수 cardService.createCardsAPI 를 호출해 /api/cards POST 요청을 보낸다.
+        - 성공 시 queryClient.invalidateQueries({ queryKey: ['cards'] }) 로 카드 목록을 무효화하여 자동 새로고침한다. (추후 낙관적 업데이트나 캐시 직접 조정으로 성능을 높일 수 있지만 1차 리팩터에서는 간단 invalidate 전략 사용.)
     - 함수 시그니처:
     ```ts
     /**
@@ -515,22 +515,22 @@
     ```ts
     import { useCreateCards } from '@/hooks/useCreateCards';
     ```
-    - 적용 규칙: [tanstack-query-hook] + [cache-inval]
+    - 적용 규칙: [tanstack-query-hook] + [cache-inval]
     - 예상 결과
         - 폼에서 mutate를 호출하면 /api/cards에 POST가 발생한다.
-        - 성공 시 ['cards'] 쿼리가 invalidated → CardList가 자동으로 최신 목록을 다시 가져온다.
+        - 성공 시 ['cards'] 쿼리가 invalidated → CardList가 자동으로 최신 목록을 다시 가져온다.
     - 테스트 포인트 (@tanstack-mutation-msw)
-        - 단건 payload → MSW 201 응답 → cards 캐시 길이 +1 확인
-        - 배열 2 건 payload → 캐시 +2 확인
-        - 실패(500) 시 error 객체 노출 및 UI 에러 표시(예: Toast)
-        - React Query DevTools에서 mutation 상태(isLoading 등) 및 cards 쿼리 재‑fetch 여부 확인
-        - 주의: 50 개 초과 배치는 Task 17 useCreateCardsBulk 를 사용해야 하며, 이 훅 내부에서 createCardsBulkAPI(202) 로 자동 전환되도록 구현한다.
+        - 단건 payload → MSW 201 응답 → cards 캐시 길이 +1 확인
+        - 배열 2 건 payload → 캐시 +2 확인
+        - 실패(500) 시 error 객체 노출 및 UI 에러 표시(예: Toast)
+        - React Query DevTools에서 mutation 상태(isLoading 등) 및 cards 쿼리 재‑fetch 여부 확인
+        - 주의: 50 개 초과 배치는 Task 17 useCreateCardsBulk 를 사용해야 하며, 이 훅 내부에서 createCardsBulkAPI(202) 로 자동 전환되도록 구현한다.
 
     ### Task 17: `useUpdateCard` 카드 수정 Mutation 훅 생성
     - 관련 파일: `/src/hooks/useUpdateCard.ts`
     - 변경 유형: [✅코드 추가]
     - 설명: 
-        - TanStack React Query의 useMutation 훅으로 단일 카드를 부분 수정한다.
+        - TanStack React Query의 useMutation 훅으로 단일 카드를 부분 수정한다.
         - 서비스 함수 cardService.updateCardAPI 를 호출하고, 성공 시 목록·상세 캐시를 모두 무효화해 UI를 자동 갱신한다.
     - 함수 시그니처:
     ```ts
@@ -565,7 +565,7 @@
     }
     ```
     ```ts
-    CardPatch = Partial<Card> /* title, content, tag 등 선택 필드 */
+    CardPatch = Partial<Card> /* title, content, tag 등 선택 필드 */
     ```
 
     - import 경로 변경:
@@ -574,16 +574,16 @@
     ```
     - 적용 규칙: [tanstack-mutation-msw], [cache-inval], [query-key]
     - 예상 결과
-        - 편집 폼에서 mutate({ title: '새 제목' }) 호출 → PATCH /api/cards/{id}
-        - 성공 시 ['cards'], ['card', id] 쿼리가 stale → 자동 refetch
+        - 편집 폼에서 mutate({ title: '새 제목' }) 호출 → PATCH /api/cards/{id}
+        - 성공 시 ['cards'], ['card', id] 쿼리가 stale → 자동 refetch
         - 리스트와 상세 화면 모두 새 제목으로 갱신됨
     - 테스트 포인트:
         케이스 | 검증 내용
-        정상 수정 | MSW PATCH /api/cards/{id} → 200 mockCard, waitFor → queryClient.getQueryData(['card',id]).title === '새 제목'
+        정상 수정 | MSW PATCH /api/cards/{id} → 200 mockCard, waitFor → queryClient.getQueryData(['card',id]).title === '새 제목'
         목록 invalidate | getQueryState(['cards']).isInvalidated === true
-        검증 실패 | MSW 400 응답 시 error 객체 전달, UI 에러 토스트 표시
+        검증 실패 | MSW 400 응답 시 error 객체 전달, UI 에러 토스트 표시
         ~~~
-        Bulk(여러 카드) 수정은 Task 18 useUpdateCardsBulk 에서 처리하므로, 이 훅은 단건 전용입니다.
+        Bulk(여러 카드) 수정은 Task 18 useUpdateCardsBulk 에서 처리하므로, 이 훅은 단건 전용입니다.
         ~~~
 
     ### Task 18: `useDeleteCard` 카드 삭제 Mutation 훅 생성
@@ -674,15 +674,15 @@
     - MSW 핸들러 : /src/tests/msw/cardHandlers.ts
     - 적용 규칙: [tanstack-query-hook]
     - 예상 결과:
-        - 단건 삭제 버튼 : useDeleteCard(card.id).mutate() → 리스트에서 즉시 사라짐, 상세 캐시 제거.
-        - 다건 선택 후 “Delete” : useDeleteCardsBulk(ids).mutate() → 작업 진행률 표시, 완료 후 리스트 새로 고침.
+        - 단건 삭제 버튼 : useDeleteCard(card.id).mutate() → 리스트에서 즉시 사라짐, 상세 캐시 제거.
+        - 다건 선택 후 “Delete” : useDeleteCardsBulk(ids).mutate() → 작업 진행률 표시, 완료 후 리스트 새로 고침.
     - 테스트 포인트:
         케이스 | 단건(useDeleteCard) | 대량(useDeleteCardsBulk)
-        정상 | MSW DELETE /api/cards/{id} → 204, 캐시 invalidate·remove 확인 | MSW POST /api/cards/bulk-delete → 202 + Location, useBulkStatus 폴링 후 ['cards'] invalidate
-        에러 | 404 응답 → error 노출, UI 에러 토스트 | 400 응답 → error 노출
-        DevTools | cards 쿼리 stale → re‑fetch | bulk 쿼리 polling 확인
+        정상 | MSW DELETE /api/cards/{id} → 204, 캐시 invalidate·remove 확인 | MSW POST /api/cards/bulk-delete → 202 + Location, useBulkStatus 폴링 후 ['cards'] invalidate
+        에러 | 404 응답 → error 노출, UI 에러 토스트 | 400 응답 → error 노출
+        DevTools | cards 쿼리 stale → re‑fetch | bulk 쿼리 polling 확인
 
-*   ## C. 태그 관리 리팩터링
+*   ## C. 태그 관리 리팩터링
 
     ### Task 19: `CreateCardModal` 컴포넌트 리팩토링 (카드 생성)
     - 관련 파일: `/src/components/cards/CreateCardModal.tsx`
@@ -932,7 +932,7 @@
     - 태그가 많아도 페이징 없이 다 가져오는지, 성능에 문제 없는지 확인 (태그 수가 많으면 추후 lazy loading 고려).
     - React Query DevTools에서 `['tags']` 캐시가 생성되는지 확인.
 
-*   ## D. Zustand 스토어 슬라이스 분리 & UI 전용화
+*   ## D. Zustand 스토어 슬라이스 분리 & UI 전용화
 
     ### Task 25: `useCreateTag` 태그 생성 Mutation 훅 생성
     - 관련 파일: `/src/hooks/useCreateTag.ts`
@@ -1153,7 +1153,7 @@
 
     ---
 
-*   ## E. IdeaMap 상태·로직 분리
+*   ## E. IdeaMap 상태·로직 분리
 
     ### Task 31: UI 상태 슬라이스 (`createUiSlice`) 생성
     - 관련 파일: `/src/store/uiSlice.ts`
@@ -1478,7 +1478,7 @@
     - 노드 드래그, 연결 생성/삭제 등의 상호작용이 여전히 작동하는지 확인 (onNodesChange, onEdgesChange, onConnect가 정상 동작).
     - IdeaMapSettings 저장 로직이 사라졌으므로, 더 이상 특정 액션 (예: “맵 저장” 버튼)이 동작하지 않을 수 있습니다. 이 부분은 Task 42에서 Layout 훅으로 대체되거나, 임시로 기능 제거를 용인합니다.
 
-*   ## F. 공통 타입 정의 & 설정 정리
+*   ## F. 공통 타입 정의 & 설정 정리
 
     ### Task 39: `useIdeaMapSync` 훅 생성 (서버-로컬 데이터 동기화)
     - 관련 파일: `/src/hooks/useIdeaMapSync.ts`
@@ -1537,48 +1537,48 @@
     - 관련 파일: `/src/hooks/useIdeaMapInteractions.ts`
     - 변경 유형: [✅코드 추가]
     - 설명: IdeaMap (React Flow) 상호작용을 처리하는 훅을 구현합니다. 여기에는:
-    - 노드 클릭시 호출될 핸들러: `onNodeClick(event, node)` -> 내부에서 `useAppStore`의 `selectCards` 또는 `toggleSelectedCard` 호출. (예: Ctrl/Shift 키 조합 여부에 따라 단일/다중 선택 구분)
-    - 배경(Pane) 클릭 핸들러: `onPaneClick()` -> `clearSelectedCards()` 호출하여 모든 선택 해제.
-    - 드래그 앤 드롭으로 새로운 카드 생성: React Flow에서는 외부 드래그 구현 시 `onDrop` 이벤트로 새 노드를 추가합니다. 여기서 `useCreateCard` Mutation을 호출하여 DB에 카드 생성. 생성이 성공하면 `useIdeaMapSync` 통해 노드 추가됨. *구현:* `onDrop(event)` -> 드롭 좌표 계산 -> `createCard({ title: '새 카드', x, y })` (x, y를 payload에 포함시켜 API가 위치 저장 가능하게 할 수도 있음; 현재는 위치 저장없으니 무시하거나 추후 Task 42 활용).
-    - 엣지 연결 핸들러: `onConnect(connection)` -> 현재 edges는 로컬 상태라 `useIdeaMapStore.getState().setEdges(addEdge(...))`로 즉시 추가. (만약 서버에도 edge 저장한다면 `useCreateEdge` mutation을 호출하는 분기 처리; 현재는 로컬만.)
-    - 기타: 노드 드래그 끝 이벤트 (onNodeDragStop) 등을 받아 필요하면 layout 저장하도록 처리(이 부분은 useIdeaMapLayout에서 담당).
+        - 노드 클릭시 호출될 핸들러: `onNodeClick(event, node)` -> 내부에서 `useAppStore`의 `selectCards` 또는 `toggleSelectedCard` 호출. (예: Ctrl/Shift 키 조합 여부에 따라 단일/다중 선택 구분)
+        - 배경(Pane) 클릭 핸들러: `onPaneClick()` -> `clearSelectedCards()` 호출하여 모든 선택 해제.
+        - 드래그 앤 드롭으로 새로운 카드 생성: React Flow에서는 외부 드래그 구현 시 `onDrop` 이벤트로 새 노드를 추가합니다. 여기서 `useCreateCard` Mutation을 호출하여 DB에 카드 생성. 생성이 성공하면 `useIdeaMapSync` 통해 노드 추가됨. *구현:* `onDrop(event)` -> 드롭 좌표 계산 -> `createCard({ title: '새 카드', x, y })` (x, y를 payload에 포함시켜 API가 위치 저장 가능하게 할 수도 있음; 현재는 위치 저장없으니 무시하거나 추후 Task 42 활용).
+        - 엣지 연결 핸들러: `onConnect(connection)` -> 현재 edges는 로컬 상태라 `useIdeaMapStore.getState().setEdges(addEdge(...))`로 즉시 추가. (만약 서버에도 edge 저장한다면 `useCreateEdge` mutation을 호출하는 분기 처리; 현재는 로컬만.)
+        - 기타: 노드 드래그 끝 이벤트 (onNodeDragStop) 등을 받아 필요하면 layout 저장하도록 처리(이 부분은 useIdeaMapLayout에서 담당).
     - 함수 시그니처:
-    ```ts
-    import { useAppStore } from '@/store/useAppStore';
-    import { useCreateCard } from '@/hooks/useCreateCard';
-    import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+        ```ts
+        import { useAppStore } from '@/store/useAppStore';
+        import { useCreateCard } from '@/hooks/useCreateCard';
+        import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
-    export function useIdeaMapInteractions() {
-        const selectCards = useAppStore(state => state.selectCards);
-        const toggleSelectedCard = useAppStore(state => state.toggleSelectedCard);
-        const clearSelectedCards = useAppStore(state => state.clearSelectedCards);
-        const { mutate: createCard } = useCreateCard();
-        const setEdges = useIdeaMapStore(state => state.setEdges);
-        const edges = useIdeaMapStore(state => state.edges);
+        export function useIdeaMapInteractions() {
+            const selectCards = useAppStore(state => state.selectCards);
+            const toggleSelectedCard = useAppStore(state => state.toggleSelectedCard);
+            const clearSelectedCards = useAppStore(state => state.clearSelectedCards);
+            const { mutate: createCard } = useCreateCard();
+            const setEdges = useIdeaMapStore(state => state.setEdges);
+            const edges = useIdeaMapStore(state => state.edges);
 
-        return {
-        onNodeClick: (_, node) => {
-            // Ctrl 키 눌렸는지 등은 node 객체나 글로벌 이벤트 통해 확인 필요
-            // 예시: 다중선택 지원
-            const multiSelect = window.event && (window.event as MouseEvent).ctrlKey;
-            multiSelect ? toggleSelectedCard(node.id) : selectCards([node.id]);
-        },
-        onPaneClick: () => clearSelectedCards(),
-        onDrop: (event) => {
-            const reactFlowBounds = event.currentTarget.getBoundingClientRect();
-            const position = {
-            x: event.clientX - reactFlowBounds.left,
-            y: event.clientY - reactFlowBounds.top
+            return {
+            onNodeClick: (_, node) => {
+                // Ctrl 키 눌렸는지 등은 node 객체나 글로벌 이벤트 통해 확인 필요
+                // 예시: 다중선택 지원
+                const multiSelect = window.event && (window.event as MouseEvent).ctrlKey;
+                multiSelect ? toggleSelectedCard(node.id) : selectCards([node.id]);
+            },
+            onPaneClick: () => clearSelectedCards(),
+            onDrop: (event) => {
+                const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+                const position = {
+                x: event.clientX - reactFlowBounds.left,
+                y: event.clientY - reactFlowBounds.top
+                };
+                createCard({ title: 'New Card', position }); // position 정보와 함께 카드 생성 (API에서 활용 가능)
+            },
+            onConnect: (connection) => {
+                setEdges([...edges, connection]);
+                // (만약 edges를 서버에 저장할 경우 여기서 useCreateEdge().mutate 호출)
+            }
             };
-            createCard({ title: 'New Card', position }); // position 정보와 함께 카드 생성 (API에서 활용 가능)
-        },
-        onConnect: (connection) => {
-            setEdges([...edges, connection]);
-            // (만약 edges를 서버에 저장할 경우 여기서 useCreateEdge().mutate 호출)
         }
-        };
-    }
-    ```
+        ```
     - import 경로 변경:
     ```ts
     import { useIdeaMapInteractions } from '@/hooks/useIdeaMapInteractions';
@@ -1586,20 +1586,20 @@
     - 적용 규칙: [zustand-slice], [tanstack-query-hook]
     - 예상 결과: IdeaMap 관련 이벤트 처리가 한 곳에 모입니다. IdeaMap 컴포넌트는 이 훅으로부터 이벤트 핸들러들을 받아 React Flow 컴포넌트에 넘겨주기만 하면 됩니다. 
     - 테스트 포인트:
-    - 맵에서 노드 클릭 시 카드 선택 상태가 변경되고 사이드바에 반영되는지 확인.
-    - 맵 배경 클릭 시 선택이 모두 해제되는지 확인.
-    - 다른 컴포넌트(예: CardList)에서 카드 선택 시 IdeaMap에서도 선택 표시(하이라이트)가 연동되려면, React Flow `selected` 속성을 `selectedCardIds`와 비교해 적용해야 함. 이 부분도 IdeaMap.tsx에서 처리 가능 (ex: `selected={selectedCardIds.includes(node.id)}`).
-    - 노드 드롭으로 새로운 카드 생성: 맵에 빈 영역에 드롭 (예: 외부에서 아이콘을 드래그) → 새 카드 생성되고 노드/리스트에 추가되는지 확인.
-    - 노드 연결 생성: 한 노드에서 다른 노드로 엣지 연결 시 엣지가 즉시 나타나는지 확인 (현재는 로컬 추가이므로 즉시 반영).
+        - 맵에서 노드 클릭 시 카드 선택 상태가 변경되고 사이드바에 반영되는지 확인.
+        - 맵 배경 클릭 시 선택이 모두 해제되는지 확인.
+        - 다른 컴포넌트(예: CardList)에서 카드 선택 시 IdeaMap에서도 선택 표시(하이라이트)가 연동되려면, React Flow `selected` 속성을 `selectedCardIds`와 비교해 적용해야 함. 이 부분도 IdeaMap.tsx에서 처리 가능 (ex: `selected={selectedCardIds.includes(node.id)}`).
+        - 노드 드롭으로 새로운 카드 생성: 맵에 빈 영역에 드롭 (예: 외부에서 아이콘을 드래그) → 새 카드 생성되고 노드/리스트에 추가되는지 확인.
+        - 노드 연결 생성: 한 노드에서 다른 노드로 엣지 연결 시 엣지가 즉시 나타나는지 확인 (현재는 로컬 추가이므로 즉시 반영).
 
     ### Task 41: `useIdeaMapLayout` 훅 생성 (레이아웃 및 저장)
     - 관련 파일: `/src/hooks/useIdeaMapLayout.ts`
     - 변경 유형: [✅코드 추가]
     - 설명: 자동 레이아웃 및 레이아웃 저장/로드를 처리하는 훅입니다.
-    - `applyAutoLayout()`: 현재 `useIdeaMapStore.getState().nodes`를 가져와 `getLayoutedElements`나 `getGridLayout` 함수를 적용하여 새로운 좌표로 노드 배열을 계산, `setNodes`로 업데이트. (edges도 재계산 가능하지만 간단히 유지)
-    - `saveLayout()`: 현재 노드 좌표 등을 `localStorage`에 저장하거나 (Optional) API 호출로 저장. (현재 DB 연동을 제거했으므로 localStorage 활용)
-    - `loadLayout()`: 컴포넌트 마운트 시 localStorage에 저장된 좌표를 읽어 적용. (또는 Task 39에서 cardsToCardNodes 시 활용)
-    - 이 훅은 IdeaMap 컴포넌트에서 호출하여, 필요 시 자동 레이아웃 버튼 클릭 핸들러 등에 사용합니다.
+        - `applyAutoLayout()`: 현재 `useIdeaMapStore.getState().nodes`를 가져와 `getLayoutedElements`나 `getGridLayout` 함수를 적용하여 새로운 좌표로 노드 배열을 계산, `setNodes`로 업데이트. (edges도 재계산 가능하지만 간단히 유지)
+        - `saveLayout()`: 현재 노드 좌표 등을 `localStorage`에 저장하거나 (Optional) API 호출로 저장. (현재 DB 연동을 제거했으므로 localStorage 활용)
+        - `loadLayout()`: 컴포넌트 마운트 시 localStorage에 저장된 좌표를 읽어 적용. (또는 Task 39에서 cardsToCardNodes 시 활용)
+        - 이 훅은 IdeaMap 컴포넌트에서 호출하여, 필요 시 자동 레이아웃 버튼 클릭 핸들러 등에 사용합니다.
     - 함수 시그니처:
     ```ts
     import { useIdeaMapStore } from '@/store/useIdeaMapStore';
@@ -1642,90 +1642,138 @@
     import { useIdeaMapLayout } from '@/hooks/useIdeaMapLayout';
     ```
     - 적용 규칙: [zustand-slice]
-    - 예상 결과: 사용자가 "자동 정렬" 버튼을 누르면 `applyAutoLayout`이 호출되어 노드들이 격자 형태 등으로 재배치됩니다. 페이지를 새로 고침해도 `loadLayout`을 통해 마지막 저장 상태를 복원할 수 있습니다. (현재 localStorage 사용이므로 본인 브라우저 한정)
+    - 예상 결과
+        - 사용자가 "자동 정렬" 버튼을 누르면 `applyAutoLayout`이 호출되어 노드들이 격자 형태 등으로 재배치됩니다. 
+        - 페이지를 새로 고침해도 `loadLayout`을 통해 마지막 저장 상태를 복원할 수 있습니다. (현재 localStorage 사용이므로 본인 브라우저 한정)
     - 테스트 포인트:
-    - 노드를 임의 배치 후 "자동 레이아웃" 버튼 (만들었다면) 클릭 → 노드들이 정의된 알고리즘대로 재배치되는지 확인.
-    - "레이아웃 저장" 버튼 클릭 후 새로고침 → "레이아웃 불러오기" 혹은 자동으로 `loadLayout()` 실행되어 이전 배치가 유지되는지 확인.
-    - (DB 저장이 필요하면, `saveLayout`에서 Supabase RPC나 Prisma API 호출로 user-specific layout 저장을 구현할 수 있지만 여기서는 범위 밖)
+        - 노드를 임의 배치 후 "자동 레이아웃" 버튼 (만들었다면) 클릭 → 노드들이 정의된 알고리즘대로 재배치되는지 확인.
+        - "레이아웃 저장" 버튼 클릭 후 새로고침 → "레이아웃 불러오기" 혹은 자동으로 `loadLayout()` 실행되어 이전 배치가 유지되는지 확인.
+        - (DB 저장이 필요하면, `saveLayout`에서 Supabase RPC나 Prisma API 호출로 user-specific layout 저장을 구현할 수 있지만 여기서는 범위 밖)
 
-*   ## G. 아키텍처·AI 협업 문서화 및 테스트 
-    ### Task 42: `IdeaMap` 컴포넌트 리팩토링
-    - 관련 파일: `/src/components/IdeaMap.tsx`
-    - 변경 유형: [🔁리팩토링]
-    - 설명: IdeaMap 화면을 구성하는 컴포넌트를 새로 만든 훅들을 사용하여 대폭 단순화합니다:
-    - 상단에 `'use client';` 추가 (React Flow가 클라이언트 컴포넌트여야 함).
-    - `const { nodes, edges } = useIdeaMapSync();` – 노드/엣지 데이터 공급 (이 훅 내부에서 cards 구독 및 변환 수행).
-    - `const { onNodeClick, onPaneClick, onDrop, onConnect } = useIdeaMapInteractions();` – 이벤트 핸들러 모음.
-    - `const { onNodesChange, onEdgesChange, viewport, setViewport } = useIdeaMapStore();` – ReactFlow의 상태 핸들러 및 뷰포트 (혹은 viewport는 ReactFlowProps의 `onMoveEnd`로 store에 저장).
-    - React Flow 컴포넌트에 props 전달:
-        ```tsx
-        <ReactFlow 
-        nodes={nodes} 
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onDrop={onDrop}
-        onConnect={onConnect}
-        fitView // 등 초기 설정
-        >
-        <Background /> <Controls /> ...
-        </ReactFlow>
-        ```
-    - 선택 표시: ReactFlow의 `nodes` 데이터에 `selected: true/false`를 설정하거나, `ReactFlow`의 `selectedNodes` prop (v10+)가 있다면 활용. 없으면, onNodeClick/PaneClick으로 관리하므로 별도 지정 없어도 됨 (ReactFlow 자체 selection mechanism 쓸 수도 있음, 그러나 여기선 수동).
-    - 이전 `IdeaMap` 컴포넌트에서 하던 데이터 fetch, context 사용, store 호출 등은 모두 제거.
-    - 함수 시그니처:
-    ```tsx
-    "use client";
-    import ReactFlow, { Background, Controls } from 'reactflow';
-    import { useIdeaMapStore } from '@/store/useIdeaMapStore';
-    import { useIdeaMapSync } from '@/hooks/useIdeaMapSync';
-    import { useIdeaMapInteractions } from '@/hooks/useIdeaMapInteractions';
-    import { useIdeaMapLayout } from '@/hooks/useIdeaMapLayout';
+*   ## G. 아키텍처·AI 협업 문서화 및 테스트 
 
-    export default function IdeaMap() {
-        const { nodes, edges } = useIdeaMapSync();
-        const { onNodeClick, onPaneClick, onDrop, onConnect } = useIdeaMapInteractions();
-        const onNodesChange = useIdeaMapStore(state => state.onNodesChange);
-        const onEdgesChange = useIdeaMapStore(state => state.onEdgesChange);
-        const { applyAutoLayout } = useIdeaMapLayout();
+    ### Task 42: store.cards` 완전 제거 + IdeaMap 리팩토링
+    
+    ####  ✨ 목표
+            1. **Zustand UI‑slice** (`useAppStore`)에서 **`cards` 필드와 관련 액션**을 완전히 삭제한다.  
+            2. 모든 컴포넌트·훅이 **TanStack Query 훅 `useCards`** 또는 **`useIdeaMapSync`** 를 통해 카드 목록을 구독하도록 변경한다.  
+            3. **IdeaMap** 컴포넌트를 새 구조(세 훅)로 리팩토링하여 store 의존을 제거하고 UI 코드를 단순화한다.
 
-        return (
-        <div className="idea-map-container" style={{ width: '100%', height: '100%' }}>
-            <button onClick={applyAutoLayout}>자동 정렬</button>
-            <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            onDrop={onDrop}
-            onConnect={onConnect}
-            fitView
-            >
-            <Background />
-            <Controls />
-            </ReactFlow>
-        </div>
-        );
-    }
-    ```
-    - import 경로 변경:
-    ```ts
-    import { useIdeaMapSync } from '@/hooks/useIdeaMapSync';
-    import { useIdeaMapInteractions } from '@/hooks/useIdeaMapInteractions';
-    import { useIdeaMapLayout } from '@/hooks/useIdeaMapLayout';
-    ```
-    - 적용 규칙: [zustand-slice]
-    - 예상 결과: `IdeaMap` 컴포넌트는 데이터 로딩이나 복잡한 상태 관리 코드 없이, 훅에서 가져온 값과 핸들러를 ReactFlow에 바인딩하는 역할만 합니다. UI 상으로는 기존과 동일하게 아이디어맵 (노드+엣지) 화면이 나타나고, 상호작용이 가능합니다.
-    - 테스트 포인트:
-    - IdeaMap 페이지 로드 시 카드에 대응하는 노드들이 표시되는지 확인.
-    - 노드 드래그, 클릭, 연결, 새 노드 생성(drop) 등이 다 제대로 동작하는지 전체 테스트.
-    - 사이드바와의 연계: 노드를 클릭하면 사이드바에 카드 내용 표시 (selectedCardIds 통해 구현), 사이드바에서 "다른 카드 선택" 시 IdeaMap에 highlight (이 부분은 ReactFlow node의 selected prop 처리를 추가적으로 구현해야 할 수도 있음 – advanced).
-    - "자동 정렬" 버튼 누르면 노드들이 재배치되는지 확인.
+    #### 🔖 작업 범위 & 파일
 
+        | 구분 | 파일 / 폴더 | 작업 유형 |
+        |------|-------------|-----------|
+        | **A. 카드 필드 제거** | `src/store/useAppStore.ts` (CardStateSlice) | 🔥 필드/액션 삭제 |
+        | **B. IdeaMap 리팩토링** | `src/components/ideamap/components/IdeaMap.tsx` | 🔁 대규모 수정 |
+        | **C. 기타 컴포넌트** | `CardList.tsx`, `Sidebar.tsx`, 검색/필터 관련 컴포넌트 등 `store.cards` 참조 파일 | 🛠 코드 수정 |
+        | **D. 테스트** | 관련 테스트 파일 (`*.test.tsx`) | 🛠 업데이트 |
+        | **E. 타입** | `src/types` (필요 시) | 🛠 정리 |
+
+    #### 📋 세부 단계
+
+        **42‑A : Zustand에서 카드 배열 제거**
+
+            1. **필드 삭제**  
+            ```diff
+            // CardStateSlice
+            - cards: Card[]
+            - setCards: (cards: Card[]) ⇒ void
+            ```
+            2. **액션 삭제** – `createCard`, `updateCard`, `deleteCard` 가 cards 배열을 조작하고 있으면 제거(이미 Task 15에서 대부분 제거됨).  
+            3. **Slice export 타입** 수정 후 **tsc 빌드 통과** 확인.
+
+        **42‑B : IdeaMap 컴포넌트 리팩토링**
+
+            ```tsx
+            // /src/components/ideamap/components/IdeaMap.tsx
+            "use client";
+
+            import ReactFlow, { Background, Controls } from 'reactflow';
+            import { useIdeaMapStore }     from '@/store/useIdeaMapStore';
+            import { useIdeaMapSync }      from '@/hooks/useIdeaMapSync';
+            import { useIdeaMapInteractions } from '@/hooks/useIdeaMapInteractions';
+            import { useIdeaMapLayout }    from '@/hooks/useIdeaMapLayout';
+
+            export default function IdeaMap() {
+            /* 1. 서버 state ↔ 노드 동기화 */
+            const { isLoading, error, /* nodes, edges set in store */ } = useIdeaMapSync();
+
+            /* 2. React‑Flow UI state */
+            const nodes        = useIdeaMapStore(s => s.nodes);
+            const edges        = useIdeaMapStore(s => s.edges);
+            const onNodesChange= useIdeaMapStore(s => s.onNodesChange);
+            const onEdgesChange= useIdeaMapStore(s => s.onEdgesChange);
+
+            /* 3. 상호작용 */
+            const {
+                onNodeClick, onPaneClick, onDrop, onConnect
+            } = useIdeaMapInteractions();
+
+            /* 4. 레이아웃 util */
+            const { applyAutoLayout } = useIdeaMapLayout();
+
+            if (isLoading) return <div>Loading…</div>;
+            if (error)     return <div className="text-red-500">Error: {error.message}</div>;
+
+            return (
+                <div className="idea-map-container w-full h-full">
+                <button onClick={applyAutoLayout}>자동 정렬</button>
+
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onNodeClick={onNodeClick}
+                    onPaneClick={onPaneClick}
+                    onDrop={onDrop}
+                    onConnect={onConnect}
+                    fitView
+                >
+                    <Background />
+                    <Controls />
+                </ReactFlow>
+                </div>
+            );
+            }
+            ```
+
+            * `useAppStore(state ⇒ state.cards)` 관련 코드 ✂️ 삭제 완료.*
+
+        **42‑C : 다른 컴포넌트 교체**
+
+            | 기존 | 변경 |
+            |------|------|
+            | `const cards = useAppStore(s ⇒ s.cards);` | `const { data: cards = [], isLoading } = useCards(params);` |
+            | `setCards(newCards)` 로컬 업데이트 | **삭제** (목록 갱신은 invalidate or refetch) |
+
+            > **검색 패턴** `useAppStore\\([^)]*\\.cards` `\\.setCards\\(`
+
+        **42‑D : 테스트 업데이트**
+
+            - *스토어 테스트* → `cards` 관련 expect 제거.  
+            - *컴포넌트 테스트* → **MSW** 로 `/api/cards` 모킹 후 `waitFor` 로 렌더 확인.  
+            - *useIdeaMapSync.test.tsx* 의 타임아웃 문제는 **store 모킹 삭제** 이후 해결될 가능성이 높음—`MockSetNodes` 대기 조건에서 `nodes.length` 로 변경 권장.
+
+        **42‑E : 타입 & 빌드 검증**
+
+        1. `pnpm type-check` / `yarn tsc --noEmit` 통과.  
+        2. 앱 실행 후 IdeaMap, Sidebar, CardList 모두 정상 동작.  
+        3. React Query DevTools → `['cards', params]` 쿼리가 *active* 인지 확인.
+
+    #### ✅ 완료 기준 (Definition of Done)
+
+    - 코드베이스에서 **`cards`/`setCards` 필드·액션 0건**.  
+    - IdeaMap 빌드 에러 해결 & 화면 정상.  
+    - 모든 단위/통합 테스트 통과.  
+    - 새 or 변경 테스트에서 **MSW + React‑Query** 흐름 검증.
+
+    ---
+
+    > **참고 문헌**  
+    > • TanStack Query “Server State vs UI State” 가이드 (https://tanstack.com/query/latest/docs/framework/react/overview)  
+    > • Zustand slice pattern – 협업에서 UI state 전용 유지 (https://docs.pmnd.rs/zustand/guides/slices-pattern)  
+  
     ### Task 43: `useNodeStore` (노드 인스펙터 상태) 제거
     - 관련 파일: `/src/store/useNodeStore.ts`
     - 변경 유형: [🗑️코드 삭제]
@@ -1743,7 +1791,11 @@
 
     ---
 
-    ### Task 44: 불필요한 API 및 코드 제거 (`/api/users/first` 등)
+    ### Task 44: useEdge
+
+    ### Task 45: Setting - Production 저장 확인. 
+
+    ### Task 46: 불필요한 API 및 코드 제거 (`/api/users/first` 등)
 - 관련 파일: `/src/app/api/users/first/route.ts`
 - 변경 유형: [🗑️코드 삭제]
 - 설명: 리팩토링 전 임시로 사용되던 API 엔드포인트와 관련 코드를 삭제합니다. 특히 `/api/users/first`는 첫 번째 사용자 ID를 가져오는 용도로 썼을 가능성이 있는데, 이제 Supabase 인증으로 사용자 정보를 얻을 수 있으므로 불필요합니다. 
