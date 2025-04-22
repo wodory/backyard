@@ -1,6 +1,13 @@
+/**
+ * 파일명: src/components/cards/CardList.tsx
+ * 목적: 카드 목록 조회 화면 구현
+ * 역할: React Query useQuery를 사용하여 카드 목록 조회 기능 제공. 이후에 BulletBoard 기능으로 개선 예정
+ * 작성일: 2025-04-22
+ */
+
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -23,13 +30,9 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
-import { useAppStore } from "@/store/useAppStore";
+import { useCards } from "@/hooks/useCards";
 
 import { SearchBar } from "./SearchBar";
-
-
-
-
 
 interface Tag {
   id: string;
@@ -37,7 +40,6 @@ interface Tag {
 }
 
 interface CardTag {
-  id: string;
   tag: Tag;
 }
 
@@ -50,67 +52,24 @@ interface CardItem {
 }
 
 export default function CardList() {
-  const { cards, setCards } = useAppStore();
-  const [loading, setLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const filteredCards = React.useMemo(() => {
-    const q = searchParams.get('q')?.toLowerCase();
-    const tag = searchParams.get('tag')?.toLowerCase();
+  const q = searchParams.get('q') || undefined;
+  const tag = searchParams.get('tag') || undefined;
 
-    if (!q && !tag) return cards as CardItem[];
+  const { data: cards, isLoading, error } = useCards({ q, tag });
 
-    return (cards as CardItem[]).filter(card => {
-      const matchesQuery = !q ||
-        card.title.toLowerCase().includes(q) ||
-        (card.content && card.content.toLowerCase().includes(q));
-
-      const matchesTag = !tag ||
-        card.cardTags?.some(cardTag =>
-          cardTag.tag.name.toLowerCase() === tag
-        );
-
-      return matchesQuery && matchesTag;
-    });
-  }, [cards, searchParams]);
-
-  const fetchCards = useCallback(async () => {
-    setLoading(true);
-    try {
-      const q = searchParams.get('q');
-      const tag = searchParams.get('tag');
-
-      const params = new URLSearchParams();
-      if (q) params.append('q', q);
-      if (tag) params.append('tag', tag);
-
-      const queryString = params.toString();
-      const endpoint = `/api/cards${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error('카드 목록을 불러오는데 실패했습니다.');
-      }
-      const data = await response.json();
-
-      setCards(data);
-    } catch (error) {
-      console.error('Error fetching cards:', error);
-      toast.error('카드 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams, setCards]);
-
-  useEffect(() => {
-    if (cards.length === 0) {
-      fetchCards();
-    }
-  }, [cards.length, fetchCards]);
+  // 쿼리 상태 디버깅을 위한 로그
+  console.log('[CardList] React Query 상태:', {
+    데이터있음: !!cards,
+    카드개수: cards?.length || 0,
+    로딩중: isLoading,
+    에러: error
+  });
 
   const handleTagClick = (tagName: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -131,7 +90,6 @@ export default function CardList() {
       }
 
       toast.success("카드가 성공적으로 삭제되었습니다.");
-      fetchCards();
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting card:", error);
@@ -148,8 +106,12 @@ export default function CardList() {
     setIsDeleteDialogOpen(true);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>로딩 중...</div>;
+  }
+
+  if (error) {
+    return <div>오류 발생: {error.message}</div>;
   }
 
   return (
@@ -179,7 +141,7 @@ export default function CardList() {
         </DialogContent>
       </Dialog>
 
-      {filteredCards.length === 0 ? (
+      {!cards || cards.length === 0 ? (
         <div className="text-center py-10">
           {searchParams.toString()
             ? '검색 결과가 없습니다.'
@@ -187,7 +149,7 @@ export default function CardList() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCards.map((card) => (
+          {cards.map((card) => (
             <Card key={card.id} className="flex flex-col">
               <CardHeader>
                 <CardTitle>{card.title}</CardTitle>
@@ -214,7 +176,7 @@ export default function CardList() {
                         <DialogHeader>
                           <DialogTitle>{card.title}</DialogTitle>
                           <DialogDescription>
-                            작성일: 2025-03-05
+                            작성일: {formatDate(card.createdAt)}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
@@ -226,8 +188,10 @@ export default function CardList() {
                             <div className="flex flex-wrap gap-1 mt-4">
                               {card.cardTags.map((cardTag) => (
                                 <Badge
-                                  key={cardTag.id}
+                                  key={cardTag.tag.id}
                                   variant="secondary"
+                                  onClick={(e) => handleTagClick(cardTag.tag.name, e)}
+                                  className="cursor-pointer"
                                 >
                                   #{cardTag.tag.name}
                                 </Badge>
@@ -251,15 +215,14 @@ export default function CardList() {
                     </Button>
                   </div>
                 </div>
-
                 {card.cardTags && card.cardTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="flex flex-wrap gap-1 mt-1">
                     {card.cardTags.map((cardTag) => (
                       <Badge
-                        key={cardTag.id}
-                        variant="secondary"
-                        className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                        key={cardTag.tag.id}
+                        variant="outline"
                         onClick={(e) => handleTagClick(cardTag.tag.name, e)}
+                        className="cursor-pointer"
                       >
                         #{cardTag.tag.name}
                       </Badge>

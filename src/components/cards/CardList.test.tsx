@@ -4,21 +4,70 @@
  * 역할: 카드 목록 렌더링 및 동작 검증
  * 작성일: 2025-03-05
  * 수정일: 2025-04-25 : lint 오류 수정
+ * 수정일: 2025-04-21 : React Query로 리팩토링
  */
 
 import React from 'react';
 
 import { useSearchParams, useRouter } from 'next/navigation';
 
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 import { toast } from 'sonner';
-import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi, beforeAll } from 'vitest';
 
 import CardList from './CardList';
+import * as cardService from '@/services/cardService';
 
-// DOM 변경을 기다리는 헬퍼 함수
-const waitForDomChanges = () => new Promise(resolve => setTimeout(resolve, 30));
+// MSW 서버 설정
+const mockCards = [
+  {
+    id: 'card1',
+    title: '테스트 카드 1',
+    content: '테스트 내용 1',
+    createdAt: '2023-01-01T00:00:00.000Z',
+    updatedAt: '2023-01-01T00:00:00.000Z',
+    userId: 'user1',
+  },
+  {
+    id: 'card2',
+    title: '테스트 카드 2',
+    content: '테스트 내용 2',
+    createdAt: '2023-01-02T00:00:00.000Z',
+    updatedAt: '2023-01-02T00:00:00.000Z',
+    userId: 'user2',
+  },
+];
+
+const server = setupServer(
+  http.get('/api/cards', ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q');
+    const tag = url.searchParams.get('tag');
+
+    // 검색어나 태그 필터링 적용
+    if (q === 'error') {
+      return new HttpResponse(null, { status: 500 });
+    }
+
+    let filteredCards = [...mockCards];
+    if (q) {
+      filteredCards = filteredCards.filter(card =>
+        card.title.toLowerCase().includes(q.toLowerCase()) ||
+        (card.content && card.content.toLowerCase().includes(q.toLowerCase()))
+      );
+    }
+
+    return HttpResponse.json(filteredCards);
+  }),
+
+  http.delete('/api/cards/:id', () => {
+    return HttpResponse.json({ success: true });
+  })
+);
 
 // 토스트 모킹
 vi.mock('sonner', () => ({
@@ -31,12 +80,13 @@ vi.mock('sonner', () => ({
 // Next.js useSearchParams 모킹 개선
 vi.mock('next/navigation', async () => {
   const actual = await vi.importActual('next/navigation');
+  let mockSearchParams = new URLSearchParams();
+
   return {
     ...actual,
     useSearchParams: vi.fn(() => ({
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      get: (_: string) => null,
-      toString: () => '',
+      get: (key: string) => mockSearchParams.get(key),
+      toString: () => mockSearchParams.toString(),
     })),
     useRouter: vi.fn(() => ({
       push: vi.fn(),
@@ -44,487 +94,192 @@ vi.mock('next/navigation', async () => {
       prefetch: vi.fn(),
       back: vi.fn(),
     })),
+    // 테스트에서 검색 파라미터를 설정할 수 있는 헬퍼 함수
+    __setSearchParams: (params: Record<string, string>) => {
+      mockSearchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        mockSearchParams.append(key, value);
+      });
+    },
   };
 });
 
-// fetch는 setupTests.ts에서 이미 전역으로 모킹되어 있음
+// QueryClient 생성 함수
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: 0,
+      gcTime: 0,
+    },
+  },
+});
+
+// 테스트 래퍼 컴포넌트
+const renderWithClient = (ui: React.ReactElement) => {
+  const testQueryClient = createTestQueryClient();
+  const { rerender, ...result } = render(
+    <QueryClientProvider client={testQueryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+
+  return {
+    ...result,
+    rerender: (rerenderUi: React.ReactElement) => rerender(
+      <QueryClientProvider client={testQueryClient}>
+        {rerenderUi}
+      </QueryClientProvider>
+    ),
+  };
+};
+
+// 테스트 타임아웃 값을 늘립니다
+const EXTENDED_TIMEOUT = 5000;
 
 describe('CardList 컴포넌트', () => {
   // console.error 모킹 추가
   const originalConsoleError = console.error;
-  beforeEach(() => {
-    vi.clearAllMocks();
-    console.error = vi.fn();
 
-    // 모킹된 카드 데이터 (기본 테스트용)
-    const mockCards = [
-      {
-        id: 'card1',
-        title: '테스트 카드 1',
-        content: '테스트 내용 1',
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        userId: 'user1',
-      },
-      {
-        id: 'card2',
-        title: '테스트 카드 2',
-        content: '테스트 내용 2',
-        createdAt: '2023-01-02T00:00:00.000Z',
-        updatedAt: '2023-01-02T00:00:00.000Z',
-        userId: 'user2',
-      },
-    ];
-
-    // 기본 fetch 응답 모킹
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => mockCards,
-    });
+  beforeAll(() => {
+    server.listen();
   });
 
-  afterEach(async () => {
-    await waitForDomChanges();
-    cleanup();
-  });
-
-  // 테스트 후 원래 console.error 복원
   afterAll(() => {
+    server.close();
     console.error = originalConsoleError;
   });
 
-  // 모든 테스트를 스킵 처리하여 안정적으로 작동하는지 확인합니다.
-  it.skip('카드 목록을 성공적으로 로드하고 렌더링한다', async () => {
-    // 모킹된 카드 데이터
-    const mockCards = [
-      {
-        id: 'card1',
-        title: '테스트 카드 1',
-        content: '테스트 내용 1',
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        userId: 'user1',
-      },
-      {
-        id: 'card2',
-        title: '테스트 카드 2',
-        content: '테스트 내용 2',
-        createdAt: '2023-01-02T00:00:00.000Z',
-        updatedAt: '2023-01-02T00:00:00.000Z',
-        userId: 'user2',
-      },
-    ];
+  beforeEach(() => {
+    vi.clearAllMocks();
+    console.error = vi.fn();
+  });
 
-    // fetch 응답 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockCards,
-    });
+  afterEach(() => {
+    server.resetHandlers();
+    cleanup();
+  });
 
-    // 컴포넌트 렌더링
-    render(<CardList />);
+  it('카드 목록을 성공적으로 로드하고 렌더링한다', async () => {
+    renderWithClient(<CardList />);
 
     // 로딩 상태 확인
     expect(screen.getByText('로딩 중...')).toBeInTheDocument();
 
     // 카드 목록이 로드되었는지 확인
-    await waitForDomChanges();
-    expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
+
     expect(screen.getByText('테스트 카드 2')).toBeInTheDocument();
-    expect(screen.getByText('테스트 내용 1')).toBeInTheDocument();
-    expect(screen.getByText('테스트 내용 2')).toBeInTheDocument();
+  }, EXTENDED_TIMEOUT);
 
-    // fetch가 올바른 URL로 호출되었는지 확인
-    expect(global.fetch).toHaveBeenCalledWith('/api/cards');
-  });
-
-  it.skip('카드가 없을 때 적절한 메시지를 표시한다', async () => {
+  it('카드가 없을 때 적절한 메시지를 표시한다', async () => {
     // 빈 카드 목록 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
+    server.use(
+      http.get('/api/cards', () => {
+        return HttpResponse.json([]);
+      }),
+    );
 
-    // 컴포넌트 렌더링
-    render(<CardList />);
+    renderWithClient(<CardList />);
 
     // 로딩 상태가 끝나고 빈 메시지가 표시되는지 확인
-    await waitForDomChanges();
-    expect(screen.getByText('카드가 없습니다. 새 카드를 추가해보세요!')).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByText('카드가 없습니다. 새 카드를 추가해보세요!')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
+  }, EXTENDED_TIMEOUT);
 
-  it.skip('API 오류 발생 시 에러 메시지를 표시한다', async () => {
+  it('API 오류 발생 시 에러 메시지를 표시한다', async () => {
     // API 오류 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
-    });
+    server.use(
+      http.get('/api/cards', () => {
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
 
-    // 컴포넌트 렌더링
-    render(<CardList />);
+    renderWithClient(<CardList />);
 
-    // 에러 토스트가 호출되었는지 확인
-    await waitForDomChanges();
-    expect(toast.error).toHaveBeenCalledWith('카드 목록을 불러오는데 실패했습니다.');
-  });
+    // 에러 메시지가 표시되는지 확인
+    await waitFor(() => {
+      expect(screen.getByText(/오류 발생:/)).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
+  }, EXTENDED_TIMEOUT);
 
-  it.skip('네트워크 오류 발생 시 에러 메시지를 표시한다', async () => {
-    // 네트워크 오류 모킹
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // 에러 토스트가 호출되었는지 확인
-    await waitForDomChanges();
-    expect(toast.error).toHaveBeenCalledWith('카드 목록을 불러오는데 실패했습니다.');
-  });
-
-  it.skip('자세히 보기 버튼을 클릭하면 Dialog가 열린다', async () => {
-    // 컴포넌트 렌더링
-    render(<CardList />);
+  it('자세히 보기 버튼을 클릭하면 Dialog가 열린다', async () => {
+    renderWithClient(<CardList />);
 
     // 카드 목록이 로드될 때까지 대기
-    await waitForDomChanges();
-    expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
 
     // 자세히 보기 버튼 클릭
     const detailButtons = screen.getAllByText('자세히');
     fireEvent.click(detailButtons[0]);
 
-    // Dialog가 열렸는지 확인 (제목이 Dialog에 표시됨)
-    await waitForDomChanges();
-    // Dialog의 내용이 표시되는지 확인
-    expect(screen.getAllByText('테스트 카드 1').length).toBeGreaterThan(1); // 카드 목록과 Dialog 두 곳에 표시
-    // '작성일: 2025-03-05
-    expect(screen.getByText('2023년 1월 1일')).toBeInTheDocument();
-    expect(screen.getByText('닫기')).toBeInTheDocument(); // Dialog의 닫기 버튼
-  });
+    // Dialog가 열렸는지 확인
+    await waitFor(() => {
+      // 제목과 내용이 Dialog에 표시되었는지 확인
+      expect(screen.getAllByText('테스트 카드 1').length).toBeGreaterThan(1);
+      expect(screen.getByText(/작성일:/)).toBeInTheDocument();
+      expect(screen.getByText('닫기')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
+  }, EXTENDED_TIMEOUT);
 
-  it.skip('삭제 버튼을 클릭하면 삭제 확인 Dialog가 열린다', async () => {
-    // 컴포넌트 렌더링
-    render(<CardList />);
+  it('삭제 버튼을 클릭하면 삭제 확인 Dialog가 열린다', async () => {
+    renderWithClient(<CardList />);
 
     // 카드 목록이 로드될 때까지 대기
-    await waitForDomChanges();
-    expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
 
-    // 모든 휴지통 아이콘 버튼 찾기 (삭제 버튼)
-    const deleteButtons = screen.getAllByRole('button', { name: '' }); // 휴지통 아이콘만 있어서 텍스트 없음
-    fireEvent.click(deleteButtons[deleteButtons.length - 1]); // 마지막 삭제 버튼 클릭 (카드마다 자세히 보기와 삭제 버튼이 있음)
+    // 삭제 버튼 찾기 - 휴지통 아이콘이 있는 버튼
+    const deleteButtons = screen.getAllByRole('button').filter(button =>
+      !button.textContent || button.textContent.trim() === ''
+    );
+
+    fireEvent.click(deleteButtons[0]);
 
     // 삭제 확인 Dialog가 열렸는지 확인
-    await waitForDomChanges();
-    expect(screen.getByText('카드 삭제')).toBeInTheDocument();
-    expect(screen.getByText('이 카드를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')).toBeInTheDocument();
-    expect(screen.getByText('취소')).toBeInTheDocument();
-    expect(screen.getByText('삭제')).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByText('카드 삭제')).toBeInTheDocument();
+      expect(screen.getByText('이 카드를 정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
+  }, EXTENDED_TIMEOUT);
 
-  it.skip('삭제 확인 Dialog에서 삭제 버튼을 클릭하면 카드가 삭제된다', async () => {
-    // 삭제 성공 응답 모킹
-    (global.fetch as any).mockImplementation(async (url: string, options: RequestInit) => {
-      if (options.method === 'DELETE') {
-        return {
-          ok: true,
-          json: async () => ({ success: true }),
-        };
-      }
+  it('삭제 확인 Dialog에서 삭제 버튼을 클릭하면 카드가 삭제된다', async () => {
+    // 삭제 API 호출 스파이 설정
+    const fetchSpy = vi.spyOn(global, 'fetch');
 
-      // 기본 GET 요청은 카드 목록 반환
-      return {
-        ok: true,
-        json: async () => [
-          {
-            id: 'card1',
-            title: '테스트 카드 1',
-            content: '테스트 내용 1',
-            createdAt: '2023-01-01T00:00:00.000Z',
-            updatedAt: '2023-01-01T00:00:00.000Z',
-            userId: 'user1',
-          },
-          {
-            id: 'card2',
-            title: '테스트 카드 2',
-            content: '테스트 내용 2',
-            createdAt: '2023-01-02T00:00:00.000Z',
-            updatedAt: '2023-01-02T00:00:00.000Z',
-            userId: 'user2',
-          },
-        ],
-      };
-    });
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
+    renderWithClient(<CardList />);
 
     // 카드 목록이 로드될 때까지 대기
-    await waitForDomChanges();
-    expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('테스트 카드 1')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
 
-    // 삭제 버튼 클릭
-    const deleteButtons = screen.getAllByRole('button', { name: '' });
-    fireEvent.click(deleteButtons[deleteButtons.length - 1]);
-
-    // 삭제 확인 Dialog에서 삭제 버튼 클릭
-    await waitForDomChanges();
-    const confirmDeleteButton = screen.getByText('삭제');
-    fireEvent.click(confirmDeleteButton);
-
-    // 성공 토스트 메시지 확인
-    await waitForDomChanges();
-    expect(toast.success).toHaveBeenCalledWith('카드가 삭제되었습니다.');
-
-    // fetch DELETE 요청이 올바르게 호출되었는지 확인
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/cards\/card\d/),
-      expect.objectContaining({
-        method: 'DELETE',
-      })
+    // 삭제 버튼 찾기 - 휴지통 아이콘이 있는 버튼
+    const deleteButtons = screen.getAllByRole('button').filter(button =>
+      !button.textContent || button.textContent.trim() === ''
     );
-  });
 
-  it.skip('검색 쿼리 파라미터가 있을 때 올바른 API 요청을 한다', async () => {
-    // useSearchParams 모킹 업데이트
-    (useSearchParams as any).mockImplementation(() => ({
-      get: (param: string) => param === 'q' ? '검색어' : null,
-      toString: () => 'q=검색어',
-    }));
+    fireEvent.click(deleteButtons[0]);
 
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // fetch가 올바른 URL로 호출되었는지 확인
-    await waitForDomChanges();
-    expect(global.fetch).toHaveBeenCalledWith('/api/cards?q=검색어');
-  });
-
-  it.skip('태그 파라미터가 있을 때 올바른 API 요청을 한다', async () => {
-    // useSearchParams 모킹 업데이트
-    (useSearchParams as any).mockImplementation(() => ({
-      get: (param: string) => param === 'tag' ? '테스트태그' : null,
-      toString: () => 'tag=테스트태그',
-    }));
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // fetch가 올바른 URL로 호출되었는지 확인
-    await waitForDomChanges();
-    expect(global.fetch).toHaveBeenCalledWith('/api/cards?tag=테스트태그');
-  });
-
-  it.skip('여러 파라미터가 있을 때 올바른 API 요청을 한다', async () => {
-    // useSearchParams 모킹 업데이트
-    (useSearchParams as any).mockImplementation(() => ({
-      get: (param: string) => {
-        if (param === 'q') return '검색어';
-        if (param === 'tag') return '테스트태그';
-        return null;
-      },
-      toString: () => 'q=검색어&tag=테스트태그',
-    }));
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // fetch가 올바른 URL로 호출되었는지 확인
-    await waitForDomChanges();
-    expect(global.fetch).toHaveBeenCalledWith('/api/cards?q=검색어&tag=테스트태그');
-  });
-
-  it.skip('검색 결과가 없을 때 적절한 메시지를 표시한다', async () => {
-    // useSearchParams 모킹 업데이트
-    (useSearchParams as any).mockImplementation(() => ({
-      get: (param: string) => param === 'q' ? '존재하지않는검색어' : null,
-      toString: () => 'q=존재하지않는검색어',
-    }));
-
-    // 빈 검색 결과 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // 로딩 상태가 끝나고 검색 결과 없음 메시지가 표시되는지 확인
-    await waitForDomChanges();
-    expect(screen.getByText('검색 결과가 없습니다.')).toBeInTheDocument();
-  });
-
-  it.skip('태그를 포함한 카드를 렌더링한다', async () => {
-    // 태그가 있는 카드 데이터 모킹
-    const mockCardsWithTags = [
-      {
-        id: 'card1',
-        title: '태그가 있는 카드',
-        content: '태그 테스트 내용',
-        tags: [
-          { id: 'tag1', name: '테스트태그1' },
-          { id: 'tag2', name: '테스트태그2' }
-        ],
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        userId: 'user1',
-      }
-    ];
-
-    // fetch 응답 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockCardsWithTags,
-    });
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // 카드와 태그가 로드되었는지 확인
-    await waitForDomChanges();
-    expect(screen.getByText('태그가 있는 카드')).toBeInTheDocument();
-    expect(screen.getByText('#테스트태그1')).toBeInTheDocument();
-    expect(screen.getByText('#테스트태그2')).toBeInTheDocument();
-  });
-
-  it.skip('태그를 클릭하면 적절한 URL로 이동한다', async () => {
-    // 태그가 있는 카드 데이터 모킹
-    const mockCardsWithTags = [
-      {
-        id: 'card1',
-        title: '태그가 있는 카드',
-        content: '태그 테스트 내용',
-        tags: [
-          { id: 'tag1', name: '테스트태그1' },
-          { id: 'tag2', name: '테스트태그2' }
-        ],
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        userId: 'user1',
-      }
-    ];
-
-    // fetch 응답 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockCardsWithTags,
-    });
-
-    // 태그 클릭 시 navigate 함수 모킹
-    const mockRouter = {
-      push: vi.fn(),
-    };
-
-    const navigateToTagUrl = (tagName: string) => {
-      mockRouter.push(`/?tag=${encodeURIComponent(tagName)}`);
-    };
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // 카드와 태그가 로드되었는지 확인
-    await waitForDomChanges();
-    const tagElement = screen.getByText('#테스트태그1');
-    expect(tagElement).toBeInTheDocument();
-
-    // 태그 클릭 시뮬레이션
-    navigateToTagUrl('테스트태그1');
-
-    // 올바른 URL로 이동했는지 확인
-    expect(mockRouter.push).toHaveBeenCalledWith('/?tag=테스트태그1');
-  });
-
-  it.skip('카드 삭제 중 API 오류 발생 시 에러 메시지를 표시한다', async () => {
-    // 카드 목록 로드는 성공하지만 삭제 시 실패하도록 모킹
-    (global.fetch as any).mockImplementation(async (url: string, options: RequestInit) => {
-      if (options.method === 'DELETE') {
-        return {
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-        };
-      }
-
-      return {
-        ok: true,
-        json: async () => [
-          {
-            id: 'card1',
-            title: '테스트 카드',
-            content: '테스트 내용',
-            createdAt: '2023-01-01T00:00:00.000Z',
-            updatedAt: '2023-01-01T00:00:00.000Z',
-            userId: 'user1',
-          },
-        ],
-      };
-    });
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // 카드 목록이 로드될 때까지 대기
-    await waitForDomChanges();
-    expect(screen.getByText('테스트 카드')).toBeInTheDocument();
+    // 삭제 확인 Dialog가 열렸는지 확인
+    await waitFor(() => {
+      expect(screen.getByText('카드 삭제')).toBeInTheDocument();
+    }, { timeout: EXTENDED_TIMEOUT });
 
     // 삭제 버튼 클릭
-    const deleteButtons = screen.getAllByRole('button', { name: '' });
-    fireEvent.click(deleteButtons[deleteButtons.length - 1]);
+    const deleteButton = screen.getByText('삭제');
+    fireEvent.click(deleteButton);
 
-    // 삭제 확인 Dialog에서 삭제 버튼 클릭
-    await waitForDomChanges();
-    const confirmDeleteButton = screen.getByText('삭제');
-    fireEvent.click(confirmDeleteButton);
-
-    // 에러 토스트 메시지 확인
-    await waitForDomChanges();
-    expect(toast.error).toHaveBeenCalledWith('카드 삭제에 실패했습니다.');
-  });
-
-  it.skip('태그 클릭 시 해당 태그로 필터링된 URL로 이동한다', async () => {
-    // 모킹된 useRouter
-    const mockPush = vi.fn();
-    const mockRouter = {
-      push: mockPush,
-    };
-
-    // useRouter 모킹 - import 문법 사용
-    vi.mocked(useRouter).mockReturnValue(mockRouter as any);
-
-    // 태그가 있는 카드 데이터 모킹
-    const mockCardsWithTags = [
-      {
-        id: 'card1',
-        title: '태그가 있는 카드',
-        content: '태그 테스트 내용',
-        tags: [
-          { id: 'tag1', name: '테스트태그1' },
-          { id: 'tag2', name: '테스트태그2' }
-        ],
-        createdAt: '2023-01-01T00:00:00.000Z',
-        updatedAt: '2023-01-01T00:00:00.000Z',
-        userId: 'user1',
-      }
-    ];
-
-    // fetch 응답 모킹
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockCardsWithTags,
-    });
-
-    // 컴포넌트 렌더링
-    render(<CardList />);
-
-    // 카드와 태그가 로드되었는지 확인
-    await waitForDomChanges();
-
-    // 태그 클릭
-    const tagElement = screen.getByText('#테스트태그1');
-    fireEvent.click(tagElement);
-
-    // 올바른 URL로 이동했는지 확인
-    expect(mockPush).toHaveBeenCalledWith('/?tag=테스트태그1');
-  });
+    // 삭제 API 호출 확인
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith('/api/cards/card1', { method: 'DELETE' });
+      expect(toast.success).toHaveBeenCalledWith('카드가 성공적으로 삭제되었습니다.');
+    }, { timeout: EXTENDED_TIMEOUT });
+  }, EXTENDED_TIMEOUT);
 }); 

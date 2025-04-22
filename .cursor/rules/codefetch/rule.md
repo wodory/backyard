@@ -1,5 +1,6 @@
 Project Structure:
 ├── async-test.mdc
+├── codefetch
 ├── explicit-error-throw-testing.mdc
 ├── global-env-mocking.mdc
 ├── increase-coverage.mdc
@@ -8,6 +9,7 @@ Project Structure:
 ├── package.mdc
 ├── piper5.mdc
 ├── react-test-failure.mdc
+├── three-layer-standard.mdc
 ├── vitest-mocking.mdc
 └── zustand-action-msw.mdc
 
@@ -844,6 +846,176 @@ react-test-failure.mdc
 116 | ```
 ```
 
+three-layer-standard.mdc
+```
+1 | ---
+2 | description: 
+3 | globs: 
+4 | alwaysApply: true
+5 | ---
+6 | ## **Rule Title**  
+7 | Three-Layer-Standard
+8 | 
+9 | > “**Zustand → MSW → TanStack Query** 3-계층 표준”  
+10 | > ─ UI 명령, HTTP 경계 Mock, Server State Sync를 **명확히 분리**하고  
+11 | > ─ 테스트·코드 작성 시 Cursor Agent가 따라야 할 **단일 지침서**
+12 | 
+13 | ---
+14 | 
+15 | ### 0. 이 룰이 해결하려는 문제
+16 | 1. 리팩토링 후 **Zustand**·**TanStack Query** 역할이 뒤섞여 발생하는 책임 혼란 방지  
+17 | 2. “어디에서 무엇을 모킹해야 하나?”를 명확히 규정 → **테스트 경계** 불일치 제거  
+18 | 3. Cursor Agent가 **파일 생성/수정·테스트 작성**을 할 때 항상 같은 패턴으로 동작하게 함
+19 | 
+20 | ---
+21 | 
+22 | ### 1. 3-계층 책임 정의 (Layer)
+23 | 
+24 | | Layer | 코드 범위 | 책임 | **금지 사항** |
+25 | |-------|-----------|------|---------------|
+26 | | **Zustand Slice (UI command)** | `/src/store/*Slice.ts` | 버튼 클릭·토글·모달 열기 등 **순수 UI state** | **fetch/axios 사용 금지**, DB I/O 금지 |
+27 | | **Service 함수 (+ API Route)** | `/src/services/*.ts` & `/src/app/api/**` | HTTP 요청, Zod validate, 오류 매핑 | React state 조작 금지 |
+28 | | **TanStack Query 훅** | `/src/hooks/use*.ts` | 서버 state Fetch/Mutation, 캐시, 낙관적 업데이트 | 직접 DOM 조작 금지, UI state 저장 금지 |
+29 | 
+30 | > **MSW**는 Service 함수가 내보내는 HTTP 경계를 **가장 바깥**에서 Stub 하는 전용 도구.
+31 | 
+32 | ---
+33 | 
+34 | ### 2. 룰 태그 4종 (테스트·코드 작성 시 선택)
+35 | 
+36 | | 태그 | 테스트 대상 | Mock 전략 | 핵심 검증 |
+37 | |------|-------------|-----------|-----------|
+38 | | `@zustand-action-msw` | Zustand 액션 | 실제 Store + spy (MSW 필요 없음) | 상태 변화 확인 |
+39 | | `@service-msw` | Service 함수 | **MSW** 로 REST 경계 stub | fetch 호출, 응답 매핑, 오류 처리 |
+40 | | `@tanstack-query-msw` | `useQuery` 훅 | QueryClient 실제 + MSW stub | 데이터 캐시, 로딩/에러 플래그 |
+41 | | `@tanstack-mutation-msw` | `useMutation` 훅 | Mutation + MSW | 캐시 무효화, optimistic update |
+42 | 
+43 | ---
+44 | 
+45 | ### 3. 파일·폴더 컨벤션
+46 | 
+47 | | 코드 | 위치 |
+48 | |------|------|
+49 | | Zustand slice | `src/store/{sliceName}Slice.ts` |
+50 | | Service 함수 | `src/services/{domain}Service.ts` |
+51 | | React Query 훅 | `src/hooks/use{Domain}.ts(x)` |
+52 | | 테스트 | `src/{store|services|hooks}/__tests__/*.test.tsx` |
+53 | | MSW 핸들러 | `src/tests/msw/{domain}Handlers.ts` |
+54 | 
+55 | ---
+56 | 
+57 | ### 4. 테스트 작성 체크리스트
+58 | 
+59 | 1. **Zustand 액션 단위 테스트**  
+60 |    ```mdc
+61 |    @zustand-action-msw toggleSidebar
+62 |    steps:
+63 |      1. import real useAppStore
+64 |      2. act() => store.toggleSidebar()
+65 |      3. expect(store.isSidebarOpen).toBe(true)
+66 |    ```
+67 | 
+68 | 2. **Service 함수 통합 테스트**  
+69 |    ```mdc
+70 |    @service-msw fetchCards
+71 |    msw:
+72 |      - GET /api/cards → 200 [mockCards]
+73 |    steps:
+74 |      1. const data = await fetchCards()
+75 |      2. expect(data).toEqual(mockCards)
+76 |    ```
+77 | 
+78 | 3. **Mutation 훅 테스트**  
+79 |    ```mdc
+80 |    @tanstack-mutation-msw useCreateCard
+81 |    msw:
+82 |      - POST /api/cards → 201 [mockCard]
+83 |    steps:
+84 |      1. renderHook(useCreateCard) within QueryClientProvider
+85 |      2. act() => mutate({ title:'t' })
+86 |      3. waitFor cache['cards'] length +1
+87 |    ```
+88 | 
+89 | ---
+90 | 
+91 | ### 5. Cursor Agent가 따라야 할 코딩 규칙
+92 | 
+93 | | 규칙 코드 | 내용 |
+94 | |-----------|------|
+95 | | `[layer-separation]` | 각 계층 파일에서 **다른 계층 책임**을 침범하면 안 된다. |
+96 | | `[msw-last]` | 네트워크 mock은 MSW로만 한다. `vi.spyOn(global, 'fetch')` 금지. |
+97 | | `[query-key]` | React Query `queryKey`는 `'[domain]', params` 형식을 지킨다. |
+98 | | `[cache-inval]` | Mutation onSuccess 시 관련 Query invalidate 필수. |
+99 | | `[store-pure-ui]` | Zustand slice는 **UI 전용 상태**만 가진다. fetch·async 없음. |
+100 | 
+101 | ---
+102 | 
+103 | ### 6. 규칙 적용 예시 (End-to-End)
+104 | 
+105 | ```mermaid
+106 | sequenceDiagram
+107 |   participant UI
+108 |   participant Store
+109 |   participant Mutation
+110 |   participant Service
+111 |   participant MSW as ⇢ MSW (STUB)
+112 | 
+113 |   UI->>Store: toggleSidebar()
+114 |   Store-->>UI: isSidebarOpen = true
+115 | 
+116 |   UI->>Mutation: mutate(newCard)
+117 |   Mutation->>Service: createCardAPI()
+118 |   Service->>MSW: POST /api/cards
+119 |   MSW-->>Service: 201 mockCard
+120 |   Service-->>Mutation: resolve(mockCard)
+121 |   Mutation-->>QueryCache: invalidate(['cards'])
+122 |   UI-->>QueryCache: useCards() re-fetch
+123 | ```
+124 | 
+125 | ```mermaid
+126 | graph TD
+127 |   UI[React Component] -->|dispatch| ZS[Zustand Slice<br>(UI command)]
+128 |   ZS -->|call| MUT[useCreateCard<br>(TanStack Mutation)]
+129 |   MUT -->|uses| SVC[cardService.createCardAPI]
+130 |   SVC -->|fetch| API[/api/cards (route)]
+131 |   API -->|DB| Prisma>Supabase
+132 |   
+133 |   classDef store fill:#f6d365,stroke:#555;
+134 |   classDef svc fill:#cdeffd,stroke:#555;
+135 |   class ZS store; class SVC svc;
+136 | ```
+137 | 
+138 | ---
+139 | 
+140 | ### 7. 파일 헤더 샘플 (자동 생성시 Cursor Agent가 넣을 주석)
+141 | 
+142 | ```ts
+143 | /**
+144 |  * @rule   three-ayer-Standard
+145 |  * @layer  service
+146 |  * @tag    @service-msw fetchCards
+147 |  * 설명    카드 목록을 fetch + Zod 검증 (HTTP 경계는 MSW)
+148 |  */
+149 | ```
+150 | 
+151 | ---
+152 | 
+153 | ### 8. 도입 가이드 (팀 공유용)
+154 | 
+155 | 1. **새 기능** 추가 시 체크  
+156 |    - UI → Zustand slice 액션? ✅  
+157 |    - 서버 데이터 필요? → Service fn + Query 훅? ✅  
+158 |    - 테스트 태그 4 종 중 하나 이상 선택? ✅  
+159 | 2. **리팩토링** 시 체크  
+160 |    - 서버 state 로직이 Zustand에 남아있으면? → Query 훅으로 이동  
+161 |    - fetch 중복? → Service 함수 재사용  
+162 |    - 테스트가 HTTP 모킹 없이 실제 서버 때리면? → MSW로 교체
+163 | 
+164 | 
+165 | ### 9. 기타
+166 | - Server Side/Client Side 구분을 명확히 할 것. 
+```
+
 vitest-mocking.mdc
 ```
 1 | ---
@@ -926,56 +1098,95 @@ zustand-action-msw.mdc
 1 | ---
 2 | description: 
 3 | globs: 
-4 | alwaysApply: true
+4 | alwaysApply: false
 5 | ---
 6 | # --- START OF FILE: .cursor/rules/zustand-action-msw.mdc ---
-7 | description: Enforces Zustand action-based architecture with MSW testing.
-8 | globs: 
+7 | description: Zustand 액션 기반 아키텍처와 MSW 테스팅을 강제합니다.
+8 | globs:
 9 |   - src/**/*.{ts,tsx}
 10 |   - src/tests/**/*.{ts,tsx}
 11 | alwaysApply: true
 12 | ---
 13 | 
-14 | # Rule: Zustand Action & MSW Pattern
+14 | # 규칙: Zustand 액션 & MSW 패턴
 15 | 
-16 | ## 1. Core Principle: Action-Centric State Management
-17 | - **MUST:** All application state modifications **MUST** go through explicitly defined actions within the Zustand store (`src/store/useAppStore.ts`).
-18 | - **FORBIDDEN:** Direct state manipulation (using `set` directly within components or hooks outside the store's defined actions, or mutating state objects) is strictly forbidden.
-19 | - **MUST:** Actions should represent specific user intents or system events (e.g., `selectCard`, `fetchBoardData`, `updateSettings`).
-20 | 
-21 | ## 2. UI Component Responsibility
-22 | - **MUST:** UI components (React components in `src/components/` or `src/app/`) **MUST NOT** contain business logic or direct state modification logic related to the global application state managed by `useAppStore`.
-23 | - **MUST:** The primary roles of UI components are:
-24 |     1.  Displaying data derived from the Zustand store or local UI state.
-25 |     2.  Calling appropriate Zustand actions in response to user interactions (e.g., button clicks, input changes).
-26 | - **SHOULD:** Local UI state (e.g., input field values, modal open/close status) can be managed within components using `useState` if it doesn't affect the global application state.
-27 | 
-28 | ## 3. Zustand Action Implementation
-29 | - **MUST:** Actions defined in `useAppStore.ts` **MUST** contain all the logic necessary to handle the corresponding event, including state updates using `set` or `get().someAction(...)`.
-30 | - **MUST:** Asynchronous operations (like API calls using `fetch`) related to global state changes **SHOULD** be initiated and managed *within* Zustand actions.
-31 |     - **MUST:** Use `try...catch` blocks for robust error handling in asynchronous actions.
-32 |     - **SHOULD:** Update relevant loading and error states within the store during the lifecycle of asynchronous actions (e.g., `isLoading: true` before fetch, `isLoading: false, error: null` on success, `isLoading: false, error: err.message` on failure).
-33 |     - **SHOULD:** Use `toast` notifications *within* the action handlers (or call a dedicated notification action) upon success or failure of operations.
-34 | 
-35 | ## 4. API Interaction & Testing with MSW
-36 | - **MUST:** When implementing or modifying Zustand actions that involve API calls (`fetch`), corresponding MSW handlers **MUST** be added or updated in `src/tests/msw/handlers.ts`.
-37 | - **MUST:** Unit tests for Zustand actions involving API calls **MUST** utilize the configured MSW server (`src/tests/msw/server.ts`) to mock API responses.
-38 | - **MUST:** Tests should cover both successful API responses and potential error scenarios (e.g., network errors, server errors) by configuring MSW handlers accordingly using `server.use()`.
+16 | ## 1. 핵심 원칙: 액션 중심의 상태 관리
+17 | 
+18 | *   **필수:** 모든 애플리케이션 상태 변경은 **반드시** Zustand 스토어 (`src/store/` 내 관련 스토어 파일) 내에 명시적으로 정의된 **액션**을 통해서만 이루어져야 합니다.
+19 | *   **금지:** 스토어의 정의된 액션 외부(예: 컴포넌트, 훅)에서 직접 상태를 조작하거나(`set` 직접 사용) 상태 객체를 변경하는 것은 **엄격히 금지**됩니다.
+20 | *   **필수:** 액션은 특정 사용자 의도나 시스템 이벤트를 나타내야 합니다 (예: `selectCard`, `fetchBoardData`, `updateSettings`).
+21 | 
+22 | ## 2. UI 컴포넌트 책임
+23 | 
+24 | *   **필수:** UI 컴포넌트(React 컴포넌트, `src/components/` 또는 `src/app/` 내)는 Zustand 스토어가 관리하는 전역 애플리케이션 상태와 관련된 비즈니스 로직이나 직접적인 상태 수정 로직을 **포함해서는 안 됩니다.**
+25 | *   **필수:** UI 컴포넌트의 주요 역할은 다음과 같습니다:
+26 |     1.  Zustand 스토어 또는 로컬 UI 상태에서 파생된 데이터 표시.
+27 |     2.  사용자 상호작용(예: 버튼 클릭, 입력 변경)에 응답하여 적절한 Zustand 액션 호출.
+28 | *   **권장:** 전역 애플리케이션 상태에 영향을 미치지 않는 로컬 UI 상태(예: 입력 필드 값, 모달 열림/닫힘 상태)는 컴포넌트 내에서 `useState`를 사용하여 관리할 수 있습니다.
+29 | 
+30 | ## 3. Zustand 액션 구현
+31 | 
+32 | *   **필수:** 스토어 파일(예: `useAppStore.ts`)에 정의된 액션은 `set` 또는 `get().someAction(...)`을 사용한 상태 업데이트를 포함하여, 해당 이벤트를 처리하는 데 필요한 **모든 로직**을 포함해야 합니다.
+33 | *   **필수:** 전역 상태 변경과 관련된 비동기 작업(예: `fetch`를 사용한 API 호출)은 Zustand 액션 **내에서** 시작되고 관리되어야 합니다.
+34 |     *   **필수:** 비동기 액션에서 강력한 오류 처리를 위해 `try...catch` 블록을 사용해야 합니다.
+35 |     *   **권장:** 비동기 액션의 생명주기 동안 스토어 내 관련 로딩 및 오류 상태를 업데이트해야 합니다 (예: fetch 전 `isLoading: true`, 성공 시 `isLoading: false, error: null`, 실패 시 `isLoading: false, error: err.message`).
+36 |     *   **권장:** 작업 성공 또는 실패 시 액션 핸들러 **내에서** `toast` 알림을 사용하거나 전용 알림 액션을 호출해야 합니다.
+37 | 
+38 | ## 4. API 상호작용 및 MSW 테스팅
 39 | 
-40 | ## 5. Console API for Debugging
-41 | - **MUST:** In development mode (`process.env.NODE_ENV === 'development'`), key Zustand actions **MUST** be exposed via the global `window.appCommands` object. This setup should be located in a client-side entry point (e.g., `ClientLayout.tsx`).
-42 |     - *Example:* `window.appCommands.selectCard = useAppStore.getState().selectCard;`
-43 | - **MUST:** Ensure this `window.appCommands` assignment is properly excluded from production builds (using the environment variable check).
-44 | - **MUST:** Maintain the `docs/console-api.md` file, documenting all exposed commands, their parameters, and usage examples whenever new commands are added or existing ones change.
+40 | *   **필수:** API 호출(`fetch`)을 포함하는 Zustand 액션을 구현하거나 수정할 때, 해당 **MSW 핸들러**를 **반드시** `src/tests/msw/handlers.ts`에 추가하거나 업데이트해야 합니다.
+41 | *   **필수:** API 호출을 포함하는 Zustand 액션에 대한 단위 테스트는 API 응답을 모킹하기 위해 설정된 **MSW 서버** (`src/tests/msw/server.ts`)를 **반드시** 활용해야 합니다.
+42 | *   **필수:** 테스트는 MSW 핸들러를 `server.use()`를 사용하여 적절히 구성함으로써 성공적인 API 응답과 잠재적 오류 시나리오(예: 네트워크 오류, 서버 오류)를 **모두 포함**해야 합니다.
+43 | 
+44 | ## 5. 디버깅을 위한 콘솔 API
 45 | 
-46 | ## 6. Refactoring Guidance
-47 | - When refactoring existing code to adhere to this pattern:
-48 |     1.  Identify state update logic within components or hooks.
-49 |     2.  Define a corresponding action in `useAppStore.ts`.
-50 |     3.  Move the logic into the newly defined action.
-51 |     4.  Update the component/hook to call the new action instead of manipulating state directly.
-52 |     5.  If the logic involved API calls, ensure MSW handlers and tests are created/updated.
-53 | 
-54 | **By strictly following this rule, we ensure a consistent, maintainable, and testable architecture centered around Zustand actions and MSW.**
-55 | # --- END OF FILE ---
+46 | *   **필수:** 개발 모드(`process.env.NODE_ENV === 'development'`)에서는 주요 Zustand 액션이 **반드시** 전역 `window.appCommands` 객체를 통해 노출되어야 합니다. 이 설정은 클라이언트 측 진입점(예: `ClientLayout.tsx`)에 위치해야 합니다.
+47 |     *   *예시:* `window.appCommands.selectCard = useAppStore.getState().selectCard;`
+48 | *   **필수:** 이 `window.appCommands` 할당이 프로덕션 빌드에서 올바르게 **제외되도록 보장**해야 합니다 (환경 변수 확인 사용).
+49 | *   **필수:** 새로운 명령이 추가되거나 기존 명령이 변경될 때마다, 노출된 모든 명령, 해당 매개변수 및 사용 예제를 문서화하는 `docs/console-api.md` 파일을 **유지 관리**해야 합니다.
+50 | 
+51 | ## 6. 리팩토링 가이드라인
+52 | 
+53 | *   기존 코드를 이 패턴에 맞게 리팩토링할 때:
+54 |     1.  컴포넌트 또는 훅 내의 상태 업데이트 로직 식별.
+55 |     2.  관련 스토어 파일에 해당 액션 정의.
+56 |     3.  새로 정의된 액션으로 로직 이동.
+57 |     4.  컴포넌트/훅이 상태를 직접 조작하는 대신 새 액션을 호출하도록 업데이트.
+58 |     5.  로직에 API 호출이 포함된 경우 MSW 핸들러 및 테스트가 생성/업데이트되었는지 확인.
+59 | 
+60 | ## 7. 서버 컴포넌트에서의 클라이언트 측 훅 사용
+61 | 
+62 | *   **필수:** 브라우저 특정 API나 컨텍스트에 의존하는 훅(예: `useState`, `useEffect`, `useSearchParams`, `usePathname`, 클라이언트 측 탐색/상태에 사용되는 `next/navigation`의 `useRouter`)은 **서버 컴포넌트**(일반적으로 `src/app/` 아래에 `'use client';` 지시문이 없는 파일) 내에서 **직접 호출해서는 안 됩니다.**
+63 | *   **필수:** 서버 컴포넌트가 클라이언트 측 훅에서 제공하는 기능이 필요한 경우:
+64 |     1.  **새로운 클라이언트 컴포넌트**를 생성합니다 (파일 상단에 `'use client';` 추가).
+65 |     2.  클라이언트 측 훅을 사용하는 로직을 이 새 클라이언트 컴포넌트로 **이동**합니다.
+66 |     3.  원래 서버 컴포넌트 내에서 새 클라이언트 컴포넌트를 **import하여 사용**합니다.
+67 | *   **필수:** 서버 컴포넌트 내에서 클라이언트 컴포넌트(특히 초기 서버 렌더링/사전 렌더링 시 사용 불가능할 수 있는 `useSearchParams` 같은 훅을 사용하는 컴포넌트)를 렌더링할 때는, 해당 클라이언트 컴포넌트를 적절한 `fallback` UI와 함께 **`<Suspense>` 경계로 감싸야 합니다.**
+68 |     *   *예시:*
+69 |       ```tsx
+70 |       // 서버 컴포넌트 내 (예: src/app/some/page.tsx)
+71 |       import { Suspense } from 'react';
+72 |       import ClientSideComponentUsingHooks from '@/components/ClientSideComponentUsingHooks';
+73 | 
+74 |       function LoadingFallback() {
+75 |         return <p>동적 콘텐츠 로딩 중...</p>;
+76 |       }
+77 | 
+78 |       export default function ServerPage() {
+79 |         return (
+80 |           <div>
+81 |             <h1>서버 렌더링된 제목</h1>
+82 |             <Suspense fallback={<LoadingFallback />}>
+83 |               <ClientSideComponentUsingHooks />
+84 |             </Suspense>
+85 |           </div>
+86 |         );
+87 |       }
+88 |       ```
+89 | *   **필수:** 클라이언트 컴포넌트를 생성한 이유(예: "useSearchParams 훅 사용")를 컴포넌트의 파일 레벨 주석이나 문서에 **명확하게 기록**해야 합니다.
+90 | 
+91 | **근거:** 이 규칙은 서버 렌더링 또는 사전 렌더링 중에 클라이언트 전용 API나 훅을 사용하려고 할 때 발생하는 빌드 오류 및 런타임 문제를 방지합니다. 이는 Next.js App Router 아키텍처 내에서 클라이언트 측 상호작용 및 데이터 가져오기를 통합하는 올바른 패턴을 강제하며, 클라이언트 컴포넌트 로딩 중 더 나은 사용자 경험을 위해 Suspense를 활용합니다.
+92 | 
+93 | **이 규칙들을 엄격히 준수함으로써, 우리는 Zustand 액션과 MSW를 중심으로 일관되고 유지 관리 가능하며 테스트 가능한 아키텍처를 보장합니다.**
+94 | # --- END OF FILE ---
 ```
