@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUpdateCard } from "@/hooks/useUpdateCard";
+import { Card } from "@/types/card";
 
 // 카드 타입 정의
 export interface CardData {
@@ -40,8 +42,13 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
   const [content, setContent] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+
+  // useUpdateCard 훅 사용
+  const updateCardMutation = useUpdateCard();
+  const { mutate: updateCard } = updateCardMutation;
+  const isSubmitting = updateCardMutation.isPending;
+  const { isSuccess, error } = updateCardMutation;
 
   // 초기 데이터 로딩
   useEffect(() => {
@@ -55,6 +62,15 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
       }
     }
   }, [card]);
+
+  // 업데이트 성공 시 처리
+  useEffect(() => {
+    if (isSuccess) {
+      if (onSuccess) {
+        onSuccess();
+      }
+    }
+  }, [isSuccess, onSuccess]);
 
   // 입력 조합(IME) 시작 핸들러
   const handleCompositionStart = () => {
@@ -109,41 +125,36 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      // API 호출로 카드 업데이트
-      const response = await fetch(`/api/cards/${card.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    updateCard(
+      {
+        id: card.id,
+        patch: {
           title,
           content,
           tags,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '카드 수정 중 오류가 발생했습니다.');
+        }
+      },
+      {
+        onSuccess: (updatedCard) => {
+          toast.success('카드가 성공적으로 수정되었습니다.');
+          if (onSuccess) {
+            // API 반환 타입(Card)을 컴포넌트 내부 타입(CardData)으로 변환
+            const cardData: CardData = {
+              id: updatedCard.id,
+              title: updatedCard.title,
+              content: updatedCard.content || '',
+              // cardTags 구조가 다를 경우 변환 처리
+              cardTags: updatedCard.cardTags || []
+            };
+            onSuccess(cardData);
+          }
+        },
+        onError: (error) => {
+          console.error('카드 수정 오류:', error);
+          toast.error('카드 수정 중 오류가 발생했습니다.');
+        }
       }
-
-      const updatedCard = await response.json();
-
-      toast.success('카드가 성공적으로 수정되었습니다.');
-
-      // 성공 콜백 호출
-      if (onSuccess) {
-        onSuccess(updatedCard);
-      }
-    } catch (error) {
-      console.error('카드 수정 오류:', error);
-      toast.error('카드 수정 중 오류가 발생했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   // 카드 수정 폼 렌더링
@@ -173,6 +184,11 @@ export default function EditCardForm({ card, onSuccess, onCancel }: EditCardForm
 
       <div className="space-y-2">
         <Label htmlFor="tags">태그</Label>
+        {error && (
+          <p className="text-sm text-red-500 mt-1 mb-2">
+            오류: {error.message || '카드 수정 중 오류가 발생했습니다.'}
+          </p>
+        )}
         <Input
           id="tags"
           value={tagInput}

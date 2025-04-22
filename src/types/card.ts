@@ -24,4 +24,5 @@ export interface CreateCardInput {
 export interface UpdateCardInput {
   title?: string;
   content?: string;
+  tags?: string[];
 } 

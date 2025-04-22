@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_USER_ID } from "@/lib/constants";
-import { useAppStore } from "@/store/useAppStore";
+import { useCreateCard } from "@/hooks/useCreateCard";
 import { CreateCardInput, Card } from "@/types/card";
 
 // 컴포넌트에 props 타입 정의
@@ -49,11 +49,13 @@ export default function CreateCardModal({
   const [content, setContent] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [firstUserId, setFirstUserId] = useState<string>("");
   const isComposing = useRef(false);
 
-  // useAppStore 훅 사용
-  const { createCard, isLoading } = useAppStore();
+  // useCreateCard 훅 사용
+  const createCardMutation = useCreateCard();
+  const { mutate: createCard } = createCardMutation;
+  const isLoading = createCardMutation.isPending;
+  const { isSuccess, error } = createCardMutation;
 
   // 자동으로 모달 열기
   useEffect(() => {
@@ -61,6 +63,17 @@ export default function CreateCardModal({
       setOpen(true);
     }
   }, [autoOpen]);
+
+  // isSuccess 상태를 감지하여 모달 닫기
+  useEffect(() => {
+    if (isSuccess) {
+      setTitle("");
+      setContent("");
+      setTags([]);
+      setTagInput("");
+      setOpen(false);
+    }
+  }, [isSuccess]);
 
   // 모달 상태 변경 처리 핸들러
   const handleOpenChange = (newOpenState: boolean) => {
@@ -71,30 +84,6 @@ export default function CreateCardModal({
       onClose();
     }
   };
-
-  // 사용자 ID 가져오기
-  useEffect(() => {
-    async function fetchFirstUserId() {
-      try {
-        const response = await fetch('/api/users/first');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.id) {
-            setFirstUserId(data.id);
-            console.log('사용자 ID 가져옴:', data.id);
-          } else {
-            console.error('사용자 ID를 가져오지 못함');
-          }
-        } else {
-          console.error('사용자 조회 실패:', response.status);
-        }
-      } catch (error) {
-        console.error('사용자 ID 가져오기 오류:', error);
-      }
-    }
-
-    fetchFirstUserId();
-  }, []);
 
   // 태그 추가 처리
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -149,33 +138,21 @@ export default function CreateCardModal({
       return;
     }
 
-    // 사용자 ID 확인
-    const userId = firstUserId || DEFAULT_USER_ID;
-    if (!userId) {
-      return;
-    }
-
     const cardInput: CreateCardInput = {
       title: title.trim(),
       content: content,
-      userId: userId,
+      userId: DEFAULT_USER_ID,
       tags: tags,
     };
 
-    const createdCard = await createCard(cardInput);
-
-    if (createdCard) {
-      setTitle("");
-      setContent("");
-      setTags([]);
-      setTagInput("");
-      setOpen(false);
-
-      // 콜백이 제공된 경우 실행
-      if (onCardCreated) {
-        onCardCreated(createdCard);
+    createCard(cardInput, {
+      onSuccess: (createdCards) => {
+        // 콜백이 제공된 경우 실행
+        if (onCardCreated && createdCards.length > 0) {
+          onCardCreated(createdCards[0]);
+        }
       }
-    }
+    });
   };
 
   // 태그 입력 중 쉼표가 입력되면 태그 추가 처리
@@ -219,6 +196,11 @@ export default function CreateCardModal({
           <DialogDescription>
             새로운 카드를 생성하려면 아래 양식을 작성하세요.
           </DialogDescription>
+          {error && (
+            <p className="text-sm text-red-500 mt-2">
+              오류: {error.message || '카드 생성 중 오류가 발생했습니다.'}
+            </p>
+          )}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

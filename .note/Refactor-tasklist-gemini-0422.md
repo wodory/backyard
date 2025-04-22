@@ -487,60 +487,60 @@
     - 예상 결과: 카드 수정 성공 시, 카드 목록과 해당 카드의 상세 정보가 자동으로 갱신됩니다.
     - 테스트 포인트: `mutate` 호출 시 `/api/cards/[id]` PATCH 요청 확인, 성공 시 `['cards']` 및 `['card', id]` 쿼리 invalidated 확인, 실패 시 `error` 상태 확인.
 
-### Task 17: `useDeleteCard` 카드 삭제 Mutation 훅 생성
-- 관련 파일: `/src/hooks/useDeleteCard.ts` (및 Bulk 버전 추가)
-- 변경 유형: [✅코드 추가]
-- 설명: 단일 카드 삭제를 위한 `useMutation` 훅을 구현합니다. `mutationFn`으로 `cardService.deleteCardAPI`를 호출하고, 성공 시 `['cards']` 목록 캐시를 무효화하고 `['card', cardId]` 상세 캐시를 제거(`removeQueries`)합니다. (Bulk 삭제 훅도 필요시 Task 18 내용 참고하여 추가)
-- 함수 시그니처: (Task 18 내용 참고 - 단건)
-  ```ts
-  import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-  import { deleteCardAPI } from '@/services/cardService';
+    ### Task 17: `useDeleteCard` 카드 삭제 Mutation 훅 생성
+    - 관련 파일: `/src/hooks/useDeleteCard.ts` (및 Bulk 버전 추가)
+    - 변경 유형: [✅코드 추가]
+    - 설명: 단일 카드 삭제를 위한 `useMutation` 훅을 구현합니다. `mutationFn`으로 `cardService.deleteCardAPI`를 호출하고, 성공 시 `['cards']` 목록 캐시를 무효화하고 `['card', cardId]` 상세 캐시를 제거(`removeQueries`)합니다. (Bulk 삭제 훅도 필요시 Task 18 내용 참고하여 추가)
+    - 함수 시그니처: (Task 18 내용 참고 - 단건)
+    ```ts
+    import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+    import { deleteCardAPI } from '@/services/cardService';
 
-  export function useDeleteCard(cardId: string): UseMutationResult<void, Error, void> {
-      const queryClient = useQueryClient();
-      return useMutation({
-          mutationKey: ['deleteCard', cardId],
-          mutationFn: () => deleteCardAPI(cardId),
-          onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: ['cards'] });
-              queryClient.removeQueries({ queryKey: ['card', cardId] });
-          },
-      });
-  }
-  ```
-- import 경로 변경: `import { useDeleteCard } from '@/hooks/useDeleteCard';`
-- 적용 규칙: [tanstack-query-hook], [cache-inval]
-- 예상 결과: 카드 삭제 성공 시, 카드 목록이 갱신되고 해당 카드의 상세 정보 캐시가 제거됩니다.
-- 테스트 포인트: `mutate` 호출 시 `/api/cards/[id]` DELETE 요청 확인, 성공 시 `['cards']` 쿼리 invalidated 및 `['card', id]` 캐시 제거 확인, 실패 시 `error` 상태 확인.
+    export function useDeleteCard(cardId: string): UseMutationResult<void, Error, void> {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationKey: ['deleteCard', cardId],
+            mutationFn: () => deleteCardAPI(cardId),
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['cards'] });
+                queryClient.removeQueries({ queryKey: ['card', cardId] });
+            },
+        });
+    }
+    ```
+    - import 경로 변경: `import { useDeleteCard } from '@/hooks/useDeleteCard';`
+    - 적용 규칙: [tanstack-query-hook], [cache-inval]
+    - 예상 결과: 카드 삭제 성공 시, 카드 목록이 갱신되고 해당 카드의 상세 정보 캐시가 제거됩니다.
+    - 테스트 포인트: `mutate` 호출 시 `/api/cards/[id]` DELETE 요청 확인, 성공 시 `['cards']` 쿼리 invalidated 및 `['card', id]` 캐시 제거 확인, 실패 시 `error` 상태 확인.
 
-### Task 18: `CreateCardModal` 컴포넌트 리팩토링
-- 관련 파일: `/src/components/cards/CreateCardModal.tsx`
-- 변경 유형: [🔁리팩토링]
-- 설명: 새 카드 생성 모달에서 `useCreateCard` 훅을 사용하도록 변경합니다.
-    - `const { mutate: createCard, isLoading, error, isSuccess } = useCreateCard();` 호출.
-    - 폼 `onSubmit`에서 `createCard(formData)` 호출.
-    - `isLoading`, `error` 상태를 UI에 반영.
-    - `isSuccess` 상태를 사용하여 성공 시 모달 닫기 처리 (`useEffect` 또는 `onSuccess` 콜백).
-    - `useAppStore` 관련 액션 호출 제거.
-- 함수 시그니처: (Task 19 내용 참고)
-- import 경로 변경: `useCreateCard` 추가, `useAppStore` 제거.
-- 적용 규칙: [tanstack-query-hook]
-- 예상 결과: 카드 생성 모달이 React Query mutation 기반으로 동작하며, 성공 시 자동으로 카드 목록이 갱신됩니다.
-- 테스트 포인트: 모달에서 카드 추가 시 `/api/cards` POST 요청 후 모달 닫힘 및 `CardList` 업데이트 확인, 에러/로딩 상태 UI 확인.
+    ### Task 18: `CreateCardModal` 컴포넌트 리팩토링
+    - 관련 파일: `/src/components/cards/CreateCardModal.tsx`
+    - 변경 유형: [🔁리팩토링]
+    - 설명: 새 카드 생성 모달에서 `useCreateCard` 훅을 사용하도록 변경합니다.
+        - `const { mutate: createCard, isLoading, error, isSuccess } = useCreateCard();` 호출.
+        - 폼 `onSubmit`에서 `createCard(formData)` 호출.
+        - `isLoading`, `error` 상태를 UI에 반영.
+        - `isSuccess` 상태를 사용하여 성공 시 모달 닫기 처리 (`useEffect` 또는 `onSuccess` 콜백).
+        - `useAppStore` 관련 액션 호출 제거.
+    - 함수 시그니처: (Task 19 내용 참고)
+    - import 경로 변경: `useCreateCard` 추가, `useAppStore` 제거.
+    - 적용 규칙: [tanstack-query-hook]
+    - 예상 결과: 카드 생성 모달이 React Query mutation 기반으로 동작하며, 성공 시 자동으로 카드 목록이 갱신됩니다.
+    - 테스트 포인트: 모달에서 카드 추가 시 `/api/cards` POST 요청 후 모달 닫힘 및 `CardList` 업데이트 확인, 에러/로딩 상태 UI 확인.
 
-### Task 19: 카드 편집 컴포넌트 리팩토링
-- 관련 파일: `/src/components/cards/EditCardContent.tsx` (또는 `EditCardModal.tsx`)
-- 변경 유형: [🔁리팩토링]
-- 설명: 카드 편집 UI에서 `useUpdateCard` 훅을 사용하도록 변경합니다.
-    - `const { mutate: updateCard, isLoading, error, isSuccess } = useUpdateCard(cardId);` 호출.
-    - 폼 저장 시 `updateCard({ title, content })` 호출.
-    - `isLoading`, `error`, `isSuccess` 상태를 UI 및 편집 모드 종료 로직에 반영.
-    - `useAppStore` 관련 액션 호출 제거.
-- 함수 시그니처: (Task 20 내용 참고)
-- import 경로 변경: `useUpdateCard` 추가, `useAppStore` 제거.
-- 적용 규칙: [tanstack-query-hook]
-- 예상 결과: 카드 편집 및 저장 시 React Query mutation 기반으로 동작하며, 성공 시 자동으로 카드 목록 및 상세 정보가 갱신됩니다.
-- 테스트 포인트: 내용 수정 후 저장 시 `/api/cards/[id]` PATCH 요청 후 UI 업데이트 확인, 에러/로딩 상태 UI 확인.
+    ### Task 19: 카드 편집 컴포넌트 리팩토링
+    - 관련 파일: `/src/components/cards/EditCardContent.tsx` (또는 `EditCardModal.tsx`)
+    - 변경 유형: [🔁리팩토링]
+    - 설명: 카드 편집 UI에서 `useUpdateCard` 훅을 사용하도록 변경합니다.
+        - `const { mutate: updateCard, isLoading, error, isSuccess } = useUpdateCard(cardId);` 호출.
+        - 폼 저장 시 `updateCard({ title, content })` 호출.
+        - `isLoading`, `error`, `isSuccess` 상태를 UI 및 편집 모드 종료 로직에 반영.
+        - `useAppStore` 관련 액션 호출 제거.
+    - 함수 시그니처: (Task 20 내용 참고)
+    - import 경로 변경: `useUpdateCard` 추가, `useAppStore` 제거.
+    - 적용 규칙: [tanstack-query-hook]
+    - 예상 결과: 카드 편집 및 저장 시 React Query mutation 기반으로 동작하며, 성공 시 자동으로 카드 목록 및 상세 정보가 갱신됩니다.
+    - 테스트 포인트: 내용 수정 후 저장 시 `/api/cards/[id]` PATCH 요청 후 UI 업데이트 확인, 에러/로딩 상태 UI 확인.
 
 ### Task 20: 카드 삭제 버튼 컴포넌트 리팩토링
 - 관련 파일: `/src/components/cards/DeleteButton.tsx` (또는 CardList 내 로직)

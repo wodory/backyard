@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import TiptapEditor from "@/components/editor/TiptapEditor";
 import TiptapViewer from "@/components/editor/TiptapViewer";
 import { Button } from "@/components/ui/button";
+import { useUpdateCard } from "@/hooks/useUpdateCard";
 
 
 interface EditCardContentProps {
@@ -18,7 +19,19 @@ interface EditCardContentProps {
 export default function EditCardContent({ cardId, initialContent }: EditCardContentProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(initialContent);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // useUpdateCard 훅 사용
+  const updateCardMutation = useUpdateCard();
+  const { mutate: updateCard } = updateCardMutation;
+  const isSubmitting = updateCardMutation.isPending;
+  const { isSuccess, error } = updateCardMutation;
+
+  // 업데이트 성공 시 편집 모드 종료
+  useEffect(() => {
+    if (isSuccess) {
+      setIsEditing(false);
+    }
+  }, [isSuccess]);
 
   const handleSubmit = async () => {
     if (content === initialContent) {
@@ -31,32 +44,21 @@ export default function EditCardContent({ cardId, initialContent }: EditCardCont
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch(`/api/cards/${cardId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+    updateCard(
+      {
+        id: cardId,
+        patch: { content }
+      },
+      {
+        onSuccess: () => {
+          toast.success("내용이 수정되었습니다.");
         },
-        body: JSON.stringify({
-          content,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "내용 수정에 실패했습니다.");
+        onError: (error) => {
+          console.error("Error updating card content:", error);
+          toast.error(error instanceof Error ? error.message : "내용 수정에 실패했습니다.");
+        }
       }
-
-      toast.success("내용이 수정되었습니다.");
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Error updating card content:", error);
-      toast.error(error instanceof Error ? error.message : "내용 수정에 실패했습니다.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   const handleCancel = () => {
@@ -72,6 +74,11 @@ export default function EditCardContent({ cardId, initialContent }: EditCardCont
           onChange={setContent}
           placeholder="카드 내용을 입력하세요..."
         />
+        {error && (
+          <p className="text-sm text-red-500">
+            오류: {error.message || '내용 수정에 실패했습니다.'}
+          </p>
+        )}
         <div className="flex justify-end space-x-2">
           <Button
             variant="outline"
