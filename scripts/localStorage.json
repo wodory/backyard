@@ -1,0 +1,3 @@
+{
+    "ideamap-edges": "[{\"id\":\"edge-1\",\"source\":\"card-1\",\"target\":\"card-2\",\"type\":\"default\",\"animated\":false,\"style\":{\"stroke\":\"#333333\"},\"data\":{\"label\":\"연결 1\"}},{\"id\":\"edge-2\",\"source\":\"card-2\",\"target\":\"card-3\",\"type\":\"step\",\"animated\":true,\"style\":{\"stroke\":\"#007bff\"},\"data\":{\"label\":\"연결 2\"}}]"
+}

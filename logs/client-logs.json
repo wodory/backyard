@@ -5002,5 +5002,336 @@
     "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
     "sessionId": "47qmnwuvxz418ky8jrquy4",
     "serverTimestamp": "2025-04-22T17:21:31.615Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:20.699Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:21.748Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:20.819Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:22.312Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:21.852Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:22.345Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:23.065Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:23.149Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:25.169Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:25.231Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:29.337Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:29.412Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:32.045Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:32.100Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:33.210Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:33.274Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:35.343Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:35.411Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:39.522Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:39.632Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:50.025Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:50.104Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:51.167Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:51.221Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:53.303Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:53.369Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:14:57.448Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:14:57.499Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:15:47.974Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:15:49.878Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:15:48.154Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:15:50.284Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:15:49.974Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:15:50.297Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:15:51.072Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:15:51.126Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:15:53.178Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:15:53.231Z"
+  },
+  {
+    "timestamp": "2025-04-23T03:15:57.275Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T03:15:57.325Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:15:28.112Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:15:30.147Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:15:30.138Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:15:30.470Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:15:28.332Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:15:30.479Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:15:31.268Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:15:31.328Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:15:33.421Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:15:33.481Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:15:37.561Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:15:37.637Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:33.402Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:33.658Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:34.551Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:34.938Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:38.442Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:38.489Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:46.228Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:46.810Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:48.028Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:49.694Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:48.232Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:50.003Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:49.317Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:50.009Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:50.519Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:50.574Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:17:52.617Z",
+    "level": "error",
+    "module": "edgeService",
+    "message": "엣지 목록 조회 오류:",
+    "data": {},
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:17:52.666Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:18:26.482Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:18:28.136Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:18:26.583Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:18:28.141Z"
+  },
+  {
+    "timestamp": "2025-04-23T04:19:06.622Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-23T04:19:06.682Z"
   }
 ]

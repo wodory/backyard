@@ -24,7 +24,7 @@ import createLogger from '@/lib/logger';
 // 보드 관련 컴포넌트 임포트
 import IdeaMapCanvas from './IdeaMapCanvas';
 // 보드 관련 훅 임포트
-import { useEdges } from '../hooks/useEdges';
+import { useEdges as useDBEdges } from '@/hooks/useEdges';
 import { useIdeaMapData } from '../hooks/useIdeaMapData';
 import { useIdeaMapHandlers } from '../hooks/useIdeaMapHandlers';
 import { useNodeClickHandlers } from '../hooks/useNodes';
@@ -35,10 +35,13 @@ import {
   XYPosition,
   SafeRef,
   IdeaMapSettings,
-  NodeChange
+  NodeChange,
+  EdgeChange,
+  Connection
 } from '../types/ideamap-types';
 import { IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
-import { Node } from '@xyflow/react';
+import { Node, Edge, applyEdgeChanges, addEdge } from '@xyflow/react';
+import { toReactFlowEdge } from '@/types/edge';
 
 // 로거 생성
 const logger = createLogger('IdeaMap');
@@ -132,25 +135,50 @@ function IdeaMap({
     }, [])
   });
 
-  // 기존 useEdges 훅 사용 (하위 호환성 유지를 위해 일단 남겨둠)
-  // 내부적으로는 이미 useIdeaMapStore 액션들을 호출하고 있음
+  // DB에서 가져온 엣지 데이터
   const {
-    edges,
-    handleEdgesChange,
-    onConnect,
-    hasUnsavedChanges: hasUnsavedEdgesChanges,
-    setEdges
-  } = useEdges({
-    ideaMapSettings,
-    nodes: ideaMapStoreNodes,
-    initialEdges: ideaMapStoreEdges
-  });
+    data: dbEdges = [],
+    isLoading: isEdgesLoading
+  } = useDBEdges();
 
-  // loadNodesAndEdges 함수를 안전하게 래핑
-  const fetchCards = useCallback(async () => {
-    await loadNodesAndEdges();
-    return { nodes: ideaMapStoreNodes, edges: ideaMapStoreEdges };
-  }, [loadNodesAndEdges, ideaMapStoreNodes, ideaMapStoreEdges]);
+  // 엣지 상태 관리 (기존 방식과 호환)
+  const [edges, setEdgesState] = useState<Edge[]>([]);
+  const hasUnsavedEdgesChanges = useRef(false);
+
+  // 엣지 변경 핸들러
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setEdgesState(prevEdges => {
+      const newEdges = applyEdgeChanges(changes, prevEdges);
+      hasUnsavedEdgesChanges.current = true;
+      return newEdges;
+    });
+  }, []);
+
+  // 엣지 연결 핸들러
+  const onConnect = useCallback((params: Connection) => {
+    setEdgesState(prevEdges => {
+      const newEdges = addEdge(params, prevEdges);
+      hasUnsavedEdgesChanges.current = true;
+      return newEdges;
+    });
+  }, []);
+
+  // 엣지 데이터 동기화
+  useEffect(() => {
+    if (!isEdgesLoading && dbEdges.length > 0) {
+      logger.debug('DB에서 엣지 데이터 로드됨:', { 엣지수: dbEdges.length });
+      setEdgesState(dbEdges.map(edge => toReactFlowEdge(edge)));
+      toast.success(`${dbEdges.length}개의 엣지 데이터를 불러왔습니다.`);
+    }
+  }, [dbEdges, isEdgesLoading]);
+
+  // 로컬 상태 업데이트 래퍼 함수
+  const setEdges = useCallback((newEdges: Edge[]) => {
+    setEdgesState(newEdges);
+  }, []);
+
+  // 로딩 상태 확인 수정
+  const isAllDataLoading = isLoading || isEdgesLoading;
 
   // useIdeaMapHandlers 훅 사용
   const {
@@ -161,7 +189,10 @@ function IdeaMap({
   } = useIdeaMapHandlers({
     reactFlowWrapper,
     reactFlowInstance,
-    fetchCards // loadNodesAndEdges 대신 래핑한 fetchCards 사용
+    fetchCards: async () => {
+      await loadNodesAndEdges();
+      return { nodes: ideaMapStoreNodes, edges: ideaMapStoreEdges };
+    }
   });
 
   // 엣지에 새 노드 추가 기능
@@ -318,10 +349,9 @@ function IdeaMap({
   // 저장되지 않은 변경사항이 있을 때 페이지 이탈 경고
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges || hasUnsavedEdgesChanges) {
+      if (hasUnsavedChanges) {
         logger.debug('저장되지 않은 변경사항이 있음:', {
-          hasUnsavedChanges,
-          hasUnsavedEdgesChanges
+          hasUnsavedChanges
         });
         const message = '저장되지 않은 변경사항이 있습니다. 정말로 나가시겠습니까?';
         event.returnValue = message;
@@ -334,7 +364,7 @@ function IdeaMap({
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [hasUnsavedChanges, hasUnsavedEdgesChanges]);
+  }, [hasUnsavedChanges]);
 
   // 사용자 변경 감지 - DB에서 해당 사용자의 레이아웃 데이터 가져오기
   useEffect(() => {
@@ -478,35 +508,21 @@ function IdeaMap({
     setIsCreateModalOpen(false);
   }, [handleCardCreated]);
 
-  // useEffect를 사용하여 초기 엣지 데이터 검증 및 로딩
+  // useEffect를 사용하여 초기 엣지 데이터 검증 및 로딩 (기존 useEffect 대체)
   useEffect(() => {
-    logger.debug('엣지 데이터 검증 시작:', { edgesLength: edges.length });
+    logger.debug('엣지 데이터 검증 시작:', {
+      localEdgesLength: edges?.length || 0,
+      dbEdgesLength: ideaMapStoreEdges?.length || 0
+    });
 
-    // 엣지가 비어있는 경우 로컬 스토리지에서 직접 로드 시도
-    if (edges.length === 0) {
-      logger.debug('엣지 배열이 비어있음. 로컬 스토리지에서 직접 로드 시도');
-      try {
-        const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
-        if (savedEdgesStr) {
-          const savedEdges = JSON.parse(savedEdgesStr);
-          logger.debug('로컬 스토리지에서 엣지 로드 성공:', { edgesCount: savedEdges.length });
-
-          // 로컬 스토리지에 엣지가 있으면 스토어에 설정
-          if (savedEdges.length > 0) {
-            // 타입 오류 해결: 명시적으로 Edge[] 타입으로 캐스팅
-            setEdges(savedEdges);
-            toast.success(`엣지 데이터 ${savedEdges.length}개를 복구했습니다.`);
-          } else {
-            logger.debug('로컬 스토리지에 저장된 엣지가 없음');
-          }
-        } else {
-          logger.debug('로컬 스토리지에 저장된 엣지 데이터 없음');
-        }
-      } catch (err) {
-        logger.error('로컬 스토리지에서 엣지 로드 중 오류:', err);
-      }
+    // DB에서 가져온 엣지가 있고 로컬 엣지가 비어있거나 적을 경우
+    if (ideaMapStoreEdges.length > (edges?.length || 0)) {
+      logger.debug('DB 엣지 데이터가 더 많음. DB 데이터 사용');
+      setEdges(ideaMapStoreEdges);
+      toast.success(`${ideaMapStoreEdges.length}개의 엣지 데이터를 DB에서 불러왔습니다.`);
     }
-  }, [edges.length, setEdges]);
+    // 기존 로컬 스토리지 로드 로직은 제거 또는 주석 처리
+  }, [edges?.length, ideaMapStoreEdges.length, setEdges]);
 
   // 오류 메시지가 있으면 표시
   if (error) {
@@ -528,7 +544,7 @@ function IdeaMap({
   }
 
   // 로딩 중이면 로딩 표시
-  if (isLoading) {
+  if (isAllDataLoading) {
     logger.info('로딩 중, 로딩 UI 렌더링');
     return (
       <div className="w-full h-full flex items-center justify-center">

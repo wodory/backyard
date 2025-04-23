@@ -8,6 +8,7 @@
 
 import { cookies } from 'next/headers';
 
+import { createClient as createClientOriginal } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 
 import { Database } from '../types/supabase';
@@ -53,4 +54,10 @@ export async function getServerSession() {
     console.error('서버 세션 조회 중 오류:', error);
     return null;
   }
-} 
+}
+
+// 직접 Supabase 클라이언트 생성 (RLS 정책 적용)
+export const supabase = createClientOriginal<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+); 

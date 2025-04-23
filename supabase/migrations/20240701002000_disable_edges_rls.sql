@@ -1,0 +1,2 @@
+-- RLS 정책 비활성화
+ALTER TABLE edges DISABLE ROW LEVEL SECURITY; 

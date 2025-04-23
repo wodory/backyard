@@ -98,4 +98,20 @@ export async function serverSignInWithGoogle(): Promise<{ success: boolean; url?
     logger.error('서버에서 Google 로그인 처리 중 오류:', error);
     return { success: false, error: errorMessage };
   }
+}
+
+/**
+ * getUserFromRequest: 요청 객체에서 현재 사용자 정보 추출
+ * @param request NextRequest 객체
+ * @returns 인증된 사용자 또는 null
+ */
+export async function getUserFromRequest(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch (error) {
+    logger.error('요청에서 사용자 정보 추출 오류:', error);
+    return null;
+  }
 } 

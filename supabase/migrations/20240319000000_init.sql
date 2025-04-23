@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 사용자 테이블 (Supabase Auth와 연동)
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY,
+  id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   name TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS cards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   content TEXT,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS card_tags (
 -- 보드 설정 테이블
 CREATE TABLE IF NOT EXISTS board_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   settings JSONB NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -85,19 +85,19 @@ ALTER TABLE board_settings ENABLE ROW LEVEL SECURITY;
 
 -- 사용자 테이블 정책
 CREATE POLICY "사용자는 자신의 정보만 조회할 수 있음" ON users
-  FOR SELECT USING (auth.uid() = id);
+  FOR SELECT USING (auth.uid()::TEXT = id);
 CREATE POLICY "사용자는 자신의 정보만 업데이트할 수 있음" ON users
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (auth.uid()::TEXT = id);
 
 -- 카드 테이블 정책
 CREATE POLICY "모든 인증된 사용자는 카드를 조회할 수 있음" ON cards
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "사용자는 자신의 카드만 생성할 수 있음" ON cards
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid()::TEXT = user_id);
 CREATE POLICY "사용자는 자신의 카드만 업데이트할 수 있음" ON cards
-  FOR UPDATE USING (auth.uid() = user_id);
+  FOR UPDATE USING (auth.uid()::TEXT = user_id);
 CREATE POLICY "사용자는 자신의 카드만 삭제할 수 있음" ON cards
-  FOR DELETE USING (auth.uid() = user_id);
+  FOR DELETE USING (auth.uid()::TEXT = user_id);
 
 -- 태그 테이블 정책
 CREATE POLICY "모든 인증된 사용자는 태그를 조회할 수 있음" ON tags
@@ -113,23 +113,23 @@ CREATE POLICY "사용자는 자신의 카드에만 태그를 연결할 수 있�
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM cards 
-      WHERE cards.id = card_id AND cards.user_id = auth.uid()
+      WHERE cards.id = card_id AND cards.user_id = auth.uid()::TEXT
     )
   );
 CREATE POLICY "사용자는 자신의 카드에서만 태그 연결을 삭제할 수 있음" ON card_tags
   FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM cards 
-      WHERE cards.id = card_id AND cards.user_id = auth.uid()
+      WHERE cards.id = card_id AND cards.user_id = auth.uid()::TEXT
     )
   );
 
 -- 보드 설정 테이블 정책
 CREATE POLICY "사용자는 자신의 보드 설정만 조회할 수 있음" ON board_settings
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT USING (auth.uid()::TEXT = user_id);
 CREATE POLICY "사용자는 자신의 보드 설정만 생성할 수 있음" ON board_settings
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid()::TEXT = user_id);
 CREATE POLICY "사용자는 자신의 보드 설정만 업데이트할 수 있음" ON board_settings
-  FOR UPDATE USING (auth.uid() = user_id);
+  FOR UPDATE USING (auth.uid()::TEXT = user_id);
 CREATE POLICY "사용자는 자신의 보드 설정만 삭제할 수 있음" ON board_settings
-  FOR DELETE USING (auth.uid() = user_id); 
+  FOR DELETE USING (auth.uid()::TEXT = user_id); 

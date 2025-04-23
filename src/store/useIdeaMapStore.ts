@@ -44,6 +44,12 @@ import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import createLogger from '@/lib/logger';
 
 import { useAppStore } from './useAppStore';
+import { useCreateEdge } from '@/hooks/useCreateEdge';
+import { useUpdateEdge } from '@/hooks/useUpdateEdge';
+import { useDeleteEdge } from '@/hooks/useDeleteEdge';
+import { useDeleteEdges } from '@/hooks/useDeleteEdges';
+import { EdgeInput, EdgePatch, toReactFlowEdge } from '@/types/edge';
+
 // 로거 생성
 const logger = createLogger('useIdeaMapStore');
 
@@ -141,6 +147,18 @@ interface IdeaMapState {
 
   // 새로 추가한 액션
   syncCardsWithNodes: (forceRefresh?: boolean) => void;
+
+  // 추가: 엣지 생성 함수
+  saveEdge: (edge: Edge) => Promise<string>;
+
+  // 추가: 엣지 업데이트 함수
+  updateEdge: (edgeId: string, changes: Partial<Edge>) => Promise<boolean>;
+
+  // 추가: 엣지 삭제 함수
+  deleteEdge: (edgeId: string) => Promise<boolean>;
+
+  // 추가: 다중 엣지 삭제 함수
+  deleteEdges: (edgeIds: string[]) => Promise<boolean>;
 }
 
 // 아이디어맵 스토어 생성
@@ -634,18 +652,11 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       },
       
       saveEdges: (edgesToSave) => {
-        try {
-          // 엣지 배열 결정
-          const edges = edgesToSave || get().edges;
-          
-          // 로컬 스토리지에 저장
-          localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
-          
-          return true;
-        } catch (error) {
-          logger.error('엣지 저장 중 오류:', error);
-          return false;
-        }
+        // 로컬 스토리지 저장 함수 제거/대체
+        // 이 함수는 더 이상 로컬 스토리지에 저장하지 않고,
+        // DB와 동기화되도록 유지합니다.
+        // 호환성을 위해 함수는 유지하지만 이제는 단순히 성공 반환
+        return true;
       },
       
       saveAllLayoutData: () => {
@@ -1533,6 +1544,77 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           logger.debug('카드-노드 동기화 불필요, 업데이트 건너뜀');
         }
       },
+
+      // 추가: 엣지 생성 함수
+      saveEdge: async (edge: Edge) => {
+        const createEdgeMutation = useCreateEdge();
+        try {
+          // 엣지 데이터 변환 및 저장
+          const edgeInput: EdgeInput = {
+            source: edge.source,
+            target: edge.target,
+            sourceHandle: edge.sourceHandle,
+            targetHandle: edge.targetHandle,
+            type: edge.type,
+            animated: edge.animated || false,
+            style: edge.style || {},
+            data: edge.data || {}
+          };
+          
+          const result = await createEdgeMutation.mutateAsync(edgeInput);
+          return result[0].id; // 생성된 엣지 ID 반환
+        } catch (error) {
+          logger.error('엣지 저장 오류:', error);
+          throw error;
+        }
+      },
+
+      // 추가: 엣지 업데이트 함수
+      updateEdge: async (edgeId: string, changes: Partial<Edge>) => {
+        const updateEdgeMutation = useUpdateEdge();
+        try {
+          const patch: Partial<EdgePatch> = {};
+          
+          if (changes.source) patch.source = changes.source;
+          if (changes.target) patch.target = changes.target;
+          if (changes.sourceHandle !== undefined) patch.sourceHandle = changes.sourceHandle;
+          if (changes.targetHandle !== undefined) patch.targetHandle = changes.targetHandle;
+          if (changes.type !== undefined) patch.type = changes.type;
+          if (changes.animated !== undefined) patch.animated = changes.animated;
+          if (changes.style !== undefined) patch.style = changes.style;
+          if (changes.data !== undefined) patch.data = changes.data;
+          
+          await updateEdgeMutation.mutateAsync({ id: edgeId, patch });
+          return true;
+        } catch (error) {
+          logger.error(`엣지 업데이트 오류 (ID=${edgeId}):`, error);
+          return false;
+        }
+      },
+
+      // 추가: 엣지 삭제 함수
+      deleteEdge: async (edgeId: string) => {
+        const deleteEdgeMutation = useDeleteEdge();
+        try {
+          await deleteEdgeMutation.mutateAsync(edgeId);
+          return true;
+        } catch (error) {
+          logger.error(`엣지 삭제 오류 (ID=${edgeId}):`, error);
+          return false;
+        }
+      },
+
+      // 추가: 다중 엣지 삭제 함수
+      deleteEdges: async (edgeIds: string[]) => {
+        const deleteEdgesMutation = useDeleteEdges();
+        try {
+          await deleteEdgesMutation.mutateAsync(edgeIds);
+          return true;
+        } catch (error) {
+          logger.error('엣지 일괄 삭제 오류:', error);
+          return false;
+        }
+      }
     }),
     {
       name: 'ideamap-store',
@@ -1542,30 +1624,6 @@ export const useIdeaMapStore = create<IdeaMapState>()(
     }
   )
 );
-
-//  04-18 삭제 
-// /**
-//  * calculateViewportBounds: 노드들의 뷰포트 경계를 계산
-//  * @param nodes - 노드 배열
-//  * @returns 뷰포트 경계 값 (최소/최대 x,y 좌표)
-//  */
-// const calculateViewportBounds = (nodes: Node[]) => {
-//   if (nodes.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  
-//   const bounds = nodes.reduce(
-//     (acc, node) => {
-//       return {
-//         minX: Math.min(acc.minX, node.position.x),
-//         minY: Math.min(acc.minY, node.position.y),
-//         maxX: Math.max(acc.maxX, node.position.x + 250), // 노드 너비 대략 250px로 가정
-//         maxY: Math.max(acc.maxY, node.position.y + 150), // 노드 높이 대략 150px로 가정
-//       };
-//     },
-//     { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
-//   );
-  
-//   return bounds;
-// };
 
 /**
  * calculateNodePosition: 노드의 위치를 계산
