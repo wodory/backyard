@@ -103,9 +103,9 @@ export function useIdeaMapLayout(reactFlowWrapper: React.RefObject<HTMLDivElemen
     const success = saveAllLayoutData();
     
     if (success) {
-      toast.success('레이아웃이 저장되었습니다');
+      console.log('[handleSaveLayout] 레이아웃이 저장되었습니다');
     } else {
-      toast.error('레이아웃 저장에 실패했습니다');
+      console.log('[handleSaveLayout] 레이아웃 저장에 실패했습니다');
     }
     
     return success;

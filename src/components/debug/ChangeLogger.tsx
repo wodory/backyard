@@ -15,7 +15,6 @@ export function useChangeLogger(): [NodeChange[], EdgeChange[], ChangeLoggerHand
 
   // 노드 변경 감지 핸들러
   const onNodesChangeLogger = useCallback((changes: NodeChange[]) => {
-    console.log('노드 변경 감지:', changes);
     setNodeChanges(changes);
   }, []);
 
@@ -26,8 +25,8 @@ export function useChangeLogger(): [NodeChange[], EdgeChange[], ChangeLoggerHand
   }, []);
 
   return [
-    nodeChanges, 
-    edgeChanges, 
+    nodeChanges,
+    edgeChanges,
     { onNodesChangeLogger, onEdgesChangeLogger }
   ];
 }
@@ -42,7 +41,7 @@ export function ChangeLogger() {
   return (
     <div className="bg-muted p-2 rounded border text-xs mt-2">
       <h3 className="font-bold mb-1 border-b pb-1">변경 로거</h3>
-      
+
       {nodeChanges.length === 0 && edgeChanges.length === 0 ? (
         <div className="text-muted-foreground">아직 변경사항이 없습니다.</div>
       ) : (
@@ -70,7 +69,7 @@ export function ChangeLogger() {
               </div>
             </div>
           )}
-          
+
           {edgeChanges.length > 0 && (
             <div>
               <div className="font-semibold">엣지 변경:</div>

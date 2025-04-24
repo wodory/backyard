@@ -45,8 +45,8 @@
     },
     "graphSettings": {
       "nodesep": 60,
-      "ranksep": 60,
-      "edgesep": 140
+      "ranksep": 100,
+      "edgesep": 100
     }
   }
 }

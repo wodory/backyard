@@ -41,6 +41,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { useUpdateIdeaMapSettingsMutation } from '@/hooks/useIdeaMapSettings';
 import {
   SNAP_GRID_OPTIONS,
   CONNECTION_TYPE_OPTIONS,
@@ -78,6 +79,9 @@ export function ProjectToolbar() {
     createProject,
     // setActiveProject
   } = useAppStore();
+
+  // TanStack Query mutation 훅 사용
+  const { mutate: updateSettings } = useUpdateIdeaMapSettingsMutation();
 
   // 활성 프로젝트 정보 가져오기
   const activeProject = useAppStore(selectActiveProject);
@@ -132,68 +136,156 @@ export function ProjectToolbar() {
 
   // 스냅 그리드 값 변경 핸들러
   const handleSnapGridChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
     const gridSize = parseInt(value, 10);
     updateIdeaMapSettings({
       snapGrid: [gridSize, gridSize] as [number, number],
       snapToGrid: gridSize > 0, // 그리드 크기가 0보다 크면 스냅 활성화
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: {
+          snapGrid: [gridSize, gridSize] as [number, number],
+          snapToGrid: gridSize > 0
+        }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 연결선 타입 변경 핸들러
   const handleConnectionTypeChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
     updateIdeaMapSettings({
       connectionLineType: value as ConnectionLineType,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { connectionLineType: value as ConnectionLineType }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 마커 타입 변경 핸들러
   const handleMarkerTypeChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
     updateIdeaMapSettings({
       markerEnd: value === 'null' ? null : value as MarkerType,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { markerEnd: value === 'null' ? null : value as MarkerType }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 스냅 그리드 토글 핸들러
   const handleSnapToGridToggle = useCallback(() => {
+    // 1. UI 상태 업데이트 (Zustand)
+    const newValue = !ideaMapSettings.snapToGrid;
     updateIdeaMapSettings({
-      snapToGrid: !ideaMapSettings.snapToGrid,
+      snapToGrid: newValue,
     });
-  }, [ideaMapSettings.snapToGrid, updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { snapToGrid: newValue }
+      });
+    }
+  }, [ideaMapSettings.snapToGrid, updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 연결선 두께 변경 핸들러
   const handleStrokeWidthChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
+    const newValue = parseInt(value, 10);
     updateIdeaMapSettings({
-      strokeWidth: parseInt(value, 10),
+      strokeWidth: newValue,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { strokeWidth: newValue }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 마커 크기 변경 핸들러
   const handleMarkerSizeChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
+    const newValue = parseInt(value, 10);
     updateIdeaMapSettings({
-      markerSize: parseInt(value, 10),
+      markerSize: newValue,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { markerSize: newValue }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 연결선 색상 변경 핸들러
   const handleEdgeColorChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
     updateIdeaMapSettings({
       edgeColor: value,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { edgeColor: value }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 선택된 연결선 색상 변경 핸들러
   const handleSelectedEdgeColorChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
     updateIdeaMapSettings({
       selectedEdgeColor: value,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { selectedEdgeColor: value }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 연결선 애니메이션 변경 핸들러
   const handleAnimatedChange = useCallback((value: string) => {
+    // 1. UI 상태 업데이트 (Zustand)
+    const newValue = value === 'true';
     updateIdeaMapSettings({
-      animated: value === 'true',
+      animated: newValue,
     });
-  }, [updateIdeaMapSettings]);
+
+    // 2. 서버 상태 업데이트 (TanStack Query → Service)
+    if (activeProject?.userId) {
+      updateSettings({
+        userId: activeProject.userId,
+        settings: { animated: newValue }
+      });
+    }
+  }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 내보내기 핸들러
   const handleExport = useCallback(() => {

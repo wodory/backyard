@@ -2,7 +2,7 @@
  * 파일명: src/app/api/ideamap-settings/route.ts
  * 목적: 아이디어맵 설정 관리 API
  * 역할: 사용자별 아이디어맵 설정의 CRUD 기능 제공
- * 작성일: 2024-05-22
+ * 작성일: 2025-04-21
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -50,20 +50,20 @@ export async function POST(request: NextRequest) {
     const { userId, settings } = ideaMapSettingsSchema.parse(body);
 
     // 기존 설정이 있는지 확인
-    const existingSettings = await prisma.boardSettings.findUnique({
+    const existingSettings = await prisma.ideaMapSettings.findUnique({
       where: { userId }
     });
 
     // 설정 업데이트 또는 생성
     if (existingSettings) {
-      await prisma.boardSettings.update({
+      await prisma.ideaMapSettings.update({
         where: { userId },
         data: {
           settings: settings
         }
       });
     } else {
-      await prisma.boardSettings.create({
+      await prisma.ideaMapSettings.create({
         data: {
           userId,
           settings
@@ -85,20 +85,20 @@ export async function PUT(request: NextRequest) {
     const { userId, settings } = ideaMapSettingsSchema.parse(body);
 
     // 기존 설정이 있는지 확인
-    const existingSettings = await prisma.boardSettings.findUnique({
+    const existingSettings = await prisma.ideaMapSettings.findUnique({
       where: { userId }
     });
 
     // 설정 업데이트 또는 생성
     if (existingSettings) {
-      await prisma.boardSettings.update({
+      await prisma.ideaMapSettings.update({
         where: { userId },
         data: {
           settings: settings
         }
       });
     } else {
-      await prisma.boardSettings.create({
+      await prisma.ideaMapSettings.create({
         data: {
           userId,
           settings
@@ -152,7 +152,7 @@ export async function PATCH(request: NextRequest) {
     console.log('검증된 데이터:', { userId, settings: partialSettings });
     
     // 기존 설정 가져오기
-    const existingSettings = await prisma.boardSettings.findUnique({
+    const existingSettings = await prisma.ideaMapSettings.findUnique({
       where: { userId }
     });
     
@@ -170,7 +170,7 @@ export async function PATCH(request: NextRequest) {
       console.log('병합된 설정:', JSON.stringify(mergedSettings, null, 2));
       
       try {
-        await prisma.boardSettings.update({
+        await prisma.ideaMapSettings.update({
           where: { userId },
           data: {
             settings: mergedSettings
@@ -186,7 +186,7 @@ export async function PATCH(request: NextRequest) {
       console.log('새 설정 생성:', JSON.stringify(partialSettings, null, 2));
       
       try {
-        await prisma.boardSettings.create({
+        await prisma.ideaMapSettings.create({
           data: {
             userId,
             settings: partialSettings
@@ -237,15 +237,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '사용자 ID가 필요합니다.' }, { status: 400 });
     }
 
-    const boardSettings = await prisma.boardSettings.findUnique({
+    const ideaMapSettings = await prisma.ideaMapSettings.findUnique({
       where: { userId }
     });
 
-    if (!boardSettings) {
+    if (!ideaMapSettings) {
       return NextResponse.json({ settings: null }, { status: 200 });
     }
 
-    return NextResponse.json({ settings: boardSettings.settings }, { status: 200 });
+    return NextResponse.json({ settings: ideaMapSettings.settings }, { status: 200 });
   } catch (error) {
     console.error('아이디어맵 설정 조회 실패:', error);
     return NextResponse.json({ error: '아이디어맵 설정을 조회하는 데 실패했습니다.' }, { status: 500 });

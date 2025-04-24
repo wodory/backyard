@@ -17,7 +17,7 @@ import { useAppStore } from '@/store/useAppStore';
 const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
 
 // 디버깅용 로그 - 순환 참조 방지를 위해 EDGE_TYPES 접근 제거
-console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge`);
+// console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge`);
 
 // 확장된 엣지 Props 인터페이스
 interface CustomEdgeProps extends EdgeProps {

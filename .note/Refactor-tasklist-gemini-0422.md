@@ -687,27 +687,129 @@
 ### Task 31: 카드 선택 상태 슬라이스 (`createCardStateSlice`) 생성
 - 관련 파일: `/src/store/cardStateSlice.ts`
 - 변경 유형: [✅코드 추가]
-- 설명: 카드 선택(`selectedCardIds`) 및 확장(`expandedCardId`) 상태와 관련 액션을 관리하는 Zustand 슬라이스를 생성합니다. 기존 단일 선택 로직은 다중 선택 기반으로 통합합니다.
-- 함수 시그니처: (Task 32 내용 참고)
-- 적용 규칙: [zustand-slice]
-- 예상 결과: 카드 선택 관련 상태 로직이 별도 파일로 분리됩니다.
+- 설명: 카드 선택 및 확장 상태를 관리하는 slice를 만듭니다. 기존에 `useAppStore`에서 관리하던 `selectedCardIds`, `selectedCardId`, `expandedCardId` 및 여러 액션들을 정리합니다:
+    - `selectedCardIds: string[]` (현재 선택된 카드들의 ID 목록, 멀티선택 지원)
+    - `expandedCardId: string | null` (현재 확장되어 상세 표시 중인 카드 ID, 하나만 가질 수 있다고 가정)
+    - 액션들:
+        - `selectCards(ids: string[])`: 다중 선택 설정 (배열 교체)
+        - `toggleSelectedCard(id: string)`: 해당 카드 ID를 선택 목록에 토글 (있으면 제거, 없으면 추가)
+        - `clearSelectedCards()`: 선택 해제 (배열 비우기)
+        - `toggleExpandCard(id: string)`: expandedCardId 토글 (같은 ID 다시 호출 시 닫힘)
+    - (기존 `selectCard`(단일 선택)와 `addSelectedCard`, `removeSelectedCard` 등을 모두 위 로직으로 통합)
+    - 함수 시그니처:
+    ```ts
+    import { StateCreator } from 'zustand';
+
+    interface CardStateSlice {
+        selectedCardIds: string[];
+        expandedCardId: string | null;
+        selectCards: (ids: string[]) => void;
+        toggleSelectedCard: (id: string) => void;
+        clearSelectedCards: () => void;
+        toggleExpandCard: (id: string) => void;
+    }
+
+    export const createCardStateSlice: StateCreator<CardStateSlice, [], [], CardStateSlice> = (set, get) => ({
+        selectedCardIds: [],
+        expandedCardId: null,
+        selectCards: (ids) => set({ selectedCardIds: ids }),
+        toggleSelectedCard: (id) => set(state => {
+        const currentlySelected = state.selectedCardIds;
+        const isSelected = currentlySelected.includes(id);
+        return {
+            selectedCardIds: isSelected 
+            ? currentlySelected.filter(cid => cid !== id) 
+            : [...currentlySelected, id]
+        };
+        }),
+        clearSelectedCards: () => set({ selectedCardIds: [] }),
+        toggleExpandCard: (id) => set(state => ({
+        expandedCardId: state.expandedCardId === id ? null : id
+        })),
+    });
+    ```
+    - import 경로 변경:
+    ```ts
+    import { createCardStateSlice, CardStateSlice } from '@/store/cardStateSlice';
+    ```
+    - 적용 규칙: [zustand-slice]
+    - 예상 결과: 카드 선택/확장 관련 상태가 잘 분리되었습니다. 이후 `useAppStore`에 통합하면 전역에서 `useAppStore(state => state.selectedCardIds)` 등의 형태로 접근 가능하며, 중복이었던 `selectedCardId` (단일 선택) 상태는 제거됩니다. 필요한 경우 `selectedCardIds`[0]을 이용하거나, 헬퍼를 만들 수 있습니다.
+    - 테스트 포인트:
+    - `toggleSelectedCard`가 동작하는지 간단 테스트: 초기 [] 상태에서 호출하면 해당 ID 추가, 다시 호출하면 제거되는지.
+    - `toggleExpandCard`가 동일 ID 두 번 호출 시 null로 돌아오는지 확인.
+    - 멀티선택 시나리오: `selectCards(['a','b'])` 호출 후 `toggleSelectedCard('b')` → 결과가 ['a']가 되는지 등.
 
 ### Task 32: 테마 설정 슬라이스 (`createThemeSlice`) 생성
 - 관련 파일: `/src/store/themeSlice.ts`
+- 설명: 기존 ThemeContext에서 관리하던 테마 관련 전역 상태를 Zustand slice로 옮깁니다. 여기서는 **앱 테마 및 노드 크기 설정** 등을 포함합니다:
+- `theme: string` (예: 'light' | 'dark' 모드 – 간단히 string으로 표현)
+- `nodeSize: number` (아이디어맵 카드 노드의 크기 배율 혹은 스타일 크기 – 기본값 설정 필요)
+- `updateTheme(theme: string)`: 테마 모드 변경 액션
+- `updateNodeSize(size: number)`: 노드 크기 설정 액션
+(기존 `ThemeContext`에 `updateNodeSize` 함수가 있었으므로 포함)
 - 변경 유형: [✅코드 추가]
-- 설명: 앱 테마(light/dark) 및 노드 크기 등 테마 관련 전역 상태와 액션을 관리하는 Zustand 슬라이스를 생성합니다. (기존 `ThemeContext` 대체 목적)
-- 함수 시그니처: (Task 33 내용 참고)
+    - 설명: 기존 ThemeContext에서 관리하던 테마 관련 전역 상태를 Zustand slice로 옮깁니다. 여기서는 **앱 테마 및 노드 크기 설정** 등을 포함합니다:
+    - `theme: string` (예: 'light' | 'dark' 모드 – 간단히 string으로 표현)
+    - `nodeSize: number` (아이디어맵 카드 노드의 크기 배율 혹은 스타일 크기 – 기본값 설정 필요)
+    - `updateTheme(theme: string)`: 테마 모드 변경 액션
+    - `updateNodeSize(size: number)`: 노드 크기 설정 액션
+    (기존 `ThemeContext`에 `updateNodeSize` 함수가 있었으므로 포함)
+    - 함수 시그니처:
+    ```ts
+    import { StateCreator } from 'zustand';
+
+    interface ThemeSlice {
+        theme: string;
+        nodeSize: number;
+        updateTheme: (theme: string) => void;
+        updateNodeSize: (size: number) => void;
+    }
+
+    export const createThemeSlice: StateCreator<ThemeSlice, [], [], ThemeSlice> = (set) => ({
+        theme: 'light',
+        nodeSize: 1,
+        updateTheme: (theme) => set({ theme }),
+        updateNodeSize: (size) => set({ nodeSize: size }),
+    });
+    ```
+    - import 경로 변경:
+    ```ts
 - 적용 규칙: [zustand-slice]
 - 예상 결과: 테마 관련 상태 로직이 별도 파일로 분리됩니다.
 
 ### Task 33: `useAppStore` 루트 스토어에 슬라이스 통합
 - 관련 파일: `/src/store/useAppStore.ts`
 - 변경 유형: [🔁리팩토링]
-- 설명: 생성된 슬라이스들(`createUiSlice`, `createCardStateSlice`, `createThemeSlice`)을 `create` 함수의 콜백 내에서 spread syntax (...)를 사용하여 하나의 루트 스토어(`useAppStore`)로 통합합니다. `AppState` 타입도 모든 슬라이스 타입을 합쳐 정의합니다. **주의:** 이 단계에서 기존 `useAppStore`에 남아있던 다른 상태(예: `cards`는 아직 제거 전일 수 있음)도 함께 통합하거나, 다음 섹션에서 제거할 때까지 유지해야 합니다.
-- 함수 시그니처: (Task 34 내용 참고)
+- 설명: 앞서 정의한 `createUiSlice`, `createCardStateSlice`, `createThemeSlice`를 합쳐 하나의 Zustand store를 만듭니다. Zustand의 슬라이스 패턴에 따라 여러 slice ([zustand/docs/guides/typescript.md at main · pmndrs/zustand · GitHub](https://github.com/pmndrs/zustand/blob/main/docs/guides/typescript.md#slices-pattern#:~:text=const%20useBoundStore%20%3D%20create,a%29%2C)) 반환합니다. 또한 DevTools, persist 등 미들웨어를 적용하려면 이 단계에서 래핑할 수 있습니다 (optional).
+    - 모든 slice의 상태를 합친 `AppState` 타입을 정의 (`AppState = UISlice & CardStateSlice & ThemeSlice`).
+    - `useAppStore = create<AppState>()((...a) => ({ ...createUiSlice(...a), ...createCardStateSlice(...a), ...createThemeSlice(...a) }));`
+    - (windowCommandSlice를 구현했다면 같이 spread)
+    - 이렇게 생성한 store 훅은 기존 `useAppStore`와 동일한 이름이므로, 기존 사용처는 그대로 쓸 수 있습니다.
+    - *주의*: 이전 `useAppStore` 구현에 있던 기타 상태/액션(예: 프로젝트 관련 또는 아이디어맵 관련)이 아직 남아 있다면, 그것들도 슬라이스로 옮기거나 여기서 함께 spread해야 합니다. 현재 단계에서는 UI/Card/Theme 세 가지에 집중합니다.
+- 함수 시그니처:
+```ts
+import { create } from 'zustand';
+import { UISlice, createUiSlice } from '@/store/uiSlice';
+import { CardStateSlice, createCardStateSlice } from '@/store/cardStateSlice';
+import { ThemeSlice, createThemeSlice } from '@/store/themeSlice';
+
+export type AppState = UISlice & CardStateSlice & ThemeSlice;
+export const useAppStore = create<AppState>()((...a) => ({
+    ...createUiSlice(...a),
+    ...createCardStateSlice(...a),
+    ...createThemeSlice(...a),
+}));
+```
+- import 경로 변경:
+```ts
+import { useAppStore } from '@/store/useAppStore'; // (변경 없음, 구현만 변경)
+```
 - 적용 규칙: [zustand-slice]
-- 예상 결과: `useAppStore`가 슬라이스 기반으로 재구성됩니다. 외부 사용 방식은 동일하지만 내부 구조가 모듈화됩니다.
-- 테스트 포인트: 앱 실행 후 `useAppStore.getState()`로 전체 상태 구조 확인, 기존 UI 기능(사이드바, 테마 등) 동작 확인.
+- 예상 결과: `useAppStore`는 내부 구현이 슬라이스 조합으로 바뀌지만, 외부에서 사용하는 인터페이스는 큰 차이가 없습니다. 다만 `useAppStore.getState()`로 보면 state가 여러 슬라이스 속성을 모두 포함한 평평한 형태가 됩니다. 기존에 제거/수정된 키들을 제외하면, 컴포넌트들의 `useAppStore` 사용 부분은 대부분 동일하게 동작합니다.
+- 테스트 포인트:
+    - 애플리케이션을 실행하고 `useAppStore.getState()`를 콘솔에 출력하여 초기 상태 구조를 확인 (예: `{ isSidebarOpen: true, sidebarWidth: 300, selectedCardIds: [], expandedCardId: null, theme: 'light', nodeSize: 1, ... }`).
+    - 사이드바 토글/열기/닫기, 카드 선택/확장, 테마 변경 등 기능을 여러 군데에서 실행해보고, 상태가 일관되게 저장/공유되는지 확인.
+    - Zustand DevTools (존재한다면)에서 store가 "useAppStore" 하나로 보이고, 그 안에 우리가 정의한 슬라이스 값들이 포함되어 있는지 확인.
 
 **(섹션 D 완료 후)** 애플리케이션을 실행하여 기존의 UI 상태 관련 기능(사이드바, 테마 등)이 슬라이스 통합 후에도 정상적으로 동작하는지 확인합니다. Zustand DevTools를 사용하면 상태 구조 변화를 더 명확히 볼 수 있습니다.
 
@@ -734,7 +836,33 @@
     - `const updateTheme = useAppStore(state => state.updateTheme);`
     - `const nodeSize = useAppStore(state => state.nodeSize);`
     - `const updateNodeSize = useAppStore(state => state.updateNodeSize);`
-- 함수 시그니처: (Task 36 내용 참고)
+    - UI 로직은 기존과 동일하게, 이 상태와 함수를 사용합니다.
+    - 예: 다크모드 토글 스위치 onChange -> `updateTheme(theme === 'light' ? 'dark' : 'light')`
+    - 노드 크기 슬라이더 onChange -> `updateNodeSize(newValue)`
+    - 함수 시그니처:
+```tsx
+import { useAppStore } from '@/store/useAppStore';
+
+function TopBar() {
+    const theme = useAppStore(state => state.theme);
+    const updateTheme = useAppStore(state => state.updateTheme);
+    // ...
+    <Toggle onChange={() => updateTheme(theme === 'light' ? 'dark' : 'light')} checked={theme === 'dark'} />
+}
+
+function NodeSettings() {
+    const nodeSize = useAppStore(state => state.nodeSize);
+    const updateNodeSize = useAppStore(state => state.updateNodeSize);
+    // ...
+    <Slider value={nodeSize} onChange={val => updateNodeSize(val)} />
+}
+```
+- import 경로 변경:
+```ts
+- import { useContext } from 'react';
+- import { ThemeContext } from '@/context/ThemeContext';
+import { useAppStore } from '@/store/useAppStore';
+```
 - 적용 규칙: [zustand-slice]
 - 예상 결과: 테마 및 노드 크기 관련 UI가 Zustand 스토어와 연동되어 동작합니다.
 - 테스트 포인트: 테마 토글, 노드 크기 조절 기능이 정상 동작하고 `useAppStore` 상태가 업데이트되는지 확인.
@@ -742,14 +870,37 @@
 ### Task 36: 카드 선택 상태 사용부 업데이트
 - 관련 파일: 카드 선택/확장 상태를 사용하던 컴포넌트들 (예: `/src/components/layout/Sidebar.tsx`, IdeaMap 노드 컴포넌트)
 - 변경 유형: [🔁리팩토링]
-- 설명: 카드 선택/확장 상태를 `useAppStore`의 `cardStateSlice` 부분에서 가져오도록 수정합니다.
-    - `const selectedIds = useAppStore(state => state.selectedCardIds);`
-    - `const expandedId = useAppStore(state => state.expandedCardId);`
-    - 카드 선택/해제 액션 호출: `selectCards`, `toggleSelectedCard`, `clearSelectedCards`, `toggleExpandCard` 사용.
-- 함수 시그니처: (Task 37 내용 참고)
+- 설명: 여러 컴포넌트에서 `useAppStore`의 카드 선택 상태를 사용하도록 수정합니다. 예를 들어:
+    - 사이드바에 선택된 카드들의 정보 표시 또는 일괄 동작 버튼이 있다면 `const selectedIds = useAppStore(state => state.selectedCardIds);`로 가져옵니다.
+    - IdeaMap에서 노드를 클릭하면 `useAppStore.getState().selectCards([id])` 등을 호출했다면, 이제 `useAppStore.getState().toggleSelectedCard(id)` 또는 `selectCards([id])`로 통일합니다. 단일 선택 동작이라도 멀티 선택에 통합되었으므로 `selectCards([id])` 사용을 권장합니다.
+    - 다중 선택 기능이 있다면 (예: Ctrl+클릭) 노드 클릭 핸들러에서 `toggleSelectedCard(id)`를 사용하고, Ctrl 키 없을 때는 `selectCards([id])`로 단일 선택 구현 가능합니다.
+    - `expandedCardId`를 사용하던 컴포넌트 (예: 상세보기 패널)도 `useAppStore(state => state.expandedCardId)`로 대체하고, 확장/축소 버튼이 `toggleExpandCard(id)`를 호출하도록 변경합니다.
+- 함수 시그니처:
+```tsx
+// 사이드바 컴포넌트 예시
+const selectedCardIds = useAppStore(state => state.selectedCardIds);
+const clearSelection = useAppStore(state => state.clearSelectedCards);
+// "선택된 카드 X개" 표시 및 "선택 해제" 버튼 onClick -> clearSelection()
+
+// IdeaMap 노드 컴포넌트 예시
+const selectCards = useAppStore(state => state.selectCards);
+const toggleSelectedCard = useAppStore(state => state.toggleSelectedCard);
+function handleNodeClick(nodeId: string, isMultiSelect: boolean) {
+    if (isMultiSelect) toggleSelectedCard(nodeId);
+    else selectCards([nodeId]);
+}
+```
+- import 경로 변경:
+```ts
+import { useAppStore } from '@/store/useAppStore';
+```
 - 적용 규칙: [zustand-slice]
-- 예상 결과: 카드 선택/확장 UI가 새로운 Zustand 슬라이스 기반으로 동작합니다.
-- 테스트 포인트: 단일/다중 카드 선택, 선택 해제, 카드 상세보기 확장/축소 기능이 정상 동작하는지 확인.
+- 예상 결과: 이제 카드 선택/확장 관련 UI가 새 slice 기반으로 동작합니다. 이전에 존재하던 `selectedCardId` 단일 값은 없어졌으므로, 하나만 선택하는 경우에도 배열 형태를 사용하도록 코드가 조정됩니다. 
+- 테스트 포인트:
+    - IdeaMap에서 노드를 클릭하면 해당 카드 ID가 `useAppStore.getState().selectedCardIds`에 들어가는지 확인. 다른 노드 클릭 시 배열이 한 개 ID로 교체되는지 (`selectCards` 사용 시).
+    - Ctrl+클릭(또는 UI 상 다중 선택 조작) 시 여러 ID가 배열에 포함되고 UI에서 다중 선택 표시가 제대로 되는지 확인 (ex: 여러 카드 강조 표시).
+    - 사이드바 등에서 "선택 해제" 기능이 모두 selection 배열을 비우는지 확인.
+    - 확장 기능: 카드 상세보기 토글 버튼을 누르면 `expandedCardId`가 설정되고 사이드바 패널 등이 열리며, 다시 누르면 `expandedCardId`가 `null`로 돌아오는지 확인.
 
 ### Task 37: `useNodeStore` (노드 인스펙터 상태) 제거
 - 관련 파일: `/src/store/useNodeStore.ts` (및 사용처)

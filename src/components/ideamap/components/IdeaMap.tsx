@@ -70,12 +70,12 @@ function IdeaMap({
 
   // 인증 상태 가져오기
   const { user, isLoading: isAuthLoading } = useAuth();
-  logger.debug('인증 상태:', { userId: user?.id, isAuthLoading });
+  // logger.debug('인증 상태:', { userId: user?.id, isAuthLoading });
 
   // 레퍼런스 및 기타 훅
   const reactFlowWrapper = useRef<HTMLDivElement>(null) as SafeRef<HTMLDivElement>;
   const reactFlowInstance = useReactFlow();
-  logger.debug('ReactFlow 인스턴스 확인:', !!reactFlowInstance);
+  // logger.debug('ReactFlow 인스턴스 확인:', !!reactFlowInstance);
 
   // useAppStore에서 필요한 상태만 선택적으로 가져오기
   const ideaMapSettings = useAppStore(state => state.ideaMapSettings) as IdeaMapSettings;
@@ -94,14 +94,15 @@ function IdeaMap({
   const applyNodeChangesAction = useIdeaMapStore(state => state.applyNodeChangesAction);
   const saveLayout = useIdeaMapStore(state => state.saveLayout);
 
-  logger.debug('IdeaMapStore 상태:', {
-    nodeCount: ideaMapStoreNodes.length,
-    edgeCount: ideaMapStoreEdges.length,
-    hasLoadedViewport: !!loadedViewport,
-    needsFitView,
-    hasViewportToRestore: !!viewportToRestore,
-    hasUnsavedChanges
-  });
+  // 디버깅 주석 처리
+  // logger.debug('IdeaMapStore 상태:', {
+  //   nodeCount: ideaMapStoreNodes.length,
+  //   edgeCount: ideaMapStoreEdges.length,
+  //   hasLoadedViewport: !!loadedViewport,
+  //   needsFitView,
+  //   hasViewportToRestore: !!viewportToRestore,
+  //   hasUnsavedChanges
+  // });
 
   // useIdeaMapData 훅 사용 부분 수정 (타입 오류 해결)
   // 타입 안전성을 위해 onSelectCard를 항상 함수로 전달
@@ -118,7 +119,8 @@ function IdeaMap({
     loadNodesAndEdges
   } = useIdeaMapData(handleSelectCard);
 
-  logger.debug('IdeaMapData 훅 상태:', { isLoading, hasError: !!error });
+  // 디버깅 주석 처리
+  // logger.debug('IdeaMapData 훅 상태:', { isLoading, hasError: !!error });
 
   // 커스텀 훅 사용
   const {
@@ -458,7 +460,7 @@ function IdeaMap({
     viewportChangeTimer.current = setTimeout(() => {
       if (reactFlowInstance) {
         const viewport = reactFlowInstance.getViewport();
-        logger.debug('뷰포트 변경 감지, 저장:', viewport);
+        // logger.debug('뷰포트 변경 감지, 저장:', viewport);
         saveViewport();
       }
       viewportChangeTimer.current = null;
@@ -529,7 +531,7 @@ function IdeaMap({
 
   // 로딩 중이면 로딩 표시
   if (isLoading) {
-    logger.info('로딩 중, 로딩 UI 렌더링');
+    // logger.info('로딩 중, 로딩 UI 렌더링');
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="bg-card p-6 rounded-md shadow-lg animate-pulse">
@@ -540,11 +542,11 @@ function IdeaMap({
       </div>
     );
   }
-
-  logger.debug('메인 UI 렌더링, 노드/엣지 상태:', {
-    nodeCount: ideaMapStoreNodes.length,
-    edgeCount: edges.length
-  });
+  // 디버깅 주석 처리
+  // logger.debug('메인 UI 렌더링, 노드/엣지 상태:', {
+  //   nodeCount: ideaMapStoreNodes.length,
+  //   edgeCount: edges.length
+  // });
 
   return (
     <div className={`w-full h-full relative ${className}`}>

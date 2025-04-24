@@ -144,7 +144,7 @@ vi.mock('../hooks/useIdeaMapUtils', () => ({
     updateViewportCenter: vi.fn(),
     handleAutoLayout: vi.fn(),
     handleSaveLayout: vi.fn(() => {
-      toast.success('레이아웃이 저장되었습니다.');
+      console.log('[handleSaveLayout] 레이아웃이 저장되었습니다.');
       return true;
     }),
     saveTransform: vi.fn(),

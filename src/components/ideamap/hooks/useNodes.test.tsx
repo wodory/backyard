@@ -4,6 +4,7 @@
  * 역할: 노드 클릭 핸들러 기능의 정상 작동 검증
  * 작성일: 2025-03-28
  * 수정일: 2025-04-11
+ * 수정일: 2025-04-21 : 참조 경로 수정 (board-types -> ideamap-types)
  */
 
 import { renderHook, act } from '@testing-library/react';
@@ -44,7 +45,7 @@ vi.mock('sonner', () => ({
 import { mockReactFlow } from '@/tests/utils/react-flow-mock';
 
 import { useNodeClickHandlers } from './useNodes';
-import { CardData } from '../types/board-types';
+import { CardData } from '../types/ideamap-types';
 
 describe('useNodeClickHandlers', () => {
   // 테스트 전 전역 설정

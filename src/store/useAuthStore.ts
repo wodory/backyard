@@ -38,10 +38,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   
   // 액션 구현
   setProfile: (user) => {
-    logger.info('사용자 프로필 설정', { 
-      hasUser: !!user, 
-      userId: user?.id
-    });
+    // logger.info('사용자 프로필 설정', { 
+    //   hasUser: !!user, 
+    //   userId: user?.id
+    // });
     set({ profile: user });
   },
   

@@ -4,6 +4,7 @@
  * 역할: React Flow의 노드로 사용되는 카드 UI 컴포넌트
  * 작성일: 2025-03-05
  * 수정일: 2025-03-31
+ * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore(themeSlice) 사용으로 변경
  */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
@@ -15,7 +16,6 @@ import { createPortal } from 'react-dom';
 
 import { EditCardModal } from '@/components/cards/EditCardModal';
 import TiptapViewer from '@/components/editor/TiptapViewer';
-import { useTheme } from '@/contexts/ThemeContext';
 import { loadDefaultIdeaMapUIConfig } from '@/lib/ideamap-ui-config';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
@@ -24,7 +24,7 @@ import { useAppStore } from '@/store/useAppStore';
 const COMPONENT_ID = 'CardNode_from_nodes_directory';
 
 // 디버깅용 로그 - 순환 참조 방지를 위해 NODE_TYPES 접근 제거
-console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/ideamap/nodes/CardNode`);
+// console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/ideamap/nodes/CardNode`);
 
 // 노드 데이터 타입 정의
 export interface NodeData {
@@ -80,18 +80,34 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   //   isExpanded: isExpanded
   // });
 
-  // 테마 컨텍스트 가져오기
-  const { theme } = useTheme();
+  // Zustand 스토어에서 테마 설정 가져오기
+  const ideaMapSettings = useAppStore(state => state.ideaMapSettings);
 
   // 선택 및 확장 관련 상태와 함수들을 스토어에서 가져오기
   const selectCard = useAppStore((state) => state.selectCard);
-  const removeSelectedCard = useAppStore((state) => state.removeSelectedCard);
   const clearSelectedCards = useAppStore((state) => state.clearSelectedCards);
   const selectedCardIds = useAppStore((state) => state.selectedCardIds);
-  const updateCardInStore = useAppStore((state) => state.updateCard);
   const expandedCardId = useAppStore((state) => state.expandedCardId);
   const toggleExpandCard = useAppStore((state) => state.toggleExpandCard);
   const isMultiSelected = selectedCardIds.includes(id);
+
+  // toggleSelectedCard를 사용하여 선택 해제 기능 구현
+  const toggleSelectedCard = useAppStore((state) => state.toggleSelectedCard);
+
+  // updateCardInStore 대신 selectCards 사용
+  const selectCards = useAppStore((state) => state.selectCards);
+
+  // 제거 함수 - toggleSelectedCard로 대체
+  const removeSelectedCard = (cardId: string) => {
+    const newSelection = selectedCardIds.filter(id => id !== cardId);
+    selectCards(newSelection);
+  };
+
+  // 업데이트 함수 - 실제 구현에 따라 수정 필요
+  const updateCardInStore = (card: any) => {
+    console.log('카드 업데이트:', card);
+    // 실제 구현이 필요한 경우 추가
+  };
 
   // 현재 노드의 펼침 상태 계산
   const isExpanded = expandedCardId === id;
@@ -114,19 +130,26 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   // 보드 설정 가져오기 - 기존 설정 유지 (폴백용)
   const uiConfig = loadDefaultIdeaMapUIConfig();
 
-  // 필요한 값들 추출 - 테마 컨텍스트에서 가져오기
-  const defaultCardWidth = theme.node.width;
-  const cardHeaderHeight = theme.node.height;
-  const cardMaxHeight = theme.node.maxHeight;
-  const borderWidth = theme.node.borderWidth;
+  // 필요한 값들 추출 - Zustand 스토어에서 가져오기
+  const defaultCardWidth = ideaMapSettings.nodeWidth || 250;
+  const cardHeaderHeight = ideaMapSettings.nodeSpacing || 50;
+  const cardMaxHeight = ideaMapSettings.maxNodeHeight || 300;
+  const borderWidth = 1;
+  const borderRadius = ideaMapSettings.nodeBorderRadius || 8;
+  const backgroundColor = '#ffffff';
+  const borderColor = '#d1d5db';
+  const selectedBorderColor = '#0071e3';
 
-  // 폰트 크기 - 테마 컨텍스트에서 가져오기
-  const titleFontSize = theme.node.font.titleSize;
-  const contentFontSize = theme.node.font.contentSize;
-  const tagsFontSize = theme.node.font.tagsSize;
+  // 폰트 크기 
+  const titleFontSize = ideaMapSettings.nodeFontSize || 14;
+  const contentFontSize = ideaMapSettings.nodeFontSize || 14;
+  const tagsFontSize = 12;
 
-  // 핸들 관련 설정 - 테마 컨텍스트에서 가져오기
-  const handleSize = theme.handle.size;
+  // 핸들 관련 설정
+  const handleSize = 8;
+  const handleBackgroundColor = '#ffffff';
+  const handleBorderColor = '#aaaaaa';
+  const handleBorderWidth = 1;
 
   // 호버 상태 관리
   const handleMouseEnter = useCallback(() => {
@@ -275,10 +298,10 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       height: cardHeight,
       // 확장된 노드는 더 높은 z-index 값을 가지도록 설정
       zIndex: isExpanded ? 9999 : (selected || isMultiSelected ? 100 : 1),
-      backgroundColor: theme.node.backgroundColor,
-      borderColor: selected || isMultiSelected ? theme.node.selectedBorderColor : theme.node.borderColor,
-      borderWidth: theme.node.borderWidth,
-      borderRadius: theme.node.borderRadius,
+      backgroundColor: backgroundColor,
+      borderColor: selected || isMultiSelected ? selectedBorderColor : borderColor,
+      borderWidth: borderWidth,
+      borderRadius: borderRadius,
       overflow: isExpanded ? 'visible' : 'visible', // 항상 visible로 설정하여 핸들러가 보이도록 처리
       position: 'relative', // 핸들러 위치 기준점
       // 확장된 노드에 그림자 효과 추가
@@ -296,8 +319,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   }, [
     data, isExpanded, selected, isMultiSelected,
     defaultCardWidth, cardMaxHeight, cardHeaderHeight,
-    theme.node.backgroundColor, theme.node.selectedBorderColor,
-    theme.node.borderColor, theme.node.borderWidth, theme.node.borderRadius
+    backgroundColor, selectedBorderColor, borderColor, borderWidth, borderRadius
   ]);
 
   // 노드 데이터 안전하게 타입 변환
@@ -431,9 +453,9 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     const baseStyle: CSSProperties = {
       width: handleSize,
       height: handleSize,
-      background: theme.handle.backgroundColor,
-      borderColor: theme.handle.borderColor,
-      borderWidth: theme.handle.borderWidth,
+      background: handleBackgroundColor,
+      borderColor: handleBorderColor,
+      borderWidth: handleBorderWidth,
       borderStyle: 'solid',
       borderRadius: '50%',
       opacity: showHandles ? 1 : 0,
@@ -469,7 +491,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
     }
 
     return baseStyle;
-  }, [handleSize, theme.handle.backgroundColor, theme.handle.borderColor, theme.handle.borderWidth, showHandles, handleOffset, isExpanded]);
+  }, [handleSize, handleBackgroundColor, handleBorderColor, handleBorderWidth, showHandles, handleOffset, isExpanded]);
 
   // 최종 렌더링
   return (

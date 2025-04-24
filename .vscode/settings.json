@@ -1,4 +1,9 @@
 {
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "chat.editor.fontSize": 13,
+  "debug.console.fontSize": 13,
   "deno.enablePaths": [
     "supabase/functions"
   ],
@@ -18,15 +23,11 @@
     "http",
     "net"
   ],
-  "npm.packageManager": "yarn",
-  "[typescript]": {
-    "editor.defaultFormatter": "denoland.vscode-deno"
-  },
-  "editor.fontSize": 13,
-  "editor.fontFamily": "'Jetbrains mono', Menlo, Monaco, 'Courier New', monospace",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "editor.fontFamily": "'Jetbrains mono', Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontSize": 13,
   "editor.formatOnSave": true,
   "eslint.validate": [
     "javascript",
@@ -34,7 +35,6 @@
     "javascriptreact",
     "typescriptreact"
   ],
-  "chat.editor.fontSize": 13,
-  "terminal.integrated.fontSize": 13,
-  "debug.console.fontSize": 13,
+  "npm.packageManager": "yarn",
+  "terminal.integrated.fontSize": 13
 }

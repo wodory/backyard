@@ -4,6 +4,7 @@
  * 역할: 노드 클릭 및 패널 클릭 이벤트 핸들링 로직 캡슐화
  * 작성일: 2025-03-28
  * 수정일: 2025-04-11
+ * 수정일: 2025-04-21 : 참조 경로 수정 (board-types -> ideamap-types)
  */
 
 import { useCallback } from 'react';
@@ -15,8 +16,7 @@ import {
 import { toast } from 'sonner';
 
 import { useAppStore } from '@/store/useAppStore';
-
-import { CardData } from '../types/board-types';
+import { CardData } from '../types/ideamap-types';
 
 /**
  * useNodeClickHandlers: 노드 클릭 관련 핸들러를 제공하는 훅
@@ -77,12 +77,12 @@ export function useNodeClickHandlers({
       // 상태 업데이트
       toggleSelectedCard(nodeId);
       
-      // 성공 메시지 표시 - 다중 선택 모드
-      if (isCurrentlySelected) {
-        toast.success(`'${typedNode.data.title}'가 선택에서 제거되었습니다.`);
-      } else {
-        toast.success(`'${typedNode.data.title}'가 선택에 추가되었습니다.`);
-      }
+      // 성공 메시지 표시 - 다중 선택 모드. 토스트 메시지 제거
+      // if (isCurrentlySelected) {
+      //   toast.success(`'${typedNode.data.title}'가 선택에서 제거되었습니다.`);
+      // } else {
+      //   toast.success(`'${typedNode.data.title}'가 선택에 추가되었습니다.`);
+      // }
     } else {
       // 단일 선택 모드: 하나만 선택
       console.log('단일 선택 모드로 노드 클릭:', nodeId);
@@ -95,8 +95,8 @@ export function useNodeClickHandlers({
         // 새로운 카드 선택
         selectCard(nodeId);
         
-        // 성공 메시지 표시 - 단일 선택 모드
-        toast.success(`'${typedNode.data.title}'가 선택되었습니다.`);
+        // 성공 메시지 표시 - 단일 선택 모드. 토스트 메시지 제거
+        // toast.success(`'${typedNode.data.title}'가 선택되었습니다.`);
       }
     }
     

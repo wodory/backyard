@@ -3,6 +3,7 @@
  * 목적: 노드 크기 설정 컴포넌트 제공
  * 역할: 사용자가 노드 크기를 조정할 수 있는 UI 제공
  * 작성일: 2025-03-27
+ * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore(themeSlice) 사용으로 변경
  */
 
 'use client';
@@ -16,22 +17,24 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useTheme } from '@/contexts/ThemeContext';
-
+import { useAppStore } from '@/store/useAppStore';
 
 /**
  * NodeSizeSettings: 노드 크기 조정 컴포넌트
  * @returns 노드 크기 설정 UI 컴포넌트
  */
 export function NodeSizeSettings() {
-  const { theme, updateNodeSize } = useTheme();
   const { getNodes } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
-  
-  const [width, setWidth] = useState(theme.node.width);
-  const [height, setHeight] = useState(theme.node.height);
-  const [maxHeight, setMaxHeight] = useState(theme.node.maxHeight);
-  
+
+  // Zustand 스토어에서 테마 관련 상태와 액션 가져오기
+  const ideaMapSettings = useAppStore(state => state.ideaMapSettings);
+  const updateIdeaMapSettings = useAppStore(state => state.updateIdeaMapSettings);
+
+  const [width, setWidth] = useState(ideaMapSettings.nodeWidth);
+  const [height, setHeight] = useState(ideaMapSettings.nodeSpacing);
+  const [maxHeight, setMaxHeight] = useState(ideaMapSettings.maxNodeHeight); // 기본 최대 높이 값
+
   // 입력값이 변경될 때 로컬 상태 업데이트
   const handleWidthChange = (value: number | string) => {
     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
@@ -39,26 +42,31 @@ export function NodeSizeSettings() {
       setWidth(numValue);
     }
   };
-  
+
   const handleHeightChange = (value: number | string) => {
     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (!isNaN(numValue) && numValue > 0) {
       setHeight(numValue);
     }
   };
-  
+
   const handleMaxHeightChange = (value: number | string) => {
     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (!isNaN(numValue) && numValue > 0) {
       setMaxHeight(numValue);
     }
   };
-  
+
   // 테마에 변경사항 적용
   const applyChanges = () => {
-    // 테마 업데이트
-    updateNodeSize(width, height, maxHeight);
-    
+    // Zustand 스토어 업데이트
+    updateIdeaMapSettings({
+      nodeWidth: width,
+      nodeSpacing: height,
+      // 최대 높이는 새로운 속성으로 추가할 수 있음
+      maxNodeHeight: maxHeight
+    });
+
     // 모든 노드 업데이트 (내부 상태 갱신)
     setTimeout(() => {
       console.log('모든 노드 내부 상태 업데이트');
@@ -67,21 +75,25 @@ export function NodeSizeSettings() {
       });
     }, 100);
   };
-  
+
   // 설정 초기화
   const resetToDefaults = () => {
     // 기본값으로 되돌리기
-    const defaultWidth = 130;
-    const defaultHeight = 48;
-    const defaultMaxHeight = 180;
-    
+    const defaultWidth = 250;
+    const defaultHeight = 50;
+    const defaultMaxHeight = 300;
+
     setWidth(defaultWidth);
     setHeight(defaultHeight);
     setMaxHeight(defaultMaxHeight);
-    
-    // 테마 업데이트
-    updateNodeSize(defaultWidth, defaultHeight, defaultMaxHeight);
-    
+
+    // Zustand 스토어 업데이트
+    updateIdeaMapSettings({
+      nodeWidth: defaultWidth,
+      nodeSpacing: defaultHeight,
+      maxNodeHeight: defaultMaxHeight
+    });
+
     // 모든 노드 업데이트
     setTimeout(() => {
       getNodes().forEach(node => {
@@ -89,13 +101,13 @@ export function NodeSizeSettings() {
       });
     }, 100);
   };
-  
+
   // 테마가 변경되면 로컬 상태 업데이트
   useEffect(() => {
-    setWidth(theme.node.width);
-    setHeight(theme.node.height);
-    setMaxHeight(theme.node.maxHeight);
-  }, [theme.node.width, theme.node.height, theme.node.maxHeight]);
+    setWidth(ideaMapSettings.nodeWidth);
+    setHeight(ideaMapSettings.nodeSpacing);
+    setMaxHeight(ideaMapSettings.maxNodeHeight || 300);
+  }, [ideaMapSettings.nodeWidth, ideaMapSettings.nodeSpacing, ideaMapSettings.maxNodeHeight]);
 
   return (
     <Card className="w-full">
@@ -105,7 +117,7 @@ export function NodeSizeSettings() {
           React Flow 노드의 크기를 조정합니다.
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* 너비 설정 */}
         <div className="space-y-3">
@@ -130,7 +142,7 @@ export function NodeSizeSettings() {
             onValueChange={(values: number[]) => handleWidthChange(values[0])}
           />
         </div>
-        
+
         {/* 높이 설정 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -154,7 +166,7 @@ export function NodeSizeSettings() {
             onValueChange={(values: number[]) => handleHeightChange(values[0])}
           />
         </div>
-        
+
         {/* 최대 높이 설정 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -179,7 +191,7 @@ export function NodeSizeSettings() {
           />
         </div>
       </CardContent>
-      
+
       <CardFooter className="flex justify-between">
         <Button variant="outline" onClick={resetToDefaults}>
           기본값으로 초기화

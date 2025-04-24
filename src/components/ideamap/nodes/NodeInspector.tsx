@@ -4,19 +4,28 @@
  * 역할: 선택된 노드의 정보를 검사하고 표시
  * 작성일: 2025-03-28
  * 수정일: 2025-04-15
+ * 수정일: 2025-04-21 : useNodeStore 제거 및 useAppStore(cardStateSlice) 사용으로 변경
  */
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Node } from '@xyflow/react';
 
 import TiptapViewer from '@/components/editor/TiptapViewer';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
-import { useNodeStore } from '@/store/useNodeStore';
+import { useAppStore } from '@/store/useAppStore';
 
 interface NodeInspectorProps {
   nodes: Node[];
+}
+
+// 노드 데이터 타입 정의
+interface NodeData {
+  title?: string;
+  content?: string;
+  tags?: string[];
+  [key: string]: any;
 }
 
 /**
@@ -25,23 +34,35 @@ interface NodeInspectorProps {
  * @returns {JSX.Element} 노드 인스펙터 컴포넌트
  */
 export function NodeInspector({ nodes }: NodeInspectorProps) {
-  const { inspectorOpen, inspectedNode, setInspectorOpen, setInspectedNode } = useNodeStore();
+  const expandedCardId = useAppStore((state) => state.expandedCardId);
+  const toggleExpandCard = useAppStore((state) => state.toggleExpandCard);
 
-  // 모달이 닫힐 때 inspectedNode 초기화
+  // 확장된 노드 찾기
+  const inspectedNode = useMemo(() => {
+    if (!expandedCardId) return null;
+    return nodes.find(node => node.id === expandedCardId) || null;
+  }, [nodes, expandedCardId]);
+
+  // 모달이 닫힐 때 expandedCardId 초기화
   const handleCloseModal = () => {
-    setInspectorOpen(false);
+    if (expandedCardId) {
+      toggleExpandCard(expandedCardId);
+    }
   };
 
   // 노드 정보가 없거나 모달이 닫혀있으면 열린 상태로 렌더링하지만 보이지 않게 함
-  const shouldShowContent = inspectorOpen && inspectedNode;
+  const shouldShowContent = Boolean(expandedCardId && inspectedNode);
+
+  // 타입 안전을 위한 데이터 접근
+  const nodeData = inspectedNode?.data as NodeData | undefined;
 
   return (
-    <Modal.Root open={Boolean(shouldShowContent)} onOpenChange={handleCloseModal}>
+    <Modal.Root open={shouldShowContent} onOpenChange={handleCloseModal}>
       <Modal.Content>
-        {shouldShowContent && (
+        {shouldShowContent && inspectedNode && (
           <>
             <Modal.Title>
-              {inspectedNode.data?.title || '제목 없음'}
+              {nodeData?.title || '제목 없음'}
             </Modal.Title>
 
             <div className="py-4">
@@ -52,21 +73,21 @@ export function NodeInspector({ nodes }: NodeInspectorProps) {
               </div>
 
               {/* 노드 내용 */}
-              {inspectedNode.data?.content && (
+              {nodeData?.content && (
                 <div className="mb-4">
                   <h3 className="text-sm font-semibold mb-1">내용</h3>
                   <div className="bg-muted p-2 rounded">
-                    <TiptapViewer content={inspectedNode.data.content} />
+                    <TiptapViewer content={nodeData.content} />
                   </div>
                 </div>
               )}
 
               {/* 노드 태그 */}
-              {inspectedNode.data?.tags && inspectedNode.data.tags.length > 0 && (
+              {nodeData?.tags && nodeData.tags.length > 0 && (
                 <div className="mb-4">
                   <h3 className="text-sm font-semibold mb-1">태그</h3>
                   <div className="flex flex-wrap gap-1">
-                    {inspectedNode.data.tags.map((tag: string) => (
+                    {nodeData.tags.map((tag: string) => (
                       <Badge key={tag} data-testid="node-tag">{tag}</Badge>
                     ))}
                   </div>

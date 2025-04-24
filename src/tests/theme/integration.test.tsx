@@ -4,6 +4,8 @@
  * 역할: ThemeContext와 NodeSizeSettings의 통합 검증
  * 작성일: 2025-03-27
  * 수정일: 2023-10-27 : 린터 오류 수정 (미사용 변수 제거)
+ * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore로 변경
+ * 수정일: 2025-04-21 : useAppStore 모킹 경로 수정
  */
 
 import React from 'react';
@@ -27,12 +29,12 @@ vi.mock('@xyflow/react', () => {
   };
 });
 
-// ThemeContext 모킹
-vi.mock('../../contexts/ThemeContext', () => {
+// useAppStore 모킹
+vi.mock('@/store/useAppStore', () => {
   return {
-    ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    useTheme: () => ({
-      theme: {
+    useAppStore: () => ({
+      themeMode: 'light',
+      ideaMapSettings: {
         node: {
           width: 220,
           height: 48,
@@ -69,7 +71,8 @@ vi.mock('../../contexts/ThemeContext', () => {
           padding: 20,
         },
       },
-      updateTheme: vi.fn(),
+      toggleThemeMode: vi.fn(),
+      setThemeMode: vi.fn(),
       updateNodeSize: updateNodeSizeMock,
     }),
   };
@@ -163,7 +166,7 @@ describe('테마 관련 컴포넌트 통합 테스트', () => {
     vi.useRealTimers();
   });
 
-  test('NodeSizeSettings의 변경이 ThemeContext를 통해 CSS 변수에 반영되어야 함', () => {
+  test('NodeSizeSettings의 변경이 useAppStore를 통해 CSS 변수에 반영되어야 함', () => {
     // NodeSizeSettings를 렌더링
     render(<NodeSizeSettings />);
 
@@ -182,7 +185,7 @@ describe('테마 관련 컴포넌트 통합 테스트', () => {
     vi.advanceTimersByTime(100);
   });
 
-  test('기본값으로 초기화가 ThemeProvider를 통해 반영되어야 함', () => {
+  test('기본값으로 초기화가 useAppStore를 통해 반영되어야 함', () => {
     // NodeSizeSettings를 렌더링
     render(<NodeSizeSettings />);
 

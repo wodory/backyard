@@ -38,7 +38,7 @@ import {
 
 import { SafeRef } from '@/components/ideamap/types/ideamap-types';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
+import { IdeaMapSettings, applyIdeaMapEdgeSettings } from '@/lib/ideamap-utils';
 // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
 // import CardNode from '@/components/ideamap/nodes/CardNode';
 // import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
@@ -303,11 +303,34 @@ export default function IdeaMapCanvas({
 
   // 뷰포트 변경 핸들러
   const handleViewportChange = useCallback((viewport: Viewport) => {
-    console.log('[IdeaMapCanvas] 뷰포트 변경:', viewport);
+    // console.log('[IdeaMapCanvas] 뷰포트 변경:', viewport);
     if (onViewportChange) {
       onViewportChange(viewport);
     }
   }, [onViewportChange]);
+
+  // ideaMapSettings가 변경될 때마다 기존 엣지들에 적용
+  useEffect(() => {
+    if (edges.length > 0) {
+      console.log('[IdeaMapCanvas] 설정 변경 감지: 엣지에 설정 적용');
+      const updatedEdges = applyIdeaMapEdgeSettings(edges, ideaMapSettings);
+
+      // 각 엣지를 ReactFlow 인스턴스에 직접 적용
+      if (reactFlowInstance.current) {
+        reactFlowInstance.current.setEdges(updatedEdges);
+        console.log('[IdeaMapCanvas] 엣지 스타일 업데이트 완료 (ReactFlow 인스턴스에 직접 적용)');
+      }
+    }
+  }, [
+    ideaMapSettings.connectionLineType,
+    ideaMapSettings.markerEnd,
+    ideaMapSettings.strokeWidth,
+    ideaMapSettings.markerSize,
+    ideaMapSettings.edgeColor,
+    ideaMapSettings.selectedEdgeColor,
+    ideaMapSettings.animated,
+    edges
+  ]);
 
   return (
     <div

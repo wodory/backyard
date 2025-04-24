@@ -978,7 +978,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        * @param changes 노드 변경 사항 배열
        */
       applyNodeChangesAction: (changes: NodeChange[]) => {
-        console.log('[useIdeaMapStore] applyNodeChangesAction 호출:', { 
+        logger.info('[useIdeaMapStore] applyNodeChangesAction 호출:', { 
           변경수: changes.length,
           변경유형: changes.map(c => c.type).join(', ')
         });

@@ -22,8 +22,7 @@ model User {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
   cards         Card[]
-  boardSettings BoardSettings?
-
+  ideaMapSettings IdeaMapSettings?
   @@map("users")
 }
 
@@ -62,7 +61,7 @@ model CardTag {
   @@map("card_tags")
 }
 
-model BoardSettings {
+model IdeaMapSettings {
   id        String   @id @default(uuid())
   userId    String   @unique @map("user_id")
   settings  Json
@@ -70,5 +69,5 @@ model BoardSettings {
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("board_settings")
-} 
+  @@map("idea_map_settings")
+}

@@ -28,7 +28,7 @@ const logger = createLogger('useIdeaMapData');
  * @returns {Object} 아이디어맵 데이터 관련 상태와 함수들
  */
 export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
-  logger.debug('훅 초기화');
+  // logger.debug('훅 초기화');
   
   // 상태 관리
   const [isLoading, setIsLoading] = useState(true);
@@ -110,10 +110,10 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
     logger.debug('초기 데이터 로드 Effect 실행, 로드 완료 상태:', initialLoadCompleteRef.current);
     
     // Strict Mode 이중 실행 방지 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development' && didFetch.current) {
-      logger.debug('Strict Mode 이중 실행 방지됨');
-      return;
-    }
+    // if (process.env.NODE_ENV === 'development' && didFetch.current) {
+    //   logger.debug('Strict Mode 이중 실행 방지됨');
+    //   return;
+    // }
     didFetch.current = true;
     
     if (!initialLoadCompleteRef.current) {

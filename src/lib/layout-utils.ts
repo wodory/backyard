@@ -4,13 +4,14 @@
  * 역할: 그래프 레이아웃 계산 및 노드 배치 유틸리티 함수 제공
  * 작성일: 2025-03-06
  * 수정일: 2025-03-27
+ * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore(themeSlice) 사용으로 변경
  */
 
 import { Node, Edge, Position } from '@xyflow/react';
 import dagre from 'dagre';
 
 import defaultConfig from '../config/uiOptions.json';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAppStore } from '@/store/useAppStore';
 
 // 기본 노드 크기 설정 (ThemeContext가 없을 때 폴백용)
 const DEFAULT_NODE_WIDTH = defaultConfig.layout.nodeSize?.width || 130;
@@ -28,10 +29,11 @@ const GRAPH_SETTINGS = {
 
 /**
  * React 컴포넌트에서 사용할 수 있는 레이아웃 훅
- * ThemeContext에서 노드 크기를 가져와 레이아웃을 계산합니다.
+ * useAppStore에서 노드 크기를 가져와 레이아웃을 계산합니다.
  */
 export function useLayoutedElements() {
-  const { theme } = useTheme();
+  // useAppStore에서 ideaMapSettings 가져오기
+  const ideaMapSettings = useAppStore(state => state.ideaMapSettings);
   
   /**
    * dagre 라이브러리를 사용하여 노드와 엣지의 레이아웃을 재배치하는 함수
@@ -49,9 +51,9 @@ export function useLayoutedElements() {
     // 노드나 엣지가 없는 경우 그대로 반환
     if (nodes.length === 0) return { nodes, edges };
 
-    // ThemeContext에서 노드 크기 가져오기
-    const NODE_WIDTH = theme.node.width;
-    const NODE_HEIGHT = theme.node.height;
+    // useAppStore에서 노드 크기 가져오기
+    const NODE_WIDTH = ideaMapSettings.nodeWidth || DEFAULT_NODE_WIDTH;
+    const NODE_HEIGHT = ideaMapSettings.nodeSpacing || DEFAULT_NODE_HEIGHT;
 
     // 그래프 생성
     const dagreGraph = new dagre.graphlib.Graph();
@@ -127,18 +129,18 @@ export function useLayoutedElements() {
    * @returns 배치된 노드 배열
    */
   const getGridLayout = (nodes: Node[], cardsPerRow: number = 3) => {
-    // 테마에서 간격 값 가져오기
-    const NODE_WIDTH = theme.node.width;
-    const NODE_HEIGHT = theme.node.height;
-    const horizontalSpacing = theme.layout.spacing.horizontal;
-    const verticalSpacing = theme.layout.spacing.vertical;
+    // useAppStore에서 간격 값 가져오기
+    const NODE_WIDTH = ideaMapSettings.nodeWidth || DEFAULT_NODE_WIDTH;
+    const NODE_HEIGHT = ideaMapSettings.nodeSpacing || DEFAULT_NODE_HEIGHT;
+    const horizontalSpacing = 30; // 기본 간격 값
+    const verticalSpacing = 30;   // 기본 간격 값
     
-    // 간격 계산 - 테마의 값을 기반으로 계산
+    // 간격 계산
     const HORIZONTAL_GAP = NODE_WIDTH + horizontalSpacing;
     const VERTICAL_GAP = NODE_HEIGHT + verticalSpacing * 3;
     
     // 기본 마진 값
-    const baseMargin = theme.layout.padding;
+    const baseMargin = 20;
     
     return nodes.map((node, index) => ({
       ...node,
@@ -159,7 +161,7 @@ export function useLayoutedElements() {
 }
 
 /**
- * ThemeContext 없이 사용 가능한 레이아웃 함수들
+ * 앱 스토어 없이 사용 가능한 레이아웃 함수들
  * (기존 코드 호환성을 위해 유지)
  */
 

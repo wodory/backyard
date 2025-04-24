@@ -3,13 +3,13 @@
  * 목적: CardNode 컴포넌트 테스트
  * 역할: 카드 노드 컴포넌트의 기능 테스트
  * 작성일: 2025-04-01
+ * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore 사용으로 변경
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import { DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
 
 // TiptapViewer 모킹
@@ -28,38 +28,7 @@ vi.mock('@/components/cards/EditCardModal', () => ({
     ))
 }));
 
-// ThemeContext 모킹
-vi.mock('@/contexts/ThemeContext', () => ({
-    useTheme: () => ({
-        theme: {
-            node: {
-                width: 200,
-                height: 30,
-                maxHeight: 200,
-                backgroundColor: '#ffffff',
-                borderWidth: 1,
-                borderColor: '#e2e8f0',
-                selectedBorderColor: '#3b82f6',
-                borderRadius: 6,
-                font: {
-                    titleSize: 14,
-                    contentSize: 12,
-                    tagsSize: 10
-                }
-            },
-            handle: {
-                size: 8,
-                backgroundColor: '#ffffff',
-                borderColor: '#888888',
-                borderWidth: 1
-            },
-            edge: {
-                color: '#a1a1aa'
-            }
-        }
-    }),
-    ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-}));
+// ThemeContext 모킹 제거 - useAppStore로 대체되었음
 
 // AppStore 모킹
 vi.mock('@/store/useAppStore', () => ({
@@ -72,8 +41,6 @@ vi.mock('@/store/useAppStore', () => ({
         // 선택 관련 액션
         selectCard: vi.fn(),
         selectCards: vi.fn(),
-        addSelectedCard: vi.fn(),
-        removeSelectedCard: vi.fn(),
         toggleSelectedCard: vi.fn(),
         clearSelectedCards: vi.fn(),
         toggleExpandCard: vi.fn(),
@@ -97,7 +64,20 @@ vi.mock('@/store/useAppStore', () => ({
         setSidebarWidth: vi.fn(),
 
         // 아이디어맵 설정
-        ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+        ideaMapSettings: {
+            ...DEFAULT_IDEAMAP_SETTINGS,
+            nodeWidth: 200,
+            nodeSpacing: 30,
+            nodeBorderRadius: 6,
+            nodeFontSize: 14,
+            maxNodeHeight: 200,
+            edgeType: 'bezier' as const,
+            edgeWidth: 1,
+            strokeWidth: 2,
+            strokeColor: '#a1a1aa',
+            backgroundColor: '#ffffff',
+            selectedBackgroundColor: '#f0f9ff'
+        },
         setIdeaMapSettings: vi.fn(),
         updateIdeaMapSettings: vi.fn(),
 
@@ -165,8 +145,6 @@ describe('CardNode', () => {
             // 선택 관련 액션
             selectCard: selectCardMockFn,
             selectCards: vi.fn(),
-            addSelectedCard: vi.fn(),
-            removeSelectedCard: vi.fn(),
             toggleSelectedCard: vi.fn(),
             clearSelectedCards: vi.fn(),
             toggleExpandCard: toggleExpandCardMockFn,
@@ -190,7 +168,20 @@ describe('CardNode', () => {
             setSidebarWidth: vi.fn(),
 
             // 아이디어맵 설정
-            ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+            ideaMapSettings: {
+                ...DEFAULT_IDEAMAP_SETTINGS,
+                nodeWidth: 200,
+                nodeSpacing: 30,
+                nodeBorderRadius: 6,
+                nodeFontSize: 14,
+                maxNodeHeight: 200,
+                edgeType: 'bezier' as const,
+                edgeWidth: 1,
+                strokeWidth: 2,
+                strokeColor: '#a1a1aa',
+                backgroundColor: '#ffffff',
+                selectedBackgroundColor: '#f0f9ff'
+            },
             setIdeaMapSettings: vi.fn(),
             updateIdeaMapSettings: vi.fn(),
 
@@ -209,11 +200,9 @@ describe('CardNode', () => {
         }));
 
         const { container } = render(
-            <ThemeProvider>
-                <ReactFlowProvider>
-                    <CardNode {...mockNodeProps as NodeProps} />
-                </ReactFlowProvider>
-            </ThemeProvider>
+            <ReactFlowProvider>
+                <CardNode {...mockNodeProps as NodeProps} />
+            </ReactFlowProvider>
         );
 
         // 펼치기 버튼 클릭
@@ -242,8 +231,6 @@ describe('CardNode', () => {
             // 선택 관련 액션
             selectCard: selectCardMockFn,
             selectCards: vi.fn(),
-            addSelectedCard: vi.fn(),
-            removeSelectedCard: vi.fn(),
             toggleSelectedCard: vi.fn(),
             clearSelectedCards: vi.fn(),
             toggleExpandCard: toggleExpandCardMockFn,
@@ -267,7 +254,20 @@ describe('CardNode', () => {
             setSidebarWidth: vi.fn(),
 
             // 아이디어맵 설정
-            ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+            ideaMapSettings: {
+                ...DEFAULT_IDEAMAP_SETTINGS,
+                nodeWidth: 200,
+                nodeSpacing: 30,
+                nodeBorderRadius: 6,
+                nodeFontSize: 14,
+                maxNodeHeight: 200,
+                edgeType: 'bezier' as const,
+                edgeWidth: 1,
+                strokeWidth: 2,
+                strokeColor: '#a1a1aa',
+                backgroundColor: '#ffffff',
+                selectedBackgroundColor: '#f0f9ff'
+            },
             setIdeaMapSettings: vi.fn(),
             updateIdeaMapSettings: vi.fn(),
 
@@ -286,11 +286,9 @@ describe('CardNode', () => {
         }));
 
         render(
-            <ThemeProvider>
-                <ReactFlowProvider>
-                    <CardNode {...mockNodeProps as NodeProps} />
-                </ReactFlowProvider>
-            </ThemeProvider>
+            <ReactFlowProvider>
+                <CardNode {...mockNodeProps as NodeProps} />
+            </ReactFlowProvider>
         );
 
         // 확장 토글 버튼 찾기
@@ -328,8 +326,6 @@ describe('CardNode', () => {
             // 선택 관련 액션
             selectCard: selectCardMockFn,
             selectCards: vi.fn(),
-            addSelectedCard: vi.fn(),
-            removeSelectedCard: vi.fn(),
             toggleSelectedCard: vi.fn(),
             clearSelectedCards: vi.fn(),
             toggleExpandCard: toggleExpandCardMockFn,
@@ -353,7 +349,20 @@ describe('CardNode', () => {
             setSidebarWidth: vi.fn(),
 
             // 아이디어맵 설정
-            ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+            ideaMapSettings: {
+                ...DEFAULT_IDEAMAP_SETTINGS,
+                nodeWidth: 200,
+                nodeSpacing: 30,
+                nodeBorderRadius: 6,
+                nodeFontSize: 14,
+                maxNodeHeight: 200,
+                edgeType: 'bezier' as const,
+                edgeWidth: 1,
+                strokeWidth: 2,
+                strokeColor: '#a1a1aa',
+                backgroundColor: '#ffffff',
+                selectedBackgroundColor: '#f0f9ff'
+            },
             setIdeaMapSettings: vi.fn(),
             updateIdeaMapSettings: vi.fn(),
 
@@ -372,11 +381,9 @@ describe('CardNode', () => {
         }));
 
         render(
-            <ThemeProvider>
-                <ReactFlowProvider>
-                    <CardNode {...mockNodeProps as NodeProps} />
-                </ReactFlowProvider>
-            </ThemeProvider>
+            <ReactFlowProvider>
+                <CardNode {...mockNodeProps as NodeProps} />
+            </ReactFlowProvider>
         );
 
         // 카드가 확장되어 내용이 표시되는지 확인

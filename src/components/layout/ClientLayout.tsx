@@ -5,6 +5,7 @@
  * 작성일: 2025-03-27
  * 수정일: 2025-04-09
  * 수정일: 2024-05-13 : AuthProvider 제거하고 useAuth 훅 사용으로 변경
+ * 수정일: 2025-04-21 : ThemeProvider 제거하고 useAppStore의 themeSlice 사용으로 변경
  */
 
 'use client';
@@ -14,10 +15,9 @@ import { ReactNode, useEffect } from 'react';
 import { Toaster } from "sonner";
 
 import InitDatabase from "@/components/debug/InitDatabase";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { useAuth } from '@/hooks/useAuth';
 import createLogger from '@/lib/logger';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore, selectUserId } from '@/store/useAuthStore';
 
 // Supabase 클라이언트 초기화 (클라이언트에서만 실행)
 // import { createClient } from "@/lib/supabase/client";
@@ -35,7 +35,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, error } = useAuth();
 
   // Zustand 스토어에서 userId 가져오기 (디버깅용)
-  const userId = useAuthStore(state => state.userId);
+  const userId = useAuthStore(selectUserId);
 
   useEffect(() => {
     logger.info('클라이언트 레이아웃 마운트');
@@ -64,14 +64,12 @@ export function ClientLayout({ children }: { children: ReactNode }) {
   }, [userId, isLoading, error]);
 
   return (
-    <ThemeProvider>
-      <main>
-        {children}
+    <main>
+      {children}
 
-        {/* DB 초기화 스크립트 */}
-        <InitDatabase />
-      </main>
+      {/* DB 초기화 스크립트 */}
+      <InitDatabase />
       <Toaster position="top-center" />
-    </ThemeProvider>
+    </main>
   );
 } 

@@ -38,23 +38,28 @@ vi.mock('dagre', () => {
   };
 });
 
-// ThemeContext 모킹
-vi.mock('../contexts/ThemeContext', () => ({
-  useTheme: () => ({
-    theme: {
-      node: {
-        width: 150,
-        height: 60,
-      },
-      layout: {
-        spacing: {
-          horizontal: 40,
-          vertical: 30,
-        },
-        padding: 25,
-      }
+// ThemeContext 모킹을 useAppStore 모킹으로 대체
+vi.mock('@/store/useAppStore', () => ({
+  useAppStore: (selector: Function) => {
+    if (typeof selector === 'function') {
+      return selector({
+        ideaMapSettings: {
+          node: {
+            width: 150,
+            height: 60,
+          },
+          layout: {
+            spacing: {
+              horizontal: 40,
+              vertical: 30,
+            },
+            padding: 25,
+          }
+        }
+      });
     }
-  })
+    return null;
+  }
 }));
 
 describe('@testcase.mdc 레이아웃 유틸리티 테스트', () => {

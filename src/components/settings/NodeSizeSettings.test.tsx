@@ -3,6 +3,7 @@
  * 목적: NodeSizeSettings 컴포넌트 테스트
  * 역할: 노드 크기 설정 컴포넌트 검증
  * 작성일: 2025-03-27
+ * 수정일: 2025-04-21 : ThemeContext 모킹을 useAppStore 모킹으로 대체
  */
 
 import React from 'react';
@@ -33,50 +34,54 @@ vi.mock('@xyflow/react', () => {
   };
 });
 
-// ThemeContext 모킹
-vi.mock('../../contexts/ThemeContext', () => {
+// useAppStore 모킹
+vi.mock('@/store/useAppStore', () => {
   return {
-    ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    useTheme: () => ({
-      theme: {
-        node: {
-          width: 220,
-          height: 48,
-          maxHeight: 180,
-          backgroundColor: '#ffffff',
-          borderColor: '#C1C1C1',
-          borderWidth: 1,
-          borderRadius: 8,
-          selectedBorderColor: '#0071e3',
-          font: {
-            family: 'Pretendard, sans-serif',
-            titleSize: 14,
-            contentSize: 12,
-            tagsSize: 10,
-          }
-        },
-        edge: {
-          color: '#C1C1C1',
-          width: 1,
-          selectedColor: '#0071e3',
-          animated: false,
-        },
-        handle: {
-          size: 8,
-          backgroundColor: '#ffffff',
-          borderColor: '#555555',
-          borderWidth: 1,
-        },
-        layout: {
-          spacing: {
-            horizontal: 30,
-            vertical: 30,
+    useAppStore: vi.fn((selector) => {
+      if (typeof selector === 'function') {
+        return selector({
+          ideaMapSettings: {
+            node: {
+              width: 220,
+              height: 48,
+              maxHeight: 180,
+              backgroundColor: '#ffffff',
+              borderColor: '#C1C1C1',
+              borderWidth: 1,
+              borderRadius: 8,
+              selectedBorderColor: '#0071e3',
+              font: {
+                family: 'Pretendard, sans-serif',
+                titleSize: 14,
+                contentSize: 12,
+                tagsSize: 10,
+              }
+            },
+            edge: {
+              color: '#C1C1C1',
+              width: 1,
+              selectedColor: '#0071e3',
+              animated: false,
+            },
+            handle: {
+              size: 8,
+              backgroundColor: '#ffffff',
+              borderColor: '#555555',
+              borderWidth: 1,
+            },
+            layout: {
+              spacing: {
+                horizontal: 30,
+                vertical: 30,
+              },
+              padding: 20,
+            },
           },
-          padding: 20,
-        },
-      },
-      updateTheme: vi.fn(),
-      updateNodeSize: updateNodeSizeMock,
+          updateIdeaMapSettings: vi.fn(),
+          updateNodeSize: updateNodeSizeMock,
+        });
+      }
+      return null;
     }),
   };
 });
