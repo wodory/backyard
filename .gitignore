@@ -57,4 +57,4 @@ prisma/prisma/dev.db-journal
 !/.note
 !/.note/**
 !/.cursor
-!/.cursor/**
+!/.cursor/**logs/client-logs.json
