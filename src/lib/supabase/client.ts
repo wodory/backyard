@@ -4,6 +4,10 @@
  * 역할: 클라이언트 컴포넌트에서 Supabase에 접근할 때 사용
  * 작성일: 2025-04-09
  * 수정일: 2024-05-08 : auth 옵션 블럭 제거하여 @supabase/ssr 표준 준수
+ * 수정일: 2024-05-25 : three-layer-Standard 룰 적용
+ * @rule   three-layer-Standard
+ * @layer  service
+ * @tag    @service-msw supabaseClient
  */
 
 import { createBrowserClient } from '@supabase/ssr'

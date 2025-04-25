@@ -8,10 +8,15 @@
  * 수정일: 2024-05-01 : 통합 테스트를 위한 추가 핸들러 구현
  * 수정일: 2025-04-21 : 카드 대량/일괄 처리 API 핸들러 추가
  * 수정일: 2025-04-21 : 태그 API 핸들러 모듈화 및 통합
+ * 수정일: 2024-05-25 : 인증 핸들러 모듈화 및 통합
+ * @rule   three-layer-Standard
+ * @layer  service
+ * @tag    @service-msw handlers
  */
 
 import { http, HttpResponse } from 'msw';
 import { tagHandlers } from './handlers/tagHandlers';
+import { authHandlers } from './handlers/authHandlers';
 
 /**
  * createMockSession: 모의 Supabase 세션 생성
@@ -107,7 +112,7 @@ const mockTags = [
   createMockTag('tag-3', '아이디어')
 ];
 
-// 모든 핸들러 통합 (기존 핸들러 + 태그 핸들러)
+// 모든 핸들러 통합 (기존 핸들러 + 태그 핸들러 + 인증 핸들러)
 export const handlers = [
   // Supabase 세션 교환 API 모킹
   http.post('*/auth/v1/token*', async ({ request }) => {
@@ -486,4 +491,7 @@ export const handlers = [
 
   // 태그 핸들러 통합
   ...tagHandlers,
+  
+  // 인증 핸들러 통합
+  ...authHandlers,
 ]; 

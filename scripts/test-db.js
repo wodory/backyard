@@ -1,3 +1,8 @@
+/**
+ * @rule   three-layer-Standard
+ * @layer  service
+ * @tag    @service-msw testDb
+ */
 // 데이터베이스 연결 테스트 스크립트
 import { PrismaClient } from '@prisma/client';
 
@@ -5,8 +10,7 @@ async function main() {
   console.log('데이터베이스 연결 테스트 시작...');
   console.log('환경 변수:', {
     NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: process.env.DATABASE_URL,
-    DATABASE_PROVIDER: process.env.DATABASE_PROVIDER
+    DATABASE_URL: process.env.DATABASE_URL
   });
 
   try {

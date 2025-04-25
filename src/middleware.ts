@@ -5,6 +5,10 @@
  * 작성일: 2025-03-08
  * 수정일: 2025-03-27
  * 수정일: 2024-05-08 : 인증된 사용자가 /login 페이지 접근 시 홈으로 리다이렉션하는 기능 추가
+ * 수정일: 2024-05-25 : three-layer-Standard 룰 적용
+ * @rule   three-layer-Standard
+ * @layer  service
+ * @tag    @service-msw authMiddleware
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,6 +17,10 @@ import { createServerClient } from '@supabase/ssr'
 
 import { updateSession } from '@/lib/supabase/middleware'
 import { Database } from '@/types/supabase'
+
+// 환경 변수 명시적 추출
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function middleware(request: NextRequest) {
   // 먼저 세션 업데이트
@@ -23,8 +31,8 @@ export async function middleware(request: NextRequest) {
   if (url.pathname === '/login') {
     // Supabase 클라이언트 생성
     const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      SUPABASE_URL,
+      SUPABASE_KEY,
       {
         cookies: {
           get(name: string) {

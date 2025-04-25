@@ -4,6 +4,10 @@
  * 역할: Auth 이벤트 리스닝과 전역 상태 동기화를 담당하는 커스텀 훅
  * 작성일: 2024-05-13
  * 수정일: 2025-04-24 : useAuthStore 리팩토링에 맞춰 업데이트 - setUser 대신 setProfile 사용
+ * 수정일: 2024-05-25 : three-layer-Standard 룰 적용
+ * @rule   three-layer-Standard
+ * @layer  hooks
+ * @tag    @tanstack-query-msw useAuth
  */
 
 'use client';
@@ -46,7 +50,7 @@ export function useAuth(): AuthStatus {
     
     async function initializeAuth() {
       try {
-        // Supabase 클라이언트 생성
+        // 중앙화된 Supabase 클라이언트 사용
         const supabase = createClient();
         
         // 초기 세션 확인

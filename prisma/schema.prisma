@@ -11,8 +11,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -22,7 +23,8 @@ model User {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
   cards         Card[]
-  ideaMapSettings IdeaMapSettings?
+  boardSettings BoardSettings?
+
   @@map("users")
 }
 
@@ -61,7 +63,7 @@ model CardTag {
   @@map("card_tags")
 }
 
-model IdeaMapSettings {
+model BoardSettings {
   id        String   @id @default(uuid())
   userId    String   @unique @map("user_id")
   settings  Json
@@ -69,5 +71,5 @@ model IdeaMapSettings {
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("idea_map_settings")
-}
+  @@map("board_settings")
+} 

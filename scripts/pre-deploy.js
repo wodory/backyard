@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 /**
+ * @rule   three-layer-Standard
+ * @layer  service
+ * @tag    @service-msw preDeploy
+ *
  * 배포 전 환경 설정 스크립트
  * 
  * 이 스크립트는 Vercel 등의 프로덕션 환경에 배포하기 전에
@@ -18,21 +22,37 @@ const __dirname = path.dirname(__filename);
 
 console.log('배포 전 환경 설정 확인 중...');
 
+// 환경 로드 (개발/운영 구분)
+const isProduction = process.env.NODE_ENV === 'production';
+const envFile = isProduction ? '.env.production' : '.env.development';
+const envPath = path.join(__dirname, '..', envFile);
+
+if (fs.existsSync(envPath)) {
+  console.log(`✅ ${envFile} 파일을 자동으로 로드합니다.`);
+  const envContent = fs.readFileSync(envPath, 'utf8');
+
+  // 환경 변수 파싱 및 설정
+  envContent.split('\n').forEach(line => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match && !match[1].startsWith('#')) {
+      if (!process.env[match[1]]) {
+        process.env[match[1]] = match[2];
+      }
+    }
+  });
+}
+
 // 기본 필수 환경 변수 목록
 let requiredEnvVars = [
-  'DATABASE_PROVIDER',
-  'DATABASE_URL'
+  'DATABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY'
 ];
 
-// 데이터베이스 프로바이더에 따라 추가 변수 검증
-if (process.env.DATABASE_PROVIDER === 'postgresql') {
-  requiredEnvVars.push('DIRECT_URL');
-  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
-  requiredEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-
-  if (process.env.NODE_ENV === 'production') {
-    requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
-  }
+// 프로덕션 환경에서만 필요한 변수 추가
+if (isProduction) {
+  requiredEnvVars.push('NEXT_PUBLIC_OAUTH_REDIRECT_URL');
+  requiredEnvVars.push('SUPABASE_SERVICE_ROLE_KEY');
 }
 
 // 환경 변수 검증
@@ -49,15 +69,10 @@ if (missingEnvVars.length > 0) {
 console.log('✅ 모든 필수 환경 변수가 설정되어 있습니다.');
 
 // 프로덕션 환경 확인
-if (process.env.NODE_ENV === 'production') {
+if (isProduction) {
   console.log('프로덕션 환경 감지: 설정을 확인합니다...');
 
-  if (process.env.DATABASE_PROVIDER !== 'postgresql') {
-    console.error('❌ 프로덕션 환경에서는 DATABASE_PROVIDER가 postgresql이어야 합니다.');
-    process.exit(1);
-  }
-
-  if (process.env.DATABASE_PROVIDER === 'postgresql' && !process.env.DATABASE_URL.includes('supabase.co')) {
+  if (!process.env.DATABASE_URL.includes('supabase.co')) {
     console.error('❌ 프로덕션 환경에서 DATABASE_URL이 Supabase 연결 문자열이 아닙니다.');
     process.exit(1);
   }
