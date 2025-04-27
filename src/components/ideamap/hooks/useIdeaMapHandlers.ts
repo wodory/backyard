@@ -121,15 +121,9 @@ export function useIdeaMapHandlers({
     connectingNodeId: string, 
     handleType: 'source' | 'target'
   ) => {
-    // Zustand 스토어 액션 호출
-    createEdgeAndNodeOnDrop(cardData, position, connectingNodeId, handleType)
-      .then(() => {
-        // 카드 목록 업데이트를 위해 데이터 다시 불러오기
-        setTimeout(() => {
-          fetchCards();
-        }, 500);
-      });
-  }, [createEdgeAndNodeOnDrop, fetchCards]);
+    // Zustand 스토어 액션 호출 - React Query 캐시 무효화에 의존하여 노드 동기화
+    createEdgeAndNodeOnDrop(cardData, position, connectingNodeId, handleType);
+  }, [createEdgeAndNodeOnDrop]);
 
   return {
     handleSelectionChange,

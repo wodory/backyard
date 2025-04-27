@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import { toast } from 'sonner';
+// import { toast } from 'sonner';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getCurrentUser, signOut } from '@/lib/auth';
 
+import { createLogger } from '@/lib/logger';
 
+const logger = createLogger('UserProfile');
 
 type User = {
   id: string;
@@ -42,7 +44,7 @@ export default function UserProfile() {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
-        console.error('사용자 정보 로드 오류:', error);
+        logger.error('사용자 정보 로드 오류:', error);
       } finally {
         setIsLoading(false);
       }
@@ -54,11 +56,11 @@ export default function UserProfile() {
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success('로그아웃 되었습니다.');
+      // toast.success('로그아웃 되었습니다.');
       router.push('/login');
     } catch (error) {
-      toast.error('로그아웃 중 오류가 발생했습니다.');
-      console.error('로그아웃 오류:', error);
+      // toast.error('로그아웃 중 오류가 발생했습니다.');
+      logger.error('로그아웃 오류:', error);
     }
   };
 

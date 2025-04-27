@@ -17,6 +17,7 @@ import { useReactFlow } from '@xyflow/react';
 import CreateCardModal from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+import { useIdeaMapSync } from '@/hooks/useIdeaMapSync';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import createLogger from '@/lib/logger';
@@ -190,6 +191,9 @@ function IdeaMap({
       setReactFlowInstance(reactFlowInstance);
     }
   }, [reactFlowInstance, setReactFlowInstance]);
+
+  // React Query 카드 데이터와 ReactFlow 노드 간 자동 동기화 설정
+  useIdeaMapSync();
 
   // 초기 데이터 로드 - 한 번만 실행되도록 의존성 배열 비움
   useEffect(() => {

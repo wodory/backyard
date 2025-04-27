@@ -22,7 +22,7 @@ async function createCardAPI(input: CardInput | CardInput[]): Promise<Card[]> {
     },
     body: JSON.stringify(input),
   });
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || '카드 생성 중 오류가 발생했습니다.');

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
 import {
@@ -64,6 +65,9 @@ import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 const logger = createLogger('ProjectToolbar');
 
 export function ProjectToolbar() {
+  // useRouter 훅 호출
+  const router = useRouter();
+
   // useAppStore에서 프로젝트 정보와 액션을 가져옴
   const {
     // layoutDirection,
@@ -293,11 +297,20 @@ export function ProjectToolbar() {
   }, []);
 
   // 로그아웃 핸들러
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     logger.info('로그아웃 시작');
-    // logoutAction 액션을 호출하여 로그아웃 처리
-    logoutAction();
-  }, [logoutAction]);
+
+    try {
+      // logoutAction 액션을 호출하여 로그아웃 처리
+      await logoutAction();
+
+      // 로그아웃 후 로그인 페이지로 리디렉션
+      router.push('/login');
+    } catch (error) {
+      console.error('로그아웃 처리 중 오류 발생:', error);
+      toast.error('로그아웃 처리 중 오류가 발생했습니다.');
+    }
+  }, [logoutAction, router]);
 
   // 컴포넌트 마운트 시 기본 프로젝트 생성 (API가 없는 경우)
   useEffect(() => {

@@ -4,6 +4,8 @@
  * 역할: 카드 작성 양식을 제공하고 카드 생성 기능 수행
  * 작성일: 2025-03-05
  * 수정일: 2025-04-25 : lint 오류 수정 - 사용되지 않는 import 및 변수 제거
+ * 수정일: 2025-04-21 : DEFAULT_USER_ID 상수 대신 useAuthStore를 사용하도록 수정
+ * 수정일: 2025-04-21 : 카드 생성 시 projectId 추가
  */
 
 "use client";
@@ -26,9 +28,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useCreateCard } from "@/hooks/useCreateCard";
 import { CreateCardInput, Card } from "@/types/card";
+
+// 프로젝트 인터페이스 정의
+interface Project {
+  id: string;
+  name: string;
+}
 
 // 컴포넌트에 props 타입 정의
 interface CreateCardModalProps {
@@ -51,11 +59,55 @@ export default function CreateCardModal({
   const [tags, setTags] = useState<string[]>([]);
   const isComposing = useRef(false);
 
+  // 프로젝트 관련 상태
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [isProjectLoading, setIsProjectLoading] = useState(true);
+  const [projectError, setProjectError] = useState<string | null>(null);
+
+  // useAuthStore에서 사용자 ID 가져오기
+  const userId = useAuthStore((state) => state.profile?.id);
+
   // useCreateCard 훅 사용
   const createCardMutation = useCreateCard();
   const { mutate: createCard } = createCardMutation;
   const isLoading = createCardMutation.isPending;
   const { isSuccess, error } = createCardMutation;
+
+  // 컴포넌트 마운트 시 프로젝트 목록 가져오기
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        setIsProjectLoading(true);
+        setProjectError(null);
+
+        const response = await fetch('/api/projects');
+
+        if (!response.ok) {
+          throw new Error('프로젝트를 불러오는데 실패했습니다.');
+        }
+
+        const data = await response.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          setProjects(data);
+          // TODO : 반드시 리펙토링을 통해 현재 로드중인 프로젝트 ID로 변경해야 함. 
+          // 지금은 테스트 중이므로 첫 번째 프로젝트를 기본값으로 설정'
+          const currentProjectId = data[0].id;
+          setSelectedProjectId(currentProjectId);
+        } else {
+          setProjectError('사용 가능한 프로젝트가 없습니다.');
+        }
+      } catch (err) {
+        console.error('프로젝트 목록 조회 오류:', err);
+        setProjectError(err instanceof Error ? err.message : '프로젝트를 불러오는데 실패했습니다.');
+      } finally {
+        setIsProjectLoading(false);
+      }
+    }
+
+    fetchProjects();
+  }, []);
 
   // 자동으로 모달 열기
   useEffect(() => {
@@ -138,10 +190,23 @@ export default function CreateCardModal({
       return;
     }
 
+    // 사용자가 로그인되어 있지 않은 경우 처리
+    if (!userId) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    // 프로젝트가 선택되지 않은 경우 처리
+    if (!selectedProjectId) {
+      alert('프로젝트를 선택해야 합니다.');
+      return;
+    }
+
     const cardInput: CreateCardInput = {
       title: title.trim(),
       content: content,
-      userId: DEFAULT_USER_ID,
+      userId: userId,
+      projectId: selectedProjectId,
       tags: tags,
     };
 
@@ -201,6 +266,11 @@ export default function CreateCardModal({
               오류: {error.message || '카드 생성 중 오류가 발생했습니다.'}
             </p>
           )}
+          {projectError && (
+            <p className="text-sm text-red-500 mt-2">
+              오류: {projectError}
+            </p>
+          )}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -210,7 +280,7 @@ export default function CreateCardModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="카드 제목을 입력하세요"
-              disabled={isLoading}
+              disabled={isLoading || isProjectLoading}
             />
           </div>
           <div className="space-y-2">
@@ -247,20 +317,25 @@ export default function CreateCardModal({
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
               placeholder="태그 입력 후 Enter 또는 쉼표(,)로 구분"
-              disabled={isLoading}
+              disabled={isLoading || isProjectLoading}
             />
           </div>
           <div className="flex justify-end space-x-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isLoading}>
+              <Button type="button" variant="outline" disabled={isLoading || isProjectLoading}>
                 취소
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || isProjectLoading || !selectedProjectId}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   생성 중...
+                </>
+              ) : isProjectLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  프로젝트 로딩 중...
                 </>
               ) : (
                 "카드 생성"

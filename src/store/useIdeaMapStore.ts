@@ -142,6 +142,9 @@ interface IdeaMapState {
 
   // 새로 추가한 액션
   syncCardsWithNodes: (forceRefresh?: boolean) => void;
+  
+  // 선택적 노드 업데이트 함수 - 변경된 카드에 대해서만 노드 업데이트
+  updateNodesSelectively: (changedCards: any[]) => void;
 }
 
 // 아이디어맵 스토어 생성
@@ -1620,6 +1623,121 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           logger.debug('카드-노드 동기화 불필요, 업데이트 건너뜀');
         }
       },
+      
+      // 선택적 노드 업데이트 함수 - 변경된 카드에 대해서만 노드 업데이트
+      updateNodesSelectively: (changedCards: any[]) => {
+        const state = get();
+        const cardIds = changedCards.map(card => card.id);
+        
+        logger.debug('선택적 노드 업데이트 실행:', { 
+          변경된카드수: changedCards.length,
+          현재노드수: state.nodes.length
+        });
+        
+        if (changedCards.length === 0) {
+          logger.debug('변경된 카드가 없습니다. 업데이트를 건너뜁니다.');
+          return;
+        }
+        
+        // 1. 현재 노드 맵 생성 (빠른 검색을 위해)
+        const currentNodesMap = state.nodes.reduce((acc, node) => {
+          acc[node.id] = node;
+          return acc;
+        }, {} as Record<string, Node<CardData>>);
+        
+        // 2. 저장된 위치 정보 로드
+        const savedPositions = loadIdeaMapPositions();
+        
+        // 현재 노드들의 위치 정보 맵 생성
+        const currentPositions: Record<string, XYPosition> = {};
+        state.nodes.forEach(node => {
+          currentPositions[node.id] = node.position;
+        });
+        
+        // 3. 변경된 카드에 대해서만 노드 생성/업데이트
+        const updatedNodes = state.nodes.map(node => {
+          // 변경된 카드에 해당하는 노드인 경우에만 업데이트
+          if (cardIds.includes(node.id)) {
+            const card = changedCards.find(c => c.id === node.id);
+            if (card) {
+              logger.debug(`노드 ${node.id} 데이터 업데이트`);
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  ...card,
+                  tags: card.cardTags 
+                    ? card.cardTags.map((cardTag: any) => cardTag.tag.name) 
+                    : (card.tags || []),
+                  _syncedAt: new Date().toISOString()
+                }
+              };
+            }
+          }
+          
+          // 변경 없음
+          return node;
+        });
+        
+        // 4. 새로 추가된 카드에 대한 노드 생성
+        const existingNodeIds = updatedNodes.map(node => node.id);
+        const newCards = changedCards.filter(card => !existingNodeIds.includes(card.id));
+        
+        if (newCards.length > 0) {
+          logger.debug('새로 추가된 카드 감지:', { 개수: newCards.length, IDs: newCards.map(c => c.id) });
+        }
+        
+        const newNodes = newCards.map((card, index) => {
+          // 위치 결정: 저장된 위치 > 현재 노드 위치 > 계산된 위치
+          let position: XYPosition;
+          
+          if (savedPositions[card.id]) {
+            position = savedPositions[card.id];
+            logger.debug(`카드 ${card.id}의 저장된 위치 사용`);
+          } else if (currentPositions[card.id]) {
+            position = currentPositions[card.id];
+            logger.debug(`카드 ${card.id}의 현재 노드 위치 사용`);
+          } else {
+            position = calculateNodePosition(index, newCards.length);
+            logger.debug(`카드 ${card.id}의 새 위치 계산`);
+          }
+          
+          return {
+            id: card.id,
+            type: NODE_TYPES_KEYS.card,
+            position,
+            data: {
+              ...card,
+              tags: card.cardTags 
+                ? card.cardTags.map((cardTag: any) => cardTag.tag.name) 
+                : (card.tags || []),
+              _syncedAt: new Date().toISOString(),
+              _nodeType: NODE_TYPES_KEYS.card
+            }
+          };
+        });
+        
+        // 변경된 내용이 있는 경우에만 상태 업데이트
+        if (newNodes.length > 0 || updatedNodes.some((node, idx) => node !== state.nodes[idx])) {
+          logger.debug('노드 상태 업데이트:', {
+            업데이트된노드: updatedNodes.length,
+            새노드: newNodes.length
+          });
+          
+          // 최종 노드 배열 설정
+          set({ 
+            nodes: [...updatedNodes, ...newNodes],
+            hasUnsavedChanges: true
+          });
+          
+          // 카드-노드 변경 후 레이아웃 저장
+          setTimeout(() => {
+            get().saveLayout();
+          }, 200);
+        } else {
+          logger.debug('변경 사항이 없어 노드 업데이트를 건너뜁니다.');
+        }
+      },
     }),
     {
       name: 'ideamap-store',
@@ -1643,3 +1761,19 @@ const calculateNodePosition = (index: number, totalNodes: number) => {
   const y = 300 + radius * Math.sin(angle);
   return { x, y };
 }; 
+
+// 로컬 스토리지에서 저장된 노드 위치를 로드하는 함수
+const loadIdeaMapPositions = (): Record<string, XYPosition> => {
+  try {
+    const savedLayout = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
+    if (savedLayout) {
+      const parsed = JSON.parse(savedLayout);
+      logger.debug('저장된 레이아웃 로드:', { nodeCount: Object.keys(parsed).length });
+      return parsed;
+    }
+  } catch (error) {
+    logger.error('레이아웃 로드 오류:', error);
+  }
+  
+  return {};
+};

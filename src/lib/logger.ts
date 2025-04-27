@@ -35,7 +35,7 @@ class LogStorage {
   private static instance: LogStorage;
   private logs: LogData[] = [];
   private sessionId: string;
-  private readonly MAX_LOGS = 100;
+  private readonly MAX_LOGS = 1000;
 
   private constructor() {
     this.sessionId = generateSessionId();

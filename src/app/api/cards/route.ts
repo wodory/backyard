@@ -3,6 +3,8 @@
  * 목적: 카드 API 엔드포인트
  * 역할: 카드 생성 및 조회 기능 제공
  * 작성일: 2024-05-22
+ * 수정일: 2025-04-21 : Card 생성 시 projectId 필드 추가
+ * 수정일: 2025-04-21 : 프로젝트가 없을 경우 자동으로 생성 로직 추가
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,11 +18,12 @@ const createCardSchema = z.object({
   title: z.string().min(1, '제목은 필수입니다.'),
   content: z.string().optional(),
   userId: z.string().uuid('유효한 사용자 ID가 필요합니다.'),
+  projectId: z.string().uuid('유효한 프로젝트 ID가 필요합니다.'),
   tags: z.array(z.string()).optional()
 });
 
 // 태그 처리 함수
-async function processTagsForCard(cardId: string, tagNames: string[] = []) {
+async function processTagsForCard(cardId: string, tagNames: string[] = [], projectId: string, userId?: string) {
   try {
     // 중복 태그 제거 및 공백 제거
     const uniqueTags = [...new Set(tagNames.map(tag => tag.trim()))].filter(tag => tag.length > 0);
@@ -32,14 +35,22 @@ async function processTagsForCard(cardId: string, tagNames: string[] = []) {
     
     // 각 태그에 대해 처리
     for (const tagName of uniqueTags) {
-      // 태그가 존재하는지 확인하고, 없으면 생성
-      let tag = await prisma.tag.findUnique({
-        where: { name: tagName }
+      // 프로젝트 내에서 동일한 이름의 태그가 존재하는지 확인
+      let tag = await prisma.tag.findFirst({
+        where: { 
+          name: tagName,
+          projectId: projectId // 내부적으로 projectId 필드를 project_id 열로 매핑
+        }
       });
       
+      // 없으면 새 태그 생성
       if (!tag) {
         tag = await prisma.tag.create({
-          data: { name: tagName }
+          data: { 
+            name: tagName,
+            projectId: projectId, // 내부적으로 projectId 필드를 project_id 열로 매핑
+            userId: userId // 내부적으로 userId 필드를 user_id 열로 매핑
+          }
         });
       }
       
@@ -92,7 +103,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { title, content, userId, tags } = validation.data;
+    const { title, content, userId, projectId, tags } = validation.data;
     
     // 사용자 존재 여부 확인
     const userResult = await safeDbOperation(
@@ -101,6 +112,8 @@ export async function POST(request: NextRequest) {
       }),
       '사용자 정보를 확인하는 중 오류가 발생했습니다.'
     );
+
+    console.log(`[api/cards/route.ts] userResult: ${JSON.stringify(userResult)}`);
     
     if (userResult.error) {
       return NextResponse.json(
@@ -116,13 +129,52 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // 프로젝트 존재 여부 확인
+    const projectResult = await safeDbOperation(
+      () => prisma.project.findUnique({
+        where: { id: projectId }
+      }),
+      '프로젝트 정보를 확인하는 중 오류가 발생했습니다.'
+    );
+    
+    console.log(`[api/cards/route.ts] projectResult: ${JSON.stringify(projectResult)}`);
+    
+    // 프로젝트가 존재하지 않는 경우 자동으로 생성
+    let project = projectResult.data;
+    
+    if (!project) {
+      console.log(`[api/cards/route.ts] 프로젝트가 존재하지 않아 자동 생성합니다. projectId: ${projectId}`);
+      
+      const createProjectResult = await safeDbOperation(
+        () => prisma.project.create({
+          data: {
+            id: projectId,
+            name: '기본 프로젝트',
+            ownerId: userId
+          }
+        }),
+        '프로젝트 생성 중 오류가 발생했습니다.'
+      );
+      
+      if (createProjectResult.error || !createProjectResult.data) {
+        return NextResponse.json(
+          { error: createProjectResult.error || '프로젝트 생성에 실패했습니다.' },
+          { status: 500 }
+        );
+      }
+      
+      project = createProjectResult.data;
+      console.log(`[api/cards/route.ts] 새 프로젝트 생성 완료: ${JSON.stringify(project)}`);
+    }
+    
     // 카드 생성
     const cardResult = await safeDbOperation(
       () => prisma.card.create({
         data: {
           title,
           content,
-          userId
+          userId,
+          projectId
         }
       }),
       '카드를 생성하는 중 오류가 발생했습니다.'
@@ -137,7 +189,7 @@ export async function POST(request: NextRequest) {
     
     // 태그 처리
     if (tags && tags.length > 0) {
-      await processTagsForCard(cardResult.data.id, tags);
+      await processTagsForCard(cardResult.data.id, tags, projectId, userId);
     }
     
     // 생성된 카드와 태그 조회
@@ -204,10 +256,11 @@ export async function GET(request: NextRequest) {
     // URL 쿼리 파라미터 파싱
     const { searchParams } = request.nextUrl;
     const userId = searchParams.get('userId');
+    const projectId = searchParams.get('projectId');
     const q = searchParams.get('q') || '';
     const tag = searchParams.get('tag') || '';
     
-    console.log('카드 조회 요청 - 파라미터:', { userId, q, tag });
+    console.log('카드 조회 요청 - 파라미터:', { userId, projectId, q, tag });
     
     // 검색 조건 구성
     const where: Record<string, unknown> = {};
@@ -215,6 +268,11 @@ export async function GET(request: NextRequest) {
     // 사용자 ID 필터
     if (userId) {
       where.userId = userId;
+    }
+    
+    // 프로젝트 ID 필터
+    if (projectId) {
+      where.projectId = projectId;
     }
     
     // 제목/내용 검색

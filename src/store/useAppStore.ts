@@ -8,6 +8,7 @@
  * 수정일: 2025-04-21 : 슬라이스 함수 호출 인수 수정
  * 수정일: 2025-04-21 : Zustand 슬라이스 통합 구조 명확화
  * 수정일: 2025-04-21 : createIdeaMapSlice를 별도 파일로 분리하고 순수 UI 상태만 관리하도록 수정
+ * 수정일: 2025-04-21 : Three-Layer-Standard 적용 - 인증 관련 API 호출을 서비스 함수로 이동
  */
 
 import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
@@ -16,10 +17,11 @@ import { create } from 'zustand'
 import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middleware'
 
 import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
-import { signOut, getCurrentUser } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
 import { createLogger } from '@/lib/logger'
+import { logout } from '@/services/authService'
 
 import { UiState, createUiSlice } from './uiSlice'
 import { CardStateState, createCardStateSlice } from './cardStateSlice'
@@ -280,7 +282,10 @@ const createAppGlobalSlice = (set: any, get: any) => ({
   // 로그아웃 액션
   logoutAction: async () => {
     try {
-      await signOut();
+      // 인증 서비스 함수를 호출하여 로그아웃 처리
+      await logout();
+      
+      // UI 상태 초기화 (Zustand의 책임)
       set({
         cards: [],
         selectedCardIds: [],
@@ -289,6 +294,7 @@ const createAppGlobalSlice = (set: any, get: any) => ({
         activeProjectId: null,
         projects: []
       });
+      
       toast.success("로그아웃 되었습니다.");
     } catch (error) {
       console.error("로그아웃 중 오류 발생:", error);
