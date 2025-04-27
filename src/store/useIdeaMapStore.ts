@@ -11,6 +11,7 @@
  * 수정일: 2024-07-18 : saveLayout 함수 개선 및 디버깅 로그 추가
  * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
  * 수정일: 2025-04-19 : 상태 업데이트 최적화 - 다중 set 호출을 하나로 배칭
+ * 수정일: 2025-07-18 : 카드가 없을 때 로컬 스토리지의 엣지 정보를 무시하도록 업데이트
  */
 import { 
   Node, 
@@ -369,12 +370,19 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               logger.debug('저장된 노드 위치 없음, 기본 위치 사용 예정');
             }
 
-            const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
-            if (savedEdgesStr) {
-              savedEdges = JSON.parse(savedEdgesStr);
-              logger.debug('저장된 엣지 로드 완료:', { 엣지수: savedEdges.length });
+            // 카드가 있을 때만 저장된 엣지 정보를 로드
+            if (cards.length > 0) {
+              const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
+              if (savedEdgesStr) {
+                savedEdges = JSON.parse(savedEdgesStr);
+                logger.debug('저장된 엣지 로드 완료:', { 엣지수: savedEdges.length });
+              } else {
+                logger.debug('저장된 엣지 없음, 빈 배열 사용');
+              }
             } else {
-              logger.debug('저장된 엣지 없음, 빈 배열 사용');
+              logger.debug('카드가 없어 저장된 엣지 정보를 무시합니다.');
+              // 카드가 없는 경우 로컬 스토리지의 엣지 정보를 초기화
+              localStorage.removeItem(IDEAMAP_EDGES_STORAGE_KEY);
             }
 
             const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_STORAGE_KEY);
@@ -430,7 +438,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
 
           // 4. 엣지 데이터 설정 (저장된 엣지 사용 및 설정 적용)
           const boardSettings = get().ideaMapSettings;
-          const finalEdges = applyIdeaMapEdgeSettings(savedEdges, boardSettings);
+          const finalEdges = cards.length > 0 ? applyIdeaMapEdgeSettings(savedEdges, boardSettings) : [];
           logger.debug('엣지 스타일 적용 완료:', { 
             엣지수: finalEdges.length,
             스타일: {
@@ -1197,7 +1205,23 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        * @param changes 엣지 변경 사항 배열
        */
       applyEdgeChangesAction: (changes: EdgeChange[]) => {
-        const { edges } = get();
+        const { edges, nodes } = get();
+        
+        // 노드가 없을 때는 엣지 변경을 무시하고 빈 배열로 설정
+        if (nodes.length === 0) {
+          logger.debug('노드가 없어 엣지 변경을 무시하고 빈 배열로 설정합니다.');
+          set({ edges: [] });
+          
+          // 로컬 스토리지의 엣지 정보도 초기화
+          try {
+            localStorage.removeItem(IDEAMAP_EDGES_STORAGE_KEY);
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+            logger.error('[useIdeaMapStore] 로컬 스토리지 엣지 정보 초기화 중 오류 발생:', errorMessage);
+          }
+          return;
+        }
+        
         const updatedEdges = applyEdgeChanges(changes, edges) as Edge[];
         set({ edges: updatedEdges, hasUnsavedChanges: true });
         
@@ -1242,7 +1266,13 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        * @param connection 연결 파라미터
        */
       connectNodesAction: (connection: Connection) => {
-        const { ideaMapSettings, edges } = get();
+        const { ideaMapSettings, edges, nodes } = get();
+        
+        // 노드가 없을 때는 연결 시도를 무시
+        if (nodes.length === 0) {
+          logger.debug('노드가 없어 노드 연결 요청을 무시합니다.');
+          return;
+        }
         
         const newEdge: Edge = {
           ...connection,
@@ -1398,6 +1428,27 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           현재노드개수: currentNodes.length
         });
         
+        // 카드가 없는 경우 특별 처리
+        if (appStoreCards.length === 0) {
+          logger.warn('카드가 없습니다. 노드와 엣지를 초기화합니다.');
+          // 노드 초기화
+          set({ 
+            nodes: [],
+            edges: [],
+            hasUnsavedChanges: true
+          });
+          
+          // 로컬 스토리지의 엣지 정보 삭제
+          try {
+            localStorage.removeItem(IDEAMAP_EDGES_STORAGE_KEY);
+            logger.debug('로컬 스토리지의 엣지 정보를 삭제했습니다.');
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+            logger.error('[useIdeaMapStore] 로컬 스토리지 엣지 정보 삭제 중 오류 발생:', errorMessage);
+          }
+          return;
+        }
+        
         // 변경이 필요한지 확인
         let needsUpdate = forceRefresh;
         
@@ -1437,7 +1488,18 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           
           if (appStoreCards.length === 0) {
             logger.warn('카드가 없습니다. 빈 노드 배열로 업데이트합니다.');
-            set({ nodes: [] });
+            set({ 
+              nodes: [],
+              edges: [], // 엣지도 초기화
+              hasUnsavedChanges: true
+            });
+            
+            // 로컬 스토리지의 엣지 정보도 초기화
+            try {
+              localStorage.removeItem(IDEAMAP_EDGES_STORAGE_KEY);
+            } catch (err) {
+              logger.error('로컬 스토리지 엣지 정보 초기화 중 오류 발생:', err);
+            }
             return;
           }
           
@@ -1517,13 +1579,37 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             });
             
             // 4. 한 번에 set 호출
+            // 엣지 업데이트 - 기존 노드와 연결된 엣지만 유지
+            const currentEdges = get().edges;
+            const validNodeIds = updatedNodes.map(node => node.id);
+            
+            const validEdges = currentEdges.filter(edge => 
+              validNodeIds.includes(edge.source) && validNodeIds.includes(edge.target)
+            );
+            
+            if (currentEdges.length !== validEdges.length) {
+              logger.debug('유효하지 않은 엣지 제거:', {
+                기존엣지: currentEdges.length,
+                유효엣지: validEdges.length
+              });
+            }
+            
             set({ 
               nodes: updatedNodes,
+              edges: validEdges,
               hasUnsavedChanges: true 
             });
             
+            // 유효한 엣지만 저장
+            try {
+              localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(validEdges));
+            } catch (err) {
+              logger.error('엣지 정보 저장 중 오류:', err);
+            }
+            
             logger.debug('카드-노드 동기화 완료, 새 노드 배열 설정:', { 
-              노드수: updatedNodes.length
+              노드수: updatedNodes.length,
+              엣지수: validEdges.length
             });
             
           } catch (err) {
