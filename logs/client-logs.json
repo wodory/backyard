@@ -1,23 +1,5 @@
 [
   {
-    "timestamp": "2025-04-26T04:18:26.910Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:18:27.044Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:18:27.317Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:18:27.421Z"
-  },
-  {
     "timestamp": "2025-04-26T04:18:27.316Z",
     "level": "error",
     "module": "useIdeaMapData",
@@ -8835,5 +8817,21 @@
     "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
     "sessionId": "tknjaw651igpketmw4z32t",
     "serverTimestamp": "2025-04-27T06:13:33.073Z"
+  },
+  {
+    "timestamp": "2025-04-27T10:08:24.322Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-27T10:08:25.345Z"
+  },
+  {
+    "timestamp": "2025-04-27T10:08:24.396Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "47qmnwuvxz418ky8jrquy4",
+    "serverTimestamp": "2025-04-27T10:08:25.364Z"
   }
 ]
