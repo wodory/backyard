@@ -1,5 +1,5 @@
 import { MarkerType, ConnectionLineType } from '@xyflow/react';
-import { I } from 'vitest/dist/chunks/reporters.d.CfRkRKN2.js';
+// import { I } from 'vitest/dist/chunks/reporters.d.CfRkRKN2.js';
 
 import defaultConfig from '../config/uiOptions.json';
 
@@ -199,7 +199,7 @@ export function loadDefaultIdeaMapUIConfig(): IdeaMapUIConfig {
 /**
  * 보드 설정 인터페이스에 필요한 기본값을 추출하는 함수
  */
-export function extractIdeaMapSettings(config: IdeaMapUIConfig) {
+export function extractSettings(config: IdeaMapUIConfig) {
   return {
     snapToGrid: config.ideaMap.snapToGrid,
     snapGrid: config.ideaMap.snapGrid,

@@ -70,6 +70,8 @@ export default function LoginForm() {
             // 서버 액션 호출하여 URL 획득
             const result = await googleSignInAction();
 
+            console.log("Google OAuth result:", result); // 결과 전체 로깅
+
             if (result.error) {
                 // 오류가 있는 경우 표시
                 console.error("Google signin error:", result.error);
@@ -78,15 +80,35 @@ export default function LoginForm() {
                 return;
             }
 
-            if (result.url) {
-                // 클라이언트 측에서 URL로 리다이렉션
-                console.log("Redirecting to Google OAuth URL...");
-                // Supabase SSR을 이용한 로그인 처리 시 window.location.href 사용 권장
-                window.location.href = result.url;
+            if (result.url && typeof result.url === 'string') {
+                // URL을 명확하게 로깅
+                console.log("Google OAuth URL:", result.url);
+
+                // 딜레이 추가 (디버깅용)
+                setTimeout(() => {
+                    try {
+                        // window.location.assign으로 변경
+                        window.location.assign(result.url as string);
+
+                        // 백업 리다이렉션 - 위 방법이 실패할 경우
+                        setTimeout(() => {
+                            if (window.location.href !== result.url) {
+                                console.log("Fallback to direct location change");
+                                window.location.href = result.url as string;
+                            }
+                        }, 500);
+                    } catch (redirectErr) {
+                        console.error("Redirect error:", redirectErr);
+                        setError("리다이렉션 중 오류가 발생했습니다: " + redirectErr);
+                        setIsGooglePending(false);
+                    }
+                }, 100);
+
                 return;
             }
 
             // URL이 없는 경우 오류 표시
+            console.error("No URL in response:", result);
             setError("구글 로그인 URL을 획득하지 못했습니다.");
             setIsGooglePending(false);
         } catch (err) {

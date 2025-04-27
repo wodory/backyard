@@ -1,9 +1,5 @@
 -- Supabase 초기 셋업용 최종 스키마 정의
 
-DROP SCHEMA IF EXISTS auth CASCADE;
-CREATE SCHEMA auth;
-CREATE EXTENSION IF NOT EXISTS "supabase_auth" SCHEMA auth;
-
 -- 1. 사용자 테이블 (Supabase Auth 연동)
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
@@ -262,4 +258,4 @@ CREATE TRIGGER update_board_settings_modtime BEFORE UPDATE ON public.board_setti
 -- END;
 -- $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
--- CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user(); 
+-- CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

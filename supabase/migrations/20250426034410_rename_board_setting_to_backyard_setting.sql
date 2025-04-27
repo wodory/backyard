@@ -1,0 +1,1 @@
+   ALTER TABLE board_setting RENAME TO backyard_setting;

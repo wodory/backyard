@@ -9,6 +9,7 @@
  * 수정일: 2025-04-24 : 구글 로그인 리다이렉션 처리 방식 변경 - URL 반환 방식으로 수정
  * 수정일: 2024-05-19 : 클라이언트 Google OAuth 모듈을 서버 호환 모듈로 교체
  * 수정일: 2024-05-19 : Google OAuth 함수 import 경로 변경 (auth/server → auth-server)
+ * 수정일: 2024-05-21 : 클라이언트 signIn 함수를 서버 호환 함수로 교체
  * 
  * @rule   three-layer-standard
  * @layer  service
@@ -20,12 +21,43 @@
 
 import { redirect } from 'next/navigation'
 
-import { signIn } from '@/lib/auth'
+// 클라이언트 함수 import 제거
+// import { signIn } from '@/lib/auth'
 import { serverSignInWithGoogle } from '@/lib/auth-server'
 import createLogger from '@/lib/logger'
+import { createClient } from '@/lib/supabase/server'
 
 // 로거 생성
 const logger = createLogger('LoginActions')
+
+/**
+ * serverSignIn: 서버에서 이메일과 비밀번호로 로그인
+ * @param {string} email - 이메일 주소
+ * @param {string} password - 비밀번호
+ * @returns {Promise<any>} 로그인 결과
+ */
+async function serverSignIn(email: string, password: string) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    logger.info('서버에서 로그인 성공', {
+      환경: process.env.NODE_ENV
+    });
+
+    return data;
+  } catch (error) {
+    logger.error('서버에서 로그인 실패:', error);
+    throw error;
+  }
+}
 
 /**
  * loginAction: 이메일과 비밀번호를 사용하여 사용자를 로그인
@@ -43,7 +75,8 @@ export async function loginAction(formData: FormData) {
 
   try {
     logger.debug('로그인 시도:', { email })
-    const data = await signIn(email, password)
+    // 클라이언트 signIn 대신 서버용 함수 사용
+    const data = await serverSignIn(email, password)
 
     // 성공 시 홈페이지로 리디렉션
     logger.info('로그인 성공:', { email })

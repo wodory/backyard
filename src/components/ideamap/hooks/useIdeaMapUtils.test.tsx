@@ -240,22 +240,14 @@ describe('useIdeaMapUtils', () => {
 
     // API 응답 모킹 (MSW 핸들러)
     server.use(
-      http.post('/api/ideamap-settings', async ({ request }) => {
-        return HttpResponse.json({ success: true });
+      http.post('/api/settings', async ({ request }) => {
+        const data = await request.json();
+        savedSettings = data.settings;
+        return HttpResponse.json({ success: true, settings: data.settings });
       }),
-      http.get('/api/ideamap-settings/:userId', ({ params }) => {
+      http.get('/api/settings/:userId', ({ params }) => {
         const { userId } = params;
-        return HttpResponse.json({
-          strokeWidth: 2,
-          edgeColor: '#000000',
-          selectedEdgeColor: '#ff0000',
-          animated: false,
-          markerEnd: 'arrowclosed',
-          connectionLineType: 'straight',
-          snapToGrid: false,
-          snapGrid: [20, 20],
-          markerSize: 20,
-        });
+        return HttpResponse.json({ settings: savedSettings });
       })
     );
   });

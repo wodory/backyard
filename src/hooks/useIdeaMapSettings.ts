@@ -7,8 +7,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { IdeaMapSettings, DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
-import * as ideaMapSettingsService from '@/services/ideaMapSettingsService';
+import { Settings, DEFAULT_SETTINGS } from '@/lib/ideamap-utils';
+import * as settingsService from '@/services/settingsService';
 
 /**
  * useIdeaMapSettings: 아이디어맵 설정을 가져오는 쿼리 훅
@@ -18,10 +18,10 @@ import * as ideaMapSettingsService from '@/services/ideaMapSettingsService';
 export const useIdeaMapSettings = (userId: string) => {
   return useQuery({
     queryKey: ['ideaMapSettings', userId],
-    queryFn: () => ideaMapSettingsService.fetchIdeaMapSettings(userId),
+    queryFn: () => settingsService.fetchSettings(userId),
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5분 동안 데이터를 신선하게 유지
-    initialData: DEFAULT_IDEAMAP_SETTINGS,
+    initialData: DEFAULT_SETTINGS,
   });
 };
 
@@ -38,9 +38,9 @@ export const useUpdateIdeaMapSettingsMutation = () => {
       settings 
     }: { 
       userId: string; 
-      settings: Partial<IdeaMapSettings>; 
+      settings: Partial<Settings>; 
     }) => 
-      ideaMapSettingsService.updateIdeaMapSettings(userId, settings),
+      settingsService.updateSettings(userId, settings),
     onSuccess: (data, variables) => {
       const { userId } = variables;
       
@@ -71,9 +71,9 @@ export const useCreateIdeaMapSettingsMutation = () => {
       settings 
     }: { 
       userId: string; 
-      settings: IdeaMapSettings; 
+      settings: Settings; 
     }) => 
-      ideaMapSettingsService.createIdeaMapSettings(userId, settings),
+      settingsService.createSettings(userId, settings),
     onSuccess: (data, variables) => {
       const { userId } = variables;
       queryClient.invalidateQueries({ 

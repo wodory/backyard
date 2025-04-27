@@ -6,23 +6,24 @@
  * 수정일: 2025-04-24 : 새로운 액션 함수명 및 시그니처에 맞게 테스트 업데이트
  * 수정일: 2024-05-19 : Google OAuth 서버 함수 모킹으로 변경
  * 수정일: 2024-05-19 : Google OAuth 함수 모킹 경로 변경 (auth/server → auth-server)
+ * 수정일: 2024-05-21 : 클라이언트 signIn 모킹을 서버용 serverSignIn에 맞게 테스트 케이스 조정
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { loginAction, signupAction, googleSignInAction } from './actions'
-import { signIn } from '@/lib/auth'
 import { serverSignInWithGoogle } from '@/lib/auth-server'
 import { redirect } from 'next/navigation'
 import createLogger from '@/lib/logger'
+import { createClient } from '@/lib/supabase/server'
 
 // Next.js의 redirect를 모킹
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
 }))
 
-// 로그인, 회원가입 함수 모킹
-vi.mock('@/lib/auth', () => ({
-  signIn: vi.fn(),
+// Supabase 클라이언트 모킹
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
 }))
 
 // 서버용 Google OAuth 함수 모킹
@@ -41,9 +42,20 @@ vi.mock('@/lib/logger', () => ({
 
 describe('Login Actions', () => {
   let formData: FormData
+  let mockSupabaseClient: any
 
   beforeEach(() => {
     formData = new FormData()
+    
+    // Supabase 클라이언트 응답 모킹 설정
+    mockSupabaseClient = {
+      auth: {
+        signInWithPassword: vi.fn(),
+      }
+    }
+    
+    ;(createClient as any).mockResolvedValue(mockSupabaseClient)
+    
     vi.resetAllMocks()
   })
 
@@ -67,14 +79,20 @@ describe('Login Actions', () => {
       formData.append('email', 'user@example.com')
       formData.append('password', 'password123')
       
-      const mockSignInResponse = { /* 성공 응답 객체 */}
-      ;(signIn as any).mockResolvedValue(mockSignInResponse)
+      // Supabase 응답 모킹
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
+        data: { session: { user: { id: 'test-id' } } },
+        error: null
+      })
       
       // 테스트 실행
       await loginAction(formData)
       
       // 결과 검증
-      expect(signIn).toHaveBeenCalledWith('user@example.com', 'password123')
+      expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        password: 'password123'
+      })
       expect(redirect).toHaveBeenCalledWith('/')
     })
 
@@ -83,14 +101,21 @@ describe('Login Actions', () => {
       formData.append('email', 'user@example.com')
       formData.append('password', 'wrong-password')
       
+      // Supabase 오류 응답 모킹
       const error = new Error('Invalid credentials')
-      ;(signIn as any).mockRejectedValue(error)
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
+        data: { session: null },
+        error: error
+      })
       
       // 테스트 실행
       await loginAction(formData)
       
       // 결과 검증
-      expect(signIn).toHaveBeenCalledWith('user@example.com', 'wrong-password')
+      expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        password: 'wrong-password'
+      })
       expect(redirect).toHaveBeenCalledWith('/login?error=Invalid%20credentials')
     })
   })

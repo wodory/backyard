@@ -16,7 +16,7 @@ import { describe, it, expect, beforeEach, vi, afterEach, afterAll, beforeAll } 
 
 import * as graphUtils from '@/components/ideamap/utils/ideamap-graphUtils';
 import * as authLib from '@/lib/auth';
-import { DEFAULT_IDEAMAP_SETTINGS, IdeaMapSettings } from '@/lib/ideamap-utils';
+import { DEFAULT_SETTINGS, Settings } from '@/lib/ideamap-utils';
 import * as layoutUtils from '@/lib/layout-utils';
 import { useAppStore, Card } from '@/store/useAppStore';
 import { server } from '@/tests/msw/server';
@@ -28,7 +28,7 @@ mockReactFlow();
 
 // 모든 모킹을 파일 상단에 배치
 vi.mock('@/lib/ideamap-utils', () => ({
-  DEFAULT_IDEAMAP_SETTINGS: {
+  DEFAULT_SETTINGS: {
     edgeColor: '#000000',
     strokeWidth: 1,
     animated: false,
@@ -141,9 +141,9 @@ describe('useAppStore', () => {
       // PUT /api/users/:userId/settings - New handler for ideaMap settings
       http.put('/api/users/:userId/settings', async ({ request, params }) => {
         const { userId } = params;
-        const partialSettings = await request.json() as Partial<IdeaMapSettings>;
+        const partialSettings = await request.json() as Partial<Settings>;
         console.log(`[MSW] PUT /api/users/${userId}/settings`, partialSettings);
-        const savedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...partialSettings };
+        const savedSettings = { ...DEFAULT_SETTINGS, ...partialSettings };
         return HttpResponse.json({ 
           success: true, 
           userId, 
@@ -151,8 +151,8 @@ describe('useAppStore', () => {
         });
       }),
 
-      // POST /api/ideamap-settings - Save options
-      http.post('/api/ideamap-settings', async ({ request }) => {
+      // POST /api/settings - Save options
+      http.post('/api/settings', async ({ request }) => {
         const partialSettings = await request.json() as Partial<IdeaMapSettings>;
         
         // 저장된 설정을 디비에서 읽어와 업데이트했다고 가정
@@ -201,7 +201,7 @@ describe('useAppStore', () => {
               settings: savedSettings 
             });
         }),
-        http.post('/api/ideamap-settings', async ({ request }) => {
+        http.post('/api/settings', async ({ request }) => {
           const partialSettings = await request.json() as Partial<IdeaMapSettings>;
           
           const saved = { ...useAppStore.getState().ideaMapSettings, ...partialSettings };
@@ -477,10 +477,10 @@ describe('useAppStore', () => {
 
   describe('보드 설정 관련 테스트', () => {
     it('setIdeaMapSettings 액션이 아이디어맵 설정을 설정해야 함', () => {
-      const { setIdeaMapSettings } = useAppStore.getState();
-      const newSettings = { ...DEFAULT_IDEAMAP_SETTINGS, snapToGrid: true };
+      const { setSettings } = useAppStore.getState();
+      const newSettings = { ...DEFAULT_SETTINGS, snapToGrid: true };
       
-      setIdeaMapSettings(newSettings);
+      setSettings(newSettings);
       
       const state = useAppStore.getState();
       expect(state.ideaMapSettings).toEqual(newSettings);
@@ -488,15 +488,15 @@ describe('useAppStore', () => {
 
     it('updateIdeaMapSettings 액션이 아이디어맵 설정을 부분 업데이트해야 함', async () => {
       const { updateIdeaMapSettings } = useAppStore.getState();
-      const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
-      const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
+      const newSettings: Partial<Settings> = { snapToGrid: true, animated: true };
+      const expectedSavedSettings = { ...DEFAULT_SETTINGS, ...newSettings };
       
       // 서버 응답 모킹
       server.use(
-        http.post('/api/ideamap-settings', async ({ request }) => {
+        http.post('/api/settings', async ({ request }) => {
           const reqBody = await request.json() as { userId: string; settings: Partial<IdeaMapSettings> };
           
-          const saved = { ...DEFAULT_IDEAMAP_SETTINGS, ...reqBody.settings };
+          const saved = { ...DEFAULT_SETTINGS, ...reqBody.settings };
           
           return HttpResponse.json({
             success: true,
@@ -515,12 +515,12 @@ describe('useAppStore', () => {
 
     it('updateIdeaMapSettings 액션이 실패 시 에러를 처리해야 함', async () => {
       const { updateIdeaMapSettings } = useAppStore.getState();
-      const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
-      const expectedSavedSettings = { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings };
+      const newSettings: Partial<Settings> = { snapToGrid: true, animated: true };
+      const expectedSavedSettings = { ...DEFAULT_SETTINGS, ...newSettings };
       
       // 실패 시뮬레이션
       server.use(
-        http.post('/api/ideamap-settings', async ({ request }) => {
+        http.post('/api/settings', async ({ request }) => {
           const reqBody = await request.json() as { userId: string; settings: Partial<IdeaMapSettings> };
           
           return HttpResponse.json({
@@ -541,14 +541,14 @@ describe('useAppStore', () => {
     it('updateIdeaMapSettings 액션이 로딩 상태를 적절히 처리해야 함', async () => {
       // Arrange
       const { updateIdeaMapSettings } = useAppStore.getState();
-      const newSettings: Partial<IdeaMapSettings> = { snapToGrid: true, animated: true };
+      const newSettings: Partial<Settings> = { snapToGrid: true, animated: true };
       
       // 응답 핸들러 설정 - 지연 없이 즉시 응답
       server.use(
-        http.post('/api/ideamap-settings', ({ request }) => {
+        http.post('/api/settings', ({ request }) => {
           return HttpResponse.json({
             success: true,
-            settings: { ...DEFAULT_IDEAMAP_SETTINGS, ...newSettings }
+            settings: { ...DEFAULT_SETTINGS, ...newSettings }
           });
         })
       );

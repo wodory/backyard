@@ -8,16 +8,16 @@
 import { Edge, ConnectionLineType, MarkerType } from '@xyflow/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
+import { SETTINGS_STORAGE_KEY } from './ideamap-constants';
 import { 
-  loadIdeaMapSettings, 
-  saveIdeaMapSettings, 
-  saveIdeaMapSettingsToServer,
-  loadIdeaMapSettingsFromServer,
-  updateIdeaMapSettingsOnServer,
+  loadSettings, 
+  saveSettings, 
+  saveSettingsToServer,
+  loadSettingsFromServer,
+  updateSettingsOnServer,
   applyIdeaMapEdgeSettings,
-  DEFAULT_IDEAMAP_SETTINGS,
-  type IdeaMapSettings
+  DEFAULT_SETTINGS,
+  type Settings
 } from './ideamap-utils';
 
 // 전역 모킹 설정
@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 // 기본 설정 가져오기 함수 (테스트용)
-function getTestIdeaMapSettings(): IdeaMapSettings {
+function getTestSettings(): Settings {
   return {
     snapToGrid: true,
     snapGrid: [15, 15] as [number, number],
@@ -56,32 +56,32 @@ function getTestIdeaMapSettings(): IdeaMapSettings {
 describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
   describe('로컬 스토리지 설정', () => {
     it('localStorage에 설정이 없으면 기본 설정을 반환', () => {
-      const settings = loadIdeaMapSettings();
-      expect(localStorage.getItem).toHaveBeenCalledWith(IDEAMAP_SETTINGS_STORAGE_KEY);
-      expect(settings).toEqual(DEFAULT_IDEAMAP_SETTINGS);
+      const settings = loadSettings();
+      expect(localStorage.getItem).toHaveBeenCalledWith(SETTINGS_STORAGE_KEY);
+      expect(settings).toEqual(DEFAULT_SETTINGS);
     });
 
     it('localStorage에서 저장된 설정을 불러옴', () => {
-      const testSettings: IdeaMapSettings = {
-        ...DEFAULT_IDEAMAP_SETTINGS,
+      const testSettings: Settings = {
+        ...DEFAULT_SETTINGS,
         snapToGrid: false,
         edgeColor: '#FF0000'
       };
       
-      localStorageMock.set(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(testSettings));
+      localStorageMock.set(SETTINGS_STORAGE_KEY, JSON.stringify(testSettings));
       
-      const settings = loadIdeaMapSettings();
-      expect(localStorage.getItem).toHaveBeenCalledWith(IDEAMAP_SETTINGS_STORAGE_KEY);
+      const settings = loadSettings();
+      expect(localStorage.getItem).toHaveBeenCalledWith(SETTINGS_STORAGE_KEY);
       expect(settings).toEqual(testSettings);
     });
 
     it('localStorage에 설정을 저장', () => {
-      const testSettings = getTestIdeaMapSettings();
+      const testSettings = getTestSettings();
       
-      saveIdeaMapSettings(testSettings);
+      saveSettings(testSettings);
       
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        IDEAMAP_SETTINGS_STORAGE_KEY,
+        SETTINGS_STORAGE_KEY,
         JSON.stringify(testSettings)
       );
     });
@@ -91,16 +91,16 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
         throw new Error('Storage error');
       });
       
-      const settings = loadIdeaMapSettings();
+      const settings = loadSettings();
       
-      expect(settings).toEqual(DEFAULT_IDEAMAP_SETTINGS);
+      expect(settings).toEqual(DEFAULT_SETTINGS);
     });
   });
 
   describe('서버 설정 동기화', () => {
     it('서버에 설정을 성공적으로 저장', async () => {
       const userId = 'test-user';
-      const testSettings = getTestIdeaMapSettings();
+      const testSettings = getTestSettings();
       
       // 성공적인 응답 모킹
       mockFetch.mockResolvedValueOnce({
@@ -111,24 +111,24 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
         })
       });
       
-      const result = await saveIdeaMapSettingsToServer(testSettings, userId);
+      const result = await saveSettingsToServer(testSettings, userId);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(Object)
       );
-      expect(mockFetch.mock.calls[0][0].url).toContain('/api/ideamap-settings');
+      expect(mockFetch.mock.calls[0][0].url).toContain('/api/settings');
       expect(result).toBe(true);
       
       // localStorage.setItem이 호출되었는지 확인
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        IDEAMAP_SETTINGS_STORAGE_KEY,
+        SETTINGS_STORAGE_KEY,
         JSON.stringify(testSettings)
       );
     });
 
     it('서버에서 설정을 성공적으로 불러옴', async () => {
       const userId = 'test-user';
-      const testSettings = getTestIdeaMapSettings();
+      const testSettings = getTestSettings();
       
       // 성공적인 응답 모킹
       mockFetch.mockResolvedValueOnce({
@@ -139,28 +139,28 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
         })
       });
       
-      const result = await loadIdeaMapSettingsFromServer(userId);
+      const result = await loadSettingsFromServer(userId);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(Object)
       );
-      expect(mockFetch.mock.calls[0][0].url).toContain(`/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
+      expect(mockFetch.mock.calls[0][0].url).toContain(`/api/settings?userId=${encodeURIComponent(userId)}`);
       expect(result).toEqual(testSettings);
       
       // localStorage.setItem이 호출되었는지 확인
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        IDEAMAP_SETTINGS_STORAGE_KEY,
+        SETTINGS_STORAGE_KEY,
         JSON.stringify(testSettings)
       );
     });
 
     it('서버 오류 시 false를 반환', async () => {
       const userId = 'test-user';
-      const testSettings = getTestIdeaMapSettings();
+      const testSettings = getTestSettings();
       
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
       
-      const result = await saveIdeaMapSettingsToServer(testSettings, userId);
+      const result = await saveSettingsToServer(testSettings, userId);
       
       expect(result).toBe(false);
     });
@@ -176,15 +176,33 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
         })
       });
       
-      const result = await loadIdeaMapSettingsFromServer(userId);
+      const result = await loadSettingsFromServer(userId);
       
       expect(result).toBeNull();
+    });
+
+    it('모킹된 fetch 오류 메시지 확인', async () => {
+      const userId = 'test-user';
+      const testSettings = getTestSettings();
+      
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      
+      const result = await saveSettingsToServer(testSettings, userId);
+      
+      expect(result).toBe(false);
+      
+      // 모킹된 fetch 오류 메시지 확인
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('서버 아이디어맵 설정 저장 중 오류:'),
+        expect.any(Error)
+      );
+      expect(mockFetch.mock.calls[0][0].url).toContain('/api/settings');
     });
   });
 
   describe('엣지 스타일 적용', () => {
     it('기본 엣지에 설정을 올바르게 적용', () => {
-      const settings = getTestIdeaMapSettings();
+      const settings = getTestSettings();
       const edges: Edge[] = [
         { id: 'edge-1', source: 'node-1', target: 'node-2' }
       ];
@@ -205,7 +223,7 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
     });
 
     it('선택된 엣지에 선택 색상을 적용', () => {
-      const settings = getTestIdeaMapSettings();
+      const settings = getTestSettings();
       const edges: Edge[] = [
         { id: 'edge-1', source: 'node-1', target: 'node-2', selected: true }
       ];
@@ -219,8 +237,8 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
     });
 
     it('마커 설정이 없을 때 마커를 제거', () => {
-      const settings: IdeaMapSettings = {
-        ...getTestIdeaMapSettings(),
+      const settings: Settings = {
+        ...getTestSettings(),
         markerEnd: null
       };
       const edges: Edge[] = [
@@ -236,7 +254,7 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
   describe('설정 부분 업데이트', () => {
     it('서버에 설정을 부분적으로 업데이트', async () => {
       const userId = 'test-user';
-      const partialSettings: Partial<IdeaMapSettings> = {
+      const partialSettings: Partial<Settings> = {
         edgeColor: '#FF0000',
         animated: true
       };
@@ -250,7 +268,7 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
         })
       });
       
-      const result = await updateIdeaMapSettingsOnServer(userId, partialSettings);
+      const result = await updateSettingsOnServer(userId, partialSettings);
       
       // 함수가 fetch를 호출했는지 확인
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -258,7 +276,7 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
       // 호출 시 올바른 URL과 메서드 사용했는지 확인
       const requestConfig = mockFetch.mock.calls[0][0];
       expect(requestConfig.method).toBe('PATCH');
-      expect(requestConfig.url).toContain('/api/ideamap-settings');
+      expect(requestConfig.url).toContain('/api/settings');
       
       // 반환값 확인
       expect(result).toBe(true);
@@ -266,14 +284,14 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
     
     it('로컬 설정을 부분 업데이트 후 저장', async () => {
       const userId = 'test-user';
-      const currentSettings = getTestIdeaMapSettings();
-      const partialSettings: Partial<IdeaMapSettings> = {
+      const currentSettings = getTestSettings();
+      const partialSettings: Partial<Settings> = {
         edgeColor: '#FF0000',
         animated: true
       };
       
       // 현재 설정 모킹
-      localStorageMock.set(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
+      localStorageMock.set(SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
       
       // 성공적인 응답 모킹
       mockFetch.mockResolvedValueOnce({
@@ -281,11 +299,11 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
         json: async () => ({ success: true })
       });
       
-      await updateIdeaMapSettingsOnServer(userId, partialSettings);
+      await updateSettingsOnServer(userId, partialSettings);
       
       // localStorage.setItem이 호출되었는지 확인
       expect(localStorage.setItem).toHaveBeenCalledWith(
-        IDEAMAP_SETTINGS_STORAGE_KEY,
+        SETTINGS_STORAGE_KEY,
         expect.any(String)
       );
       

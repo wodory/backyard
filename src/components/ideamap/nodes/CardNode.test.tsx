@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReactFlowProvider, Node, NodeProps } from '@xyflow/react';
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 
-import { DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
+import { DEFAULT_SETTINGS } from '@/lib/ideamap-utils';
 
 // TiptapViewer 모킹
 vi.mock('@/components/editor/TiptapViewer', () => ({
@@ -65,7 +65,7 @@ vi.mock('@/store/useAppStore', () => ({
 
         // 아이디어맵 설정
         ideaMapSettings: {
-            ...DEFAULT_IDEAMAP_SETTINGS,
+            ...DEFAULT_SETTINGS,
             nodeWidth: 200,
             nodeSpacing: 30,
             nodeBorderRadius: 6,
@@ -169,7 +169,7 @@ describe('CardNode', () => {
 
             // 아이디어맵 설정
             ideaMapSettings: {
-                ...DEFAULT_IDEAMAP_SETTINGS,
+                ...DEFAULT_SETTINGS,
                 nodeWidth: 200,
                 nodeSpacing: 30,
                 nodeBorderRadius: 6,
@@ -255,7 +255,7 @@ describe('CardNode', () => {
 
             // 아이디어맵 설정
             ideaMapSettings: {
-                ...DEFAULT_IDEAMAP_SETTINGS,
+                ...DEFAULT_SETTINGS,
                 nodeWidth: 200,
                 nodeSpacing: 30,
                 nodeBorderRadius: 6,
@@ -350,7 +350,7 @@ describe('CardNode', () => {
 
             // 아이디어맵 설정
             ideaMapSettings: {
-                ...DEFAULT_IDEAMAP_SETTINGS,
+                ...DEFAULT_SETTINGS,
                 nodeWidth: 200,
                 nodeSpacing: 30,
                 nodeBorderRadius: 6,

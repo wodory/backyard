@@ -8,7 +8,7 @@
 import { ReactFlowInstance, ConnectionLineType, MarkerType } from '@xyflow/react';
 import { StateCreator } from 'zustand';
 
-import { IdeaMapSettings, DEFAULT_IDEAMAP_SETTINGS } from '@/lib/ideamap-utils';
+import { Settings, DEFAULT_SETTINGS } from '@/lib/ideamap-utils';
 
 /**
  * 아이디어맵 상태 인터페이스
@@ -19,8 +19,8 @@ export interface IdeaMapState {
   setReactFlowInstance: (instance: ReactFlowInstance | null) => void;
   
   // 아이디어맵 설정 (UI 상태)
-  ideaMapSettings: IdeaMapSettings;
-  updateIdeaMapSettings: (settings: Partial<IdeaMapSettings>) => void;
+  ideaMapSettings: Settings;
+  updateIdeaMapSettings: (settings: Partial<Settings>) => void;
   
   // 레이아웃 방향
   layoutDirection: 'horizontal' | 'vertical' | 'auto' | null;
@@ -36,7 +36,7 @@ export const createIdeaMapSlice: StateCreator<IdeaMapState> = (set) => ({
   setReactFlowInstance: (instance) => set({ reactFlowInstance: instance }),
   
   // 아이디어맵 설정 (UI 상태)
-  ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+  ideaMapSettings: DEFAULT_SETTINGS,
   updateIdeaMapSettings: (newSettings) => set((state) => ({ 
     ideaMapSettings: { ...state.ideaMapSettings, ...newSettings } 
   })),

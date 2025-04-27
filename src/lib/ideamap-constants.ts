@@ -69,7 +69,7 @@ export const EDGE_COLOR_OPTIONS = [
 
 export const IDEAMAP_LAYOUT_STORAGE_KEY = 'backyard-board-layout';
 export const IDEAMAP_EDGES_STORAGE_KEY = 'backyard-board-edges';
-export const IDEAMAP_SETTINGS_STORAGE_KEY = 'backyard-board-settings';
+export const SETTINGS_STORAGE_KEY = 'backyard-board-settings';
 export const IDEAMAP_TRANSFORM_STORAGE_KEY = 'backyard-board-transform'; // 뷰포트 transform 저장용 키
 
 

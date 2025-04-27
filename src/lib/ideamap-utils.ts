@@ -8,7 +8,7 @@
 
 import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
 
-import { IDEAMAP_SETTINGS_STORAGE_KEY } from './ideamap-constants';
+import { SETTINGS_STORAGE_KEY } from './ideamap-constants';
 
 // API URL 가져오기
 const getApiUrl = () => {
@@ -16,7 +16,7 @@ const getApiUrl = () => {
   return apiUrl;
 };
 
-export interface IdeaMapSettings {
+export interface Settings {
   // 그리드 설정
   snapToGrid: boolean;
   snapGrid: [number, number];
@@ -31,8 +31,8 @@ export interface IdeaMapSettings {
   animated: boolean;
 }
 
-// 기본 아이디어맵 설정
-export const DEFAULT_IDEAMAP_SETTINGS: IdeaMapSettings = {
+// 기본 설정
+export const DEFAULT_SETTINGS: Settings = {
   // 그리드 설정
   snapToGrid: false,
   snapGrid: [15, 15],
@@ -48,18 +48,18 @@ export const DEFAULT_IDEAMAP_SETTINGS: IdeaMapSettings = {
 };
 
 /**
- * 로컬 스토리지에서 아이디어맵 설정을 불러오는 함수
+ * 로컬 스토리지에서 설정을 불러오는 함수
  */
-export function loadIdeaMapSettings(): IdeaMapSettings {
+export function loadSettings(): Settings {
   if (typeof window === 'undefined') {
-    return DEFAULT_IDEAMAP_SETTINGS;
+    return DEFAULT_SETTINGS;
   }
 
   try {
-    const savedSettings = localStorage.getItem(IDEAMAP_SETTINGS_STORAGE_KEY);
+    const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
     
     if (!savedSettings) {
-      return DEFAULT_IDEAMAP_SETTINGS;
+      return DEFAULT_SETTINGS;
     }
 
     // 저장된 설정 복원
@@ -67,42 +67,42 @@ export function loadIdeaMapSettings(): IdeaMapSettings {
     
     // 기존 설정이 없는 경우 기본값으로 통합
     return {
-      ...DEFAULT_IDEAMAP_SETTINGS,
+      ...DEFAULT_SETTINGS,
       ...parsedSettings,
     };
   } catch (error) {
-    console.error('아이디어맵 설정 로드 중 오류:', error);
-    return DEFAULT_IDEAMAP_SETTINGS;
+    console.error('설정 로드 중 오류:', error);
+    return DEFAULT_SETTINGS;
   }
 }
 
 /**
- * 아이디어맵 설정을 로컬 스토리지에 저장하는 함수
+ * 설정을 로컬 스토리지에 저장하는 함수
  */
-export function saveIdeaMapSettings(settings: IdeaMapSettings): void {
+export function saveSettings(settings: Settings): void {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(IDEAMAP_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
-      console.error('아이디어맵 설정 저장 중 오류:', error);
+      console.error('설정 저장 중 오류:', error);
     }
   }
 }
 
 /**
- * 서버 API를 통해 아이디어맵 설정을 저장하는 함수
+ * 서버 API를 통해 설정을 저장하는 함수
  */
-export const saveIdeaMapSettingsToServer = async (settings: IdeaMapSettings, userId: string): Promise<boolean> => {
+export const saveSettingsToServer = async (settings: Settings, userId: string): Promise<boolean> => {
   try {
     if (!userId) {
-      console.warn('[saveIdeaMapSettingsToServer] 사용자 ID 없음, 설정 저장 스킵');
+      console.warn('[saveSettingsToServer] 사용자 ID 없음, 설정 저장 스킵');
       return false;
     }
 
-    console.log('[saveIdeaMapSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
+    console.log('[saveSettingsToServer] 서버에 설정 저장 시작', { settings, userId });
     
     const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/ideamap-settings`, {
+    const response = await fetch(`${apiUrl}/api/settings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,35 +111,35 @@ export const saveIdeaMapSettingsToServer = async (settings: IdeaMapSettings, use
     });
 
     if (!response.ok) {
-      throw new Error('서버에 아이디어맵 설정을 저장하는데 실패했습니다.');
+      throw new Error('서버에 설정을 저장하는데 실패했습니다.');
     }
 
     // 로컬에도 저장
-    saveIdeaMapSettings(settings);
+    saveSettings(settings);
     return true;
   } catch (error) {
-    console.error('서버 아이디어맵 설정 저장 중 오류:', error);
+    console.error('서버 설정 저장 중 오류:', error);
     return false;
   }
 }
 
 /**
- * 서버 API를 통해 아이디어맵 설정을 불러오는 함수
+ * 서버 API를 통해 설정을 불러오는 함수
  */
-export const loadIdeaMapSettingsFromServer = async (userId: string): Promise<IdeaMapSettings | null> => {
+export const loadSettingsFromServer = async (userId: string): Promise<Settings | null> => {
   try {
     if (!userId) {
-      console.warn('[loadIdeaMapSettingsFromServer] 사용자 ID 없음, 설정 로드 스킵');
+      console.warn('[loadSettingsFromServer] 사용자 ID 없음, 설정 로드 스킵');
       return null;
     }
 
-    console.log('[loadIdeaMapSettingsFromServer] 서버에서 설정 로드 시작', { userId });
+    console.log('[loadSettingsFromServer] 서버에서 설정 로드 시작', { userId });
     
     const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/ideamap-settings?userId=${encodeURIComponent(userId)}`);
+    const response = await fetch(`${apiUrl}/api/settings?userId=${encodeURIComponent(userId)}`);
     
     if (!response.ok) {
-      throw new Error('서버에서 아이디어맵 설정을 불러오는데 실패했습니다.');
+      throw new Error('서버에서 설정을 불러오는데 실패했습니다.');
     }
 
     const data = await response.json();
@@ -151,35 +151,35 @@ export const loadIdeaMapSettingsFromServer = async (userId: string): Promise<Ide
     }
 
     const settings = {
-      ...DEFAULT_IDEAMAP_SETTINGS,
+      ...DEFAULT_SETTINGS,
       ...data.settings,
     };
 
     // 로컬에도 저장
-    saveIdeaMapSettings(settings);
+    saveSettings(settings);
     return settings;
   } catch (error) {
-    console.error('서버 아이디어맵 설정 로드 중 오류:', error);
+    console.error('서버 설정 로드 중 오류:', error);
     return null;
   }
 }
 
 /**
- * 서버 API를 통해 아이디어맵 설정을 부분 업데이트하는 함수
+ * 서버 API를 통해 설정을 부분 업데이트하는 함수
  */
-export async function updateIdeaMapSettingsOnServer(userId: string, partialSettings: Partial<IdeaMapSettings>): Promise<boolean> {
+export async function updateSettingsOnServer(userId: string, partialSettings: Partial<Settings>): Promise<boolean> {
   try {
     // 요청 데이터 깊은 복사 및 문자열 변환 확인
     // markerEnd 값이 null인 경우 명시적으로 null로 처리
     const safeSettings = JSON.parse(JSON.stringify(partialSettings));
     
-    console.log('아이디어맵 설정 업데이트 요청:', {
+    console.log('설정 업데이트 요청:', {
       userId,
       settings: safeSettings
     });
     
     const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/ideamap-settings`, {
+    const response = await fetch(`${apiUrl}/api/settings`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ export async function updateIdeaMapSettingsOnServer(userId: string, partialSetti
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
       console.error('응답 오류 데이터:', errorData);
       throw new Error(
-        errorData.details || errorData.error || '아이디어맵 설정을 부분 업데이트하는 데 실패했습니다.'
+        errorData.details || errorData.error || '설정을 부분 업데이트하는 데 실패했습니다.'
       );
     }
 
@@ -206,23 +206,23 @@ export async function updateIdeaMapSettingsOnServer(userId: string, partialSetti
     console.log('업데이트 성공 응답:', responseData);
 
     // 로컬 설정도 업데이트 (기존 설정과 병합)
-    const currentSettings = loadIdeaMapSettings();
+    const currentSettings = loadSettings();
     const updatedSettings = {
       ...currentSettings,
       ...safeSettings,
     };
     
     // 로컬 스토리지에 저장
-    saveIdeaMapSettings(updatedSettings);
+    saveSettings(updatedSettings);
     console.log('로컬 설정 업데이트 완료:', updatedSettings);
     
     return true;
   } catch (error) {
-    console.error('서버 아이디어맵 설정 부분 업데이트 중 오류:', error);
+    console.error('서버 설정 부분 업데이트 중 오류:', error);
     // 로컬 저장소에만 저장 (서버 저장 실패시 임시 대안)
     try {
-      const currentSettings = loadIdeaMapSettings();
-      saveIdeaMapSettings({
+      const currentSettings = loadSettings();
+      saveSettings({
         ...currentSettings,
         ...partialSettings,
       });
@@ -235,10 +235,10 @@ export async function updateIdeaMapSettingsOnServer(userId: string, partialSetti
 }
 
 /**
- * 아이디어맵 설정에 따라 엣지 스타일을 적용하는 함수
+ * 설정에 따라 엣지 스타일을 적용하는 함수
  * 모든 연결선에 설정이 즉시 반영되도록 함
  */
-export function applyIdeaMapEdgeSettings(edges: Edge[], settings: IdeaMapSettings): Edge[] {
+export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edge[] {
   // 각 엣지에 새 설정을 적용
   return edges.map(edge => {
     // 기존 속성은 유지하면서 새로운 속성 추가
@@ -249,7 +249,7 @@ export function applyIdeaMapEdgeSettings(edges: Edge[], settings: IdeaMapSetting
       target: edge.target,                 // 타겟 노드 유지
       type: 'custom',                      // 커스텀 엣지 타입 사용 - 렌더링 컴포넌트 지정
       data: {
-        ...(edge.data || {}),              // 기존 데이터 유지
+        ...edge.data,                      // 기존 데이터 보존
         edgeType: settings.connectionLineType, // 연결선 타입을 data로 전달
         settings: {                        // 설정 정보 추가
           animated: settings.animated,
@@ -261,15 +261,15 @@ export function applyIdeaMapEdgeSettings(edges: Edge[], settings: IdeaMapSetting
       },
       animated: settings.animated,         // 애니메이션 설정
       
-      // 스타일 객체 생성 (기존 스타일 유지하면서 새 설정으로 덮어씀)
+      // 스타일 속성 설정
       style: {
-        ...(edge.style || {}),             // 기존 스타일 유지 (있다면)
+        ...(edge.style || {}),             // 기존 스타일 보존
         strokeWidth: settings.strokeWidth, // 선 굵기 설정
         stroke: edge.selected ? settings.selectedEdgeColor : settings.edgeColor, // 선 색상
       },
     };
     
-    // 화살표 마커 설정
+    // 마커 설정 (있을 경우에만)
     if (settings.markerEnd) {
       updatedEdge.markerEnd = {
         type: settings.markerEnd,          // 마커 타입 설정

@@ -47,12 +47,12 @@ export interface ThemeState {
   // 액션
   toggleThemeMode: () => void;
   setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
-  updateIdeaMapSettings: (settings: Partial<ThemeState['ideaMapSettings']>) => void;
-  resetIdeaMapSettings: () => void;
+  updateSettings: (settings: Partial<ThemeState['ideaMapSettings']>) => void;
+  resetSettings: () => void;
 }
 
 // 기본 아이디어맵 설정 값
-const DEFAULT_IDEAMAP_SETTINGS = {
+const DEFAULT_SETTINGS = {
   nodeWidth: 250,
   nodeSpacing: 100,
   maxNodeHeight: 180,
@@ -80,7 +80,7 @@ const DEFAULT_IDEAMAP_SETTINGS = {
 export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
   // 초기 상태
   themeMode: 'system', // 기본값은 시스템 설정 따르기
-  ideaMapSettings: { ...DEFAULT_IDEAMAP_SETTINGS },
+  ideaMapSettings: { ...DEFAULT_SETTINGS },
   layoutDirection: 'auto', // 기본 레이아웃 방향
   
   // 액션
@@ -144,7 +144,7 @@ export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
    * updateIdeaMapSettings: 아이디어맵 설정 업데이트
    * @param settings - 업데이트할 설정 객체 (일부만 포함 가능)
    */
-  updateIdeaMapSettings: (settings) => {
+  updateSettings: (settings) => {
     set((state) => ({
       ideaMapSettings: {
         ...state.ideaMapSettings,
@@ -156,9 +156,9 @@ export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
   /**
    * resetIdeaMapSettings: 아이디어맵 설정을 기본값으로 초기화
    */
-  resetIdeaMapSettings: () => {
+  resetSettings: () => {
     set({
-      ideaMapSettings: { ...DEFAULT_IDEAMAP_SETTINGS },
+      settings: { ...DEFAULT_SETTINGS },
     });
   },
 }); 

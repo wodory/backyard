@@ -33,12 +33,12 @@ import { CardData } from '@/components/ideamap/types/ideamap-types';
 import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
 import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { 
-  IdeaMapSettings, 
-  DEFAULT_IDEAMAP_SETTINGS, 
-  saveIdeaMapSettings,
+  Settings, 
+  DEFAULT_SETTINGS, 
+  saveSettings,
   applyIdeaMapEdgeSettings,
-  loadIdeaMapSettingsFromServer,
-  saveIdeaMapSettingsToServer
+  loadSettingsFromServer,
+  saveSettingsToServer
 } from '@/lib/ideamap-utils';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import createLogger from '@/lib/logger';
@@ -67,9 +67,9 @@ interface IdeaMapState {
   onConnect: (connection: Connection) => void;
   
   // 아이디어맵 설정 관련 상태
-  ideaMapSettings: IdeaMapSettings;
-  setIdeaMapSettings: (settings: IdeaMapSettings) => void;
-  updateIdeaMapSettings: (settings: Partial<IdeaMapSettings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
+  ideaMapSettings: Settings;
+  setIdeaMapSettings: (settings: Settings) => void;
+  updateIdeaMapSettings: (settings: Partial<Settings>, isAuthenticated: boolean, userId?: string) => Promise<void>;
   
   // 레이아웃 관련 함수
   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
@@ -81,7 +81,7 @@ interface IdeaMapState {
   saveAllLayoutData: () => boolean;
   
   // 엣지 스타일 업데이트
-  updateEdgeStyles: (settings: IdeaMapSettings) => void;
+  updateEdgeStyles: (settings: Settings) => void;
   
   // 서버 동기화 함수
   loadIdeaMapSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
@@ -111,7 +111,7 @@ interface IdeaMapState {
   
   // useIdeaMapUtils에서 이전된 액션들
   loadAndApplyIdeaMapSettings: (userId: string) => Promise<void>;
-  updateAndSaveIdeaMapSettings: (newSettings: Partial<IdeaMapSettings>, userId?: string) => Promise<void>;
+  updateAndSaveIdeaMapSettings: (newSettings: Partial<Settings>, userId?: string) => Promise<void>;
   saveViewport: () => void;
   restoreViewport: () => void;
   saveIdeaMapState: () => boolean;
@@ -278,13 +278,13 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       },
       
       // 아이디어맵 설정 관련 초기 상태 및 함수
-      ideaMapSettings: DEFAULT_IDEAMAP_SETTINGS,
+      ideaMapSettings: DEFAULT_SETTINGS,
       isSettingsLoading: false,
       settingsError: null,
       viewportToRestore: null,
       setIdeaMapSettings: (settings) => {
         set({ ideaMapSettings: settings });
-        saveIdeaMapSettings(settings);
+        saveSettings(settings);
       },
       updateIdeaMapSettings: async (partialSettings, isAuthenticated, userId) => {
         const currentSettings = get().ideaMapSettings;
@@ -302,7 +302,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         // 3. 인증된 사용자인 경우 서버에도 저장
         if (isAuthenticated && userId) {
           try {
-            await saveIdeaMapSettingsToServer(newSettings, userId);
+            await saveSettingsToServer(newSettings, userId);
             // lotoast.success('아이디어맵 설정이 저장되었습니다');
             logger.debug('아이디어맵 설정이 저장되었습니다');
           } catch (err) {
@@ -678,10 +678,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
 
         set({ isSettingsLoading: true, settingsError: null });
         try {
-          const settings = await loadIdeaMapSettingsFromServer(userId);
+          const settings = await loadSettingsFromServer(userId);
           if (settings) {
             // 여기서 설정을 저장 (로컬 스토리지에도 저장)
-            saveIdeaMapSettings(settings);
+            saveSettings(settings);
             
             // 전역 상태 업데이트
             set({ 
@@ -751,7 +751,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           set({ isSettingsLoading: true, settingsError: null });
           
           // 서버에서 설정 로드
-          const settings = await loadIdeaMapSettingsFromServer(userId);
+          const settings = await loadSettingsFromServer(userId);
           
           // 설정이 로드되면 적용
           if (settings) {
@@ -780,7 +780,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         const updatedSettings = { ...currentSettings, ...newSettings };
         
         // 로컬 스토리지에 저장
-        saveIdeaMapSettings(updatedSettings);
+        saveSettings(updatedSettings);
         
         // 전역 상태 업데이트
         set({ ideaMapSettings: updatedSettings });
@@ -792,7 +792,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         // 인증된 사용자면 서버에도 저장
         if (userId) {
           try {
-            await saveIdeaMapSettingsToServer(updatedSettings, userId);
+            await saveSettingsToServer(updatedSettings, userId);
             // toast.success('아이디어맵 설정이 저장되었습니다');
           } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -858,8 +858,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               title: data.title as string || '새 카드',
               content: data.content as string || '',
               tags: data.tags as string[] || [],
-              ...data
-            } as CardData,
+              ...Object.fromEntries(
+                Object.entries(data).filter(([key]) => !['id', 'title', 'content', 'tags'].includes(key))
+              )
+            },
           };
           
           // 3. 노드 저장
@@ -1077,30 +1079,29 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        */
       addNodeAction: async (newNodeData) => {
         try {
-          // API를 사용해 카드 생성 (구현에 따라 변경 필요)
-          const appStore = useAppStore.getState();
-          
           // 카드 데이터 생성
           const cardData = newNodeData.data as CardData;
-          const newCard = await appStore.createCard({
-            title: cardData.title,
-            content: cardData.content || '',
-            userId: 'current-user', // 실제 구현에 맞게 수정 필요
-            tags: cardData.tags || []
-          });
           
-          if (!newCard) {
-            logger.error('카드 생성에 실패했습니다.');
-            return null;
-          }
+          // 노드 ID 생성
+          const nodeId = `node-${Date.now()}`;
           
-          // 노드 데이터 설정
+          // 노드 위치 설정
           const nodePosition = newNodeData.position || { x: 0, y: 0 };
+          
+          // 노드 생성
           const newNode: Node<CardData> = {
-            id: newCard.id,
+            id: nodeId,
             type: newNodeData.type || 'card',
             position: nodePosition,
-            data: newCard,
+            data: {
+              id: nodeId,
+              title: cardData.title || '새 카드',
+              content: cardData.content || '',
+              tags: cardData.tags || [],
+              ...Object.fromEntries(
+                Object.entries(cardData).filter(([key]) => !['id', 'title', 'content', 'tags'].includes(key))
+              )
+            },
             ...(newNodeData.draggable !== undefined ? { draggable: newNodeData.draggable } : {}),
             ...(newNodeData.selectable !== undefined ? { selectable: newNodeData.selectable } : {}),
           };
@@ -1496,7 +1497,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
 
               // 태그 처리
               const tags = card.cardTags && card.cardTags.length > 0
-                ? card.cardTags.map(cardTag => cardTag.tag.name)
+                ? card.cardTags.map((cardTag: {tag: {name: string}}) => cardTag.tag.name)
                 : (card.tags || []);
               
               const node = {
@@ -1542,30 +1543,6 @@ export const useIdeaMapStore = create<IdeaMapState>()(
     }
   )
 );
-
-//  04-18 삭제 
-// /**
-//  * calculateViewportBounds: 노드들의 뷰포트 경계를 계산
-//  * @param nodes - 노드 배열
-//  * @returns 뷰포트 경계 값 (최소/최대 x,y 좌표)
-//  */
-// const calculateViewportBounds = (nodes: Node[]) => {
-//   if (nodes.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  
-//   const bounds = nodes.reduce(
-//     (acc, node) => {
-//       return {
-//         minX: Math.min(acc.minX, node.position.x),
-//         minY: Math.min(acc.minY, node.position.y),
-//         maxX: Math.max(acc.maxX, node.position.x + 250), // 노드 너비 대략 250px로 가정
-//         maxY: Math.max(acc.maxY, node.position.y + 150), // 노드 높이 대략 150px로 가정
-//       };
-//     },
-//     { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
-//   );
-  
-//   return bounds;
-// };
 
 /**
  * calculateNodePosition: 노드의 위치를 계산
