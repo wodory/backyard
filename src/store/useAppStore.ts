@@ -9,17 +9,21 @@
  * 수정일: 2025-04-21 : Zustand 슬라이스 통합 구조 명확화
  * 수정일: 2025-04-21 : createIdeaMapSlice를 별도 파일로 분리하고 순수 UI 상태만 관리하도록 수정
  * 수정일: 2025-04-21 : Three-Layer-Standard 적용 - 인증 관련 API 호출을 서비스 함수로 이동
+ * 수정일: 2025-04-21 : MOCK_PROJECTS 테스트 데이터를 실제 UUID 형식으로 변경
+ * 수정일: 2025-04-21 : 프로젝트 관련 함수를 Mock 데이터가 아닌 실제 API 호출로 대체
+ * 수정일: 2025-04-21 : 프로젝트 생성/수정/삭제는 API 구현 전까지 목업 데이터로 임시 복원
+ * 수정일: 2025-04-21 : 모든 목업 제거하고 실제 DB에서 프로젝트 데이터만 가져오도록 변경
  */
 
-import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
+// import { ReactFlowInstance, Node, Edge } from '@xyflow/react'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { persist, subscribeWithSelector, createJSONStorage } from 'zustand/middleware'
 
 import { saveAllLayoutData } from '@/components/ideamap/utils/ideamap-graphUtils'
-import { getCurrentUser } from "@/lib/auth"
-import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
-import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
+// import { getCurrentUser } from "@/lib/auth"
+// import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants'
+// import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils'
 import { createLogger } from '@/lib/logger'
 import { logout } from '@/services/authService'
 
@@ -76,31 +80,8 @@ interface AppGlobalState {
 // 슬라이스를 통합한 AppState 인터페이스 정의
 export type AppState = UiState & CardStateState & ThemeState & IdeaMapState & ProjectState & CardDataState & AppGlobalState;
 
-// 목업 프로젝트 데이터
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: 'project-1',
-    name: '기본 프로젝트',
-    ownerNickname: '우도리',
-    userId: '787043b3-3996-4121-b650-404c7bd6fdcc',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    settings: {}
-  },
-  {
-    id: 'project-2',
-    name: '새 아이디어',
-    ownerNickname: '사용자',
-    userId: 'user-1',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    settings: {}
-  }
-];
-
-// 아이디어맵 관련 상태와 액션 생성 함수는 ideaMapSlice.ts로 이동
-
 /**
+ * TODO : projectSlice 함수 분리 필요
  * 프로젝트 관련 상태와 액션 생성 함수
  */
 const createProjectSlice = (set: any, get: any) => ({
@@ -111,29 +92,40 @@ const createProjectSlice = (set: any, get: any) => ({
     try {
       set({ isLoading: true });
       
-      // API 통신 대신 목업 데이터 사용
-      // 이후 개발 예정: 실제 API, 호출로 대체
-      setTimeout(() => {
+      // 실제 API 호출로 프로젝트 목록 가져오기
+      const response = await fetch('/api/projects');
+      
+      if (!response.ok) {
+        throw new Error(`프로젝트 조회 실패: ${response.status} ${response.statusText}`);
+      }
+      
+      const projects = await response.json();
+      
+      // 프로젝트 목록 설정 및 첫 번째 프로젝트를 항상 활성화
+      if (projects.length > 0) {
         set({ 
-          projects: MOCK_PROJECTS,
+          projects,
+          activeProjectId: projects[0].id,
           isLoading: false
         });
-        
-        // 활성 프로젝트가 없거나 유효하지 않으면 첫 번째 프로젝트를 활성화
-        const { activeProjectId } = get();
-        if ((!activeProjectId || !MOCK_PROJECTS.some(p => p.id === activeProjectId)) && MOCK_PROJECTS.length > 0) {
-          set({ activeProjectId: MOCK_PROJECTS[0].id });
-        }
-        
-        console.log("목업 프로젝트 데이터 로드 완료");
-      }, 500); // 실제 API 호출처럼 약간의 지연 추가
-      
+        logger.debug(`프로젝트 데이터 로드 완료: ${projects.length}개 프로젝트, 활성 프로젝트 ID: ${projects[0].id}`);
+      } else {
+        set({ 
+          projects,
+          activeProjectId: null,
+          isLoading: false
+        });
+        logger.debug(`프로젝트 데이터 로드 완료: 프로젝트 없음`);
+      }
     } catch (error) {
-      console.error("프로젝트 가져오기 오류:", error);
+      logger.error("프로젝트 가져오기 오류:", error);
       set({ 
         isLoading: false,
-        error: error instanceof Error ? error : new Error(String(error))
+        error: error instanceof Error ? error : new Error(String(error)),
+        projects: [],
+        activeProjectId: null
       });
+      toast.error("프로젝트 목록을 가져오는 데 실패했습니다.");
     }
   },
   
@@ -141,129 +133,24 @@ const createProjectSlice = (set: any, get: any) => ({
   setActiveProject: (projectId: string | null) => set({ activeProjectId: projectId }),
   
   createProject: async (projectData: Partial<Project>) => {
-    try {
-      set({ isLoading: true });
-      
-      // API 통신 대신 목업 데이터 사용
-      // 이후 개발 예정: 실제 API 호출로 대체
-      return new Promise<Project | null>((resolve) => {
-        setTimeout(() => {
-          // 고유 ID 생성
-          const newId = `project-${Date.now()}`;
-          const newProject: Project = {
-            id: newId,
-            name: projectData.name || '새 프로젝트',
-            ownerNickname: '사용자',
-            userId: 'user-1',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            settings: projectData.settings || {},
-            ...projectData
-          };
-          
-          // 프로젝트 목록 업데이트 및 새 프로젝트를 활성화
-          set((state: AppState) => ({
-            projects: [...state.projects, newProject],
-            activeProjectId: newProject.id,
-            isLoading: false
-          }));
-          
-          resolve(newProject);
-        }, 500); // 실제 API 호출처럼 약간의 지연 추가
-      });
-      
-    } catch (error) {
-      console.error("프로젝트 생성 오류:", error);
-      set({ 
-        isLoading: false,
-        error: error instanceof Error ? error : new Error(String(error))
-      });
-      return null;
-    }
+    // API 개발 전까지 사용할 수 없는 기능
+    toast.error("프로젝트 생성 API가 아직 구현되지 않았습니다.");
+    logger.warn("프로젝트 생성 API 미구현");
+    return null;
   },
   
   updateProject: async (projectId: string, projectData: Partial<Project>) => {
-    try {
-      set({ isLoading: true });
-      
-      // API 통신 대신 목업 데이터 사용
-      // 이후 개발 예정: 실제 API 호출로 대체
-      return new Promise<Project | null>((resolve) => {
-        setTimeout(() => {
-          // 프로젝트 찾기
-          const { projects } = get();
-          const projectIndex = projects.findIndex((p: Project) => p.id === projectId);
-          
-          if (projectIndex === -1) {
-            set({ isLoading: false });
-            toast.error("프로젝트를 찾을 수 없습니다.");
-            resolve(null);
-            return;
-          }
-          
-          // 프로젝트 업데이트
-          const updatedProject = {
-            ...projects[projectIndex],
-            ...projectData,
-            updatedAt: new Date().toISOString()
-          };
-          
-          // 프로젝트 목록 업데이트
-          set((state: AppState) => ({
-            projects: state.projects.map((p: Project) => p.id === projectId ? updatedProject : p),
-            isLoading: false
-          }));
-          
-          resolve(updatedProject);
-        }, 500); // 실제 API 호출처럼 약간의 지연 추가
-      });
-      
-    } catch (error) {
-      console.error("프로젝트 업데이트 오류:", error);
-      set({ 
-        isLoading: false,
-        error: error instanceof Error ? error : new Error(String(error))
-      });
-      return null;
-    }
+    // API 개발 전까지 사용할 수 없는 기능
+    toast.error("프로젝트 수정 API가 아직 구현되지 않았습니다.");
+    logger.warn("프로젝트 수정 API 미구현");
+    return null;
   },
   
   deleteProject: async (projectId: string) => {
-    try {
-      set({ isLoading: true });
-      
-      // API 통신 대신 목업 데이터 사용
-      // 이후 개발 예정: 실제 API 호출로 대체
-      return new Promise<boolean>((resolve) => {
-        setTimeout(() => {
-          // 프로젝트 삭제
-          set((state: AppState) => {
-            const updatedProjects = state.projects.filter((p: Project) => p.id !== projectId);
-            const newState: Partial<AppState> = {
-              projects: updatedProjects,
-              isLoading: false
-            };
-            
-            // 삭제된 프로젝트가 활성 상태였다면 다른 프로젝트로 전환
-            if (state.activeProjectId === projectId) {
-              newState.activeProjectId = updatedProjects.length > 0 ? updatedProjects[0].id : null;
-            }
-            
-            return newState;
-          });
-          
-          resolve(true);
-        }, 500); // 실제 API 호출처럼 약간의 지연 추가
-      });
-      
-    } catch (error) {
-      console.error("프로젝트 삭제 오류:", error);
-      set({ 
-        isLoading: false,
-        error: error instanceof Error ? error : new Error(String(error))
-      });
-      return false;
-    }
+    // API 개발 전까지 사용할 수 없는 기능
+    toast.error("프로젝트 삭제 API가 아직 구현되지 않았습니다.");
+    logger.warn("프로젝트 삭제 API 미구현");
+    return false;
   },
 });
 
@@ -394,8 +281,10 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     toggleExpandCard: (id: string) => useAppStore.getState().toggleExpandCard(id),
     clearSelectedCards: () => useAppStore.getState().clearSelectedCards(),
     updateIdeaMapSettings: (settings: any) => useAppStore.getState().updateIdeaMapSettings(settings),
+    // TODO: applyLayout 메서드 타입 정의 추가 필요
     applyLayout: (layout: string) => {
       if (layout === 'horizontal' || layout === 'vertical' || layout === 'auto') {
+        // @ts-ignore: applyLayout은 ideaMapSlice에 정의되어 있으며 타입 정의가 필요함
         useAppStore.getState().applyLayout(layout);
       }
     },

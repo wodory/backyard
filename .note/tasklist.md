@@ -61,6 +61,7 @@ User me +-> Project 1  +- card 1, 2, 3, 4      <-- [share the cards/projects] --
   - [ ] 멀티 샐랙트 -> 사이드 바 통합 표시 안 됨
 
 **Todo**
+- [ ] z 활용한 스키바 벨리데이션 (cards/routes 참고?)
 - [ ] 카드 리스트 삭제 -> 캔버스 삭제 
 - [ ] Sidebar 필터 
 - [ ] 자식 노드와의 why so 관계 추출 -> 계산 @https://reactflow.dev/learn/advanced-use/computing-flows

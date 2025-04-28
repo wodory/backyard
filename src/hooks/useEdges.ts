@@ -5,6 +5,7 @@
  * 작성일: 2025-04-21
  * 수정일: 2025-04-21 : ApiEdge 별칭 대신 Edge 타입 직접 사용
  * 수정일: 2025-04-21 : React Flow의 Edge를 기본 Edge로 사용하도록 수정
+ * 수정일: 2025-04-21 : useCreateEdge 뮤테이션 훅 추가
  */
 
 /**
@@ -13,10 +14,11 @@
  * @tag    @tanstack-query-msw useEdges
  * 설명    아이디어맵 엣지 데이터 조회를 위한 TanStack Query 훅
  */
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { fetchEdges } from '@/services/edgeService';
-import { Edge as DBEdge } from '@/types/edge';
-import { Edge } from '@xyflow/react';
+import { useQuery, useMutation, UseQueryResult, UseMutationResult, useQueryClient } from '@tanstack/react-query';
+import { fetchEdges, createEdgeAPI } from '@/services/edgeService';
+import { Edge as DBEdge, EdgeInput } from '@/types/edge';
+import { Edge, Connection } from '@xyflow/react';
+import { toast } from 'sonner';
 import createLogger from '@/lib/logger';
 
 const logger = createLogger('useEdges');
@@ -35,6 +37,35 @@ const transformDbEdgeToFlowEdge = (dbEdge: DBEdge): Edge => ({
     style: dbEdge.style || undefined,
     data: dbEdge.data || undefined,
 });
+
+/**
+ * 엣지 생성을 위한 입력 데이터 타입 (Connection 필드명과 API 필드명 매핑)
+ */
+export interface CreateEdgeInput {
+  // Connection에서는 source/target이지만 API에서는 sourceCardId/targetCardId로 매핑
+  sourceCardId?: string; // 실제 API에서는 source로 변환됨
+  targetCardId?: string; // 실제 API에서는 target으로 변환됨
+  source?: string;      // 직접 source를 받을 수도 있음
+  target?: string;      // 직접 target을 받을 수도 있음
+  projectId: string;
+  type?: string;
+  animated?: boolean;
+  style?: Record<string, any>;
+  data?: Record<string, any>;
+}
+
+// CreateEdgeInput을 EdgeInput으로 변환하는 함수
+const mapToEdgeInput = (input: CreateEdgeInput): EdgeInput => {
+  return {
+    source: input.source || input.sourceCardId || '',
+    target: input.target || input.targetCardId || '',
+    projectId: input.projectId,
+    type: input.type,
+    animated: input.animated,
+    style: input.style,
+    data: input.data
+  };
+};
 
 /**
  * useEdges: 아이디어맵 엣지 데이터를 조회하는 TanStack Query 훅
@@ -63,4 +94,35 @@ export function useEdges(userId?: string, projectId?: string): UseQueryResult<Ed
   });
 }
 
-// useCreateEdge, useDeleteEdge는 다음 Task에서 구현 
+/**
+ * useCreateEdge: 새로운 엣지를 생성하는 뮤테이션 훅
+ * @rule   three-layer-Standard
+ * @layer  tanstack-mutation-hook
+ * @tag    @tanstack-mutation-msw useCreateEdge
+ * @returns {UseMutationResult} 뮤테이션 결과
+ */
+export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeInput> {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (edgeData: CreateEdgeInput) => {
+      logger.debug('새 엣지 생성 요청:', edgeData);
+      const apiInput = mapToEdgeInput(edgeData);
+      return await createEdgeAPI(apiInput);
+    },
+    onSuccess: (data, variables) => {
+      logger.debug('엣지 생성 성공:', data);
+      // 성공적으로 생성되면 엣지 데이터 쿼리 무효화
+      queryClient.invalidateQueries({ 
+        queryKey: ['edges', undefined, variables.projectId] 
+      });
+      toast.success('엣지가 성공적으로 생성되었습니다.');
+    },
+    onError: (error) => {
+      logger.error('엣지 생성 실패:', error);
+      toast.error('엣지 생성 중 오류가 발생했습니다.');
+    }
+  });
+}
+
+// useDeleteEdge는 다음 Task에서 구현 

@@ -5,6 +5,7 @@
  * 작성일: 2025-03-28
  * 수정일: 2025-04-17 : 렌더링 최적화 (불필요한 리렌더링 방지)
  * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
+ * 수정일: 2025-04-21 : useCreateEdge 훅을 사용하여 엣지 DB 연동 구현
  */
 
 'use client';
@@ -12,11 +13,12 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { toast } from 'sonner';
 
-import { useReactFlow } from '@xyflow/react';
+import { useReactFlow, Connection } from '@xyflow/react';
 
 import CreateCardModal from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
+import { useCreateEdge } from '@/hooks/useCreateEdge';
 import { useIdeaMapSync } from '@/hooks/useIdeaMapSync';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
@@ -81,6 +83,7 @@ function IdeaMap({
   // useAppStore에서 필요한 상태만 선택적으로 가져오기
   const ideaMapSettings = useAppStore(state => state.ideaMapSettings) as IdeaMapSettings;
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
+  const activeProjectId = useAppStore(state => state.activeProjectId);
 
   // useIdeaMapStore에서 필요한 상태와 액션만 선택적으로 가져오기
   const ideaMapStoreNodes = useIdeaMapStore(state => state.nodes);
@@ -94,6 +97,9 @@ function IdeaMap({
   const loadAndApplyIdeaMapSettings = useIdeaMapStore(state => state.loadAndApplyIdeaMapSettings);
   const applyNodeChangesAction = useIdeaMapStore(state => state.applyNodeChangesAction);
   const saveLayout = useIdeaMapStore(state => state.saveLayout);
+
+  // 엣지 생성 mutation 훅 사용
+  const createEdgeMutation = useCreateEdge();
 
   // 디버깅 주석 처리
   // logger.debug('IdeaMapStore 상태:', {
@@ -140,7 +146,7 @@ function IdeaMap({
   const {
     edges,
     handleEdgesChange,
-    onConnect,
+    onConnect: originalOnConnect,
     hasUnsavedChanges: hasUnsavedEdgesChanges,
     setEdges
   } = useEdges({
@@ -148,6 +154,62 @@ function IdeaMap({
     nodes: ideaMapStoreNodes,
     initialEdges: ideaMapStoreEdges
   });
+
+  // onConnect 함수를 재정의하여 useCreateEdge 뮤테이션 호출 추가
+  const onConnect = useCallback((connection: Connection) => {
+    // Zustand 스토어의 상태 업데이트를 위해 기존 onConnect 호출 유지
+    originalOnConnect(connection);
+
+    // DB 연동을 위해 createEdgeMutation 호출
+    if (connection.source && connection.target && activeProjectId) {
+      // 변수 이름을 엣지 API 입력에 맞게 source, target으로 변경
+      const edgeInput = {
+        source: connection.source,
+        target: connection.target,
+        projectId: activeProjectId,
+        sourceHandle: connection.sourceHandle || undefined,
+        targetHandle: connection.targetHandle || undefined,
+        // 필요한 경우 스타일링 정보도 추가 가능
+        type: 'custom',
+        animated: ideaMapSettings.animated
+      };
+
+      // 뮤테이션 실행
+      createEdgeMutation.mutate(edgeInput, {
+        onError: (error) => {
+          // 오류 발생 시 UI에 알림 표시 (toast는 이미 뮤테이션 내부에서 처리됨)
+          logger.error('엣지 생성 실패:', error);
+
+          // 오류 시 UI 롤백 로직
+          // 해당 source와 target을 가진 엣지 찾기
+          const failedEdgeIndex = edges.findIndex(
+            e => e.source === connection.source && e.target === connection.target
+          );
+
+          if (failedEdgeIndex !== -1) {
+            // 실패한 엣지를 스토어에서 제거
+            const updatedEdges = [...edges];
+            updatedEdges.splice(failedEdgeIndex, 1);
+            setEdges(updatedEdges);
+
+            logger.debug('실패한 엣지 롤백 완료');
+          }
+        }
+      });
+
+      logger.debug('엣지 생성 뮤테이션 요청됨:', {
+        source: connection.source,
+        target: connection.target,
+        projectId: activeProjectId
+      });
+    } else {
+      logger.warn('엣지 생성에 필요한 정보 부족:', {
+        hasSource: !!connection.source,
+        hasTarget: !!connection.target,
+        hasProjectId: !!activeProjectId
+      });
+    }
+  }, [originalOnConnect, activeProjectId, ideaMapSettings, createEdgeMutation, edges, setEdges]);
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {
