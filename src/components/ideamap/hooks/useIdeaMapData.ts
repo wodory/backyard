@@ -8,6 +8,8 @@
  * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
  * 수정일: 2025-04-19 : 개발 환경에서 useEffect 이중 실행 방지 로직 추가
  * 수정일: 2025-05-07 : setCards 호출 시 안전하게 처리하도록 수정
+ * 수정일: 2025-04-21 : useEdges 훅을 사용하여 DB에서 엣지 데이터 로드 추가
+ * 수정일: 2025-04-21 : 프로젝트 API에서 첫 번째 프로젝트 ID를 가져와 사용하도록 수정
  */
 
 import { Edge } from '@xyflow/react';
@@ -15,12 +17,24 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Node } from '@xyflow/react';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import { useAuthStore, selectUserId } from '@/store/useAuthStore';
+import { useEdges } from '@/hooks/useEdges';
 import createLogger from '@/lib/logger';
 
 import { Node as NodeType, CardData } from '../types/ideamap-types';
 
 // 로거 생성
 const logger = createLogger('useIdeaMapData');
+
+// 프로젝트 인터페이스 정의
+interface Project {
+  id: string;
+  name: string;
+  ownerId: string;
+  settings: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
 
 /**
  * useIdeaMapData: 아이디어맵 데이터를 로드하고 관리하는 훅
@@ -33,15 +47,19 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   // 상태 관리
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [firstProject, setFirstProject] = useState<Project | null>(null);
   
   // 초기 데이터 로드 완료 여부 추적
   const initialLoadCompleteRef = useRef(false);
   // 개발 환경에서 Strict Mode로 인한 이중 실행 방지를 위한 ref
   const didFetch = useRef(false);
+  // DB 엣지 로드 완료 여부 추적
+  const edgesLoadedRef = useRef(false);
   
   // 아이디어맵 스토어에서 필요한 상태와 액션만 선택적으로 가져오기
   const nodes = useIdeaMapStore(state => state.nodes);
   const edges = useIdeaMapStore(state => state.edges);
+  const setEdges = useIdeaMapStore(state => state.setEdges);
   const isIdeaMapLoading = useIdeaMapStore(state => state.isIdeaMapLoading);
   const ideaMapError = useIdeaMapStore(state => state.ideaMapError);
   const loadIdeaMapData = useIdeaMapStore(state => state.loadIdeaMapData);
@@ -50,6 +68,60 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   
   // 앱 스토어에서 필요한 액션만 선택적으로 가져오기
   const setCards = useAppStore(state => state.setCards);
+  
+  // 인증 스토어에서 사용자 ID 가져오기
+  const userId = useAuthStore(selectUserId);
+  
+  // 프로젝트 목록을 가져오고 첫 번째 프로젝트 ID 설정
+  useEffect(() => {
+    async function fetchFirstProject() {
+      try {
+        logger.debug('프로젝트 목록 조회 중...');
+        const response = await fetch('/api/projects');
+        
+        if (!response.ok) {
+          throw new Error(`프로젝트 목록 조회 실패 (상태: ${response.status})`);
+        }
+        
+        const projects: Project[] = await response.json();
+        
+        if (projects && projects.length > 0) {
+          const firstProj = projects[0];
+          logger.debug(`첫 번째 프로젝트 ID: ${firstProj.id}, 이름: ${firstProj.name}`);
+          setFirstProject(firstProj);
+        } else {
+          logger.warn('프로젝트 목록이 비어있습니다.');
+        }
+      } catch (err) {
+        logger.error('프로젝트 목록 조회 오류:', err);
+        setError(err instanceof Error ? err : new Error('프로젝트 목록을 가져오는 중 오류가 발생했습니다'));
+      }
+    }
+    
+    fetchFirstProject();
+  }, []);
+  
+  // TanStack Query로 엣지 데이터 조회
+  const { 
+    data: dbEdges, 
+    isLoading: isEdgesLoading, 
+    isSuccess: isEdgesSuccess,
+    error: edgesError 
+  } = useEdges(userId || undefined, firstProject?.id);
+  
+  // DB 엣지 데이터를 스토어에 저장
+  useEffect(() => {
+    if (isEdgesSuccess && dbEdges && !edgesLoadedRef.current) {
+      logger.debug(`DB에서 로드한 엣지 데이터(${dbEdges.length}개)를 스토어에 설정`);
+      setEdges(dbEdges);
+      edgesLoadedRef.current = true;
+    }
+    
+    if (edgesError) {
+      logger.error('엣지 데이터 로드 중 오류 발생:', edgesError);
+      setError(edgesError instanceof Error ? edgesError : new Error('엣지 데이터 로드 중 오류가 발생했습니다'));
+    }
+  }, [dbEdges, isEdgesSuccess, edgesError, setEdges]);
   
   /**
    * 노드와 엣지 데이터 로드 함수
@@ -91,10 +163,11 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
       logger.debug('아이디어맵 스토어의 loadIdeaMapData 함수 호출');
       await loadIdeaMapData();
       
+      // 엣지 데이터는 useEdges 훅을 통해 별도로 로드됨
+      
       setIsLoading(false);
       logger.info('데이터 로드 완료', { 
-        노드수: nodes.length, 
-        엣지수: edges.length 
+        노드수: nodes.length
       });
       initialLoadCompleteRef.current = true;
       
@@ -103,7 +176,7 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
       setError(err instanceof Error ? err : new Error('데이터 로드 중 오류가 발생했습니다'));
       setIsLoading(false);
     }
-  }, [setCards, loadIdeaMapData, isLoading, nodes.length, edges.length]);
+  }, [setCards, loadIdeaMapData, isLoading, nodes.length]);
   
   // 컴포넌트 마운트 시 데이터 로드 (의존성 배열에 모든 변수를 명시)
   useEffect(() => {
@@ -120,6 +193,10 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
       loadNodesAndEdges();
     }
   }, [loadNodesAndEdges]);
+  
+  // DB 데이터 로드 상태 통합
+  const isDataLoading = isLoading || isEdgesLoading;
+  const dataError = error || edgesError;
   
   // 노드 변경 감지 Effect
   useEffect(() => {
@@ -144,8 +221,8 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   return {
     nodes,
     edges,
-    isLoading,
-    error,
+    isLoading: isDataLoading,
+    error: dataError,
     handleNodeClick,
     loadNodesAndEdges,
     loadedViewport,
