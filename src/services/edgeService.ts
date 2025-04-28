@@ -3,6 +3,9 @@
  * 목적: 엣지 관련 API 통신 서비스
  * 역할: 엣지 데이터의 CRUD 작업을 위한 API 호출 함수 제공
  * 작성일: 2024-07-01
+ * 수정일: 2025-04-21 : Task 1.4 요구사항 반영 - fetchEdges 함수 수정 및 타입 정의
+ * 수정일: 2025-04-21 : 타입 정의를 src/types/edge.ts로 이동
+ * 수정일: 2025-04-21 : ApiEdge 타입 이름을 Edge로 변경
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchEdges
@@ -14,32 +17,36 @@ import { Edge, EdgeInput, EdgePatch } from '@/types/edge';
 const logger = createLogger('edgeService');
 
 /**
- * fetchEdges: 모든 엣지 목록 또는 필터링된 엣지 조회
- * @param {Object} params - 필터링 파라미터
- * @returns {Promise<Edge[]>} 엣지 목록
+ * fetchEdges: 특정 프로젝트의 엣지 목록을 조회합니다.
+ *             (API는 내부적으로 세션을 통해 사용자 ID를 확인합니다)
+ * @param {string} projectId - 조회할 프로젝트 ID
+ * @returns {Promise<Edge[]>} 엣지 목록 (API 응답 형식)
  */
-export async function fetchEdges(
-  params?: { source?: string; target?: string; userId?: string }
-): Promise<Edge[]> {
+export async function fetchEdges(projectId: string): Promise<Edge[]> {
+  // projectId 유효성 검사
+  if (!projectId) {
+    logger.warn('fetchEdges: projectId가 제공되지 않았습니다.');
+    return []; // 빈 배열 반환
+  }
+  
   try {
-    // 쿼리 파라미터 생성
-    const queryParams = new URLSearchParams();
-    if (params?.source) queryParams.append('source', params.source);
-    if (params?.target) queryParams.append('target', params.target);
-    if (params?.userId) queryParams.append('userId', params.userId);
-    
-    const queryString = queryParams.toString();
-    const url = `/api/edges${queryString ? `?${queryString}` : ''}`;
-    
+    // API 엔드포인트 및 쿼리 파라미터 수정
+    const url = `/api/edges?projectId=${encodeURIComponent(projectId)}`;
+    logger.debug(`[edgeService] Fetching edges from: ${url}`);
+
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(response.statusText || '엣지 목록을 가져오는 중 오류가 발생했습니다.');
+      const errorData = await response.text(); // 에러 내용 확인 위해 text() 사용
+      logger.error(`엣지 조회 실패: ${response.status} ${response.statusText}`, { url, errorData });
+      throw new Error(`엣지 목록을 가져오는 중 오류가 발생했습니다: ${response.statusText} (${response.status})`);
     }
-    
-    return await response.json();
+
+    const data: Edge[] = await response.json();
+    logger.debug(`[edgeService] Fetched ${data.length} edges for project ${projectId}`);
+    return data;
   } catch (error) {
-    logger.error('엣지 목록 조회 오류:', error);
+    logger.error(`fetchEdges 오류 (projectId: ${projectId}):`, error);
     throw error;
   }
 }

@@ -12,6 +12,7 @@
  * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
  * 수정일: 2025-04-19 : 상태 업데이트 최적화 - 다중 set 호출을 하나로 배칭
  * 수정일: 2025-07-18 : 카드가 없을 때 로컬 스토리지의 엣지 정보를 무시하도록 업데이트
+ * 수정일: 2025-04-21 : localStorage 엣지 데이터 로딩 및 저장 제거
  */
 import { 
   Node, 
@@ -354,10 +355,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           const cards = await response.json();
           logger.debug('API 카드 데이터 로드 완료:', { 카드수: cards.length });
 
-          // 2. 로컬 스토리지에서 노드 위치, 엣지, 뷰포트 정보 읽기
+          // 2. 로컬 스토리지에서 노드 위치, 뷰포트 정보 읽기
           logger.debug('로컬 스토리지에서 레이아웃 데이터 로드 시작');
           let nodePositions: Record<string, { position: XYPosition }> = {};
-          let savedEdges: Edge[] = [];
+          let savedEdges: Edge[] = []; // 빈 배열로 초기화
           let savedViewport: Viewport | null = null;
 
           try {
@@ -373,20 +374,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               logger.debug('저장된 노드 위치 없음, 기본 위치 사용 예정');
             }
 
-            // 카드가 있을 때만 저장된 엣지 정보를 로드
-            if (cards.length > 0) {
-              const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
-              if (savedEdgesStr) {
-                savedEdges = JSON.parse(savedEdgesStr);
-                logger.debug('저장된 엣지 로드 완료:', { 엣지수: savedEdges.length });
-              } else {
-                logger.debug('저장된 엣지 없음, 빈 배열 사용');
-              }
-            } else {
-              logger.debug('카드가 없어 저장된 엣지 정보를 무시합니다.');
-              // 카드가 없는 경우 로컬 스토리지의 엣지 정보를 초기화
-              localStorage.removeItem(IDEAMAP_EDGES_STORAGE_KEY);
-            }
+            logger.debug('엣지 데이터는 더 이상 localStorage에서 로드하지 않습니다');
 
             const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_STORAGE_KEY);
             if (transformString) {
@@ -657,9 +645,9 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           // 엣지 배열 결정
           const edges = edgesToSave || get().edges;
           
-          // 로컬 스토리지에 저장
-          localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
-          
+          // localStorage 저장 로직 제거
+
+          logger.debug('엣지 데이터는 더 이상 localStorage에 저장하지 않습니다');
           return true;
         } catch (error) {
           logger.error('엣지 저장 중 오류:', error);

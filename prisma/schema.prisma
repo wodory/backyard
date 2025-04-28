@@ -75,16 +75,18 @@ model ProjectMember {
 }
 
 model Card {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId String    @map("project_id") @db.Uuid
-  userId    String?   @map("user_id") @db.Uuid
-  title     String
-  content   String?
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  cardTags  CardTag[]
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user      User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId                 String    @map("project_id") @db.Uuid
+  userId                    String?   @map("user_id") @db.Uuid
+  title                     String
+  content                   String?
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cardTags                  CardTag[]
+  project                   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                      User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  edges_edges_sourceTocards Edge[]    @relation("edges_sourceTocards")
+  edges_edges_targetTocards Edge[]    @relation("edges_targetTocards")
 
   @@map("cards")
   @@schema("public")
@@ -107,22 +109,26 @@ model Tag {
 }
 
 model Edge {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId    String   @map("project_id") @db.Uuid
-  userId       String?  @map("user_id") @db.Uuid
-  source       String
-  target       String
-  sourceHandle String?  @map("source_handle")
-  targetHandle String?  @map("target_handle")
-  type         String?
-  animated     Boolean? @default(false)
-  style        Json?
-  data         Json?
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user         User?    @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId                 String   @map("project_id") @db.Uuid
+  userId                    String?  @map("user_id") @db.Uuid
+  source                    String   @db.Uuid
+  target                    String   @db.Uuid
+  sourceHandle              String?  @map("source_handle")
+  targetHandle              String?  @map("target_handle")
+  type                      String?
+  animated                  Boolean? @default(false)
+  style                     Json?
+  data                      Json?
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project                   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  cards_edges_sourceTocards Card     @relation("edges_sourceTocards", fields: [source], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "edges_source_card_id_fkey")
+  cards_edges_targetTocards Card     @relation("edges_targetTocards", fields: [target], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "edges_target_card_id_fkey")
+  user                      User?    @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
+  @@unique([projectId, source, target], map: "edges_project_source_target_unique")
+  @@index([userId, projectId], map: "idx_edges_user_project")
   @@map("edges")
   @@schema("public")
 }
