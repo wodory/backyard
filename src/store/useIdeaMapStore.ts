@@ -577,11 +577,19 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         
         try {
           // 1. 기존에 저장된 노드 위치 정보 불러오기
-          let existingPositions: Record<string, { position: XYPosition }> = {};
+          let existingPositions: Record<string, XYPosition> = {};
           try {
             const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
             if (savedPositionsStr) {
-              existingPositions = JSON.parse(savedPositionsStr);
+              const parsedData = JSON.parse(savedPositionsStr);
+              // 중첩된 position 구조를 변환하여 처리
+              Object.entries(parsedData).forEach(([nodeId, data]) => {
+                if (typeof data === 'object' && data !== null && 'position' in data) {
+                  existingPositions[nodeId] = (data as { position: XYPosition }).position;
+                } else {
+                  existingPositions[nodeId] = data as XYPosition;
+                }
+              });
               logger.debug('기존 저장된 노드 위치 로드:', { 
                 노드수: Object.keys(existingPositions).length 
               });
@@ -590,7 +598,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             logger.warn('기존 위치 정보 로드 실패:', err);
           }
           
-          const positionsData: Record<string, { position: XYPosition }> = {...existingPositions};
+          const positionsData: Record<string, XYPosition> = {...existingPositions};
           const nodes = nodesToSave || get().nodes;
           
           // 노드가 없으면 알림 후 리턴
@@ -604,7 +612,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           // 각 노드의 위치 정보를 추출하여 positionsData 객체에 저장 (기존 정보 유지하면서 업데이트)
           nodes.forEach(node => {
             if (node && node.id && node.position) {
-              positionsData[node.id] = { position: node.position };
+              positionsData[node.id] = node.position;
             } else {
               logger.warn('노드 데이터 형식 오류:', node);
             }
@@ -1513,7 +1521,7 @@ export const useIdeaMapStore = create<IdeaMapState>()(
               const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
               if (savedPositionsStr) {
                 const parsedData = JSON.parse(savedPositionsStr);
-                // 새로운 구조로 저장된 데이터 처리 (위치 값이 position 객체 안에 있는 경우)
+                // 중첩된 position 구조를 처리
                 Object.entries(parsedData).forEach(([nodeId, data]) => {
                   if (typeof data === 'object' && data !== null && 'position' in data) {
                     savedPositions[nodeId] = (data as { position: XYPosition }).position;
@@ -1769,7 +1777,18 @@ const loadIdeaMapPositions = (): Record<string, XYPosition> => {
     if (savedLayout) {
       const parsed = JSON.parse(savedLayout);
       logger.debug('저장된 레이아웃 로드:', { nodeCount: Object.keys(parsed).length });
-      return parsed;
+      
+      // 중첩된 position 객체 구조 처리
+      const positions: Record<string, XYPosition> = {};
+      Object.entries(parsed).forEach(([nodeId, data]) => {
+        if (typeof data === 'object' && data !== null && 'position' in data) {
+          positions[nodeId] = (data as { position: XYPosition }).position;
+        } else {
+          positions[nodeId] = data as XYPosition;
+        }
+      });
+      
+      return positions;
     }
   } catch (error) {
     logger.error('레이아웃 로드 오류:', error);

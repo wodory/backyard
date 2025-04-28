@@ -3,6 +3,7 @@
  * 목적: 그래프 관련 순수 함수 모음
  * 역할: 노드, 엣지 처리를 위한 순수 유틸리티 함수 제공
  * 작성일: 2025-03-28
+ * 수정일: 2025-04-21 : 중첩된 position 객체 구조 수정으로 리액트 플로우 초기화 오류 해결
  */
 
 import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';
@@ -17,9 +18,9 @@ import { IdeaMapSettings } from '@/lib/ideamap-utils';
  */
 export const saveLayout = (nodes: Node[]): boolean => {
   try {
-    // 노드 ID와 위치만 저장
-    const nodePositions = nodes.reduce((acc: Record<string, { position: XYPosition }>, node: Node) => {
-      acc[node.id] = { position: node.position };
+    // 노드 ID와 위치만 저장 - 단순 position 구조로 저장
+    const nodePositions = nodes.reduce((acc: Record<string, XYPosition>, node: Node) => {
+      acc[node.id] = node.position;
       return acc;
     }, {});
     
