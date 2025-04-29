@@ -13,6 +13,7 @@
  * 수정일: 2025-04-19 : 상태 업데이트 최적화 - 다중 set 호출을 하나로 배칭
  * 수정일: 2025-07-18 : 카드가 없을 때 로컬 스토리지의 엣지 정보를 무시하도록 업데이트
  * 수정일: 2025-04-21 : localStorage 엣지 데이터 로딩 및 저장 제거
+ * 수정일: 2025-04-21 : applyEdgeChangesAction 함수의 역할 명확화 - 오직 엣지 상태 업데이트만 수행하도록 수정
  */
 import { 
   Node, 
@@ -1204,34 +1205,14 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        * @param changes 엣지 변경 사항 배열
        */
       applyEdgeChangesAction: (changes: EdgeChange[]) => {
-        const { edges, nodes } = get();
+        logger.info('[useIdeaMapStore] applyEdgeChangesAction 호출됨', { changesCount: changes.length }); // 디버깅 로그
         
-        // 노드가 없을 때는 엣지 변경을 무시하고 빈 배열로 설정
-        if (nodes.length === 0) {
-          logger.debug('노드가 없어 엣지 변경을 무시하고 빈 배열로 설정합니다.');
-          set({ edges: [] });
-          
-          // 로컬 스토리지의 엣지 정보도 초기화
-          try {
-            localStorage.removeItem(IDEAMAP_EDGES_STORAGE_KEY);
-          } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-            logger.error('[useIdeaMapStore] 로컬 스토리지 엣지 정보 초기화 중 오류 발생:', errorMessage);
-          }
-          return;
-        }
-        
-        const updatedEdges = applyEdgeChanges(changes, edges) as Edge[];
-        set({ edges: updatedEdges, hasUnsavedChanges: true });
-        
-        // 삭제된 엣지가 있는지 확인
-        const deletedEdgeIds = changes
-          .filter(change => change.type === 'remove')
-          .map(change => (change as EdgeChange & { id: string }).id);
-          
-        if (deletedEdgeIds.length > 0) {
-          get().removeEdgesFromStorage(deletedEdgeIds);
-        }
+        set((state) => {
+          const prevEdgeCount = state.edges.length;
+          const nextEdges = applyEdgeChanges(changes, state.edges); // 오직 applyEdgeChanges 만 사용
+          logger.info('[useIdeaMapStore] applyEdgeChanges 적용 완료', { prevCount: prevEdgeCount, nextCount: nextEdges.length });
+          return { edges: nextEdges }; // 변경된 edges 상태만 반환
+        });
       },
       
       /**

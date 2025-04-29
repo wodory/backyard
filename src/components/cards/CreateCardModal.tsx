@@ -6,6 +6,7 @@
  * 수정일: 2025-04-25 : lint 오류 수정 - 사용되지 않는 import 및 변수 제거
  * 수정일: 2025-04-21 : DEFAULT_USER_ID 상수 대신 useAuthStore를 사용하도록 수정
  * 수정일: 2025-04-21 : 카드 생성 시 projectId 추가
+ * 수정일: 2025-04-29 : 직접 프로젝트 로딩 로직 제거 및 useAppStore에서 projects 및 activeProjectId 사용
  */
 
 "use client";
@@ -29,14 +30,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useAppStore } from "@/store/useAppStore";
 import { useCreateCard } from "@/hooks/useCreateCard";
 import { CreateCardInput, Card } from "@/types/card";
 
-// 프로젝트 인터페이스 정의
-interface Project {
-  id: string;
-  name: string;
-}
+// 프로젝트 인터페이스 정의 - AppStore에서 이미 Project 타입이 제공됨
+// interface Project {
+//   id: string;
+//   name: string;
+// }
 
 // 컴포넌트에 props 타입 정의
 interface CreateCardModalProps {
@@ -59,11 +61,13 @@ export default function CreateCardModal({
   const [tags, setTags] = useState<string[]>([]);
   const isComposing = useRef(false);
 
-  // 프로젝트 관련 상태
-  const [projects, setProjects] = useState<Project[]>([]);
+  // AppStore에서 프로젝트 관련 상태 직접 가져오기
+  const projects = useAppStore(state => state.projects);
+  const activeProjectId = useAppStore(state => state.activeProjectId);
+  const isAppLoading = useAppStore(state => state.isLoading);
+
+  // 프로젝트 관련 상태 - 선택된 프로젝트 ID는 activeProjectId를 기본값으로 사용
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [isProjectLoading, setIsProjectLoading] = useState(true);
-  const [projectError, setProjectError] = useState<string | null>(null);
 
   // useAuthStore에서 사용자 ID 가져오기
   const userId = useAuthStore((state) => state.profile?.id);
@@ -74,40 +78,15 @@ export default function CreateCardModal({
   const isLoading = createCardMutation.isPending;
   const { isSuccess, error } = createCardMutation;
 
-  // 컴포넌트 마운트 시 프로젝트 목록 가져오기
+  // 컴포넌트 마운트 시 activeProjectId 설정
   useEffect(() => {
-    async function fetchProjects() {
-      try {
-        setIsProjectLoading(true);
-        setProjectError(null);
-
-        const response = await fetch('/api/projects');
-
-        if (!response.ok) {
-          throw new Error('프로젝트를 불러오는데 실패했습니다.');
-        }
-
-        const data = await response.json();
-
-        if (Array.isArray(data) && data.length > 0) {
-          setProjects(data);
-          // TODO : 반드시 리펙토링을 통해 현재 로드중인 프로젝트 ID로 변경해야 함. 
-          // 지금은 테스트 중이므로 첫 번째 프로젝트를 기본값으로 설정'
-          const currentProjectId = data[0].id;
-          setSelectedProjectId(currentProjectId);
-        } else {
-          setProjectError('사용 가능한 프로젝트가 없습니다.');
-        }
-      } catch (err) {
-        console.error('프로젝트 목록 조회 오류:', err);
-        setProjectError(err instanceof Error ? err.message : '프로젝트를 불러오는데 실패했습니다.');
-      } finally {
-        setIsProjectLoading(false);
-      }
+    if (activeProjectId) {
+      setSelectedProjectId(activeProjectId);
+    } else if (projects.length > 0) {
+      // 혹시 activeProjectId가 없지만 projects는 있는 경우 첫 번째 프로젝트 사용
+      setSelectedProjectId(projects[0].id);
     }
-
-    fetchProjects();
-  }, []);
+  }, [activeProjectId, projects]);
 
   // 자동으로 모달 열기
   useEffect(() => {
@@ -245,103 +224,117 @@ export default function CreateCardModal({
     }
   };
 
+  // 로딩 중이거나 에러가 있는 경우의 버튼 상태
+  const isButtonDisabled = !selectedProjectId || !title.trim() || !content.trim() || isLoading;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {customTrigger || (
-          <Button>
-            <PlusCircle className="w-4 h-4 mr-2" />
-            새 카드 만들기
+          <Button variant="secondary" size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            새 카드 추가
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>새 카드 만들기</DialogTitle>
+          <DialogTitle>새 카드 작성</DialogTitle>
           <DialogDescription>
-            새로운 카드를 생성하려면 아래 양식을 작성하세요.
+            아이디어맵에 추가할 새 카드의 내용을 입력하세요.
           </DialogDescription>
-          {error && (
-            <p className="text-sm text-red-500 mt-2">
-              오류: {error.message || '카드 생성 중 오류가 발생했습니다.'}
-            </p>
-          )}
-          {projectError && (
-            <p className="text-sm text-red-500 mt-2">
-              오류: {projectError}
-            </p>
-          )}
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">제목</Label>
             <Input
               id="title"
+              placeholder="카드 제목을 입력하세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="카드 제목을 입력하세요"
-              disabled={isLoading || isProjectLoading}
+              required
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project">프로젝트</Label>
+            <select
+              id="project"
+              className="w-full p-2 border rounded-md"
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              disabled={isAppLoading || projects.length === 0}
+            >
+              {isAppLoading ? (
+                <option>로딩 중...</option>
+              ) : projects.length === 0 ? (
+                <option>사용 가능한 프로젝트가 없습니다.</option>
+              ) : (
+                projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="content">내용</Label>
-            <TiptapEditor
-              id="content"
-              content={content}
-              onChange={setContent}
-              placeholder="카드 내용을 입력하세요..."
-            />
+            <div className="min-h-[150px] border rounded-md overflow-hidden">
+              <TiptapEditor
+                content={content}
+                onChange={setContent}
+                placeholder="카드 내용을 입력하세요..."
+              />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="tags">태그</Label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+            <div className="flex flex-wrap gap-1 mb-2">
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="py-1">
                   {tag}
-                  <button
-                    type="button"
+                  <X
+                    className="ml-1 h-3 w-3 cursor-pointer"
                     onClick={() => removeTag(tag)}
-                    className="text-xs hover:text-destructive"
-                    disabled={isLoading}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  />
                 </Badge>
               ))}
             </div>
             <Input
               id="tags"
+              placeholder="태그 입력 후 Enter 또는 쉼표로 구분 (선택사항)"
               value={tagInput}
               onChange={handleTagInputChange}
               onKeyDown={handleAddTag}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              placeholder="태그 입력 후 Enter 또는 쉼표(,)로 구분"
-              disabled={isLoading || isProjectLoading}
             />
           </div>
+
           <div className="flex justify-end space-x-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isLoading || isProjectLoading}>
-                취소
-              </Button>
+              <Button variant="outline">취소</Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading || isProjectLoading || !selectedProjectId}>
+            <Button type="submit" disabled={isButtonDisabled}>
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  생성 중...
-                </>
-              ) : isProjectLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  프로젝트 로딩 중...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 저장 중...
                 </>
               ) : (
-                "카드 생성"
+                "저장"
               )}
             </Button>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm mt-2">
+              오류 발생: {error.message || "카드 저장 중 문제가 발생했습니다."}
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>

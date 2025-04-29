@@ -116,12 +116,17 @@ export function ProjectToolbar() {
   // 프로젝트 불러오기 핸들러
   const handleLoadProject = useCallback(() => {
     try {
-      // API 호출을 통해 프로젝트 목록 가져오기 (아직 API 미구현)
-      fetchProjects();
+      // 프로젝트 목록은 이미 ClientLayout에서 로드됨
+      // 여기서는 단순히 사용자에게 현재 사용 가능한 프로젝트 정보를 표시
+      if (projects.length > 0) {
+        toast.success(`${projects.length}개의 프로젝트가 로드되었습니다.`);
+      } else {
+        toast.info('사용 가능한 프로젝트가 없습니다.');
+      }
     } catch (error) {
       console.log(error);
     }
-  }, [fetchProjects]);
+  }, [projects]);
 
   // 새 프로젝트 생성 핸들러
   const handleCreateProject = useCallback(() => {

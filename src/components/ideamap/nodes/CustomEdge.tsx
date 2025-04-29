@@ -5,19 +5,22 @@
  * 작성일: 2025-03-08
  * 수정일: 2025-03-31
  * 수정일: 2023-10-27 : 사용하지 않는 import/변수 제거 및 any 타입 개선
+ * 수정일: 2025-04-30 : useAppStore에서 useIdeaMapStore로 변경하여 설정 직접 참조 방식으로 수정 (Task 3.2)
+ * 수정일: 2025-04-30 : 로깅 최적화 및 렌더링 성능 개선을 위한 useMemo 사용 확대 (Task 3.2)
  */
 
 import React, { useMemo } from 'react';
 
 import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
 
-import { useAppStore } from '@/store/useAppStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import createLogger from '@/lib/logger';
+
+// 모듈별 로거 생성
+const logger = createLogger('CustomEdge');
 
 // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
 const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
-
-// 디버깅용 로그 - 순환 참조 방지를 위해 EDGE_TYPES 접근 제거
-// console.log(`[${COMPONENT_ID}] 모듈이 로드됨 - 경로: @/components/board/nodes/CustomEdge`);
 
 // 확장된 엣지 Props 인터페이스
 interface CustomEdgeProps extends EdgeProps {
@@ -31,11 +34,11 @@ interface CustomEdgeProps extends EdgeProps {
 
 /**
  * 커스텀 엣지 컴포넌트
- * - ReactFlow의 기본 동작을 최대한 활용하고, 최소한의 조정만 적용
+ * - Zustand 스토어에서 직접 설정을 참조하여 다음과 같은 이점이 있습니다:
+ *   1. props 드릴링 제거: 설정을 컴포넌트 트리를 통해 전달할 필요 없음
+ *   2. 일관된 스타일: 모든 엣지가 동일한 중앙 집중식 설정 소스 참조
+ *   3. 실시간 업데이트: 설정 변경 시 모든 엣지가 자동으로 업데이트
  */
-// 컴포넌트 사용 시점 디버깅
-console.log('[CustomEdge] 컴포넌트 정의 전: 함수 형태의 컴포넌트 생성');
-
 function CustomEdge({
   sourceX,
   sourceY,
@@ -50,8 +53,18 @@ function CustomEdge({
   data,
   ...restProps
 }: CustomEdgeProps) {
-  // Zustand 스토어에서 ideaMapSettings 가져오기
-  const { ideaMapSettings } = useAppStore();
+  // Zustand 스토어에서 ideaMapSettings 직접 가져오기 (Task 3.2)
+  const ideaMapSettings = useIdeaMapStore(state => state.ideaMapSettings);
+
+  // 개발 환경에서만 디버깅 로그
+  if (process.env.NODE_ENV === 'development') {
+    logger.debug('엣지 렌더링', {
+      id: restProps.id,
+      source: restProps.source,
+      target: restProps.target,
+      settings: ideaMapSettings
+    });
+  }
 
   // 글로벌 설정과 로컬 설정 결합
   const effectiveSettings = useMemo(() => {
@@ -108,7 +121,9 @@ function CustomEdge({
   }, [effectiveEdgeType, edgeParams]);
 
   // 실제 애니메이션 여부는 보드 설정과 컴포넌트 prop 결합
-  const isAnimated = animated !== undefined ? animated : effectiveSettings.animated;
+  const isAnimated = useMemo(() =>
+    animated !== undefined ? animated : effectiveSettings.animated,
+    [animated, effectiveSettings.animated]);
 
   // 스타일 적용 우선순위 변경 - props로 전달된 style을 우선시
   const edgeStyle = useMemo(() => {
@@ -135,6 +150,24 @@ function CustomEdge({
     };
   }, [style, selected]);
 
+  // clean props - 불필요한 prop 제거
+  const cleanProps = useMemo(() => {
+    // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
+    const {
+      selectable,
+      deletable,
+      sourceHandleId,
+      targetHandleId,
+      pathOptions,
+      source,
+      target,
+      id,
+      type,
+      ...cleanProps
+    } = restProps;
+    return cleanProps;
+  }, [restProps]);
+
   return (
     <BaseEdge
       path={edgePath}
@@ -143,22 +176,7 @@ function CustomEdge({
       className={isAnimated ? 'edge-animated' : ''}
       data-selected={selected ? 'true' : 'false'}
       data-component-id={COMPONENT_ID}
-      {...(() => {
-        // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
-        const {
-          selectable,
-          deletable,
-          sourceHandleId,
-          targetHandleId,
-          pathOptions,
-          source,
-          target,
-          id,
-          type,
-          ...cleanProps
-        } = restProps;
-        return cleanProps;
-      })()}
+      {...cleanProps}
     />
   );
 }

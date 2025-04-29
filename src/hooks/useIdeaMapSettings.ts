@@ -3,12 +3,16 @@
  * 목적: 아이디어맵 설정 관련 React Query 훅 제공
  * 역할: 서버 상태로서의 아이디어맵 설정을 관리하는 훅 제공
  * 작성일: 2025-04-21
+ * 수정일: 2025-04-30 : Task 3.1 요구사항 반영 - enabled 조건 개선 및 오류 처리 강화
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Settings, DEFAULT_SETTINGS } from '@/lib/ideamap-utils';
 import * as settingsService from '@/services/settingsService';
+import createLogger from '@/lib/logger';
+
+const logger = createLogger('useIdeaMapSettings');
 
 /**
  * useIdeaMapSettings: 아이디어맵 설정을 가져오는 쿼리 훅
@@ -18,10 +22,32 @@ import * as settingsService from '@/services/settingsService';
 export const useIdeaMapSettings = (userId: string) => {
   return useQuery({
     queryKey: ['ideaMapSettings', userId],
-    queryFn: () => settingsService.fetchSettings(userId),
+    queryFn: async () => {
+      logger.debug(`[useIdeaMapSettings] 설정 데이터 조회 시작 (userId: ${userId})`);
+      
+      if (!userId) {
+        logger.warn('[useIdeaMapSettings] 사용자 ID가 없어 기본 설정을 반환합니다.');
+        return DEFAULT_SETTINGS;
+      }
+      
+      try {
+        const settings = await settingsService.fetchSettings(userId);
+        
+        if (!settings) {
+          logger.info(`[useIdeaMapSettings] 사용자(${userId})의 설정이 없어 기본 설정을 반환합니다.`);
+          return DEFAULT_SETTINGS;
+        }
+        
+        logger.debug(`[useIdeaMapSettings] 설정 데이터 조회 성공 (userId: ${userId})`);
+        return settings;
+      } catch (error) {
+        logger.error(`[useIdeaMapSettings] 설정 데이터 조회 오류 (userId: ${userId}):`, error);
+        return DEFAULT_SETTINGS;
+      }
+    },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5분 동안 데이터를 신선하게 유지
-    initialData: DEFAULT_SETTINGS,
+    gcTime: 1000 * 60 * 30, // 30분 동안 캐시 유지
   });
 };
 

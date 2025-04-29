@@ -284,7 +284,7 @@
         1.  Postman 등을 사용하여 `/api/edges` POST 요청으로 엣지 생성을 시도하고, DB에 반영되는지와 201 응답을 받는지 확인합니다. 유효하지 않은 데이터로 요청 시 400 오류를 받는지 확인합니다.
         2.  Postman 등을 사용하여 `/api/edges?edgeId=<test_edge_id>` DELETE 요청으로 엣지 삭제를 시도하고, DB에서 삭제되는지와 200/204 응답을 받는지 확인합니다. 존재하지 않는 ID로 요청 시 404 오류를 받는지 확인합니다.
 
-6.  **Task 2.6 (신규, 2.2-2:** 엣지 서비스 함수 구현 (`createEdgeAPI`, `deleteEdgeAPI`)
+6.  **Task 2.6 (신규):** 엣지 서비스 함수 구현 (`createEdgeAPI`, `deleteEdgeAPI`)
     *   **파일:** `src/services/edgeService.ts` (수정)
     *   **지침:** Task 1.4에서 만든 파일에 `createEdgeAPI`와 `deleteEdgeAPI` 함수를 추가합니다.
         *   `createEdgeAPI`: `/api/edges` POST 엔드포인트 호출.

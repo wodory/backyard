@@ -6,6 +6,7 @@
  * 수정일: 2025-04-21 : ApiEdge 별칭 대신 Edge 타입 직접 사용
  * 수정일: 2025-04-21 : React Flow의 Edge를 기본 Edge로 사용하도록 수정
  * 수정일: 2025-04-21 : useCreateEdge 뮤테이션 훅 추가
+ * 수정일: 2025-04-21 : useDeleteEdge 뮤테이션 훅 추가 - Task 2.7 구현
  */
 
 /**
@@ -15,7 +16,7 @@
  * 설명    아이디어맵 엣지 데이터 조회를 위한 TanStack Query 훅
  */
 import { useQuery, useMutation, UseQueryResult, UseMutationResult, useQueryClient } from '@tanstack/react-query';
-import { fetchEdges, createEdgeAPI } from '@/services/edgeService';
+import { fetchEdges, createEdgeAPI, deleteEdgeAPI } from '@/services/edgeService';
 import { Edge as DBEdge, EdgeInput } from '@/types/edge';
 import { Edge, Connection } from '@xyflow/react';
 import { toast } from 'sonner';
@@ -125,4 +126,32 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
   });
 }
 
-// useDeleteEdge는 다음 Task에서 구현 
+/**
+ * useDeleteEdge: 엣지를 삭제하는 뮤테이션 훅
+ * @rule   three-layer-Standard
+ * @layer  tanstack-mutation-hook
+ * @tag    @tanstack-mutation-msw useDeleteEdge
+ * @returns {UseMutationResult} 뮤테이션 결과
+ */
+export function useDeleteEdge(): UseMutationResult<void, Error, { id: string; projectId: string }> {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id }: { id: string; projectId: string }) => {
+      logger.debug(`엣지 삭제 요청: ID=${id}`);
+      return await deleteEdgeAPI(id);
+    },
+    onSuccess: (_, variables) => {
+      logger.debug(`엣지 삭제 성공: ID=${variables.id}`);
+      // 성공적으로 삭제되면 엣지 데이터 쿼리 무효화
+      queryClient.invalidateQueries({ 
+        queryKey: ['edges', undefined, variables.projectId] 
+      });
+      toast.success('엣지가 성공적으로 삭제되었습니다.');
+    },
+    onError: (error, variables) => {
+      logger.error(`엣지 삭제 실패: ID=${variables.id}`, error);
+      toast.error('엣지 삭제 중 오류가 발생했습니다.');
+    }
+  });
+} 

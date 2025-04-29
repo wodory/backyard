@@ -13,6 +13,7 @@
  * 수정일: 2024-06-27 : 뷰포트 관리 로직 추가 및 자동 fitView 기능 개선
  * 수정일: 2024-06-28 : 디버깅을 위한 logger.info 추가
  * 수정일: 2024-07-18 : 엣지 관련 디버깅 로그 활성화 및 데이터 확인 로직 추가
+ * 수정일: 2025-04-21 : handleEdgesChange 함수를 수정하여 오직 applyEdgeChangesAction만 호출하도록 단순화
  */
 
 'use client';
@@ -48,6 +49,7 @@ import { cn } from '@/lib/utils';
 // import BoardControls from './BoardControls';
 
 import { createLogger } from '@/lib/logger';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 const logger = createLogger('IdeaMapCanvas');
 
@@ -295,8 +297,10 @@ export default function IdeaMapCanvas({
         id: 'id' in c ? c.id : '알 수 없음'
       }))
     });
-    onEdgesChange(changes);
-  }, [onEdgesChange]);
+
+    // 오직 applyEdgeChangesAction만 호출
+    useIdeaMapStore.getState().applyEdgeChangesAction(changes);
+  }, []); // 빈 의존성 배열 - 스토어 액션은 참조가 안정적
 
   // 연결 핸들러에 로깅 추가
   const handleConnect = useCallback((connection: Connection) => {

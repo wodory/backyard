@@ -6,9 +6,13 @@
  * 수정일: 2025-04-21 : Task 1.4 요구사항 반영 - fetchEdges 함수 수정 및 타입 정의
  * 수정일: 2025-04-21 : 타입 정의를 src/types/edge.ts로 이동
  * 수정일: 2025-04-21 : ApiEdge 타입 이름을 Edge로 변경
+ * 수정일: 2025-04-21 : deleteEdgeAPI 함수 URL 경로 수정 - Task 2.6 요구사항 반영
+ * 수정일: 2025-04-21 : createEdgeAPI 함수 로깅 및 에러 처리 개선 - Task 2.6 요구사항 반영
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchEdges
+ * @tag    @service-msw createEdge
+ * @tag    @service-msw deleteEdge
  */
 
 import createLogger from '@/lib/logger';
@@ -78,6 +82,8 @@ export async function fetchEdgeById(id: string): Promise<Edge> {
  */
 export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edge[]> {
   try {
+    logger.debug('[edgeService] Creating edge(s)', { input });
+    
     const response = await fetch('/api/edges', {
       method: 'POST',
       headers: {
@@ -87,10 +93,14 @@ export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edg
     });
     
     if (!response.ok) {
+      const errorData = await response.text();
+      logger.error(`엣지 생성 실패: ${response.status} ${response.statusText}`, { input, errorData });
       throw new Error(response.statusText || '엣지 생성 중 오류가 발생했습니다.');
     }
     
-    return await response.json();
+    const createdEdges = await response.json();
+    logger.debug(`[edgeService] Successfully created ${Array.isArray(createdEdges) ? createdEdges.length : 1} edges`);
+    return createdEdges;
   } catch (error) {
     logger.error('엣지 생성 오류:', error);
     throw error;
@@ -131,13 +141,17 @@ export async function updateEdgeAPI(id: string, patch: Partial<EdgePatch>): Prom
  */
 export async function deleteEdgeAPI(id: string): Promise<void> {
   try {
-    const response = await fetch(`/api/edges/${id}`, {
+    const response = await fetch(`/api/edges?ids=${id}`, {
       method: 'DELETE',
     });
     
     if (!response.ok) {
+      const errorData = await response.text();
+      logger.error(`엣지 삭제 실패: ${response.status} ${response.statusText}`, { id, errorData });
       throw new Error(response.statusText || '엣지 삭제 중 오류가 발생했습니다.');
     }
+    
+    logger.debug(`[edgeService] Edge ${id} successfully deleted`);
   } catch (error) {
     logger.error(`엣지 삭제 오류 (ID=${id}):`, error);
     throw error;
@@ -151,16 +165,28 @@ export async function deleteEdgeAPI(id: string): Promise<void> {
  */
 export async function deleteEdgesAPI(ids: string[]): Promise<void> {
   try {
+    if (!ids.length) {
+      logger.warn('[edgeService] deleteEdgesAPI called with empty ids array');
+      return; // 빈 배열이면 API 호출 스킵
+    }
+    
     const idParam = ids.join(',');
+    logger.debug(`[edgeService] Deleting multiple edges: ${idParam}`);
+    
     const response = await fetch(`/api/edges?ids=${idParam}`, {
       method: 'DELETE',
     });
     
     if (!response.ok) {
+      const errorData = await response.text();
+      logger.error(`다중 엣지 삭제 실패: ${response.status} ${response.statusText}`, { ids, errorData });
       throw new Error(response.statusText || '엣지 일괄 삭제 중 오류가 발생했습니다.');
     }
+    
+    const result = await response.json();
+    logger.debug(`[edgeService] Successfully deleted ${result.deletedCount} edges`);
   } catch (error) {
-    logger.error(`엣지 일괄 삭제 오류:`, error);
+    logger.error(`엣지 일괄 삭제 오류 (IDs=${ids.join(',')}):`, error);
     throw error;
   }
 } 

@@ -1,1393 +1,5 @@
 [
   {
-    "timestamp": "2025-04-26T04:20:58.691Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:20:59.030Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:20:58.710Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:20:59.033Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:20:59.360Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:20:59.495Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:20:59.357Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:20:59.518Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:20:59.801Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:20:59.930Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:20:59.803Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:20:59.964Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:00.577Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:00.705Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:00.595Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:00.715Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:01.020Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:01.152Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:01.021Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:01.154Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:01.486Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:01.606Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:01.484Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:01.618Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:02.071Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:02.366Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:02.074Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:02.369Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:02.777Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:02.910Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:02.774Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:02.919Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:05.678Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:06.005Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:05.681Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:06.024Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:06.340Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:06.440Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:06.337Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:06.454Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:06.660Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:06.727Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:06.657Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:06.736Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:06.979Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:07.519Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:06.980Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:07.561Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:08.326Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:08.484Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:08.343Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:08.499Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:08.855Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:09.000Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:08.858Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:09.007Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:09.340Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:09.616Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:09.337Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:09.629Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:09.957Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:10.106Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:09.960Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:10.120Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:10.495Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:10.647Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:10.492Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:10.675Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:11.338Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:11.471Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:11.320Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:11.475Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:11.794Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:11.926Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:11.798Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:11.943Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:12.259Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:12.395Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:12.262Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:12.412Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:12.716Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:12.846Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:12.717Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:12.860Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:13.396Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:13.561Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:13.398Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:13.577Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:13.960Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:15.195Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:13.959Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:15.199Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:15.550Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:15.679Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:15.553Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:15.687Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:15.995Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:16.117Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:15.993Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:16.125Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:16.446Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:16.566Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:16.448Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:16.576Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:16.887Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:17.008Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:16.885Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:17.022Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:17.347Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:17.492Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:17.349Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:17.499Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:17.824Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:17.949Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:17.822Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:17.959Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:18.318Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:18.444Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:18.321Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:18.452Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:18.781Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:18.915Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:18.799Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:18.926Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:19.244Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:19.380Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:19.263Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:19.392Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:19.725Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:19.852Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:19.708Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:19.863Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:20.130Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:20.261Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:20.446Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:20.774Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:20.445Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:20.777Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:20.443Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:20.779Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:21.087Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:21.223Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:21.088Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:21.229Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:21.562Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:21.703Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:21.565Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:21.713Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:22.091Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:22.291Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:22.089Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:22.296Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:22.829Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:22.997Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:21:22.832Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:21:23.004Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:14.450Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:14.929Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:14.484Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:14.933Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:14.402Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "기본 설정을 서버에 저장하는데 실패했습니다. 로컬 기본값을 사용합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:14.936Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:31.497Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:32.030Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:31.695Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:32.418Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:32.612Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:33.008Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:23:32.692Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "기본 설정을 서버에 저장하는데 실패했습니다. 로컬 기본값을 사용합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:23:33.068Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:35:02.180Z",
-    "level": "error",
-    "module": "cardService",
-    "message": "카드 목록 조회 오류:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:35:02.464Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:37:11.524Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:37:12.641Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:37:12.548Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:37:13.005Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:37:12.488Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:37:13.019Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:37:12.755Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:37:13.109Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:03.724Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:03.790Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:03.744Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:03.829Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:03.896Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:04.336Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:03.940Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:04.368Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:24.761Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:24.821Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:24.930Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:25.232Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:24.932Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:25.248Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:24.989Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:25.266Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:44.570Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:44.734Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:44.743Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:45.090Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:44.805Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:45.316Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:44.992Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:45.333Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:50.372Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:50.450Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:50.662Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:50.809Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:50.607Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:50.846Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:40:50.843Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:40:51.221Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:59:19.324Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:59:19.716Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:59:19.382Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:59:19.719Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:59:19.162Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:59:19.722Z"
-  },
-  {
-    "timestamp": "2025-04-26T04:59:19.696Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T04:59:19.992Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:09:40.622Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:09:41.290Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:09:41.491Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:09:41.714Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:09:41.547Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:09:41.727Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:09:42.599Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:09:42.710Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:21:03.930Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:21:04.273Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:21:04.060Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:21:04.286Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:21:04.568Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:21:04.704Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:21:04.779Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:21:05.269Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:29:24.483Z",
-    "level": "error",
-    "module": "cardService",
-    "message": "카드 목록 조회 오류:",
-    "data": {},
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:29:25.164Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:29:26.500Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:29:27.229Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:29:27.499Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:29:27.626Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:29:27.531Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "저장된 아이디어맵 설정이 없어 기본값을 사용합니다",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:29:27.708Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:29:28.499Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:29:28.574Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:30:15.506Z",
-    "level": "error",
-    "module": "useIdeaMapStore",
-    "message": "[useIdeaMapStore] 아이디어맵 설정 로드 실패:",
-    "data": "(0 , _lib_ideamap_utils__WEBPACK_IMPORTED_MODULE_3__.loadIdeaMapSettingsFromServer) is not a function",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:30:15.594Z"
-  },
-  {
-    "timestamp": "2025-04-26T05:30:15.571Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T05:30:15.843Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:41:10.086Z",
-    "level": "error",
-    "module": "useIdeaMapStore",
-    "message": "[useIdeaMapStore] 아이디어맵 설정 로드 실패:",
-    "data": "(0 , _lib_ideamap_utils__WEBPACK_IMPORTED_MODULE_3__.loadIdeaMapSettingsFromServer) is not a function",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:41:11.621Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:41:10.123Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:41:11.625Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:41:10.311Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:41:11.628Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:41:12.136Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:41:12.381Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:54:16.289Z",
-    "level": "error",
-    "module": "useIdeaMapStore",
-    "message": "[useIdeaMapStore] 아이디어맵 설정 로드 실패:",
-    "data": "loadIdeaMapSettingsFromServer is not defined",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:54:18.192Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:54:16.324Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:54:18.197Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:54:16.511Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:54:18.540Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:54:18.797Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:54:19.032Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:56:24.236Z",
-    "level": "error",
-    "module": "useIdeaMapStore",
-    "message": "[useIdeaMapStore] 아이디어맵 설정 로드 실패:",
-    "data": "loadIdeaMapSettingsFromServer is not defined",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:56:24.704Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:56:24.310Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:56:24.708Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:56:24.197Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:56:24.713Z"
-  },
-  {
-    "timestamp": "2025-04-26T08:56:25.217Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-26T08:56:25.276Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:51.012Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:52.227Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:51.209Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:52.587Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:52.751Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:52.983Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:55.023Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:55.092Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:55.306Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:55.411Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:55.248Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:55.420Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:57.176Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:57.245Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:57.421Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:57.597Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:57.458Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:57.631Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:59.559Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:59.693Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:46:59.787Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:46:59.989Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:00.124Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:00.437Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:09.637Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:09.769Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:09.885Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:10.613Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:12.255Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:12.498Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:12.480Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:12.532Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:14.902Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:14.989Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:15.089Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:15.427Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:17.130Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:17.213Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:17.373Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:17.593Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:17.416Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:17.596Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:19.578Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:19.680Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:19.890Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:20.404Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:19.822Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:20.415Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:22.006Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:22.368Z"
-  },
-  {
-    "timestamp": "2025-04-27T00:47:22.149Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 빈 노드 배열로 업데이트합니다.",
-    "sessionId": "47qmnwuvxz418ky8jrquy4",
-    "serverTimestamp": "2025-04-27T00:47:22.377Z"
-  },
-  {
     "timestamp": "2025-04-27T00:47:22.788Z",
     "level": "warn",
     "module": "useIdeaMapStore",
@@ -8721,5 +7333,1420 @@
     "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
     "sessionId": "tknjaw651igpketmw4z32t",
     "serverTimestamp": "2025-04-29T04:27:52.600Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:29:07.205Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:29:08.020Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:29:09.946Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:29:10.046Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:19.009Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:19.448Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.385Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.457Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.383Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.469Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.387Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.478Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.381Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.480Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.384Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.483Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.386Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.497Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.390Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.715Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.388Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.730Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.391Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.738Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.391Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.740Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.393Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.742Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.393Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.744Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.394Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.867Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.395Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.876Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.396Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.881Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.398Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.886Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.397Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.889Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.399Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:22.892Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.400Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.155Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.404Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.256Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.401Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.259Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.403Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.262Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.403Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.265Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.402Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.270Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.405Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.453Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.408Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.518Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.409Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.528Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.406Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.530Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.407Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.532Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.410Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.534Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.408Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.536Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.411Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.716Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.412Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.781Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.414Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.791Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.415Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.794Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.413Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.796Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.416Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.798Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.416Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.800Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.417Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:23.980Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.419Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.045Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.418Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.054Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.420Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.056Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.421Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.057Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.422Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.059Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.423Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.061Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.424Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.294Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.429Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.305Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.428Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.307Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.427Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.309Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.425Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.311Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.426Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.313Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.430Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.500Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.431Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.562Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:22.432Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:24.571Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:30.189Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:30.256Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:32.459Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:32.516Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:36.690Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:36.736Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:38.845Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:38.910Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:32:40.775Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:32:40.833Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:33:21.689Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:33:21.741Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:36:05.410Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:36:06.254Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:41.483Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:42.046Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.268Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.350Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.266Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.359Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.269Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.361Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.270Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.370Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.276Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.381Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.277Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.384Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.278Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.628Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.279Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.638Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.280Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.641Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.281Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.643Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.283Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.679Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.282Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.690Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.284Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.789Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.286Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.812Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.285Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.817Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.287Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:45.820Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.288Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.011Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.289Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.016Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.290Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.039Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.290Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.094Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.291Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.107Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.293Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.127Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.292Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.129Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.294Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.131Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.295Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.348Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.295Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.353Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.296Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.355Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.297Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.419Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.299Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.431Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.298Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.440Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.302Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.442Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.300Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.444Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.301Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.446Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.303Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.628Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.304Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.634Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.305Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.705Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.306Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.714Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.307Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.726Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.308Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.728Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.309Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.731Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.310Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.733Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.311Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.905Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.312Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.972Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.315Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.980Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.313Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.982Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.315Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.984Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.316Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.986Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.314Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:46.988Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.317Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:47.227Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.318Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:47.235Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.319Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:47.237Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.320Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:47.239Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.322Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:47.241Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:45.321Z",
+    "level": "error",
+    "module": "useIdeaMapData",
+    "message": "데이터 로드 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:47.243Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:40:52.758Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:40:52.804Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:41:00.996Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:41:01.049Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:41:02.977Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:41:03.017Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:41:32.547Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:41:32.607Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:42:11.832Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:42:11.893Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:42:26.311Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:42:26.354Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:42:30.408Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:42:30.451Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:42:34.532Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:42:34.595Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:44:20.399Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:44:20.877Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:49:27.019Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:49:28.038Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:49:30.258Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:49:30.311Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:04.317Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:04.361Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:08.436Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:08.479Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:11.976Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:12.045Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:16.123Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:16.175Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:18.604Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:18.657Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:31.731Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:31.789Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:35.188Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:35.285Z"
+  },
+  {
+    "timestamp": "2025-04-29T04:50:57.751Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T04:50:57.812Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:06:01.260Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:06:01.647Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:06:07.510Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:06:07.549Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:06:23.480Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:06:23.552Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:06:25.653Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:06:25.699Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:06:29.590Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:06:29.648Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:06:34.468Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:06:34.535Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:08:14.578Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:08:14.625Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:08:16.911Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:08:16.963Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:10:13.370Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:10:13.421Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:10:14.298Z",
+    "level": "error",
+    "module": "cardService",
+    "message": "카드 목록 조회 오류:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:10:14.362Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:10:15.803Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:10:15.885Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:54:41.365Z",
+    "level": "error",
+    "module": "cardService",
+    "message": "카드 목록 조회 오류:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:54:41.755Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:54:41.369Z",
+    "level": "error",
+    "module": "settingsService",
+    "message": "[settingsService] 설정 조회 중 오류 발생:",
+    "data": {},
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:54:41.758Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:54:50.384Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:54:50.453Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:54:52.831Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:54:52.886Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:54:57.073Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:54:57.133Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:55:01.258Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:55:01.310Z"
+  },
+  {
+    "timestamp": "2025-04-29T05:55:04.955Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T05:55:05.026Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:00:30.849Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:00:31.681Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:00:31.721Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:00:31.976Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:03:00.473Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:03:01.062Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:03:13.609Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:03:13.656Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:03:13.719Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:03:13.959Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:03:22.616Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:03:22.683Z"
+  },
+  {
+    "timestamp": "2025-04-29T06:03:22.716Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-29T06:03:22.959Z"
   }
 ]
