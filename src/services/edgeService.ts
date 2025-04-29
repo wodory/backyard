@@ -8,6 +8,7 @@
  * 수정일: 2025-04-21 : ApiEdge 타입 이름을 Edge로 변경
  * 수정일: 2025-04-21 : deleteEdgeAPI 함수 URL 경로 수정 - Task 2.6 요구사항 반영
  * 수정일: 2025-04-21 : createEdgeAPI 함수 로깅 및 에러 처리 개선 - Task 2.6 요구사항 반영
+ * 수정일: 2025-05-01 : 오류 처리 및 로깅 개선 - 인증 오류 구분 및 상세 오류 정보 로깅
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchEdges
@@ -82,7 +83,38 @@ export async function fetchEdgeById(id: string): Promise<Edge> {
  */
 export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edge[]> {
   try {
-    logger.debug('[edgeService] Creating edge(s)', { input });
+    // 입력값 로깅 (민감한 정보는 제외)
+    const logSafeInput = Array.isArray(input) 
+      ? input.map(edge => ({ ...edge, projectId: edge.projectId }))
+      : { ...input, projectId: input.projectId };
+      
+    logger.debug('[edgeService] Creating edge(s)', { input: logSafeInput });
+    
+    // 유효성 검사
+    if (Array.isArray(input)) {
+      // 배열의 각 항목 검사
+      input.forEach((edge, index) => {
+        if (!edge.source || !edge.target || !edge.projectId) {
+          logger.error(`[edgeService] 엣지 데이터 #${index}에 필수 필드가 누락됨:`, { 
+            source: !!edge.source, 
+            target: !!edge.target, 
+            projectId: !!edge.projectId 
+          });
+        }
+      });
+    } else {
+      // 단일 항목 검사
+      if (!input.source || !input.target || !input.projectId) {
+        logger.error('[edgeService] 엣지 데이터에 필수 필드가 누락됨:', { 
+          source: !!input.source, 
+          target: !!input.target, 
+          projectId: !!input.projectId 
+        });
+      }
+    }
+    
+    // API 호출 시작 시간 기록 (성능 측정용)
+    const startTime = Date.now();
     
     const response = await fetch('/api/edges', {
       method: 'POST',
@@ -92,18 +124,91 @@ export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edg
       body: JSON.stringify(input),
     });
     
+    // API 호출 종료 시간 기록
+    const endTime = Date.now();
+    const requestDuration = endTime - startTime;
+    
+    // 응답 분석
     if (!response.ok) {
-      const errorData = await response.text();
-      logger.error(`엣지 생성 실패: ${response.status} ${response.statusText}`, { input, errorData });
-      throw new Error(response.statusText || '엣지 생성 중 오류가 발생했습니다.');
+      let errorData = '';
+      try {
+        // JSON 응답인 경우
+        errorData = JSON.stringify(await response.json());
+      } catch {
+        // 일반 텍스트 응답인 경우
+        errorData = await response.text();
+      }
+      
+      // HTTP 상태 코드에 따른 오류 처리
+      if (response.status === 401) {
+        logger.error('엣지 생성 실패: 인증 오류 (401 Unauthorized)', { 
+          input: logSafeInput, 
+          errorData,
+          requestDuration
+        });
+        throw new Error('인증이 필요합니다. 다시 로그인해주세요.');
+      } else if (response.status === 400) {
+        logger.error('엣지 생성 실패: 잘못된 요청 (400 Bad Request)', { 
+          input: logSafeInput, 
+          errorData,
+          requestDuration
+        });
+        throw new Error(errorData || '엣지 생성을 위한 요청 데이터가 올바르지 않습니다.');
+      } else if (response.status === 403) {
+        logger.error('엣지 생성 실패: 권한 없음 (403 Forbidden)', { 
+          input: logSafeInput, 
+          errorData,
+          requestDuration
+        });
+        throw new Error('해당 프로젝트에 엣지를 생성할 권한이 없습니다.');
+      } else if (response.status === 500) {
+        logger.error(`엣지 생성 실패: 서버 오류 (500 Internal Server Error)`, { 
+          input: logSafeInput, 
+          errorData,
+          requestDuration
+        });
+        // 서버 오류에 대한 더 자세한 정보 로깅 (디버깅용)
+        if (errorData.includes('unique constraint') || errorData.includes('duplicate key')) {
+          logger.warn('서버 오류 원인 추정: 중복된 엣지 데이터');
+          throw new Error('이미 동일한 엣지가 존재합니다.');
+        } else if (errorData.includes('foreign key constraint')) {
+          logger.warn('서버 오류 원인 추정: 존재하지 않는 카드 ID 참조');
+          throw new Error('해당 카드가 존재하지 않습니다.');
+        } else {
+          throw new Error('서버에서 엣지 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      } else {
+        logger.error(`엣지 생성 실패: ${response.status} ${response.statusText}`, { 
+          input: logSafeInput, 
+          errorData,
+          requestDuration
+        });
+        throw new Error(response.statusText || '엣지 생성 중 오류가 발생했습니다.');
+      }
     }
     
     const createdEdges = await response.json();
-    logger.debug(`[edgeService] Successfully created ${Array.isArray(createdEdges) ? createdEdges.length : 1} edges`);
+    logger.debug(`[edgeService] Successfully created ${Array.isArray(createdEdges) ? createdEdges.length : 1} edges`, {
+      edgeCount: Array.isArray(createdEdges) ? createdEdges.length : 1,
+      edgeIds: Array.isArray(createdEdges) ? createdEdges.map(e => e.id) : [createdEdges.id],
+      requestDuration
+    });
     return createdEdges;
-  } catch (error) {
-    logger.error('엣지 생성 오류:', error);
-    throw error;
+  } catch (error: any) {
+    // 에러 종류에 따른 로깅 및 처리
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      // 네트워크 오류
+      logger.error('엣지 생성 중 네트워크 오류:', error);
+      throw new Error('네트워크 연결을 확인해주세요.');
+    } else if (error.name === 'SyntaxError') {
+      // JSON 파싱 오류
+      logger.error('엣지 생성 응답 파싱 오류:', error);
+      throw new Error('서버 응답을 처리하는 중 오류가 발생했습니다.');
+    } else {
+      // 이미 처리한 HTTP 오류는 그대로 전달
+      logger.error('엣지 생성 오류:', error);
+      throw error;
+    }
   }
 }
 

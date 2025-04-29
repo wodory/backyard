@@ -7,6 +7,10 @@
  * 수정일: 2025-04-21 : React Flow의 Edge를 기본 Edge로 사용하도록 수정
  * 수정일: 2025-04-21 : useCreateEdge 뮤테이션 훅 추가
  * 수정일: 2025-04-21 : useDeleteEdge 뮤테이션 훅 추가 - Task 2.7 구현
+ * 수정일: 2025-05-01 : useCreateEdge 내부에서 필드 변환 로직 추가 (sourceCardId → source)
+ * 수정일: 2025-05-01 : 엣지 생성/삭제 오류 처리 및 로깅 개선
+ * 수정일: 2025-05-02 : useCreateEdge에 낙관적 업데이트(Optimistic Updates) 로직 추가
+ * 수정일: 2025-04-21 : sourceHandle과 targetHandle 필드 지원 추가
  */
 
 /**
@@ -48,6 +52,8 @@ export interface CreateEdgeInput {
   targetCardId?: string; // 실제 API에서는 target으로 변환됨
   source?: string;      // 직접 source를 받을 수도 있음
   target?: string;      // 직접 target을 받을 수도 있음
+  sourceHandle?: string; // 소스 노드의 핸들 ID
+  targetHandle?: string; // 타겟 노드의 핸들 ID
   projectId: string;
   type?: string;
   animated?: boolean;
@@ -61,6 +67,8 @@ const mapToEdgeInput = (input: CreateEdgeInput): EdgeInput => {
     source: input.source || input.sourceCardId || '',
     target: input.target || input.targetCardId || '',
     projectId: input.projectId,
+    sourceHandle: input.sourceHandle,
+    targetHandle: input.targetHandle,
     type: input.type,
     animated: input.animated,
     style: input.style,
@@ -106,22 +114,223 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
   const queryClient = useQueryClient();
   
   return useMutation({
+    mutationKey: ['createEdge'], // 뮤테이션 키 추가
     mutationFn: async (edgeData: CreateEdgeInput) => {
       logger.debug('새 엣지 생성 요청:', edgeData);
+      
+      // 필드 유효성 검사 - 필수 필드가 빠졌는지 확인
+      if (!edgeData.projectId) {
+        logger.error('엣지 생성 실패: projectId가 누락되었습니다.', edgeData);
+        throw new Error('엣지 생성에 필요한 projectId가 누락되었습니다.');
+      }
+      
+      if ((!edgeData.source && !edgeData.sourceCardId) || 
+          (!edgeData.target && !edgeData.targetCardId)) {
+        logger.error('엣지 생성 실패: source 또는 target이 누락되었습니다.', edgeData);
+        throw new Error('엣지 생성에 필요한 소스 또는 타겟 노드가 누락되었습니다.');
+      }
+      
+      // sourceCardId/targetCardId를 source/target으로 자동 변환
       const apiInput = mapToEdgeInput(edgeData);
-      return await createEdgeAPI(apiInput);
+      logger.debug('API 요청용 데이터로 변환:', apiInput);
+      
+      try {
+        // 엣지 생성 시도
+        const result = await createEdgeAPI(apiInput);
+        logger.debug('엣지 생성 API 호출 성공:', result);
+        return result;
+      } catch (error: any) {
+        // 오류가 "unique constraint" 관련이면 사용자 친화적 메시지로 변환
+        if (error.message && (
+            error.message.includes('unique constraint') ||
+            error.message.includes('Unique constraint') ||
+            error.message.includes('duplicate key') ||
+            error.message.includes('already exists')
+          )) {
+          const friendlyError = new Error('이미 동일한 엣지가 존재합니다.');
+          logger.warn('엣지 중복 생성 시도:', { input: apiInput, error: friendlyError.message });
+          throw friendlyError;
+        }
+        
+        // 외래 키 제약 조건 위반 (카드 ID가 존재하지 않음)
+        if (error.message && (
+            error.message.includes('foreign key constraint') ||
+            error.message.includes('Foreign key constraint')
+          )) {
+          const friendlyError = new Error('해당 카드가 존재하지 않습니다.');
+          logger.warn('존재하지 않는 카드로 엣지 생성 시도:', { input: apiInput, error: friendlyError.message });
+          throw friendlyError;
+        }
+        
+        // 인증 관련 오류 처리
+        if (error.message && error.message.includes('Unauthorized')) {
+          const authError = new Error('인증이 필요합니다. 다시 로그인해주세요.');
+          logger.error('엣지 생성 중 인증 오류:', { input: apiInput, error: authError.message });
+          throw authError;
+        }
+        
+        // 서버 오류의 경우 원래 에러 메시지에 더 많은 컨텍스트 추가
+        logger.error('엣지 생성 중 서버 오류:', {
+          error: error.message || '알 수 없는 오류',
+          input: apiInput,
+          status: error.status || '알 수 없음'
+        });
+        
+        // 사용자에게 표시할 수 있는 오류 메시지 생성
+        const serverError = new Error(
+          error.message === 'Internal Server Error' 
+            ? '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' 
+            : `엣지 생성 중 오류: ${error.message}`
+        );
+        
+        throw serverError;
+      }
     },
-    onSuccess: (data, variables) => {
-      logger.debug('엣지 생성 성공:', data);
-      // 성공적으로 생성되면 엣지 데이터 쿼리 무효화
-      queryClient.invalidateQueries({ 
-        queryKey: ['edges', undefined, variables.projectId] 
+    // 낙관적 업데이트: API 호출 이전에 UI에 먼저 변경사항 반영
+    onMutate: async (newEdgeData) => {
+      logger.debug('낙관적 업데이트 시작:', newEdgeData);
+      
+      // 현재 진행 중인 refetch를 취소하여 낙관적 업데이트가 덮어쓰기 되는 것 방지
+      await queryClient.cancelQueries({ 
+        queryKey: ['edges', undefined, newEdgeData.projectId] 
       });
+      
+      // 이전 엣지 데이터 백업 (롤백용)
+      const previousEdges = queryClient.getQueryData<Edge[]>(
+        ['edges', undefined, newEdgeData.projectId]
+      ) || [];
+      
+      logger.debug('이전 엣지 데이터 백업 완료:', { count: previousEdges.length });
+      
+      // 임시 ID 생성 (낙관적 업데이트용)
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // 낙관적 엣지 생성
+      const optimisticEdge: Edge = {
+        id: tempId,
+        source: newEdgeData.source || newEdgeData.sourceCardId || '',
+        target: newEdgeData.target || newEdgeData.targetCardId || '',
+        sourceHandle: newEdgeData.sourceHandle,
+        targetHandle: newEdgeData.targetHandle,
+        type: newEdgeData.type || 'custom',
+        animated: newEdgeData.animated || false,
+        style: newEdgeData.style || {},
+        data: newEdgeData.data || {},
+      };
+      
+      // UI에 낙관적 엣지 추가
+      queryClient.setQueryData<Edge[]>(
+        ['edges', undefined, newEdgeData.projectId],
+        old => [...(old || []), optimisticEdge]
+      );
+      
+      logger.debug('낙관적 엣지 추가 완료:', { 
+        tempId, 
+        source: optimisticEdge.source, 
+        target: optimisticEdge.target 
+      });
+      
+      // 롤백을 위한 정보 반환
+      return { 
+        previousEdges,
+        tempId,
+        optimisticEdge,
+      };
+    },
+    onSuccess: (data, variables, context) => {
+      logger.debug('엣지 생성 성공:', { 
+        edgeIds: data.map(edge => edge.id),
+        edgeCount: data.length,
+        projectId: variables.projectId
+      });
+      
+      // 낙관적 업데이트를 실제 데이터로 교체
+      if (context?.tempId && data.length > 0) {
+        const queryKey = ['edges', undefined, variables.projectId];
+        const currentEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+        
+        // 임시 엣지 제거하고 실제 엣지로 교체
+        const updatedEdges = currentEdges
+          .filter(edge => edge.id !== context.tempId)
+          .concat(data.map(transformDbEdgeToFlowEdge));
+        
+        // 업데이트된 엣지 세트 적용
+        queryClient.setQueryData(queryKey, updatedEdges);
+        
+        logger.debug('낙관적 엣지를 실제 데이터로 교체 완료:', {
+          tempId: context.tempId,
+          realIds: data.map(edge => edge.id)
+        });
+      }
+      
+      // 엣지 쿼리 무효화하여 필요시 다시 가져오게 함
+      queryClient.invalidateQueries({ 
+        queryKey: ['edges', undefined, variables.projectId],
+        // 즉시 refetch는 하지 않음 (이미 위에서 최신 데이터로 업데이트함)
+        refetchType: 'none'
+      });
+      
       toast.success('엣지가 성공적으로 생성되었습니다.');
     },
-    onError: (error) => {
+    onError: (error: any, variables, context) => {
       logger.error('엣지 생성 실패:', error);
-      toast.error('엣지 생성 중 오류가 발생했습니다.');
+      
+      // 낙관적 업데이트 롤백
+      if (context) {
+        logger.debug('낙관적 업데이트 롤백 시작:', { 
+          projectId: variables.projectId,
+          tempId: context.tempId
+        });
+        
+        // 이전 엣지 데이터로 복원
+        queryClient.setQueryData(
+          ['edges', undefined, variables.projectId],
+          context.previousEdges
+        );
+        
+        logger.debug('낙관적 업데이트 롤백 완료');
+      }
+      
+      // 사용자 친화적 에러 메시지 표시
+      const errorMessage = error.message || '엣지 생성 중 오류가 발생했습니다.';
+      
+      // 에러 메시지에 따라 다른 토스트 표시
+      if (errorMessage.includes('이미 동일한 엣지가 존재합니다')) {
+        toast.error('이미 동일한 연결이 존재합니다.');
+      } else if (errorMessage.includes('해당 카드가 존재하지 않습니다')) {
+        toast.error('연결하려는 카드가 존재하지 않습니다.');
+      } else if (errorMessage.includes('인증이 필요합니다')) {
+        toast.error('인증 세션이 만료되었습니다. 다시 로그인해주세요.');
+      } else {
+        toast.error(`엣지 생성 중 오류: ${errorMessage}`);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      logger.debug('엣지 생성 뮤테이션 완료:', { 
+        success: !error,
+        projectId: variables.projectId
+      });
+      
+      // 모든 상황(성공/실패)에서 캐시를 최신 상태로 유지하기 위해 쿼리 무효화
+      queryClient.invalidateQueries({ 
+        queryKey: ['edges', undefined, variables.projectId],
+        // 필요한 경우에만 백그라운드 리페치 실행
+        refetchType: 'active'
+      });
+    },
+    // 재시도 방지 (인증 오류, 중복 등은 재시도해도 해결되지 않음)
+    retry: (failureCount, error: any) => {
+      // 인증 오류, 중복 오류, 외래 키 제약 조건 오류는 재시도하지 않음
+      if (error.message && (
+        error.message.includes('이미 동일한 엣지가 존재합니다') ||
+        error.message.includes('해당 카드가 존재하지 않습니다') ||
+        error.message.includes('인증이 필요합니다')
+      )) {
+        return false;
+      }
+      
+      // 서버 오류는 최대 2번까지만 재시도
+      return failureCount < 2;
     }
   });
 }

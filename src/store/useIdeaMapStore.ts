@@ -57,7 +57,7 @@ interface ExtendedViewport extends Viewport {
 }
 
 // 아이디어맵 스토어 상태 인터페이스
-interface IdeaMapState {
+export interface IdeaMapState {
   // 노드 관련 상태
   nodes: Node<CardData>[];
   setNodes: (nodes: Node<CardData>[]) => void;
@@ -1205,44 +1205,48 @@ export const useIdeaMapStore = create<IdeaMapState>()(
        * @param changes 엣지 변경 사항 배열
        */
       applyEdgeChangesAction: (changes: EdgeChange[]) => {
-        logger.info('[useIdeaMapStore] applyEdgeChangesAction 호출됨', { changesCount: changes.length }); // 디버깅 로그
+        logger.info('[useIdeaMapStore] applyEdgeChangesAction 호출됨', { changesCount: changes.length });
         
+        // 삭제된 엣지 ID 식별
+        const deleteChanges = changes.filter(change => change.type === 'remove');
+        const deletedEdgeIds = deleteChanges.map(change => change.id);
+        
+        // 상태 업데이트 - Zustand 상태만 업데이트 (Three-Layer-Standard 준수)
         set((state) => {
           const prevEdgeCount = state.edges.length;
-          const nextEdges = applyEdgeChanges(changes, state.edges); // 오직 applyEdgeChanges 만 사용
-          logger.info('[useIdeaMapStore] applyEdgeChanges 적용 완료', { prevCount: prevEdgeCount, nextCount: nextEdges.length });
-          return { edges: nextEdges }; // 변경된 edges 상태만 반환
+          const nextEdges = applyEdgeChanges(changes, state.edges);
+          logger.info('[useIdeaMapStore] applyEdgeChanges 적용 완료', { 
+            prevCount: prevEdgeCount, 
+            nextCount: nextEdges.length,
+            deletedCount: deletedEdgeIds.length
+          });
+          
+          return { 
+            edges: nextEdges,
+            hasUnsavedChanges: true // 변경사항이 있음을 표시
+          };
         });
+        
+        // 참고: 이제 DB 동기화는 TanStack Query 훅(useDeleteEdge 등)을 통해 처리해야 함
+        // 로컬 스토리지 저장 로직은 삭제 (Three-Layer-Standard에 따라 Zustand는 UI 상태만 관리)
       },
       
       /**
-       * removeEdgesFromStorage: 삭제된 엣지를 로컬 스토리지에서 제거하는 액션
+       * removeEdgesFromStorage: 삭제된 엣지를 스토리지에서 제거하는 액션
+       * 참고: 이 함수는 레거시 호환성을 위해 유지하지만, 실제 DB 삭제는 
+       * TanStack Query의 useDeleteEdge 훅을 사용해야 함
        * @param deletedEdgeIds 삭제된 엣지 ID 배열
+       * @deprecated DB 동기화는 TanStack Query 사용 권장
        */
       removeEdgesFromStorage: (deletedEdgeIds: string[]) => {
-        try {
-          // 로컬 스토리지에서 현재 엣지 정보 가져오기
-          const storedEdgesJSON = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
-          if (!storedEdgesJSON) return;
-          
-          const storedEdges = JSON.parse(storedEdgesJSON) as Edge[];
-          
-          // 삭제할 엣지를 제외한 나머지 엣지만 남기기
-          const updatedEdges = storedEdges.filter(
-            edge => !deletedEdgeIds.includes(edge.id)
-          );
-          
-          // 업데이트된 엣지 정보를 다시 로컬 스토리지에 저장
-          localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('엣지 제거 중 오류 발생:', errorMessage);
-          logger.error('[useIdeaMapStore] 엣지 제거 중 오류 발생:', errorMessage);
-        }
+        logger.info('[useIdeaMapStore] removeEdgesFromStorage 호출됨. 참고: 실제 DB 삭제는 useDeleteEdge 훅 사용 권장');
+        // 이제 이 함수는 로그만 남기고 실제 동작은 하지 않음 (Three-Layer-Standard 준수)
       },
       
       /**
        * connectNodesAction: 노드 간 연결을 생성하는 액션
+       * 참고: 이 함수는 UI 상태 업데이트만 담당하며, 실제 DB 저장은
+       * TanStack Query의 useCreateEdge 훅을 사용해야 함
        * @param connection 연결 파라미터
        */
       connectNodesAction: (connection: Connection) => {
@@ -1284,31 +1288,32 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         const updatedEdges = [...edges, newEdge];
         set({ edges: updatedEdges, hasUnsavedChanges: true });
         
-        // 변경 사항 저장
-        try {
-          localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('엣지 저장 중 오류 발생:', errorMessage);
-          logger.error('[useIdeaMapStore] 엣지 저장 중 오류 발생:', errorMessage);
-        }
+        // DB에 엣지 저장을 위한 이벤트 발행
+        // Three-Layer-Standard에 따라 DB 저장은 여기서 직접 하지 않고,
+        // 이 액션이 호출된 후 useCreateEdge 훅이 실행되어야 함
+        
+        // useAppStore에서 activeProjectId 가져오기 (IdeaMapStore에서는 접근 불가)
+        // 엣지 생성에 필요한 정보 로깅
+        logger.info('[useIdeaMapStore] 노드 연결 생성 완료. DB 저장 위한 정보:', {
+          source: connection.source,
+          target: connection.target,
+          sourceHandle: connection.sourceHandle,
+          targetHandle: connection.targetHandle
+        });
       },
       
       /**
-       * saveEdgesAction: 현재 엣지 상태를 로컬 스토리지에 저장하는 액션
+       * saveEdgesAction: 현재 엣지 상태를 저장하는 액션
+       * 참고: 이 함수는 레거시 호환성을 위해 유지하지만, 실제 DB 저장은
+       * TanStack Query의 useCreateEdge 또는 useUpdateEdge 훅을 사용해야 함
        * @returns 저장 성공 여부
+       * @deprecated DB 동기화는 TanStack Query 사용 권장
        */
       saveEdgesAction: () => {
-        try {
-          const { edges } = get();
-          localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
-          set({ hasUnsavedChanges: false });
-          return true;
-        } catch (err) {
-          // console.error('엣지 저장 실패:', err);
-          logger.error('[useIdeaMapStore] 엣지 저장 실패:', err);
-          return false;
-        }
+        logger.info('[useIdeaMapStore] saveEdgesAction 호출됨. 참고: 실제 DB 저장은 useCreateEdge/useUpdateEdge 훅 사용 권장');
+        // Three-Layer-Standard를 준수하여 Zustand는 UI 상태만 관리
+        set({ hasUnsavedChanges: false }); // UI 상태 업데이트
+        return true; // 호환성을 위해 성공 반환
       },
       
       /**

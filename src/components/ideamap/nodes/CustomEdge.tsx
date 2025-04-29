@@ -7,6 +7,7 @@
  * 수정일: 2023-10-27 : 사용하지 않는 import/변수 제거 및 any 타입 개선
  * 수정일: 2025-04-30 : useAppStore에서 useIdeaMapStore로 변경하여 설정 직접 참조 방식으로 수정 (Task 3.2)
  * 수정일: 2025-04-30 : 로깅 최적화 및 렌더링 성능 개선을 위한 useMemo 사용 확대 (Task 3.2)
+ * 수정일: 2025-04-30 : 스토어 설정값을 직접 참조하여 엣지 스타일(색상, 굵기) 적용
  */
 
 import React, { useMemo } from 'react';
@@ -129,17 +130,16 @@ function CustomEdge({
   const edgeStyle = useMemo(() => {
     // 1. 기본 스타일 (보드 설정에서 가져옴)
     const baseStyle = {
-      strokeWidth: `var(--edge-width)`,
-      stroke: selected
-        ? `var(--edge-selected-color)`
-        : `var(--edge-color)`,
+      strokeWidth: effectiveSettings.strokeWidth, // CSS 변수 대신 스토어 값 사용
+      stroke: effectiveSettings.edgeColor,        // CSS 변수 대신 스토어 값 사용
       transition: 'stroke 0.2s, stroke-width 0.2s',
     };
 
     // 2. 선택 상태에 따른 스타일
     const selectedStyle = selected ? {
-      strokeWidth: `var(--edge-selected-width)`,
-      stroke: `var(--edge-selected-color)`,
+      // 선택 시 굵기를 약간 더 굵게 할 수 있음 (선택 사항)
+      // strokeWidth: effectiveSettings.strokeWidth * 1.5,
+      stroke: effectiveSettings.selectedEdgeColor, // 선택된 엣지 색상 사용
     } : {};
 
     // 3. 스타일 병합 (props의 style이 가장 우선)
@@ -148,7 +148,7 @@ function CustomEdge({
       ...selectedStyle,
       ...style, // props의 style을 마지막에 적용하여 우선시
     };
-  }, [style, selected]);
+  }, [style, selected, effectiveSettings]); // effectiveSettings 의존성 추가
 
   // clean props - 불필요한 prop 제거
   const cleanProps = useMemo(() => {

@@ -46,7 +46,7 @@
   --sidebar-accent-foreground: #1a1a1a;
   --sidebar-border: #d2d2d7;
   --sidebar-ring: #c7c7cc;
-  
+
   /* Apple theme Light */
   --theme-color-labelPrimary: rgba(0,0,0,0.88);
   --theme-color-labelSecondary: rgba(0,0,0,0.56);
@@ -125,54 +125,53 @@
   --theme-color-divider: #d1d1d6;
   --theme-color-separator: #d1d1d6;
 
-
   /* ReactFlow 관련 변수 */
   --card-bg: #FFFFFF;
   --card-border: #C1C1C1;
   --card-border-width: 1px;
   --card-radius: var(--radius);
-  
+
   /* 선택 상태 통합 변수 */
   --selection-color: var(--primary);
   --selection-bg: var(--theme-color-systemBlue);
   --selection-border: var(--theme-color-systemBlue);
   --selection-font-color: var(--theme-color-systemWhite);
-  
+
   /* 엣지 관련 변수 */
   --edge-color: #C1C1C1;
   --edge-selected-color: #000000;
   --edge-width: 2px;
   --edge-selected-width: 3px;
   --edge-connection-color: #FF0072;
-  
+
   /* 핸들 관련 변수 */
   --handle-size: 12px;
   --handle-bg: white;
   --handle-border: var(--edge-color);
   --handle-border-width: 2px;
-  
+
   /* 카드 레이아웃 변수 */
   --card-header-height: 48px;
   --card-max-height: 180px;
   --card-default-width: 130px;
-  
+
   /* 카드 여백 변수 */
   --card-padding-x: 12px;
   --card-padding-y: 8px;
   --card-content-padding-x: 12px;
   --card-content-padding-y: 8px;
-  
+
   /* 폰트 크기 변수 */
   --font-size-title: 16px;
   --font-size-content: 14px;
   --font-size-tags: 12px;
   --font-size-tiptap: 0.8rem;
-  
+
   /* 간격 및 여백 변수 */
   --gap-small: 4px;
   --gap-medium: 8px;
   --gap-large: 12px;
-  
+
   /* 선택 상태 통일된 변수 */
   --multi-selection-color: var(--primary);
   --multi-selection-bg: rgba(var(--primary-rgb), 0.15);
@@ -279,20 +278,20 @@
   --theme-color-sidebar: #202023;
   --theme-color-divider: #000;
   --theme-color-separator: #343436
-  
+
   /* 다크 모드 카드 관련 변수 */
   --card-bg: hsl(var(--card));
   --card-border: hsl(var(--border));
-  
+
   /* 다크 모드 선택 상태 변수 */
   --selection-color: var(--primary);
   --selection-bg: rgba(255, 255, 255, 0.1);
   --selection-border: var(--primary);
-  
+
   /* 다크 모드 엣지 관련 변수 */
   --edge-color: rgba(255, 255, 255, 0.5);
   --edge-selected-color: #ff0072;
-  
+
   /* 다크 모드 핸들 관련 변수 */
   --handle-bg: hsl(var(--card));
   --handle-border: hsl(var(--border));
@@ -335,6 +334,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --animate-orbit: orbit calc(var(--duration)*1s) linear infinite;
+  @keyframes orbit {
+  0% {
+    transform: rotate(calc(var(--angle) * 1deg)) translateY(calc(var(--radius) * 1px)) rotate(calc(var(--angle) * -1deg));
+    }
+  100% {
+    transform: rotate(calc(var(--angle) * 1deg + 360deg)) translateY(calc(var(--radius) * 1px)) rotate(calc((var(--angle) * -1deg) - 360deg));
+    }
+  }
 }
 
 @layer base {

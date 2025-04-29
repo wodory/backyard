@@ -14,6 +14,8 @@
  * 수정일: 2024-06-28 : 디버깅을 위한 logger.info 추가
  * 수정일: 2024-07-18 : 엣지 관련 디버깅 로그 활성화 및 데이터 확인 로직 추가
  * 수정일: 2025-04-21 : handleEdgesChange 함수를 수정하여 오직 applyEdgeChangesAction만 호출하도록 단순화
+ * 수정일: 2025-04-29 : 무한 루프 방지를 위한 handleEdgesChange 최적화
+ * 수정일: 2025-05-01 : TanStack Query 훅을 사용한 엣지 CRUD 연동
  */
 
 'use client';
@@ -34,7 +36,10 @@ import {
   MarkerType,
   Viewport,
   ConnectionLineType,
-  ReactFlowInstance
+  ReactFlowInstance,
+  applyNodeChanges,
+  applyEdgeChanges,
+  useReactFlow
 } from '@xyflow/react';
 
 import { SafeRef } from '@/components/ideamap/types/ideamap-types';
@@ -50,6 +55,9 @@ import { cn } from '@/lib/utils';
 
 import { createLogger } from '@/lib/logger';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import { useAppStore } from '@/store/useAppStore';
+import { useCreateEdge, useDeleteEdge } from '@/hooks/useEdges'; // TanStack Query 훅 임포트
+import { toast } from 'sonner';
 
 const logger = createLogger('IdeaMapCanvas');
 
@@ -287,7 +295,16 @@ export default function IdeaMapCanvas({
     [onNodesChange, nodes]
   );
 
-  // 엣지 변경 핸들러에 로깅 추가
+  // 엣지 삭제를 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
+  const deleteEdgeMutation = useDeleteEdge();
+
+  // 엣지 생성을 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
+  const createEdgeMutation = useCreateEdge();
+
+  // 활성 프로젝트 ID 가져오기
+  const activeProjectId = useAppStore(state => state.activeProjectId);
+
+  // 엣지 변경 핸들러에 TanStack Query 통합
   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
     logger.info('엣지 변경 감지:', {
       changesCount: changes.length,
@@ -298,14 +315,55 @@ export default function IdeaMapCanvas({
       }))
     });
 
-    // 오직 applyEdgeChangesAction만 호출
-    useIdeaMapStore.getState().applyEdgeChangesAction(changes);
-  }, []); // 빈 의존성 배열 - 스토어 액션은 참조가 안정적
+    // 삭제 변경 감지하여 DB에서도 삭제
+    const deleteChanges = changes.filter(change => change.type === 'remove');
+    if (deleteChanges.length > 0 && activeProjectId) {
+      // 삭제된 각 엣지에 대해 DB 삭제 처리
+      deleteChanges.forEach(change => {
+        const edgeId = change.id;
+        logger.info(`엣지 DB 삭제 요청: ${edgeId}`);
 
-  // 연결 핸들러에 로깅 추가
+        // mutate 호출하여 DB에서 삭제
+        deleteEdgeMutation.mutate({
+          id: edgeId,
+          projectId: activeProjectId
+        }, {
+          onSuccess: () => logger.info(`엣지 DB 삭제 성공: ${edgeId}`),
+          onError: (error) => logger.error(`엣지 DB 삭제 실패: ${edgeId}`, error)
+        });
+      });
+    } else if (deleteChanges.length > 0 && !activeProjectId) {
+      logger.warn('프로젝트 ID가 없어 DB 동기화를 진행할 수 없습니다.');
+    }
+
+    // Zustand 스토어 상태 업데이트 (UI 상태)
+    useIdeaMapStore.getState().applyEdgeChangesAction(changes);
+  }, [deleteEdgeMutation, activeProjectId]); // 의존성 추가
+
+  // 연결 핸들러에 로깅 추가 및 TanStack Query 통합
   const handleConnect = useCallback((connection: Connection) => {
     logger.info('연결 생성:', connection);
+
+    // 유효성 검사 (필수 필드 확인)
+    if (!connection.source || !connection.target) {
+      logger.error('연결 생성 실패: 소스 또는 타겟 노드가 누락되었습니다.', {
+        source: connection.source,
+        target: connection.target
+      });
+      toast.error('연결에 필요한 노드 정보가 누락되었습니다.');
+      return;
+    }
+
+    // UI 상태 업데이트만 수행 (onConnect 콜백을 통해)
     onConnect(connection);
+
+    logger.info('연결 종료:', {
+      isValid: true,
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle,
+      targetHandle: connection.targetHandle
+    });
   }, [onConnect]);
 
   // 뷰포트 변경 핸들러
@@ -315,28 +373,6 @@ export default function IdeaMapCanvas({
       onViewportChange(viewport);
     }
   }, [onViewportChange]);
-
-  // ideaMapSettings가 변경될 때마다 기존 엣지들에 적용
-  useEffect(() => {
-    if (edges.length > 0) {
-      const updatedEdges = applyIdeaMapEdgeSettings(edges, ideaMapSettings);
-
-      // 각 엣지를 ReactFlow 인스턴스에 직접 적용
-      if (reactFlowInstance.current) {
-        reactFlowInstance.current.setEdges(updatedEdges);
-        logger.info('엣지 스타일 업데이트 완료 (ReactFlow 인스턴스에 직접 적용)');
-      }
-    }
-  }, [
-    ideaMapSettings.connectionLineType,
-    ideaMapSettings.markerEnd,
-    ideaMapSettings.strokeWidth,
-    ideaMapSettings.markerSize,
-    ideaMapSettings.edgeColor,
-    ideaMapSettings.selectedEdgeColor,
-    ideaMapSettings.animated,
-    edges
-  ]);
 
   return (
     <div

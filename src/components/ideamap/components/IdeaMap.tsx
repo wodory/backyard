@@ -102,16 +102,6 @@ function IdeaMap({
   // 엣지 생성 mutation 훅 사용
   const createEdgeMutation = useCreateEdge();
 
-  // 디버깅 주석 처리
-  // logger.debug('IdeaMapStore 상태:', {
-  //   nodeCount: ideaMapStoreNodes.length,
-  //   edgeCount: ideaMapStoreEdges.length,
-  //   hasLoadedViewport: !!loadedViewport,
-  //   needsFitView,
-  //   hasViewportToRestore: !!viewportToRestore,
-  //   hasUnsavedChanges
-  // });
-
   // useIdeaMapData 훅 사용 부분 수정 (타입 오류 해결)
   // 타입 안전성을 위해 onSelectCard를 항상 함수로 전달
   const handleSelectCard = useCallback((cardId: string) => {
@@ -160,38 +150,16 @@ function IdeaMap({
   const onConnect = useCallback((connection: Connection) => {
     console.log('[onConnect DEBUG] activeProjectId inside handler:', activeProjectId);
 
-    // DB 연동을 위해 createEdgeMutation 호출
-    if (connection.source && connection.target && activeProjectId) {
-      // 변수 이름을 엣지 API 입력에 맞게 source, target으로 변경
-      const edgeInput = {
+    // UI 상태 업데이트만 수행 (Zustand 스토어를 통한 상태 관리)
+    // 기존 originalOnConnect는 이미 Zustand 스토어의 상태를 업데이트함
+    if (connection.source && connection.target) {
+      originalOnConnect(connection);
+
+      logger.debug('UI 엣지 생성 완료:', {
         source: connection.source,
         target: connection.target,
-        projectId: activeProjectId,
-        sourceHandle: connection.sourceHandle || undefined,
-        targetHandle: connection.targetHandle || undefined,
-        // 필요한 경우 스타일링 정보도 추가 가능
-        type: 'custom',
-        animated: ideaMapSettings.animated
-      };
-
-      console.log('[onConnect DEBUG] Executing createEdgeMutation with input:', edgeInput); // 로그 추가
-
-      // 뮤테이션 실행
-      createEdgeMutation.mutate(edgeInput, {
-        onSuccess: (createdApiEdge) => { // 성공 시 생성된 엣지 데이터 받음
-          logger.info('[onConnect DEBUG] 엣지 생성 성공:', createdApiEdge);
-          // 쿼리 무효화는 이미 useCreateEdge 훅 내부에서 처리됨
-        },
-        onError: (error) => {
-          // 오류 발생 시 UI에 알림 표시 (toast는 이미 뮤테이션 내부에서 처리됨)
-          logger.error('[onConnect DEBUG] 엣지 생성 실패:', error);
-        }
-      });
-
-      logger.debug('엣지 생성 뮤테이션 요청됨:', {
-        source: connection.source,
-        target: connection.target,
-        projectId: activeProjectId
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle
       });
     } else {
       logger.warn('엣지 생성에 필요한 정보 부족:', {
@@ -199,10 +167,8 @@ function IdeaMap({
         hasTarget: !!connection.target,
         hasProjectId: !!activeProjectId
       });
-
-      logger.error('활성 프로젝트 ID가 없어 엣지를 생성할 수 없습니다.')
     }
-  }, [activeProjectId, ideaMapSettings, createEdgeMutation, edges]);
+  }, [activeProjectId, originalOnConnect]);
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {
@@ -591,22 +557,8 @@ function IdeaMap({
   // 로딩 중이면 로딩 표시
   if (isLoading) {
     // logger.info('로딩 중, 로딩 UI 렌더링');
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="bg-card p-6 rounded-md shadow-lg animate-pulse">
-          <div className="h-6 w-36 bg-muted rounded mb-4"></div>
-          <div className="h-4 w-64 bg-muted rounded mb-2"></div>
-          <div className="h-4 w-48 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return;
   }
-  // 디버깅 주석 처리
-  // logger.debug('메인 UI 렌더링, 노드/엣지 상태:', {
-  //   nodeCount: ideaMapStoreNodes.length,
-  //   edgeCount: edges.length
-  // });
-
   return (
     <div className={`w-full h-full relative ${className}`}>
       {/* 캔버스 컴포넌트 */}

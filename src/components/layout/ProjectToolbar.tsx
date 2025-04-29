@@ -79,7 +79,7 @@ export function ProjectToolbar() {
     logoutAction,
     projects,
     // activeProjectId,
-    fetchProjects,
+    // fetchProjects,
     createProject,
     // setActiveProject
   } = useAppStore();
@@ -321,15 +321,12 @@ export function ProjectToolbar() {
   useEffect(() => {
     logger.info('프로젝트 정보 로딩');
     // 프로젝트가 없고 API 호출이 불가능한 경우 로컬 상태에 기본 프로젝트 생성
-    if (projects.length === 0) {
-      const defaultProject: Partial<Project> = {
-        name: '기본 프로젝트',
-        ownerNickname: '사용자',
-        userId: 'default-user',
-      };
-
-      // 이 부분은 API가 구현되면 실제 API 호출로 대체될 것임
-      createProject(defaultProject);
+    if (activeProject) {
+      createProject(activeProject);
+    }
+    else {
+      toast.info('프로젝트 정보를 불러오지 못했습니다.');
+      logger.error('프로젝트가 없습니다.');
     }
   }, [projects.length, createProject]);
 

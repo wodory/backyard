@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // TODO : 반드시 리펙토링을 통해 실제 프로젝트 ID로 변경해야 함. 
 const DEFAULT_PROJECT = {
   id: '5ad74831-d031-4e35-aad8-08054937269e',
-  name: '기본 프로젝트',
+  name: '이거 쓰나?',
   ownerId: '47050492-4cde-4a79-a55b-44a8da1a4fc8', // 기본 사용자 ID와 동일하게 설정
   settings: {},
   createdAt: new Date().toISOString(),
