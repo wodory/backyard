@@ -38,7 +38,7 @@ import {
 
 import { SafeRef } from '@/components/ideamap/types/ideamap-types';
 import { NODE_TYPES, EDGE_TYPES } from '@/lib/flow-constants';
-import { IdeaMapSettings, applyIdeaMapEdgeSettings } from '@/lib/ideamap-utils';
+import { Settings, applyIdeaMapEdgeSettings } from '@/lib/ideamap-utils';
 // 노드 타입과 엣지 타입 컴포넌트 직접 가져오기
 // import CardNode from '@/components/ideamap/nodes/CardNode';
 // import CustomEdge from '@/components/ideamap/nodes/CustomEdge';
@@ -71,7 +71,7 @@ interface IdeaMapCanvasProps {
   /** 빈 공간 클릭 핸들러 */
   onPaneClick: (e: React.MouseEvent) => void;
   /** 아이디어맵 설정 */
-  ideaMapSettings: IdeaMapSettings;
+  ideaMapSettings: Settings;
   /** 컨트롤 표시 여부 */
   showControls?: boolean;
   /** 래퍼 ref */
@@ -140,7 +140,7 @@ export default function IdeaMapCanvas({
 
   // 컴포넌트 마운트/언마운트 로깅
   useEffect(() => {
-    logger.info('컴포넌트 마운트, 노드 수:', nodes.length, '엣지 수:', edges.length);
+    logger.info('컴포넌트 마운트', { 노드수: nodes.length, 엣지수: edges.length });
     return () => {
       logger.info('컴포넌트 언마운트');
     };

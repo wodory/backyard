@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { toast } from 'sonner';
 
-import { useReactFlow, Connection } from '@xyflow/react';
+import { useReactFlow, Connection, addEdge } from '@xyflow/react';
 
 import CreateCardModal from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -83,8 +83,8 @@ function IdeaMap({
   // useAppStore에서 필요한 상태만 선택적으로 가져오기
   const ideaMapSettings = useAppStore(state => state.ideaMapSettings) as IdeaMapSettings;
   const setReactFlowInstance = useAppStore(state => state.setReactFlowInstance);
+  // 현재의 프로젝트 아이디 가져오기
   const activeProjectId = useAppStore(state => state.activeProjectId);
-
   // useIdeaMapStore에서 필요한 상태와 액션만 선택적으로 가져오기
   const ideaMapStoreNodes = useIdeaMapStore(state => state.nodes);
   const ideaMapStoreEdges = useIdeaMapStore(state => state.edges);
@@ -158,7 +158,10 @@ function IdeaMap({
   // onConnect 함수를 재정의하여 useCreateEdge 뮤테이션 호출 추가
   const onConnect = useCallback((connection: Connection) => {
     // Zustand 스토어의 상태 업데이트를 위해 기존 onConnect 호출 유지
+    // TODO 낙관적 업데이트 대비 코드 필요. 
     originalOnConnect(connection);
+
+    console.log('[onConnect DEBUG] activeProjectId inside handler:', activeProjectId);
 
     // DB 연동을 위해 createEdgeMutation 호출
     if (connection.source && connection.target && activeProjectId) {
@@ -174,11 +177,20 @@ function IdeaMap({
         animated: ideaMapSettings.animated
       };
 
+      console.log('[onConnect DEBUG] Executing createEdgeMutation with input:', edgeInput); // 로그 추가
+
       // 뮤테이션 실행
       createEdgeMutation.mutate(edgeInput, {
+        onSuccess: (createdApiEdge) => { // 성공 시 생성된 엣지 데이터 받음
+          logger.info('[onConnect DEBUG] 엣지 생성 성공:', createdApiEdge);
+          // TODO 뮤테이션 성공 시, 낙관적으로 추가된 엣지를 실제 ID를 가진 엣지로 교체하거나,
+          // 단순히 쿼리를 리페치하여 최신 상태를 반영하는 건?
+          // (쿼리 무효화가 훅에 있다면, 리페치 후 useEdges 훅 -> useEffect -> setEdges 로 상태 업데이트됨)
+          // 예시: queryClient.invalidateQueries({ queryKey: ['edges', userId, activeProjectId] });
+        },
         onError: (error) => {
           // 오류 발생 시 UI에 알림 표시 (toast는 이미 뮤테이션 내부에서 처리됨)
-          logger.error('엣지 생성 실패:', error);
+          logger.error('[onConnect DEBUG] 엣지 생성 실패:', error);
 
           // 오류 시 UI 롤백 로직
           // 해당 source와 target을 가진 엣지 찾기
@@ -208,8 +220,12 @@ function IdeaMap({
         hasTarget: !!connection.target,
         hasProjectId: !!activeProjectId
       });
+
+      // TODO activeProjectId가 없는 경우, 위에서 추가된 낙관적 엣지 롤백 필요
+      logger.error('활성 프로젝트 ID가 없어 엣지를 생성할 수 없습니다.')
+
     }
-  }, [originalOnConnect, activeProjectId, ideaMapSettings, createEdgeMutation, edges, setEdges]);
+  }, [originalOnConnect, activeProjectId, ideaMapSettings, createEdgeMutation, edges, setEdges, addEdge]);
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {

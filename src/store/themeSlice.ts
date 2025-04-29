@@ -7,10 +7,13 @@
  * 수정일: 2025-04-21 : StateCreator 시그니처를 Zustand v5에 맞게 수정
  * 수정일: 2025-04-21 : strokeWidth 속성 추가
  * 수정일: 2025-04-21 : connectionLineType, markerEnd 속성 추가 및 기존 속성들 확인
+ * 수정일: 2025-04-21 : ideaMapSettings 타입을 Settings 인터페이스와 일치시킴
+ * 수정일: 2025-04-21 : DEFAULT_SETTINGS를 lib/ideamap-utils에서 임포트하여 일관성 확보
  */
 
 import { StateCreator } from 'zustand'
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
+import { Settings, DEFAULT_SETTINGS } from '@/lib/ideamap-utils';
 
 /**
  * 테마 상태 인터페이스 정의
@@ -20,23 +23,7 @@ export interface ThemeState {
   themeMode: 'light' | 'dark' | 'system';
   
   // 아이디어맵 관련 설정
-  ideaMapSettings: {
-    nodeWidth: number;
-    nodeSpacing: number;
-    maxNodeHeight: number;
-    nodeBorderRadius: number;
-    nodeFontSize: number;
-    edgeType: 'bezier' | 'step' | 'straight';
-    edgeWidth: number;
-    strokeWidth: number;
-    snapGrid: [number, number];
-    snapToGrid: boolean;
-    connectionLineType: ConnectionLineType;
-    markerEnd: MarkerType | null;
-    markerSize: number;
-    edgeColor: string;
-    selectedEdgeColor: string;
-    animated: boolean;
+  ideaMapSettings: Settings & {
     [key: string]: any; // 추가 설정을 위한 인덱스 시그니처
   };
   
@@ -50,26 +37,6 @@ export interface ThemeState {
   updateSettings: (settings: Partial<ThemeState['ideaMapSettings']>) => void;
   resetSettings: () => void;
 }
-
-// 기본 아이디어맵 설정 값
-const DEFAULT_SETTINGS = {
-  nodeWidth: 250,
-  nodeSpacing: 100,
-  maxNodeHeight: 180,
-  nodeBorderRadius: 8,
-  nodeFontSize: 14,
-  edgeType: 'bezier' as const,
-  edgeWidth: 2,
-  strokeWidth: 2,
-  snapGrid: [25, 25] as [number, number],
-  snapToGrid: true,
-  connectionLineType: 'bezier' as ConnectionLineType,
-  markerEnd: 'arrow' as MarkerType,
-  markerSize: 8,
-  edgeColor: '#333333',
-  selectedEdgeColor: '#ff0000',
-  animated: false
-};
 
 /**
  * createThemeSlice: 테마 관련 Zustand 슬라이스 생성
@@ -158,7 +125,7 @@ export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
    */
   resetSettings: () => {
     set({
-      settings: { ...DEFAULT_SETTINGS },
+      ideaMapSettings: { ...DEFAULT_SETTINGS },
     });
   },
 }); 

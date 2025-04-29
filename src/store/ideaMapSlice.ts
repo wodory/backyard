@@ -3,6 +3,7 @@
  * 목적: 아이디어맵 UI 상태를 관리하는 Zustand 슬라이스
  * 역할: 아이디어맵 UI 설정 및 ReactFlow 인스턴스 관리
  * 작성일: 2025-04-21
+ * 수정일: 2025-04-21 : layoutDirection 타입을 ThemeState와 일치하도록 수정
  */
 
 import { ReactFlowInstance, ConnectionLineType, MarkerType } from '@xyflow/react';
@@ -23,8 +24,8 @@ export interface IdeaMapState {
   updateIdeaMapSettings: (settings: Partial<Settings>) => void;
   
   // 레이아웃 방향
-  layoutDirection: 'horizontal' | 'vertical' | 'auto' | null;
-  setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto' | null) => void;
+  layoutDirection: 'horizontal' | 'vertical' | 'auto' | 'none';
+  setLayoutDirection: (direction: 'horizontal' | 'vertical' | 'auto' | 'none') => void;
 }
 
 /**
@@ -42,6 +43,6 @@ export const createIdeaMapSlice: StateCreator<IdeaMapState> = (set) => ({
   })),
   
   // 레이아웃 방향
-  layoutDirection: null,
+  layoutDirection: 'none',
   setLayoutDirection: (direction) => set({ layoutDirection: direction }),
 }); 

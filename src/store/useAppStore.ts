@@ -94,9 +94,11 @@ const createProjectSlice = (set: any, get: any) => ({
       
       // 실제 API 호출로 프로젝트 목록 가져오기
       const response = await fetch('/api/projects');
+
+      console.log('[createProjectSlice DEBUG] response:', response);
       
       if (!response.ok) {
-        throw new Error(`프로젝트 조회 실패: ${response.status} ${response.statusText}`);
+        throw new Error(`[fetchProjects DEBUG] 프로젝트 조회 실패: ${response.status} ${response.statusText}`);
       }
       
       const projects = await response.json();

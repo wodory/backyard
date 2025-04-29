@@ -10,6 +10,7 @@
  * 수정일: 2025-05-07 : setCards 호출 시 안전하게 처리하도록 수정
  * 수정일: 2025-04-21 : useEdges 훅을 사용하여 DB에서 엣지 데이터 로드 추가
  * 수정일: 2025-04-21 : 프로젝트 API에서 첫 번째 프로젝트 ID를 가져와 사용하도록 수정
+ * 수정일: 2025-04-29 : 프로젝트 로딩 로직 제거 및 useAppStore의 activeProjectId 사용
  */
 
 import { Edge } from '@xyflow/react';
@@ -26,16 +27,6 @@ import { Node as NodeType, CardData } from '../types/ideamap-types';
 // 로거 생성
 const logger = createLogger('useIdeaMapData');
 
-// 프로젝트 인터페이스 정의
-interface Project {
-  id: string;
-  name: string;
-  ownerId: string;
-  settings: Record<string, any>;
-  createdAt: string;
-  updatedAt: string;
-}
-
 /**
  * useIdeaMapData: 아이디어맵 데이터를 로드하고 관리하는 훅
  * @param onSelectCard 카드 선택 시 호출될 콜백 함수
@@ -47,7 +38,6 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   // 상태 관리
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [firstProject, setFirstProject] = useState<Project | null>(null);
   
   // 초기 데이터 로드 완료 여부 추적
   const initialLoadCompleteRef = useRef(false);
@@ -66,40 +56,12 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
   const loadedViewport = useIdeaMapStore(state => state.loadedViewport);
   const needsFitView = useIdeaMapStore(state => state.needsFitView);
   
-  // 앱 스토어에서 필요한 액션만 선택적으로 가져오기
+  // 앱 스토어에서 필요한 상태 가져오기
   const setCards = useAppStore(state => state.setCards);
+  const activeProjectId = useAppStore(state => state.activeProjectId);
   
   // 인증 스토어에서 사용자 ID 가져오기
   const userId = useAuthStore(selectUserId);
-  
-  // 프로젝트 목록을 가져오고 첫 번째 프로젝트 ID 설정
-  useEffect(() => {
-    async function fetchFirstProject() {
-      try {
-        logger.debug('프로젝트 목록 조회 중...');
-        const response = await fetch('/api/projects');
-        
-        if (!response.ok) {
-          throw new Error(`프로젝트 목록 조회 실패 (상태: ${response.status})`);
-        }
-        
-        const projects: Project[] = await response.json();
-        
-        if (projects && projects.length > 0) {
-          const firstProj = projects[0];
-          logger.debug(`첫 번째 프로젝트 ID: ${firstProj.id}, 이름: ${firstProj.name}`);
-          setFirstProject(firstProj);
-        } else {
-          logger.warn('프로젝트 목록이 비어있습니다.');
-        }
-      } catch (err) {
-        logger.error('프로젝트 목록 조회 오류:', err);
-        setError(err instanceof Error ? err : new Error('프로젝트 목록을 가져오는 중 오류가 발생했습니다'));
-      }
-    }
-    
-    fetchFirstProject();
-  }, []);
   
   // TanStack Query로 엣지 데이터 조회
   const { 
@@ -107,7 +69,7 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
     isLoading: isEdgesLoading, 
     isSuccess: isEdgesSuccess,
     error: edgesError 
-  } = useEdges(userId || undefined, firstProject?.id);
+  } = useEdges(userId || undefined, activeProjectId || undefined);
   
   // DB 엣지 데이터를 스토어에 저장
   useEffect(() => {
