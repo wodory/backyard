@@ -8,11 +8,8 @@
  * 수정일: 2023-10-27 : wrapperRef 타입을 SafeRef로 수정
  * 수정일: 2023-10-27 : import 순서 수정 및 미사용 변수(ConnectionLineType) 제거
  * 수정일: 2023-10-27 : connectionLineType 타입을 ConnectionLineType으로 수정
- * 수정일: 2024-05-30 : fitView 옵션을 개선하여 노드가 항상 보이도록 수정
  * 수정일: 2024-06-27 : fitView 옵션 개선 및 defaultViewport 설정 강화
  * 수정일: 2024-06-27 : 뷰포트 관리 로직 추가 및 자동 fitView 기능 개선
- * 수정일: 2024-06-28 : 디버깅을 위한 logger.info 추가
- * 수정일: 2024-07-18 : 엣지 관련 디버깅 로그 활성화 및 데이터 확인 로직 추가
  * 수정일: 2025-04-21 : handleEdgesChange 함수를 수정하여 오직 applyEdgeChangesAction만 호출하도록 단순화
  * 수정일: 2025-04-29 : 무한 루프 방지를 위한 handleEdgesChange 최적화
  * 수정일: 2025-05-01 : TanStack Query 훅을 사용한 엣지 CRUD 연동
