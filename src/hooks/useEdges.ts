@@ -13,6 +13,7 @@
  * 수정일: 2025-04-21 : sourceHandle과 targetHandle 필드 지원 추가
  * 수정일: 2025-05-11 : queryKey 일관성 확보 및 낙관적 업데이트 개선
  * 수정일: 2025-04-21 : three-layer-standard 규칙에 따라 쿼리 키 구조를 ['edges', projectId]로 통일하여 일관성 확보
+ * 수정일: 2025-05-21 : useDeleteMultipleEdges 뮤테이션 훅 추가 - 다중 엣지 동시 삭제 지원
  */
 
 /**
@@ -22,7 +23,7 @@
  * 설명    아이디어맵 엣지 데이터 조회를 위한 TanStack Query 훅
  */
 import { useQuery, useMutation, UseQueryResult, UseMutationResult, useQueryClient } from '@tanstack/react-query';
-import { fetchEdges, createEdgeAPI, deleteEdgeAPI } from '@/services/edgeService';
+import { fetchEdges, createEdgeAPI, deleteEdgeAPI, deleteEdgesAPI } from '@/services/edgeService';
 import { Edge as DBEdge, EdgeInput } from '@/types/edge';
 import { Edge, Connection } from '@xyflow/react';
 import { toast } from 'sonner';
@@ -446,6 +447,110 @@ export function useDeleteEdge(): UseMutationResult<void, Error, { id: string; pr
       if (context) {
         const queryKey = context.queryKey || getEdgesQueryKey(variables.projectId);
         logger.debug('엣지 삭제 롤백:', { edgeId: variables.id, queryKey });
+        queryClient.setQueryData(queryKey, context.previousEdges);
+      }
+      
+      toast.error('엣지 삭제 중 오류가 발생했습니다.');
+    },
+    onSettled: (_, error, variables) => {
+      // 성공이든 실패든 마지막에 쿼리 무효화
+      if (error) {
+        queryClient.invalidateQueries({
+          queryKey: getEdgesQueryKey(variables.projectId)
+        });
+      }
+    }
+  });
+}
+
+/**
+ * useDeleteMultipleEdges: 여러 엣지를 한 번에 삭제하는 뮤테이션 훅
+ * @rule   three-layer-Standard
+ * @layer  tanstack-mutation-hook
+ * @tag    @tanstack-mutation-msw useDeleteMultipleEdges
+ * @returns {UseMutationResult} 뮤테이션 결과
+ */
+export function useDeleteMultipleEdges(): UseMutationResult<void, Error, { ids: string[]; projectId: string }> {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ ids }: { ids: string[]; projectId: string }) => {
+      logger.debug(`다중 엣지 삭제 요청: ${ids.length}개`, {
+        edgeIds: ids
+      });
+      
+      if (!ids.length) {
+        logger.warn('삭제할 엣지 ID가 없습니다.');
+        return; // 빈 배열이면 API 호출 스킵
+      }
+      
+      return await deleteEdgesAPI(ids);
+    },
+    // 낙관적 업데이트 - 여러 엣지를 UI에서 즉시 제거
+    onMutate: async (variables) => {
+      logger.debug('다중 엣지 삭제 낙관적 업데이트 시작:', {
+        edgeCount: variables.ids.length,
+        projectId: variables.projectId
+      });
+      
+      // 쿼리 키 생성
+      const queryKey = getEdgesQueryKey(variables.projectId);
+      
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey });
+      
+      // 이전 엣지 데이터 백업
+      const previousEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+      
+      // 낙관적으로 UI에서 엣지들 제거
+      queryClient.setQueryData<Edge[]>(
+        queryKey,
+        previousEdges.filter(edge => !variables.ids.includes(edge.id))
+      );
+      
+      logger.debug('다중 엣지 삭제 낙관적 업데이트 완료:', {
+        edgeIds: variables.ids,
+        previousEdgeCount: previousEdges.length,
+        currentEdgeCount: previousEdges.length - variables.ids.length,
+        queryKey
+      });
+      
+      // 롤백 정보 반환
+      return { previousEdges, queryKey };
+    },
+    onSuccess: (_, variables) => {
+      logger.debug(`다중 엣지 삭제 성공: ${variables.ids.length}개`, {
+        edgeIds: variables.ids,
+        projectId: variables.projectId
+      });
+      
+      // 성공적으로 삭제되면 엣지 데이터 쿼리 무효화
+      queryClient.invalidateQueries({ 
+        queryKey: getEdgesQueryKey(variables.projectId),
+        // 낙관적 업데이트로 UI는 이미 반영되었으므로 자동 리페치는 방지
+        refetchType: 'none'
+      });
+      
+      // 엣지 수에 따라 다른 메시지 표시
+      if (variables.ids.length === 1) {
+        toast.success('엣지가 성공적으로 삭제되었습니다.');
+      } else {
+        toast.success(`${variables.ids.length}개의 엣지가 성공적으로 삭제되었습니다.`);
+      }
+    },
+    onError: (error, variables, context) => {
+      logger.error(`다중 엣지 삭제 실패: ${variables.ids.length}개`, {
+        edgeIds: variables.ids,
+        error
+      });
+      
+      // 낙관적 업데이트 롤백
+      if (context) {
+        const queryKey = context.queryKey || getEdgesQueryKey(variables.projectId);
+        logger.debug('다중 엣지 삭제 롤백:', { 
+          edgeCount: variables.ids.length, 
+          queryKey 
+        });
         queryClient.setQueryData(queryKey, context.previousEdges);
       }
       

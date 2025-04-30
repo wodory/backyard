@@ -13,6 +13,7 @@
  * 수정일: 2025-04-21 : handleEdgesChange 함수를 수정하여 오직 applyEdgeChangesAction만 호출하도록 단순화
  * 수정일: 2025-04-29 : 무한 루프 방지를 위한 handleEdgesChange 최적화
  * 수정일: 2025-05-01 : TanStack Query 훅을 사용한 엣지 CRUD 연동
+ * 수정일: 2025-05-21 : 다중 엣지 삭제 처리 기능 추가
  */
 
 'use client';
@@ -53,7 +54,7 @@ import { cn } from '@/lib/utils';
 import { createLogger } from '@/lib/logger';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { useAppStore } from '@/store/useAppStore';
-import { useCreateEdge, useDeleteEdge } from '@/hooks/useEdges'; // 경로 수정됨
+import { useCreateEdge, useDeleteEdge, useDeleteMultipleEdges } from '@/hooks/useEdges'; // useDeleteMultipleEdges 추가
 import { toast } from 'sonner';
 
 const logger = createLogger('IdeaMapCanvas');
@@ -295,6 +296,9 @@ export default function IdeaMapCanvas({
   // 엣지 삭제를 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
   const deleteEdgeMutation = useDeleteEdge();
 
+  // 다중 엣지 삭제를 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
+  const deleteMultipleEdgesMutation = useDeleteMultipleEdges();
+
   // 엣지 생성을 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
   const createEdgeMutation = useCreateEdge();
 
@@ -314,28 +318,42 @@ export default function IdeaMapCanvas({
 
     // 삭제 변경 감지하여 DB에서도 삭제
     const deleteChanges = changes.filter(change => change.type === 'remove');
-    if (deleteChanges.length > 0 && activeProjectId) {
-      // 삭제된 각 엣지에 대해 DB 삭제 처리
-      deleteChanges.forEach(change => {
-        const edgeId = change.id;
-        logger.info(`엣지 DB 삭제 요청: ${edgeId}`);
 
-        // mutate 호출하여 DB에서 삭제
+    if (deleteChanges.length > 0 && activeProjectId) {
+      // Task 1: 모든 삭제된 엣지 ID를 하나의 배열로 수집
+      const deletedEdgeIds = deleteChanges.map(change => change.id);
+
+      logger.info(`엣지 다중 삭제 요청: ${deletedEdgeIds.length}개`, {
+        edgeIds: deletedEdgeIds
+      });
+
+      // 여러 엣지를 한 번에 삭제하는 뮤테이션 호출
+      if (deletedEdgeIds.length === 1) {
+        // 단일 엣지 삭제인 경우 기존 함수 사용
         deleteEdgeMutation.mutate({
-          id: edgeId,
+          id: deletedEdgeIds[0],
           projectId: activeProjectId
         }, {
-          onSuccess: () => logger.info(`엣지 DB 삭제 성공: ${edgeId}`),
-          onError: (error) => logger.error(`엣지 DB 삭제 실패: ${edgeId}`, error)
+          onSuccess: () => logger.info(`엣지 DB 삭제 성공: ${deletedEdgeIds[0]}`),
+          onError: (error) => logger.error(`엣지 DB 삭제 실패: ${deletedEdgeIds[0]}`, error)
         });
-      });
+      } else {
+        // 다중 엣지 삭제인 경우 새 함수 사용
+        deleteMultipleEdgesMutation.mutate({
+          ids: deletedEdgeIds,
+          projectId: activeProjectId
+        }, {
+          onSuccess: () => logger.info(`엣지 다중 DB 삭제 성공: ${deletedEdgeIds.length}개 삭제됨`),
+          onError: (error) => logger.error(`엣지 다중 DB 삭제 실패: ${deletedEdgeIds.length}개`, error)
+        });
+      }
     } else if (deleteChanges.length > 0 && !activeProjectId) {
       logger.warn('프로젝트 ID가 없어 DB 동기화를 진행할 수 없습니다.');
     }
 
     // Zustand 스토어 상태 업데이트 (UI 상태)
     useIdeaMapStore.getState().applyEdgeChangesAction(changes);
-  }, [deleteEdgeMutation, activeProjectId]); // 의존성 추가
+  }, [deleteEdgeMutation, deleteMultipleEdgesMutation, activeProjectId]); // 의존성 추가
 
   // 연결 핸들러에 로깅 추가 및 TanStack Query 통합
   const handleConnect = useCallback((connection: Connection) => {
