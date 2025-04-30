@@ -1,170 +1,5 @@
 [
   {
-    "timestamp": "2025-04-28T23:57:13.865Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:15.739Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.871Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:15.741Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.873Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:15.744Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.874Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:15.927Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.875Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:15.932Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.876Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:15.956Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.879Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:16.001Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:13.878Z",
-    "level": "error",
-    "module": "useIdeaMapData",
-    "message": "데이터 로드 중 오류 발생:",
-    "data": {},
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:16.015Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:22.652Z",
-    "level": "warn",
-    "module": "useIdeaMapLayout",
-    "message": "프로젝트 생성 API 미구현",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:22.841Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:22.770Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:22.877Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:22.962Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:23.330Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:30.293Z",
-    "level": "error",
-    "module": "IdeaMap",
-    "message": "활성 프로젝트 ID가 없어 엣지를 생성할 수 없습니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:30.418Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:30.291Z",
-    "level": "warn",
-    "module": "IdeaMap",
-    "message": "엣지 생성에 필요한 정보 부족:",
-    "data": {
-      "hasSource": true,
-      "hasTarget": true,
-      "hasProjectId": false
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:30.426Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:31.820Z",
-    "level": "warn",
-    "module": "useIdeaMapLayout",
-    "message": "프로젝트 생성 API 미구현",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:31.891Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:32.129Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:32.273Z"
-  },
-  {
-    "timestamp": "2025-04-28T23:57:32.001Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-28T23:57:32.277Z"
-  },
-  {
-    "timestamp": "2025-04-29T00:02:20.979Z",
-    "level": "warn",
-    "module": "useIdeaMapLayout",
-    "message": "프로젝트 생성 API 미구현",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-29T00:02:21.070Z"
-  },
-  {
-    "timestamp": "2025-04-29T00:02:21.159Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-29T00:02:21.608Z"
-  },
-  {
-    "timestamp": "2025-04-29T00:02:21.289Z",
-    "level": "warn",
-    "module": "useIdeaMapStore",
-    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-04-29T00:02:21.623Z"
-  },
-  {
     "timestamp": "2025-04-29T00:02:25.724Z",
     "level": "warn",
     "module": "useIdeaMapLayout",
@@ -10034,5 +9869,157 @@
     "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
     "sessionId": "tknjaw651igpketmw4z32t",
     "serverTimestamp": "2025-04-30T02:11:23.743Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:06.659Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:07.017Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:06.676Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:07.022Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:06.783Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:07.026Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:07.412Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:07.477Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:15.637Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:15.712Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:15.653Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:15.745Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:15.761Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:16.028Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:40:15.948Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:40:16.275Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:42:52.626Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:42:52.723Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:42:52.643Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:42:52.768Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:42:52.749Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:42:53.004Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:11.603Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:11.951Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:11.622Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:11.955Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:11.728Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:11.958Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:12.171Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:12.443Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:16.371Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:16.446Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:16.389Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:16.645Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:16.496Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:16.727Z"
+  },
+  {
+    "timestamp": "2025-04-30T02:49:16.912Z",
+    "level": "warn",
+    "module": "useIdeaMapStore",
+    "message": "카드가 없습니다. 노드와 엣지를 초기화합니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-04-30T02:49:17.014Z"
   }
 ]

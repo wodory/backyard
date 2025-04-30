@@ -12,6 +12,7 @@
  * 수정일: 2025-04-21 : 프로젝트 API에서 첫 번째 프로젝트 ID를 가져와 사용하도록 수정
  * 수정일: 2025-04-29 : 프로젝트 로딩 로직 제거 및 useAppStore의 activeProjectId 사용
  * 수정일: 2025-04-21 : 데이터 로딩 및 상태 동기화 시점 명확화 - 카드와 엣지 데이터가 모두 로드된 후 상태 일괄 업데이트
+ * 수정일: 2025-04-21 : useEdges 훅 호출 수정 - 첫 번째 인자(userId) 제거 및 activeProjectId만 전달하도록 변경
  */
 
 import { Edge } from '@xyflow/react';
@@ -80,7 +81,7 @@ export function useIdeaMapData(onSelectCard: (cardId: string) => void) {
     isLoading: isEdgesLoading, 
     isSuccess: isEdgesSuccess,
     error: edgesError 
-  } = useEdges(userId || undefined, activeProjectId || undefined);
+  } = useEdges(activeProjectId || undefined);
   
   // 전체 로딩 상태 계산
   const isDataLoading = isCardsLoading || isEdgesLoading;
