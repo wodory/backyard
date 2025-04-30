@@ -60,6 +60,7 @@ import {
 // import { IdeaMapSettings } from '@/lib/ideamap-utils';
 import createLogger from '@/lib/logger';
 import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 // 모듈별 로거 생성
 const logger = createLogger('ProjectToolbar');
@@ -178,6 +179,10 @@ export function ProjectToolbar() {
         settings: { connectionLineType: value as ConnectionLineType }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 마커 타입 변경 핸들러
@@ -194,6 +199,10 @@ export function ProjectToolbar() {
         settings: { markerEnd: value === 'null' ? null : value as MarkerType }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 스냅 그리드 토글 핸들러
@@ -228,6 +237,10 @@ export function ProjectToolbar() {
         settings: { strokeWidth: newValue }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 마커 크기 변경 핸들러
@@ -245,6 +258,10 @@ export function ProjectToolbar() {
         settings: { markerSize: newValue }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 연결선 색상 변경 핸들러
@@ -261,6 +278,10 @@ export function ProjectToolbar() {
         settings: { edgeColor: value }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 선택된 연결선 색상 변경 핸들러
@@ -277,6 +298,10 @@ export function ProjectToolbar() {
         settings: { selectedEdgeColor: value }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 연결선 애니메이션 변경 핸들러
@@ -294,6 +319,10 @@ export function ProjectToolbar() {
         settings: { animated: newValue }
       });
     }
+
+    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
+    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+    updateAllEdgeStyles();
   }, [updateIdeaMapSettings, updateSettings, activeProject]);
 
   // 내보내기 핸들러

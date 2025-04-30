@@ -3,6 +3,7 @@
  * 목적: 엣지 생성을 위한 TanStack Query 뮤테이션 훅
  * 역할: 엣지 생성 API 호출 및 쿼리 캐시 무효화 처리
  * 작성일: 2025-04-21
+ * 수정일: 2025-04-21 : 새 엣지 생성 시 전역 엣지 설정 적용
  */
 
 /**
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 
 import { EdgeInput } from '@/types/edge';
 import { createEdgeAPI } from '@/services/edgeService';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import createLogger from '@/lib/logger';
 
 const logger = createLogger('useCreateEdge');
@@ -26,11 +28,55 @@ const logger = createLogger('useCreateEdge');
  */
 export function useCreateEdge() {
   const queryClient = useQueryClient();
+  // useIdeaMapStore에서 현재 전역 엣지 설정 가져오기
+  const ideaMapSettings = useIdeaMapStore(state => state.ideaMapSettings);
 
   return useMutation({
     mutationFn: async (edgeData: EdgeInput) => {
       logger.debug('엣지 생성 요청:', edgeData);
-      return createEdgeAPI(edgeData);
+      
+      // 전역 엣지 스타일 설정을 새 엣지에 적용
+      const enhancedEdgeData: EdgeInput = {
+        ...edgeData,
+        // 타입 설정
+        type: 'custom',
+        // 애니메이션 설정
+        animated: ideaMapSettings.animated,
+        // 스타일 설정
+        style: {
+          ...(edgeData.style || {}),
+          stroke: ideaMapSettings.edgeColor,
+          strokeWidth: ideaMapSettings.strokeWidth,
+        },
+        // 추가 데이터 설정
+        data: {
+          ...(edgeData.data || {}),
+          edgeType: ideaMapSettings.connectionLineType,
+          settings: {
+            animated: ideaMapSettings.animated,
+            connectionLineType: ideaMapSettings.connectionLineType,
+            strokeWidth: ideaMapSettings.strokeWidth,
+            edgeColor: ideaMapSettings.edgeColor,
+            selectedEdgeColor: ideaMapSettings.selectedEdgeColor,
+          }
+        }
+      };
+      
+      // 마커 설정 (있을 경우에만)
+      if (ideaMapSettings.markerEnd) {
+        enhancedEdgeData.data = {
+          ...(enhancedEdgeData.data || {}),
+          markerEnd: {
+            type: ideaMapSettings.markerEnd,
+            width: ideaMapSettings.markerSize,
+            height: ideaMapSettings.markerSize,
+            color: ideaMapSettings.edgeColor,
+          }
+        };
+      }
+      
+      logger.debug('전역 설정이 적용된 엣지 생성 요청:', enhancedEdgeData);
+      return createEdgeAPI(enhancedEdgeData);
     },
     onSuccess: (data, variables) => {
       // 성공 시 캐시된 엣지 쿼리 무효화
