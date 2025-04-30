@@ -11,6 +11,7 @@
  * 수정일: 2025-05-01 : 엣지 생성/삭제 오류 처리 및 로깅 개선
  * 수정일: 2025-05-02 : useCreateEdge에 낙관적 업데이트(Optimistic Updates) 로직 추가
  * 수정일: 2025-04-21 : sourceHandle과 targetHandle 필드 지원 추가
+ * 수정일: 2025-05-11 : queryKey 일관성 확보 및 낙관적 업데이트 개선
  */
 
 /**
@@ -25,6 +26,8 @@ import { Edge as DBEdge, EdgeInput } from '@/types/edge';
 import { Edge, Connection } from '@xyflow/react';
 import { toast } from 'sonner';
 import createLogger from '@/lib/logger';
+import { useAppStore } from '@/store/useAppStore';
+import { useAuth } from '@/hooks/useAuth';
 
 const logger = createLogger('useEdges');
 
@@ -41,6 +44,8 @@ const transformDbEdgeToFlowEdge = (dbEdge: DBEdge): Edge => ({
     animated: dbEdge.animated || false,
     style: dbEdge.style || undefined,
     data: dbEdge.data || undefined,
+    sourceHandle: dbEdge.sourceHandle,
+    targetHandle: dbEdge.targetHandle,
 });
 
 /**
@@ -77,6 +82,15 @@ const mapToEdgeInput = (input: CreateEdgeInput): EdgeInput => {
 };
 
 /**
+ * 엣지 쿼리 키 생성 함수 - 일관성을 위해 공통 함수로 분리
+ * @param userId 사용자 ID (옵션)
+ * @param projectId 프로젝트 ID (옵션)
+ * @returns 일관된 쿼리 키 배열
+ */
+export const getEdgesQueryKey = (userId?: string, projectId?: string) => 
+  ['edges', userId, projectId];
+
+/**
  * useEdges: 아이디어맵 엣지 데이터를 조회하는 TanStack Query 훅
  * @param {string} userId - 현재 사용자 ID
  * @param {string} projectId - 현재 프로젝트 ID
@@ -84,7 +98,7 @@ const mapToEdgeInput = (input: CreateEdgeInput): EdgeInput => {
  */
 export function useEdges(userId?: string, projectId?: string): UseQueryResult<Edge[], Error> {
   return useQuery({
-    queryKey: ['edges', userId, projectId],
+    queryKey: getEdgesQueryKey(userId, projectId),
     queryFn: async () => {
       logger.debug(`엣지 데이터 조회: userId=${userId}, projectId=${projectId}`);
       if (!projectId) {
@@ -112,9 +126,12 @@ export function useEdges(userId?: string, projectId?: string): UseQueryResult<Ed
  */
 export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeInput> {
   const queryClient = useQueryClient();
+  // useAuth 훅을 사용하여 현재 사용자 ID 가져오기
+  const { user } = useAuth();
+  const userId = user?.id;
   
   return useMutation({
-    mutationKey: ['createEdge'], // 뮤테이션 키 추가
+    mutationKey: ['createEdge'], // 뮤테이션 키 유지
     mutationFn: async (edgeData: CreateEdgeInput) => {
       logger.debug('새 엣지 생성 요청:', edgeData);
       
@@ -190,17 +207,19 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
     onMutate: async (newEdgeData) => {
       logger.debug('낙관적 업데이트 시작:', newEdgeData);
       
+      // 쿼리 키 가져오기 (일관성을 위해 공통 함수 사용)
+      const queryKey = getEdgesQueryKey(userId, newEdgeData.projectId);
+      
       // 현재 진행 중인 refetch를 취소하여 낙관적 업데이트가 덮어쓰기 되는 것 방지
-      await queryClient.cancelQueries({ 
-        queryKey: ['edges', undefined, newEdgeData.projectId] 
-      });
+      await queryClient.cancelQueries({ queryKey });
       
       // 이전 엣지 데이터 백업 (롤백용)
-      const previousEdges = queryClient.getQueryData<Edge[]>(
-        ['edges', undefined, newEdgeData.projectId]
-      ) || [];
+      const previousEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
       
-      logger.debug('이전 엣지 데이터 백업 완료:', { count: previousEdges.length });
+      logger.debug('이전 엣지 데이터 백업 완료:', { 
+        count: previousEdges.length,
+        queryKey
+      });
       
       // 임시 ID 생성 (낙관적 업데이트용)
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -220,14 +239,15 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
       
       // UI에 낙관적 엣지 추가
       queryClient.setQueryData<Edge[]>(
-        ['edges', undefined, newEdgeData.projectId],
+        queryKey,
         old => [...(old || []), optimisticEdge]
       );
       
       logger.debug('낙관적 엣지 추가 완료:', { 
         tempId, 
         source: optimisticEdge.source, 
-        target: optimisticEdge.target 
+        target: optimisticEdge.target,
+        queryKey
       });
       
       // 롤백을 위한 정보 반환
@@ -235,18 +255,22 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
         previousEdges,
         tempId,
         optimisticEdge,
+        queryKey // 쿼리 키도 컨텍스트에 추가
       };
     },
     onSuccess: (data, variables, context) => {
       logger.debug('엣지 생성 성공:', { 
         edgeIds: data.map(edge => edge.id),
         edgeCount: data.length,
-        projectId: variables.projectId
+        projectId: variables.projectId,
+        userId
       });
       
-      // 낙관적 업데이트를 실제 데이터로 교체
+      // context가 undefined일 경우를 대비한 안전한 접근
       if (context?.tempId && data.length > 0) {
-        const queryKey = ['edges', undefined, variables.projectId];
+        // 쿼리 키 가져오기 (일관성을 위해 컨텍스트에서 가져오거나 공통 함수 사용)
+        const queryKey = context.queryKey || getEdgesQueryKey(userId, variables.projectId);
+        
         const currentEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
         
         // 임시 엣지 제거하고 실제 엣지로 교체
@@ -259,13 +283,40 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
         
         logger.debug('낙관적 엣지를 실제 데이터로 교체 완료:', {
           tempId: context.tempId,
-          realIds: data.map(edge => edge.id)
+          realIds: data.map(edge => edge.id),
+          queryKey
+        });
+      } else {
+        // 컨텍스트가 없는 경우(낙관적 업데이트가 실패했거나 건너뛴 경우)에 대한 처리
+        const queryKey = getEdgesQueryKey(userId, variables.projectId);
+        
+        // 현재 캐시된 데이터 가져오기
+        const currentEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+        
+        // 새 엣지 추가 (중복 방지)
+        const newEdgeIds = data.map(edge => edge.id);
+        const filteredCurrentEdges = currentEdges.filter(
+          edge => !edge.id.startsWith('temp-') && !newEdgeIds.includes(edge.id)
+        );
+        
+        const updatedEdges = [
+          ...filteredCurrentEdges,
+          ...data.map(transformDbEdgeToFlowEdge)
+        ];
+        
+        // 업데이트된 엣지 세트 적용
+        queryClient.setQueryData(queryKey, updatedEdges);
+        
+        logger.debug('엣지 데이터 캐시 업데이트 완료:', {
+          newEdgeCount: data.length,
+          totalEdgeCount: updatedEdges.length,
+          queryKey
         });
       }
       
       // 엣지 쿼리 무효화하여 필요시 다시 가져오게 함
       queryClient.invalidateQueries({ 
-        queryKey: ['edges', undefined, variables.projectId],
+        queryKey: getEdgesQueryKey(userId, variables.projectId),
         // 즉시 refetch는 하지 않음 (이미 위에서 최신 데이터로 업데이트함)
         refetchType: 'none'
       });
@@ -277,16 +328,17 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
       
       // 낙관적 업데이트 롤백
       if (context) {
+        // 쿼리 키 가져오기 (일관성을 위해 컨텍스트에서 가져오거나 공통 함수 사용)
+        const queryKey = context.queryKey || getEdgesQueryKey(userId, variables.projectId);
+        
         logger.debug('낙관적 업데이트 롤백 시작:', { 
           projectId: variables.projectId,
-          tempId: context.tempId
+          tempId: context.tempId,
+          queryKey
         });
         
         // 이전 엣지 데이터로 복원
-        queryClient.setQueryData(
-          ['edges', undefined, variables.projectId],
-          context.previousEdges
-        );
+        queryClient.setQueryData(queryKey, context.previousEdges);
         
         logger.debug('낙관적 업데이트 롤백 완료');
       }
@@ -308,14 +360,15 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
     onSettled: (data, error, variables) => {
       logger.debug('엣지 생성 뮤테이션 완료:', { 
         success: !error,
-        projectId: variables.projectId
+        projectId: variables.projectId,
+        userId
       });
       
       // 모든 상황(성공/실패)에서 캐시를 최신 상태로 유지하기 위해 쿼리 무효화
       queryClient.invalidateQueries({ 
-        queryKey: ['edges', undefined, variables.projectId],
-        // 필요한 경우에만 백그라운드 리페치 실행
-        refetchType: 'active'
+        queryKey: getEdgesQueryKey(userId, variables.projectId),
+        // 성공 시에는 자동 리페치 방지 (onSuccess에서 이미 처리)
+        refetchType: error ? 'active' : 'none'
       });
     },
     // 재시도 방지 (인증 오류, 중복 등은 재시도해도 해결되지 않음)
@@ -344,23 +397,75 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
  */
 export function useDeleteEdge(): UseMutationResult<void, Error, { id: string; projectId: string }> {
   const queryClient = useQueryClient();
+  // useAuth 훅을 사용하여 현재 사용자 ID 가져오기
+  const { user } = useAuth();
+  const userId = user?.id;
   
   return useMutation({
     mutationFn: async ({ id }: { id: string; projectId: string }) => {
       logger.debug(`엣지 삭제 요청: ID=${id}`);
       return await deleteEdgeAPI(id);
     },
+    // 낙관적 업데이트 추가
+    onMutate: async (variables) => {
+      logger.debug('엣지 삭제 낙관적 업데이트 시작:', variables);
+      
+      // 쿼리 키 생성
+      const queryKey = getEdgesQueryKey(userId, variables.projectId);
+      
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey });
+      
+      // 이전 엣지 데이터 백업
+      const previousEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+      
+      // 낙관적으로 UI에서 엣지 제거
+      queryClient.setQueryData<Edge[]>(
+        queryKey,
+        previousEdges.filter(edge => edge.id !== variables.id)
+      );
+      
+      logger.debug('엣지 삭제 낙관적 업데이트 완료:', {
+        edgeId: variables.id,
+        previousEdgeCount: previousEdges.length,
+        currentEdgeCount: previousEdges.length - 1,
+        queryKey
+      });
+      
+      // 롤백 정보 반환
+      return { previousEdges, queryKey };
+    },
     onSuccess: (_, variables) => {
       logger.debug(`엣지 삭제 성공: ID=${variables.id}`);
+      
       // 성공적으로 삭제되면 엣지 데이터 쿼리 무효화
       queryClient.invalidateQueries({ 
-        queryKey: ['edges', undefined, variables.projectId] 
+        queryKey: getEdgesQueryKey(userId, variables.projectId),
+        // 낙관적 업데이트로 UI는 이미 반영되었으므로 자동 리페치는 방지
+        refetchType: 'none'
       });
+      
       toast.success('엣지가 성공적으로 삭제되었습니다.');
     },
-    onError: (error, variables) => {
+    onError: (error, variables, context) => {
       logger.error(`엣지 삭제 실패: ID=${variables.id}`, error);
+      
+      // 낙관적 업데이트 롤백
+      if (context) {
+        const queryKey = context.queryKey || getEdgesQueryKey(userId, variables.projectId);
+        logger.debug('엣지 삭제 롤백:', { edgeId: variables.id, queryKey });
+        queryClient.setQueryData(queryKey, context.previousEdges);
+      }
+      
       toast.error('엣지 삭제 중 오류가 발생했습니다.');
+    },
+    onSettled: (_, error, variables) => {
+      // 성공이든 실패든 마지막에 쿼리 무효화
+      if (error) {
+        queryClient.invalidateQueries({
+          queryKey: getEdgesQueryKey(userId, variables.projectId)
+        });
+      }
     }
   });
 } 

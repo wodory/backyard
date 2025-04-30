@@ -56,7 +56,7 @@ import { cn } from '@/lib/utils';
 import { createLogger } from '@/lib/logger';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { useAppStore } from '@/store/useAppStore';
-import { useCreateEdge, useDeleteEdge } from '@/hooks/useEdges'; // TanStack Query 훅 임포트
+import { useCreateEdge, useDeleteEdge } from '@/hooks/useEdges'; // 경로 수정됨
 import { toast } from 'sonner';
 
 const logger = createLogger('IdeaMapCanvas');

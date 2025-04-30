@@ -7,6 +7,7 @@
  * 수정일: 2025-04-19 : 로그 최적화 - 과도한 콘솔 로그 제거 및 logger.debug로 변경
  * 수정일: 2025-04-21 : useCreateEdge 훅을 사용하여 엣지 DB 연동 구현
  * 수정일: 2025-04-21 : onConnect 함수에서 낙관적 업데이트 제거하여 무한 루프 방지
+ * 수정일: 2025-05-11 : useCreateEdge 훅 임포트 경로 수정 및 queryKey 일관성 확보
  */
 
 'use client';
@@ -19,7 +20,7 @@ import { useReactFlow, Connection, addEdge } from '@xyflow/react';
 import CreateCardModal from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
-import { useCreateEdge } from '@/hooks/useCreateEdge';
+import { useCreateEdge } from '@/hooks/useEdges';
 import { useIdeaMapSync } from '@/hooks/useIdeaMapSync';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
@@ -148,27 +149,56 @@ function IdeaMap({
 
   // onConnect 함수를 재정의하여 useCreateEdge 뮤테이션 호출 추가
   const onConnect = useCallback((connection: Connection) => {
-    console.log('[onConnect DEBUG] activeProjectId inside handler:', activeProjectId);
+    logger.debug('새 엣지 생성 요청:', connection);
 
-    // UI 상태 업데이트만 수행 (Zustand 스토어를 통한 상태 관리)
-    // 기존 originalOnConnect는 이미 Zustand 스토어의 상태를 업데이트함
-    if (connection.source && connection.target) {
-      originalOnConnect(connection);
-
-      logger.debug('UI 엣지 생성 완료:', {
-        source: connection.source,
-        target: connection.target,
-        sourceHandle: connection.sourceHandle,
-        targetHandle: connection.targetHandle
-      });
-    } else {
+    // 유효성 검사
+    if (!connection.source || !connection.target || !activeProjectId) {
       logger.warn('엣지 생성에 필요한 정보 부족:', {
         hasSource: !!connection.source,
         hasTarget: !!connection.target,
         hasProjectId: !!activeProjectId
       });
+
+      if (!activeProjectId) {
+        toast.error('프로젝트 ID가 없어 엣지를 생성할 수 없습니다.');
+      } else {
+        toast.error('엣지 생성에 필요한 노드 정보가 누락되었습니다.');
+      }
+      return;
     }
-  }, [activeProjectId, originalOnConnect]);
+
+    // TanStack Query의 useCreateEdge 뮤테이션 호출
+    createEdgeMutation.mutate({
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle ?? undefined, // null을 undefined로 변환
+      targetHandle: connection.targetHandle ?? undefined, // null을 undefined로 변환
+      projectId: activeProjectId,
+      // 추가 스타일링 정보는 UI 상태에서 가져옴
+      type: 'custom',
+      animated: ideaMapSettings.animated,
+      style: {
+        stroke: ideaMapSettings.edgeColor,
+        strokeWidth: ideaMapSettings.strokeWidth,
+      },
+      data: {
+        edgeType: ideaMapSettings.connectionLineType,
+        settings: {
+          animated: ideaMapSettings.animated,
+          connectionLineType: ideaMapSettings.connectionLineType,
+          strokeWidth: ideaMapSettings.strokeWidth,
+          edgeColor: ideaMapSettings.edgeColor,
+          selectedEdgeColor: ideaMapSettings.selectedEdgeColor,
+        }
+      }
+    });
+
+    logger.debug('엣지 생성 요청 전송 완료:', {
+      source: connection.source,
+      target: connection.target,
+      projectId: activeProjectId
+    });
+  }, [activeProjectId, createEdgeMutation, ideaMapSettings]);
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {

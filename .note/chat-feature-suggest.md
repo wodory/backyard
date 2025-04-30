@@ -1,6 +1,7 @@
 **버그**
 - test 입력 -> 앞에 @ 추가 -> test.md 선택 -> test.md test로 텍스트가 남음. 
     -- @@zustand-action-msw.mdc zustand-action-msw.mdc 
+    -- 가끔은 앞의 텍스트 1-2 단어를 삭제하는 오류가 있음. 
 - 앞에 다른 텍스트가 있을 때 기존 스트링 앞에 @ 붙이면 왕창 없어짐
     -- 2. 테스트를 작성할 때 @async-test.mdc e 
     -- @async-test.mdc
@@ -13,6 +14,8 @@
 
 - 가끔 코드 베이스를 못 찾음. -_-
 - 최상단 루트에 파일 이동 못하는 현상
+
+
 
 - font-size : 에디터와 함께 하는 옵션
 
