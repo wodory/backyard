@@ -5,6 +5,7 @@
  * 작성일: 2025-03-27
  * 수정일: 2025-04-09
  * 수정일: 2024-05-19 : serverSignInWithGoogle 함수 추가
+ * 수정일: 2025-05-21 : auth 함수에 디버깅 로그 추가
  * 
  * @rule   three-layer-standard
  * @layer  service
@@ -23,9 +24,21 @@ const logger = createLogger('AuthServer');
  * @returns 현재 인증된 세션 정보
  */
 export const auth = async () => {
+  console.log('--- [auth-server] auth() 함수 실행 시작 ---');
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    console.log('[auth-server] Supabase 서버 클라이언트 생성 완료');
+    
+    console.log('[auth-server] supabase.auth.getSession() 호출 시작...');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('[auth-server] supabase.auth.getSession() 호출 완료');
+    
+    if (sessionError) {
+      console.error('[auth-server] 세션 가져오기 에러 발생:', sessionError);
+    } else {
+      console.log('[auth-server] 가져온 세션 정보:', session ? `사용자 ID: ${session.user.id}` : '세션 없음');
+      console.log('[auth-server] 가져온 세션 정보:', session);
+    }
     return session;
   } catch (error) {
     logger.error('서버 인증 오류:', error);

@@ -14,6 +14,8 @@
  * 수정일: 2025-04-29 : 무한 루프 방지를 위한 handleEdgesChange 최적화
  * 수정일: 2025-05-01 : TanStack Query 훅을 사용한 엣지 CRUD 연동
  * 수정일: 2025-05-21 : 다중 엣지 삭제 처리 기능 추가
+ * 수정일: 2025-04-21 : 노드 삭제 시 CardNode 삭제 로직 추가
+ * 수정일: 2025-04-21 : 노드 드래그 종료 시 CardNode 위치 업데이트 로직 추가
  */
 
 'use client';
@@ -55,6 +57,7 @@ import { createLogger } from '@/lib/logger';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useCreateEdge, useDeleteEdge, useDeleteMultipleEdges } from '@/hooks/useEdges'; // useDeleteMultipleEdges 추가
+import { useDeleteCardNode, useUpdateCardNodePosition } from '@/hooks/useCardNodes'; // CardNode 삭제 훅 및 위치 업데이트 훅 추가
 import { toast } from 'sonner';
 
 const logger = createLogger('IdeaMapCanvas');
@@ -207,6 +210,15 @@ export default function IdeaMapCanvas({
     }
   }, [nodes]);
 
+  // 활성 프로젝트 ID 가져오기
+  const activeProjectId = useAppStore(state => state.activeProjectId);
+
+  // CardNode 삭제를 위한 TanStack Query 훅
+  const deleteCardNodeMutation = useDeleteCardNode();
+
+  // CardNode 위치 업데이트를 위한 TanStack Query 훅
+  const updateCardNodePositionMutation = useUpdateCardNodePosition();
+
   // 뷰포트 관리 기능이 추가된 노드 변경 핸들러
   const handleNodeChangesWithViewport = useCallback(
     (changes: NodeChange[]) => {
@@ -214,6 +226,31 @@ export default function IdeaMapCanvas({
       //   changesCount: changes.length,
       //   changeTypes: changes.map(c => c.type).join(', ')
       // });
+
+      // 노드 삭제 변경 감지
+      const deleteChanges = changes.filter(change => change.type === 'remove');
+
+      if (deleteChanges.length > 0 && activeProjectId) {
+        // 삭제된 노드 ID 추출
+        const deletedNodeIds = deleteChanges.map(change => change.id);
+
+        logger.info(`노드 삭제 요청: ${deletedNodeIds.length}개`, {
+          nodeIds: deletedNodeIds
+        });
+
+        // 각 노드에 대해 CardNode 삭제 뮤테이션 호출
+        deletedNodeIds.forEach(nodeId => {
+          deleteCardNodeMutation.mutate({
+            id: nodeId,  // 이제 노드 ID는 CardNode 테이블의 ID
+            projectId: activeProjectId
+          }, {
+            onSuccess: () => logger.info(`CardNode DB 삭제 성공: ${nodeId}`),
+            onError: (error) => logger.error(`CardNode DB 삭제 실패: ${nodeId}`, error)
+          });
+        });
+      } else if (deleteChanges.length > 0 && !activeProjectId) {
+        logger.warn('프로젝트 ID가 없어 CardNode DB 동기화를 진행할 수 없습니다.');
+      }
 
       const hasPositionChanges = changes.some(
         (change) => change.type === 'position'
@@ -290,7 +327,7 @@ export default function IdeaMapCanvas({
         }, 300);
       }
     },
-    [onNodesChange, nodes]
+    [onNodesChange, nodes, activeProjectId, deleteCardNodeMutation]
   );
 
   // 엣지 삭제를 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
@@ -301,9 +338,6 @@ export default function IdeaMapCanvas({
 
   // 엣지 생성을 위한 TanStack Query 훅 (Three-Layer-Standard 준수)
   const createEdgeMutation = useCreateEdge();
-
-  // 활성 프로젝트 ID 가져오기
-  const activeProjectId = useAppStore(state => state.activeProjectId);
 
   // 엣지 변경 핸들러에 TanStack Query 통합
   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
@@ -389,6 +423,36 @@ export default function IdeaMapCanvas({
     }
   }, [onViewportChange]);
 
+  // 노드 드래그 종료 핸들러 - CardNode 위치 업데이트
+  const handleNodeDragStop = useCallback((event: React.MouseEvent, node: Node) => {
+    logger.info('노드 드래그 종료:', {
+      nodeId: node.id,
+      position: node.position
+    });
+
+    // 프로젝트 ID가 있는 경우에만 노드 위치 업데이트
+    if (activeProjectId) {
+      updateCardNodePositionMutation.mutate(
+        {
+          id: node.id,
+          position: node.position,
+          projectId: activeProjectId
+        },
+        {
+          onSuccess: () => {
+            logger.info(`CardNode 위치 업데이트 성공: ${node.id}`, node.position);
+          },
+          onError: (error) => {
+            logger.error(`CardNode 위치 업데이트 실패: ${node.id}`, error);
+            toast.error(`노드 위치 저장에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+          }
+        }
+      );
+    } else {
+      logger.warn('프로젝트 ID가 없어 CardNode 위치 업데이트를 진행할 수 없습니다.');
+    }
+  }, [activeProjectId, updateCardNodePositionMutation]);
+
   return (
     <div
       className={cn("h-full w-full flex flex-col relative", className)}
@@ -418,6 +482,7 @@ export default function IdeaMapCanvas({
           logger.info('빈 공간 클릭');
           onPaneClick(event);
         }}
+        onNodeDragStop={handleNodeDragStop}
         onViewportChange={handleViewportChange}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}

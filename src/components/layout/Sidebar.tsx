@@ -1,3 +1,12 @@
+/**
+ * 파일명: src/components/layout/Sidebar.tsx
+ * 목적: 사이드바 UI 컴포넌트 구현
+ * 역할: 사이드바 렌더링 및 상태 관리
+ * 작성일: 2025-03-28
+ * 수정일: 2025-04-21 : 카드 정보 로딩 방식 개선 - 불필요한 API 호출 제거 및 캐시 활용
+ * 수정일: 2025-05-21 : 개별 카드 조회 API 호출 제거 및 TanStack Query 캐시 활용 로직 구현
+ */
+
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
@@ -39,7 +48,7 @@ import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import type { Card } from '@/types/card';
 import { signOut } from '@/lib/auth';
 import Image from 'next/image';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { deleteCardAPI } from '@/services/cardService';
 
 
@@ -74,31 +83,24 @@ export function Sidebar({ className }: SidebarProps) {
     selectedCardId,
     selectedCardIds,
     selectCard,
+    toggleSelectedCard,
     sidebarWidth,
     setSidebarWidth,
-    reactFlowInstance
+    reactFlowInstance,
+    activeProjectId
   } = useAppStore();
 
-  // 라인 60-75: useCards 훅 사용
-  const auth = useAuth();
-
   // React Query를 사용하여 카드 데이터 가져오기
-  const { data: cards = [], isLoading: cardsLoading, refetch: refetchCards } = useCards();
+  const { data: allCardsData = [], isLoading: cardsLoading, refetch: refetchCards } = useCards();
 
   // updateCard 훅 가져오기
   const updateCardMutation = useUpdateCard();
 
-  // deleteCard 훅 가져오기 (필요할 때 내부적으로 호출)
   const queryClient = useQueryClient();
 
-  const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
-  const [selectedCards, setSelectedCards] = useState<CardItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  // 카드 정보 로드 상태 - Hook 순서 문제 해결을 위해 여기로 이동
-  const [selectedCardsInfo, setSelectedCardsInfo] = useState<Array<{ id: string, title: string, content: string }>>([]);
   const [hierarchyLoading, setHierarchyLoading] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -117,47 +119,26 @@ export function Sidebar({ className }: SidebarProps) {
   // 다중 선택 모드인지 확인 - 이 변수는 항상 앞에 선언
   const isMultiSelectMode = useMemo(() => selectedCardIds.length > 1, [selectedCardIds]);
 
+  // 선택된 카드 정보를 allCardsData에서 필터링하여 가져오기
+  const selectedCardsForViewer = useMemo(() => {
+    if (!allCardsData || selectedCardIds.length === 0) {
+      return [];
+    }
+    return allCardsData.filter(card => selectedCardIds.includes(card.id));
+  }, [selectedCardIds, allCardsData]);
+
+  // 단일 선택된 카드 정보 
+  const selectedCard = useMemo(() => {
+    if (!selectedCardId || !allCardsData) return null;
+    return allCardsData.find(card => card.id === selectedCardId) || null;
+  }, [selectedCardId, allCardsData]);
+
   // 카드 목록 불러오기
   useEffect(() => {
     if (isSidebarOpen) {
       refetchCards();
     }
   }, [isSidebarOpen, refetchCards]);
-
-  // 선택된 카드 정보 불러오기
-  useEffect(() => {
-    if (selectedCardId) {
-      fetchCardDetails(selectedCardId);
-    } else {
-      setSelectedCard(null);
-    }
-  }, [selectedCardId]);
-
-  // 다중 선택된 카드 정보 불러오기
-  useEffect(() => {
-    if (selectedCardIds.length > 0) {
-      fetchSelectedCards(selectedCardIds);
-    } else {
-      setSelectedCards([]);
-    }
-  }, [selectedCardIds]);
-
-  // 전역 상태의 카드 목록이 변경될 때마다 현재 선택된 카드 정보 다시 불러오기
-  useEffect(() => {
-    if (cards.length > 0) {
-      // 단일 선택된 카드가 있으면 해당 카드 정보 다시 로드
-      if (selectedCardId) {
-        console.log('전역 카드 상태 변경, 선택된 카드 정보 다시 조회:', selectedCardId);
-        fetchCardDetails(selectedCardId);
-      }
-
-      // 다중 선택된 카드가 있으면 선택된 카드 정보 다시 로드
-      if (selectedCardIds.length > 1) {
-        console.log('전역 카드 상태 변경, 다중 선택된 카드 정보 다시 조회:', selectedCardIds);
-        fetchSelectedCards(selectedCardIds);
-      }
-    }
-  }, [cards, selectedCardId, selectedCardIds]);
 
   useEffect(() => {
     setSidebarWidth(width);
@@ -168,11 +149,11 @@ export function Sidebar({ className }: SidebarProps) {
     if (selectedCardIds.length >= 2) {
       console.group('다중 선택된 카드 정보');
       console.log('선택된 카드 ID 목록:', selectedCardIds);
-      console.log('현재 계층 구조 정렬된 선택 카드:', selectedCards);
+      console.log('선택된 카드 데이터:', selectedCardsForViewer);
       console.log('다중 선택 모드:', isMultiSelectMode);
       console.groupEnd();
     }
-  }, [selectedCardIds, selectedCards, isMultiSelectMode]);
+  }, [selectedCardIds, selectedCardsForViewer, isMultiSelectMode]);
 
   // 선택된 카드의 카드 데이터 가져오기 (다중 선택 모드)
   useEffect(() => {
@@ -180,115 +161,171 @@ export function Sidebar({ className }: SidebarProps) {
       console.log("여러 카드 선택됨:", selectedCardIds);
       setHierarchyLoading(true);
 
-      const fetchSelectedCardsInfo = async () => {
-        try {
-          // ReactFlow의 노드와 엣지 가져오기
-          const nodes = reactFlowInstance?.getNodes() || [];
-          const edges = reactFlowInstance?.getEdges() || [];
+      try {
+        // ReactFlow의 노드와 엣지 가져오기
+        const nodes = reactFlowInstance?.getNodes() || [];
+        const edges = reactFlowInstance?.getEdges() || [];
 
-          // 계층 구조 분석
-          const orderedNodeIds = analyzeHierarchy(selectedCardIds, nodes, edges);
+        // 계층 구조 분석
+        const orderedNodeIds = analyzeHierarchy(selectedCardIds, nodes, edges);
 
-          // 선택된 카드 정보 로드
-          const cardsInfo = await Promise.all(
-            orderedNodeIds.map(async (id) => {
-              // 로컬 캐시에서 카드 정보 확인
-              const cachedNode = nodes.find(node => node.id === id);
-              if (cachedNode?.data) {
-                return {
-                  id,
-                  title: String(cachedNode.data.title || cachedNode.data.label || '제목 없음'),
-                  content: String(cachedNode.data.content || '')
-                };
-              }
-
-              // 캐시에 없으면 API에서 로드 (필요시 구현)
-              try {
-                const response = await fetch(`/api/cards/${id}`);
-                if (response.ok) {
-                  const data = await response.json();
-                  return {
-                    id: data.id,
-                    title: data.title || '제목 없음',
-                    content: data.content || ''
-                  };
-                }
-              } catch (error) {
-                console.error(`카드 ${id} 로드 중 오류:`, error);
-              }
-
-              return {
-                id,
-                title: String(id),
-                content: '내용을 불러올 수 없습니다.'
-              };
-            })
-          );
-
-          console.log("로드된 카드 정보:", cardsInfo);
-          if (cardsInfo.length > 0) {
-            setSelectedCardsInfo(cardsInfo);
+        // 선택된 카드 정보를 캐시된 데이터에서 가져오기
+        const cardsInfo = orderedNodeIds.map(id => {
+          // 캐시된 카드 데이터에서 찾기
+          const card = allCardsData.find(card => card.id === id);
+          if (card) {
+            return {
+              id,
+              title: card.title || '제목 없음',
+              content: card.content || ''
+            };
           }
-        } catch (error) {
-          console.error("카드 정보 로드 중 오류:", error);
-          toast.error("카드 정보를 불러오는데 실패했습니다.");
-          setSelectedCardsInfo([]);
-        } finally {
+
+          // 캐시에 없는 경우 기본 정보 반환
+          return {
+            id,
+            title: String(id),
+            content: '내용을 불러올 수 없습니다.'
+          };
+        });
+
+        console.log("로드된 카드 정보:", cardsInfo);
+        if (cardsInfo.length > 0) {
           setHierarchyLoading(false);
         }
-      };
-
-      fetchSelectedCardsInfo();
-    } else {
-      setSelectedCardsInfo([]);
+      } catch (error) {
+        console.error("카드 정보 로드 중 오류:", error);
+        toast.error("카드 정보를 불러오는데 실패했습니다.");
+      } finally {
+        setHierarchyLoading(false);
+      }
     }
-  }, [selectedCardIds, reactFlowInstance]);
+  }, [selectedCardIds, reactFlowInstance, allCardsData]);
 
-  async function fetchCardDetails(cardId: string) {
-    try {
-      // 먼저 전역 상태에서 카드 찾기 (캐시 활용)
-      const cachedCard = cards.find(card => card.id === cardId);
-      if (cachedCard) {
-        console.log(`카드 ID ${cardId} - 전역 상태에서 찾음`);
-        setSelectedCard(cachedCard as CardItem);
-        return;
+  // 카드 삭제를 위한 mutation 설정
+  const deleteCardMutation = useMutation<void, Error, string>({
+    mutationFn: (cardIdToDelete: string) => deleteCardAPI(cardIdToDelete),
+    onSuccess: (_, cardIdToDelete) => {
+      // 관련 쿼리 무효화
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      queryClient.removeQueries({ queryKey: ['card', cardIdToDelete] });
+
+      // cardNodes 쿼리 무효화
+      if (activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['cardNodes', activeProjectId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['cardNodes'] });
       }
 
-      console.log(`카드 ID ${cardId} - API 호출로 조회`);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃 설정
+      toast.success("카드가 성공적으로 삭제되었습니다.");
 
-      const response = await fetch(`/api/cards/${cardId}`, {
-        signal: controller.signal,
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
+      // 삭제된 카드가 현재 선택된 카드라면 선택 해제
+      if (selectedCardId === cardIdToDelete) {
+        selectCard(null);
+      }
+    },
+    onError: (error) => {
+      console.error("Error deleting card:", error);
+      toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
+    }
+  });
+
+  // 카드 삭제 처리
+  const handleDeleteCard = async (cardId: string) => {
+    setIsDeleting(true);
+    try {
+      await deleteCardMutation.mutateAsync(cardId);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      // 에러 처리는 mutation의 onError에서 처리됨
+    } finally {
+      setIsDeleting(false);
+      setDeletingCardId(null);
+    }
+  };
+
+  const openDeleteDialog = (cardId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingCardId(cardId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // 다중 선택된 카들의 모든 태그를 합쳐서 중복 제거하여 반환
+  const getMultiCardTags = () => {
+    const allTags: CardTag[] = [];
+    selectedCardsForViewer.forEach(card => {
+      if (card.cardTags && card.cardTags.length > 0) {
+        // 타입 어서션으로 CardTag 타입을 지정
+        allTags.push(...(card.cardTags as CardTag[]));
+      }
+    });
+
+    // 중복 태그 제거 (태그 ID 기준)
+    const uniqueTags = allTags.filter((tag, index, self) =>
+      index === self.findIndex(t => t.tag.id === tag.tag.id)
+    );
+
+    return uniqueTags;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation(); // React Flow 드래그 이벤트 중지
+    startResize(e);
+  };
+
+  // 카드 수정 모달 열기
+  const openEditModal = (cardId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    console.log('카드 수정 모달 열기 요청:', cardId);
+    setEditingCardId(cardId);
+    setIsEditModalOpen(true);
+  };
+
+  // 카드 수정 성공 시 호출될 콜백
+  const handleCardUpdated = (updatedCard: any) => {
+    console.log('카드 업데이트 완료:', updatedCard);
+    if (updatedCard) {
+      // React Query 캐시 업데이트를 위한 뮤테이션 호출
+      updateCardMutation.mutate({
+        id: updatedCard.id,
+        patch: {
+          title: updatedCard.title,
+          content: updatedCard.content,
+          // 필요한 다른 필드들 추가
+        }
       });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`카드 조회 실패 (상태 코드: ${response.status}): ${errorText}`);
-        throw new Error(`카드 정보를 불러오는데 실패했습니다. 상태 코드: ${response.status}`);
+      // 현재 선택된 카드가 업데이트된 카드인 경우 로컬 상태도 즉시 업데이트
+      if (selectedCardId === updatedCard.id) {
+        console.log('선택된 카드 정보 즉시 업데이트');
+        selectCard(updatedCard.id);
       }
 
-      const data = await response.json();
-      setSelectedCard(data);
-    } catch (error) {
-      console.error('Error fetching card details:', error);
-
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        toast.error('요청 시간이 초과되었습니다.');
-      } else {
-        toast.error('카드 정보를 불러오는데 실패했습니다.');
+      // 다중 선택 모드에서 업데이트된 카드가 포함되어 있는 경우 선택된 카드 목록도 업데이트
+      if (selectedCardIds.includes(updatedCard.id) && selectedCardIds.length > 1) {
+        console.log('다중 선택 모드에서 카드 정보 업데이트');
+        selectCard(updatedCard.id);
       }
 
-      selectCard(null); // 에러 발생 시 선택 해제
+      toast.success("카드가 성공적으로 수정되었습니다.");
     }
-  }
+    setIsEditModalOpen(false);
+    setEditingCardId(null);
+  };
+
+  // 로그아웃 처리 함수
+  const handleLogout = async () => {
+    try {
+      // AuthContext의 signOut 함수 사용
+      await signOut();
+      toast.success('로그아웃되었습니다.');
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+      toast.error('로그아웃 중 오류가 발생했습니다.');
+    }
+  };
 
   // 엣지 정보를 기반으로 카드의 계층 구조 분석
   const analyzeHierarchy = (selectedIds: string[], nodes: any[], edges: any[]) => {
@@ -355,231 +392,6 @@ export function Sidebar({ className }: SidebarProps) {
 
     console.log("계층 순서 노드:", orderedNodes);
     return orderedNodes;
-  };
-
-  // 다중 선택된 카드 정보 불러오기
-  async function fetchSelectedCards(cardIds: string[]) {
-    if (!cardIds.length) return;
-
-    console.log('fetchSelectedCards 호출됨 - 선택된 카드:', cardIds);
-
-    try {
-      const fetchedCards: CardItem[] = [];
-      const cardsToFetch: string[] = [];
-
-      // 1단계: 전역 상태에서 먼저 카드 찾기 (캐시 활용)
-      for (const cardId of cardIds) {
-        const cachedCard = cards.find(card => card.id === cardId);
-        if (cachedCard) {
-          fetchedCards.push(cachedCard as CardItem);
-          console.log(`카드 ID ${cardId} - 전역 상태에서 찾음`);
-        } else {
-          // 캐시에 없는 카드만 API 호출 목록에 추가
-          cardsToFetch.push(cardId);
-          console.log(`카드 ID ${cardId} - API 호출 필요`);
-        }
-      }
-
-      // 2단계: 캐시에 없는 카드만 API로 조회
-      if (cardsToFetch.length > 0) {
-        console.log(`${cardsToFetch.length}개 카드를 API로 조회합니다.`);
-
-        // 여러 카드를 병렬로 조회
-        const promises = cardsToFetch.map(async (cardId) => {
-          try {
-            const response = await fetch(`/api/cards/${cardId}`);
-            if (response.ok) {
-              const cardData = await response.json();
-              return cardData;
-            } else {
-              console.error(`카드 ID ${cardId} - API 조회 실패: ${response.status}`);
-              return null;
-            }
-          } catch (error) {
-            console.error(`카드 ID ${cardId} - API 조회 중 오류:`, error);
-            return null;
-          }
-        });
-
-        // 병렬 요청 결과 처리
-        const results = await Promise.all(promises);
-
-        // 유효한 결과만 추가
-        results.forEach(cardData => {
-          if (cardData) {
-            fetchedCards.push(cardData);
-          }
-        });
-      }
-
-      // 3단계: 계층 구조 분석 및 정렬
-      const hierarchy = analyzeHierarchy(cardIds, reactFlowInstance?.getNodes() || [], reactFlowInstance?.getEdges() || []);
-      console.log('계층 구조 분석 결과:', hierarchy);
-
-      // 계층 구조 순서로 카드 정렬
-      const sortedCards = hierarchy
-        .map(h => {
-          const card = fetchedCards.find(c => c.id === h);
-          if (card) {
-            return {
-              ...card,
-              depth: 0
-            };
-          }
-          return null;
-        })
-        .filter(card => card !== null) as CardItem[];
-
-      console.log('정렬된 카드 목록:', sortedCards);
-      setSelectedCards(sortedCards);
-    } catch (error) {
-      console.error('다중 선택 카드 정보 조회 실패:', error);
-      toast.error('다중 선택된 카드 정보를 불러오는데 실패했습니다.');
-    }
-  }
-
-  // 카드 삭제 처리
-  const handleDeleteCard = async (cardId: string) => {
-    setIsDeleting(true);
-    try {
-      // deleteCardAPI 함수를 직접 사용
-      await deleteCardAPI(cardId);
-
-      // 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
-      queryClient.removeQueries({ queryKey: ['card', cardId] });
-
-      toast.success("카드가 성공적으로 삭제되었습니다.");
-
-      // 삭제된 카드가 현재 선택된 카드라면 선택 해제
-      if (selectedCardId === cardId) {
-        selectCard(null);
-      }
-      setIsDeleteDialogOpen(false);
-    } catch (error) {
-      console.error("Error deleting card:", error);
-      toast.error(error instanceof Error ? error.message : "카드 삭제에 실패했습니다.");
-    } finally {
-      setIsDeleting(false);
-      setDeletingCardId(null);
-    }
-  };
-
-  const openDeleteDialog = (cardId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeletingCardId(cardId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  // 다중 선택된 카들의 모든 태그를 합쳐서 중복 제거하여 반환
-  const getMultiCardTags = () => {
-    const allTags: CardTag[] = [];
-    selectedCards.forEach(card => {
-      if (card.cardTags && card.cardTags.length > 0) {
-        allTags.push(...card.cardTags);
-      }
-    });
-
-    // 중복 태그 제거 (태그 ID 기준)
-    const uniqueTags = allTags.filter((tag, index, self) =>
-      index === self.findIndex(t => t.tag.id === tag.tag.id)
-    );
-
-    return uniqueTags;
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation(); // React Flow 드래그 이벤트 중지
-    startResize(e);
-  };
-
-  // DocumentViewer 컴포넌트에 전달할 데이터 처리 - 타입 안전성 보장
-  const documentViewerProps = useMemo(() => {
-    if (selectedCardIds.length > 1) {
-      // 다중 선택 모드
-      return {
-        cards: selectedCardsInfo,
-        isMultiSelection: true,
-        loading: hierarchyLoading
-      };
-    } else if (selectedCardIds.length === 1 && selectedCard) {
-      // 단일 선택 모드 - content가 null인 경우 빈 문자열로 처리
-      const cardContent = selectedCard.content || ''; // null인 경우 빈 문자열로 처리
-      return {
-        cards: [{
-          id: selectedCard.id,
-          title: selectedCard.title,
-          content: cardContent,
-        }],
-        isMultiSelection: false,
-        loading: false
-      };
-    } else {
-      // 선택된 카드 없음
-      return {
-        cards: [],
-        isMultiSelection: false,
-        loading: false
-      };
-    }
-  }, [selectedCardIds, selectedCard, selectedCardsInfo, hierarchyLoading]);
-
-  // 카드 수정 모달 열기
-  const openEditModal = (cardId: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    console.log('카드 수정 모달 열기 요청:', cardId);
-    setEditingCardId(cardId);
-    setIsEditModalOpen(true);
-  };
-
-  // 카드 수정 성공 시 호출될 콜백
-  const handleCardUpdated = (updatedCard: any) => {
-    console.log('카드 업데이트 완료:', updatedCard);
-    if (updatedCard) {
-      // React Query 캐시 업데이트를 위한 뮤테이션 호출
-      updateCardMutation.mutate({
-        id: updatedCard.id,
-        patch: {
-          title: updatedCard.title,
-          content: updatedCard.content,
-          // 필요한 다른 필드들 추가
-        }
-      });
-
-      // 현재 선택된 카드가 업데이트된 카드인 경우 로컬 상태도 즉시 업데이트
-      if (selectedCardId === updatedCard.id) {
-        console.log('선택된 카드 정보 즉시 업데이트');
-        setSelectedCard(updatedCard as CardItem);
-      }
-
-      // 다중 선택 모드에서 업데이트된 카드가 포함되어 있는 경우 선택된 카드 목록도 업데이트
-      if (selectedCardIds.includes(updatedCard.id) && selectedCardIds.length > 1) {
-        console.log('다중 선택 모드에서 카드 정보 업데이트');
-        setSelectedCards(prev =>
-          prev.map(card =>
-            card.id === updatedCard.id ? { ...card, ...updatedCard, depth: card.depth } : card
-          )
-        );
-      }
-
-      toast.success("카드가 성공적으로 수정되었습니다.");
-    }
-    setIsEditModalOpen(false);
-    setEditingCardId(null);
-  };
-
-  // 로그아웃 처리 함수
-  const handleLogout = async () => {
-    try {
-      // AuthContext의 signOut 함수 사용
-      await signOut();
-      toast.success('로그아웃되었습니다.');
-    } catch (error) {
-      console.error('로그아웃 오류:', error);
-      toast.error('로그아웃 중 오류가 발생했습니다.');
-    }
   };
 
   if (!isSidebarOpen) return null;
@@ -682,7 +494,7 @@ export function Sidebar({ className }: SidebarProps) {
                   content: selectedCard.content || ''
                 }]}
                 isMultiSelection={false}
-                loading={loading}
+                loading={cardsLoading}
               />
             </div>
           </div>
@@ -695,13 +507,13 @@ export function Sidebar({ className }: SidebarProps) {
                 <h2
                   ref={titleRef}
                   className="text-l font-semibold truncate max-w-[calc(100%-70px)]"
-                  title={selectedCardsInfo.map(card => card.title).join(', ')}
+                  title={selectedCardsForViewer.map(card => card.title).join(', ')}
                 >
                   <span className="text-green-500 mr-1">📑</span>
-                  {selectedCardsInfo.length > 1
-                    ? (selectedCardsInfo.map(card => card.title).join(', ').length > 50
-                      ? selectedCardsInfo.map(card => card.title).join(', ').substring(0, 50) + '...'
-                      : selectedCardsInfo.map(card => card.title).join(', '))
+                  {selectedCardsForViewer.length > 1
+                    ? (selectedCardsForViewer.map(card => card.title).join(', ').length > 50
+                      ? selectedCardsForViewer.map(card => card.title).join(', ').substring(0, 50) + '...'
+                      : selectedCardsForViewer.map(card => card.title).join(', '))
                     : '선택된 카드들'}
                 </h2>
                 <Button
@@ -715,7 +527,7 @@ export function Sidebar({ className }: SidebarProps) {
               <div className="flex items-center justify-between mt-1">
                 <span className="text-sm text-green-600 font-medium">다중 선택 모드</span>
                 <span className="text-sm text-muted-foreground">
-                  {selectedCardsInfo.length}개 카드
+                  {selectedCardsForViewer.length}개 카드
                 </span>
               </div>
             </div>
@@ -723,9 +535,13 @@ export function Sidebar({ className }: SidebarProps) {
             {/* DocumentViewer를 사용하여 다중 선택 모드의 내용 표시 */}
             <div className="flex-1 overflow-y-auto">
               <DocumentViewer
-                cards={documentViewerProps.cards}
-                isMultiSelection={documentViewerProps.isMultiSelection}
-                loading={documentViewerProps.loading}
+                cards={selectedCardsForViewer.map(card => ({
+                  id: card.id,
+                  title: card.title || '',
+                  content: card.content || ''
+                }))}
+                isMultiSelection={true}
+                loading={cardsLoading || hierarchyLoading}
               />
             </div>
           </div>
@@ -733,17 +549,17 @@ export function Sidebar({ className }: SidebarProps) {
           // 카드 목록 (선택된 카드 없음)
           <div className="h-full flex flex-col">
             <div className="flex-1 overflow-y-auto">
-              {loading ? (
+              {cardsLoading ? (
                 <div className="flex justify-center items-center h-20">
                   <p className="text-sm text-muted-foreground">로딩 중...</p>
                 </div>
-              ) : cards.length === 0 ? (
+              ) : allCardsData.length === 0 ? (
                 <div className="p-4 text-center">
                   <p className="text-sm text-muted-foreground">카드가 없습니다. 새 카드를 추가해보세요!</p>
                 </div>
               ) : (
                 <div className="p-2 space-y-2">
-                  {cards.map((card) => (
+                  {allCardsData.map((card) => (
                     <div
                       key={card.id}
                       className={cn(
@@ -757,15 +573,8 @@ export function Sidebar({ className }: SidebarProps) {
                         if (isMultiSelection) {
                           // 토글 선택: 이미 선택된 카드라면 제거, 아니면 추가
                           const isSelected = selectedCardIds.includes(card.id);
-                          if (isSelected) {
-                            const appStore = useAppStore.getState();
-                            appStore.removeSelectedCard(card.id);
-                            toast.info(`'${card.title}' 선택 해제됨`);
-                          } else {
-                            const appStore = useAppStore.getState();
-                            appStore.addSelectedCard(card.id);
-                            toast.info(`'${card.title}' 선택됨`);
-                          }
+                          toggleSelectedCard(card.id);
+                          toast.info(`'${card.title}' ${isSelected ? '선택 해제됨' : '선택됨'}`);
                         } else {
                           // 일반 클릭: 단일 선택
                           selectCard(card.id);

@@ -17,19 +17,27 @@
  * 수정일: 2025-04-21 : syncCardsWithNodes 함수 수정 - 카드가 없는 경우에도 엣지 데이터를 초기화하지 않도록 변경
  * 수정일: 2025-04-21 : isIdeaMapLoading 초기 상태 false로 변경 - 실제 데이터 로딩 시작 시에만 로딩 상태 활성화
  * 수정일: 2025-04-21 : 노드와 엣지 상태 업데이트를 항상 원자적으로 수행하도록 수정 - 초기 로딩 시 엣지가 일시적으로 사라지는 문제 해결
+ * 수정일: 2025-04-21 : syncCardsWithNodes 함수 제거 - 카드-노드 연동을 TanStack Query로 대체
+ * 수정일: 2025-04-21 : nodes 배열과 관련 액션 제거 - TanStack Query로 대체
+ * 수정일: 2025-04-30 : 로컬 스토리지 키(IDEAMAP_LAYOUT_STORAGE_KEY) 관련 코드 제거
+ * 수정일: 2025-04-30 : Settings 인터페이스와 일치하도록 속성명 수정 (animate→animated, color→edgeColor, markerType→markerEnd)
+ * 수정일: 2025-05-12 : updateNodesSelectively, addNodeAtPosition 등 누락된 함수 추가
+ * 수정일: 2025-05-12 : applyNodeChangesAction 함수 추가 - 노드 위치 변경 처리
  */
 import { 
-  Node, 
   Edge, 
   Connection, 
-  applyNodeChanges, 
   applyEdgeChanges,
+  applyNodeChanges,
   addEdge,
-  NodeChange,
   EdgeChange,
   XYPosition,
   Viewport,
-  ReactFlowInstance
+  ReactFlowInstance,
+  MarkerType,
+  Node,
+  EdgeMarker,
+  NodeChange
 } from '@xyflow/react';
 import { toast } from 'sonner';
 import { create } from 'zustand';
@@ -37,13 +45,13 @@ import { persist } from 'zustand/middleware';
 
 import { CardData } from '@/components/ideamap/types/ideamap-types';
 import { NODE_TYPES_KEYS } from '@/lib/flow-constants';
-import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
+import { IDEAMAP_EDGES_STORAGE_KEY, IDEAMAP_TRANSFORM_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { 
   Settings, 
   DEFAULT_SETTINGS, 
   saveSettings,
-  applyIdeaMapEdgeSettings,
-  loadSettingsFromServer,
+  applyIdeaMapEdgeSettings, 
+  loadSettingsFromServer, 
   saveSettingsToServer
 } from '@/lib/ideamap-utils';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
@@ -61,10 +69,10 @@ interface ExtendedViewport extends Viewport {
 
 // 아이디어맵 스토어 상태 인터페이스
 export interface IdeaMapState {
-  // 노드 관련 상태
-  nodes: Node<CardData>[];
-  setNodes: (nodes: Node<CardData>[]) => void;
-  onNodesChange: (changes: NodeChange[]) => void;
+  // 노드 관련 상태 및 액션
+  nodes: Node[]; // 노드 배열 상태
+  setNodes: (nodes: Node[]) => void; // 노드 상태 설정 함수
+  applyNodeChangesAction: (changes: NodeChange[]) => void; // 노드 변경 사항 적용 함수
   
   // 엣지 관련 상태
   edges: Edge[];
@@ -82,7 +90,6 @@ export interface IdeaMapState {
   applyGridLayout: () => void;
   
   // 저장 관련 함수
-  saveLayout: (nodesToSave?: Node<CardData>[]) => boolean;
   saveEdges: (edgesToSave?: Edge[]) => boolean;
   saveAllLayoutData: () => boolean;
   
@@ -122,18 +129,6 @@ export interface IdeaMapState {
   restoreViewport: () => void;
   saveIdeaMapState: () => boolean;
 
-  // 노드 추가 관련 액션
-  addNodeAtPosition: (type: string, position: XYPosition, data?: Record<string, unknown>) => Promise<Node<CardData> | null>;
-  addCardAtCenterPosition: (cardData: CardData) => Promise<Node<CardData> | null>;
-  createEdgeAndNodeOnDrop: (cardData: CardData, position: XYPosition, connectingNodeId: string, handleType: 'source' | 'target') => Promise<Node<CardData> | null>;
-
-  // 새로 추가한 액션들 (useNodes 훅에서 이전)
-  applyNodeChangesAction: (changes: NodeChange[]) => void;
-  removeNodesAndRelatedEdgesFromStorage: (deletedNodeIds: string[]) => void;
-  addNodeAction: (newNodeData: Omit<Node<CardData>, 'id' | 'position'> & { position?: XYPosition }) => Promise<Node<CardData> | null>;
-  deleteNodeAction: (nodeId: string) => void;
-  saveNodesAction: () => boolean;
-
   // 새로 추가할 엣지 관련 액션들 (useEdges 훅에서 이전)
   applyEdgeChangesAction: (changes: EdgeChange[]) => void;
   removeEdgesFromStorage: (deletedEdgeIds: string[]) => void;
@@ -145,85 +140,39 @@ export interface IdeaMapState {
   // 추가된 함수: 드래그 앤 드롭으로 새 노드 추가하기
   onDrop: (event: React.DragEvent, position: XYPosition) => void;
 
-  // 새로 추가한 액션
-  syncCardsWithNodes: (forceRefresh?: boolean) => void;
-  
-  // 선택적 노드 업데이트 함수 - 변경된 카드에 대해서만 노드 업데이트
-  updateNodesSelectively: (changedCards: any[]) => void;
+  // 노드와 카드 동기화 관련 함수
+  updateNodesSelectively: (cards: CardData[]) => void;
+  addNodeAtPosition: (type: string, position: XYPosition, data: any) => void;
+  addCardAtCenterPosition: (cardData: CardData) => void;
+  createEdgeAndNodeOnDrop: (
+    cardData: CardData, 
+    position: XYPosition, 
+    connectingNodeId: string, 
+    handleType: 'source' | 'target'
+  ) => void;
 }
 
 // 아이디어맵 스토어 생성
 export const useIdeaMapStore = create<IdeaMapState>()(
   persist(
-    (set, get) => ({
-      // 노드 관련 초기 상태 및 함수
-      nodes: [],
+    (set, get) => ({      
+      // 노드 관련 상태 및 액션
+      nodes: [], // 노드 배열 초기 상태
       setNodes: (nodes) => {
         logger.debug('setNodes 호출:', { nodeCount: nodes.length });
         set({ nodes, hasUnsavedChanges: true });
       },
-      onNodesChange: (changes) => {
-        logger.debug('onNodesChange 호출:', { 
-          changeCount: changes.length,
-          changeTypes: changes.map(c => c.type).join(', ')
-        });
-        
-        // 삭제된 노드가 있는지 확인
-        const deleteChanges = changes.filter(
-          (change) => change.type === 'remove'
-        );
-        
-        // 삭제된 노드의 ID 추출
-        const deletedNodeIds = deleteChanges.map(
-          (change) => (change as NodeChange & { id: string }).id
-        );
-        
-        if (deletedNodeIds.length > 0) {
-          logger.debug('노드 삭제 감지:', { deletedNodeIds });
-        }
-        
-        // 엣지 업데이트 (삭제된 노드와 연결된 엣지 제거)
-        if (deletedNodeIds.length > 0) {
-          const currentEdges = get().edges;
-          const updatedEdges = currentEdges.filter(
-            (edge) => 
-              !deletedNodeIds.includes(edge.source) && 
-              !deletedNodeIds.includes(edge.target)
-          );
-          
-          // 엣지 변경이 있는 경우만 setEdges 호출
-          if (currentEdges.length !== updatedEdges.length) {
-            logger.debug('연결된 엣지 제거:', { 
-              이전엣지수: currentEdges.length, 
-              제거후엣지수: updatedEdges.length 
-            });
-            set({ edges: updatedEdges, hasUnsavedChanges: true });
-          }
-        }
-        
-        // 위치 변경이 있는 경우 저장 상태 업데이트
-        const positionChanges = changes.filter(
-          (change) => change.type === 'position' && change.dragging === false
-        );
-        
-        if (positionChanges.length > 0) {
-          logger.debug('노드 위치 확정 감지:', { 
-            positionChangesCount: positionChanges.length 
-          });
-        }
-        
-        if (positionChanges.length > 0 || deleteChanges.length > 0) {
-          set({ hasUnsavedChanges: true });
-        }
-        
-        // 노드 변경 적용
+      applyNodeChangesAction: (changes) => {
         set(state => {
-          const updatedNodes = applyNodeChanges(changes, state.nodes) as Node<CardData>[];
-          logger.debug('노드 변경 적용 완료:', { 
-            이전노드수: state.nodes.length,
-            변경후노드수: updatedNodes.length
+          const nextNodes = applyNodeChanges(changes, state.nodes);
+          logger.debug('노드 변경 적용:', { 
+            changeCount: changes.length,
+            changeTypes: changes.map(c => c.type).join(', ')
           });
-          return { nodes: updatedNodes };
+          return {
+            nodes: nextNodes,
+            hasUnsavedChanges: true
+          };
         });
       },
       
@@ -250,1543 +199,788 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         set(state => {
           const newEdge = addEdge({
             ...connection,
-            type: 'custom',
-            animated: state.ideaMapSettings.animated,
+            type: 'smoothstep',
+            animated: state.ideaMapSettings.animated || false,
             style: {
-              stroke: state.ideaMapSettings.edgeColor,
-              strokeWidth: state.ideaMapSettings.strokeWidth,
+              stroke: state.ideaMapSettings.edgeColor || '#C1C1C1',
+              strokeWidth: state.ideaMapSettings.strokeWidth || 2,
             },
-            markerEnd: state.ideaMapSettings.markerEnd ? {
-              type: state.ideaMapSettings.markerEnd,
-              width: state.ideaMapSettings.markerSize,
-              height: state.ideaMapSettings.markerSize,
-              color: state.ideaMapSettings.edgeColor,
-            } : undefined,
-            data: {
-              edgeType: state.ideaMapSettings.connectionLineType,
-              settings: {
-                animated: state.ideaMapSettings.animated,
-                connectionLineType: state.ideaMapSettings.connectionLineType,
-                strokeWidth: state.ideaMapSettings.strokeWidth,
-                edgeColor: state.ideaMapSettings.edgeColor,
-                selectedEdgeColor: state.ideaMapSettings.selectedEdgeColor,
-              }
-            }
+            markerEnd: {
+              type: MarkerType.Arrow,
+              color: state.ideaMapSettings.edgeColor || '#C1C1C1',
+              width: state.ideaMapSettings.markerSize || 15,
+              height: state.ideaMapSettings.markerSize || 15,
+            },
           }, state.edges);
           
-          logger.debug('새 엣지 생성 완료:', { 
-            엣지ID: newEdge[newEdge.length - 1]?.id,
-            총엣지수: newEdge.length
+          logger.debug('새 엣지 생성됨:', { 
+            sourceId: connection.source, 
+            targetId: connection.target,
+            edgeId: newEdge[newEdge.length - 1].id
           });
           
-          return {
+          return { 
             edges: newEdge,
             hasUnsavedChanges: true
           };
         });
       },
       
-      // 아이디어맵 설정 관련 초기 상태 및 함수
+      // 아이디어맵 설정 관련 상태 및 함수
       ideaMapSettings: DEFAULT_SETTINGS,
-      isSettingsLoading: false,
-      settingsError: null,
-      viewportToRestore: null,
-      setIdeaMapSettings: (settings) => {
-        set({ ideaMapSettings: settings });
-        saveSettings(settings);
-      },
+      setIdeaMapSettings: (settings) => set({ ideaMapSettings: settings }),
       updateIdeaMapSettings: async (partialSettings, isAuthenticated, userId) => {
         const currentSettings = get().ideaMapSettings;
         const newSettings = { ...currentSettings, ...partialSettings };
         
-        logger.debug('아이디어맵 설정 변경:', newSettings);
-        
-        // 1. 전역 상태 업데이트
+        // 로컬 상태 업데이트
         set({ ideaMapSettings: newSettings });
         
-        // 2. 새 설정을 엣지에 적용
-        const updatedEdges = applyIdeaMapEdgeSettings(get().edges, newSettings);
-        set({ edges: updatedEdges });
+        // 엣지 스타일 업데이트
+        get().updateEdgeStyles(newSettings);
         
-        // 3. 인증된 사용자인 경우 서버에도 저장
+        // 로컬 스토리지에 저장
+        saveSettings(newSettings);
+        
+        // 인증된 사용자인 경우 서버에도 저장
         if (isAuthenticated && userId) {
           try {
             await saveSettingsToServer(newSettings, userId);
-            // lotoast.success('아이디어맵 설정이 저장되었습니다');
-            logger.debug('아이디어맵 설정이 저장되었습니다');
-          } catch (err) {
-            logger.error('서버 저장 실패:', err);
-            // toast.error('서버에 설정 저장 실패');
+            logger.debug('서버에 설정 저장 성공:', { userId });
+          } catch (error) {
+            logger.error('서버에 설정 저장 실패:', error);
+            toast.error('설정을 서버에 저장하는 중 오류가 발생했습니다.');
           }
         }
       },
       
-      // 아이디어맵 데이터 로딩 상태 및 함수 (신규 추가)
-      isIdeaMapLoading: false,
-      ideaMapError: null,
-      loadedViewport: null,
-      needsFitView: false,
-      
-      /**
-       * loadIdeaMapData: 아이디어맵 데이터(노드, 엣지)를 로드하는 액션
-       * API에서 카드 데이터를 가져와 노드 데이터로 변환하고 
-       * 로컬 스토리지에서 위치, 엣지, 뷰포트 정보를 불러와 적용
-       */
-      loadIdeaMapData: async () => {
-        // 이미 로딩 중이면 중복 호출 방지
-        if (get().isIdeaMapLoading) {
-          logger.debug('이미 데이터 로딩 중, 중복 호출 방지');
-          return;
-        }
-        
-        // 로딩 상태 초기화
-        set({ 
-          isIdeaMapLoading: true, 
-          ideaMapError: null, 
-          loadedViewport: null, 
-          needsFitView: false 
-        });
-        
-        logger.debug('아이디어맵 데이터 로딩 시작');
-        try {
-          // 1. API 호출
-          logger.debug('카드 데이터 API 호출');
-          const response = await fetch('/api/cards');
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `데이터 불러오기 실패 (상태: ${response.status})`);
-          }
-          const cards = await response.json();
-          logger.debug('API 카드 데이터 로드 완료:', { 카드수: cards.length });
-
-          // 2. 로컬 스토리지에서 노드 위치, 뷰포트 정보 읽기
-          logger.debug('로컬 스토리지에서 레이아웃 데이터 로드 시작');
-          let nodePositions: Record<string, { position: XYPosition }> = {};
-          let savedEdges: Edge[] = []; // 빈 배열로 초기화
-          let savedViewport: Viewport | null = null;
-
-          try {
-            const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-            if (savedPositionsStr) {
-              nodePositions = JSON.parse(savedPositionsStr);
-              logger.debug('저장된 노드 위치 로드 완료:', { 
-                노드수: Object.keys(nodePositions).length,
-                데이터샘플: Object.keys(nodePositions).length > 0 ? 
-                  nodePositions[Object.keys(nodePositions)[0]] : null
-              });
-            } else {
-              logger.debug('저장된 노드 위치 없음, 기본 위치 사용 예정');
-            }
-
-            logger.debug('엣지 데이터는 더 이상 localStorage에서 로드하지 않습니다');
-
-            const transformString = localStorage.getItem(IDEAMAP_TRANSFORM_STORAGE_KEY);
-            if (transformString) {
-              savedViewport = JSON.parse(transformString);
-              logger.debug('저장된 뷰포트 로드 완료:', savedViewport);
-            } else {
-              logger.debug('저장된 뷰포트 없음, fitView 필요 설정');
-            }
-          } catch (err) {
-            logger.error('로컬 스토리지 읽기 오류:', err);
-            // toast.error('저장된 아이디어맵 레이아웃을 불러오는 중 문제가 발생했습니다.');
-          }
-
-          // 3. 노드 데이터 생성 및 위치 적용
-          logger.debug('카드 데이터를 노드로 변환 시작');
-          const nodes: Node<CardData>[] = cards.map((card: CardData, index: number) => {
-            // 저장된 위치 정보 가져오기 - 새로운 구조 적용
-            let savedPosition: XYPosition | undefined;
-            
-            if (nodePositions[card.id] && nodePositions[card.id].position) {
-              savedPosition = nodePositions[card.id].position;
-              logger.debug(`저장된 위치 발견 - 카드 ID: ${card.id}`);
-            }
-            
-            // 저장된 위치가 있으면 사용, 없으면 기본 위치 계산
-            const position = savedPosition || { 
-              x: (index % 5) * 250, 
-              y: Math.floor(index / 5) * 150 
-            };
-            
-            // 태그 처리 (카드에 cardTags가 있는 경우와 없는 경우 모두 처리)
-            const tags = card.cardTags && card.cardTags.length > 0
-              ? card.cardTags.map((cardTag: {tag: {name: string}}) => cardTag.tag.name)
-              : (card.tags || []);
-              
-            return {
-              id: card.id,
-              type: NODE_TYPES_KEYS.card,
-              position,
-              data: {
-                ...card,
-                tags,
-              },
-            };
-          });
-          
-          logger.debug('노드 데이터 생성 완료:', { 노드수: nodes.length });
-          logger.debug('생성된 노드의 위치 정보 확인:', nodes.map(node => ({
-            id: node.id,
-            position: node.position
-          })));
-
-          // 4. 엣지 데이터 설정 (저장된 엣지 사용 및 설정 적용)
-          const boardSettings = get().ideaMapSettings;
-          const finalEdges = cards.length > 0 ? applyIdeaMapEdgeSettings(savedEdges, boardSettings) : [];
-          logger.debug('엣지 스타일 적용 완료:', { 
-            엣지수: finalEdges.length,
-            스타일: {
-              animated: boardSettings.animated,
-              strokeWidth: boardSettings.strokeWidth,
-              edgeColor: boardSettings.edgeColor
-            }
-          });
-
-          // 5. 스토어 상태 업데이트 - 모든 상태를 한 번에 업데이트
-          logger.debug('스토어 상태 업데이트');
-          set({
-            nodes,
-            edges: finalEdges,
-            isIdeaMapLoading: false,
-            loadedViewport: savedViewport,
-            needsFitView: !savedViewport,
-            ideaMapError: null,
-          });
-          
-          // 최종 상태 설정 후 노드 로그 추가
-          logger.debug('최종 상태 설정 후 노드:', get().nodes.map(node => ({
-            id: node.id,
-            position: node.position
-          })));
-          
-          // 6. 카드 데이터를 전역 상태에 저장 (useAppStore)
-          // 현재의 카드 데이터와 새로 가져온 카드 데이터를 비교하여 변경사항이 있을 때만 설정
-          const currentCards = useAppStore.getState().cards;
-          const hasCardsChanged = 
-            currentCards.length !== cards.length || 
-            // 모든 카드를 비교하여 변경된 부분이 있는지 확인
-            cards.some((newCard: CardData) => {
-              const existingCard = currentCards.find(card => card.id === newCard.id);
-              if (!existingCard) return true; // 새 카드가 추가됨
-              
-              // 주요 속성 비교 (제목, 내용, 태그)
-              return (
-                existingCard.title !== newCard.title ||
-                existingCard.content !== newCard.content
-              );
-            });
-
-          if (hasCardsChanged) {
-            logger.debug('카드 데이터가 변경되어 AppStore 상태 업데이트:', {
-              이전카드수: currentCards.length,
-              새카드수: cards.length
-            });
-            useAppStore.getState().setCards(cards);
-          } else {
-            logger.debug('카드 데이터가 변경되지 않아 AppStore 상태 업데이트 건너뜀');
-          }
-          
-          // 7. 카드-노드 동기화 강제 실행은 필요한 경우에만 수행
-          // 이미 노드와 엣지가 원자적으로 설정되었으므로 추가 동기화는 필요한 경우만 수행
-          if (nodes.length !== cards.length || !finalEdges.length) {
-            logger.debug('데이터 불일치 감지: 카드-노드 동기화 예약');
-            // 약간의 지연 후 실행하여 다른 상태 업데이트와 충돌하지 않도록 함
-            setTimeout(() => {
-              logger.debug('데이터 로드 후 카드-노드 동기화 실행');
-              get().syncCardsWithNodes(true);
-            }, 200);
-          } else {
-            logger.debug('카드와 노드 데이터가 일치하여 추가 동기화 건너뜀');
-          }
-
-          // toast.success('아이디어맵 데이터를 성공적으로 불러왔습니다.');
-
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('아이디어맵 데이터 로딩 실패:', errorMessage);
-          // 오류 발생 시에도 여러 상태를 한 번에 업데이트
-          set({ 
-            isIdeaMapLoading: false, 
-            ideaMapError: errorMessage,
-            nodes: [],
-            edges: []
-          });
-        }
-      },
-      
-      // 레이아웃 함수
-      applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => {
-        const { nodes, edges } = get();
-        
-        if (nodes.length === 0) {
-          logger.error('노드가 없어 레이아웃을 적용할 수 없습니다');
-          return;
-        }
-        
-        try {
-          let layoutedNodes;
-          let layoutedEdges = edges; // 기본적으로 기존 엣지 사용
-          
-          if (direction === 'auto') {
-            // 자동 레이아웃 (그리드)
-            layoutedNodes = getGridLayout(nodes);
-          } else {
-            // 방향 기반 레이아웃
-            const { nodes: newNodes, edges: newEdges } = getLayoutedElements(nodes, edges, direction);
-            layoutedNodes = newNodes;
-            layoutedEdges = newEdges; // 엣지도 업데이트
-          }
-          
-          // 노드와 엣지 업데이트
-          set({ 
-            nodes: layoutedNodes as Node<CardData>[],
-            edges: layoutedEdges as Edge[],
-            hasUnsavedChanges: true
-          });
-          
-          // 레이아웃 적용 후 바로 저장 (추가된 부분)
-          setTimeout(() => {
-            const result = get().saveAllLayoutData(); // saveLayout 대신 saveAllLayoutData 호출
-            logger.debug(`${direction} 레이아웃 적용 후 위치 및 엣지 저장:`, result ? '성공' : '실패');
-            
-            if (result) {
-              set({ hasUnsavedChanges: false });
-            }
-          }, 200); // 상태 업데이트가 완료된 후 저장하기 위해 약간의 지연 추가
-          
-          // toast.info(`${direction === 'auto' ? '그리드' : direction === 'horizontal' ? '수평' : '수직'} 레이아웃이 적용되었습니다`);
-        } catch (error) {
-          logger.error('레이아웃 적용 중 오류:', error);
-          toast.error('레이아웃 적용에 실패했습니다');
-        }
-      },
-      
-      // 아이디어맵 레이아웃을 그리드 형태로 정렬
-      applyGridLayout: () => {
-        get().applyLayout('auto');
-      },
-      
-      // 저장 함수
-      saveLayout: (nodesToSave) => {
-        logger.debug('saveLayout 함수 호출됨', {
-          노드수: nodesToSave ? nodesToSave.length : get().nodes.length
-        });
-        
-        try {
-          // 1. 기존에 저장된 노드 위치 정보 불러오기
-          let existingPositions: Record<string, XYPosition> = {};
-          try {
-            const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-            if (savedPositionsStr) {
-              const parsedData = JSON.parse(savedPositionsStr);
-              // 중첩된 position 구조를 변환하여 처리
-              Object.entries(parsedData).forEach(([nodeId, data]) => {
-                if (typeof data === 'object' && data !== null && 'position' in data) {
-                  existingPositions[nodeId] = (data as { position: XYPosition }).position;
-                } else {
-                  existingPositions[nodeId] = data as XYPosition;
-                }
-              });
-              logger.debug('기존 저장된 노드 위치 로드:', { 
-                노드수: Object.keys(existingPositions).length 
-              });
-            }
-          } catch (err) {
-            logger.warn('기존 위치 정보 로드 실패:', err);
-          }
-          
-          const positionsData: Record<string, XYPosition> = {...existingPositions};
-          const nodes = nodesToSave || get().nodes;
-          
-          // 노드가 없으면 알림 후 리턴
-          if (!nodes || nodes.length === 0) {
-            logger.warn('저장할 노드가 없음');
-            return false;
-          }
-          
-          logger.debug('노드 위치 저장 준비:', { 노드수: nodes.length });
-          
-          // 각 노드의 위치 정보를 추출하여 positionsData 객체에 저장 (기존 정보 유지하면서 업데이트)
-          nodes.forEach(node => {
-            if (node && node.id && node.position) {
-              positionsData[node.id] = node.position;
-            } else {
-              logger.warn('노드 데이터 형식 오류:', node);
-            }
-          });
-          
-          // positionsData 객체가 비어있으면 오류 발생
-          if (Object.keys(positionsData).length === 0) {
-            logger.error('저장할 노드 위치 데이터가 없음');
-            return false;
-          }
-          
-          // 로컬 스토리지에 저장
-          const jsonData = JSON.stringify(positionsData);
-          localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, jsonData);
-          
-          logger.debug('노드 위치 저장 완료:', {
-            노드수: Object.keys(positionsData).length,
-            스토리지키: IDEAMAP_LAYOUT_STORAGE_KEY,
-            데이터크기: jsonData.length
-          });
-          
-          // 저장 후 로컬 스토리지 확인
-          const savedData = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-          if (!savedData) {
-            logger.error('저장 직후 데이터 확인 실패');
-            return false;
-          }
-          
-          // 저장이 성공한 경우 변경사항 업데이트
-          set({ hasUnsavedChanges: false });
-          
-          return true;
-        } catch (error: unknown) {
-          // const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('레이아웃 저장 실패:', error);
-          return false;
-        }
-      },
-      
-      saveEdges: (edgesToSave) => {
-        try {
-          // 엣지 배열 결정
-          const edges = edgesToSave || get().edges;
-          
-          // localStorage 저장 로직 제거
-
-          logger.debug('엣지 데이터는 더 이상 localStorage에 저장하지 않습니다');
-          return true;
-        } catch (error) {
-          logger.error('엣지 저장 중 오류:', error);
-          return false;
-        }
-      },
-      
-      saveAllLayoutData: () => {
-        const state = get();
-        const layoutSaved = state.saveLayout();
-        const edgesSaved = state.saveEdges();
-        
-        if (layoutSaved && edgesSaved) {
-          // toast.success('레이아웃이 저장되었습니다');
-          set({ hasUnsavedChanges: false });
-          return true;
-        }
-        
-        return false;
-      },
-      
-      // 엣지 스타일 업데이트
+      // 엣지 관련 함수
       updateEdgeStyles: (settings) => {
         const { edges } = get();
-        const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
+        const updatedEdges = edges.map(edge => {
+          return {
+            ...edge,
+            animated: settings.animated,
+            style: {
+              ...edge.style,
+              stroke: settings.edgeColor,
+              strokeWidth: settings.strokeWidth,
+            },
+            markerEnd: {
+              ...(edge.markerEnd as any),
+              type: settings.markerEnd,
+              color: settings.edgeColor,
+              width: settings.markerSize,
+              height: settings.markerSize,
+            },
+          };
+        });
+        
         set({ edges: updatedEdges });
       },
       
-      // 서버 동기화 함수
-      loadIdeaMapSettingsFromServerIfAuthenticated: async (isAuthenticated, userId) => {
-        if (!isAuthenticated || !userId) {
-          logger.debug('비인증 사용자는 설정을 로드하지 않음');
-          return;
-        }
-
-        set({ isSettingsLoading: true, settingsError: null });
-        try {
-          const settings = await loadSettingsFromServer(userId);
-          if (settings) {
-            // 여기서 설정을 저장 (로컬 스토리지에도 저장)
-            saveSettings(settings);
-            
-            // 전역 상태 업데이트
-            set({ 
-              ideaMapSettings: settings, 
-              isSettingsLoading: false 
-            });
-            
-            // 엣지 스타일도 업데이트
-            const { edges } = get();
-            const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
-            set({ edges: updatedEdges });
+      // 레이아웃 함수
+      applyLayout: (direction) => {
+        logger.debug('레이아웃 적용:', { direction });
+        const { edges, reactFlowInstance } = get();
+        
+        // 노드와 엣지 데이터가 있는지 확인
+        if (reactFlowInstance) {
+          const currentNodes = reactFlowInstance.getNodes();
+          
+          if (currentNodes.length === 0) {
+            logger.warn('레이아웃을 적용할 노드가 없습니다.');
+            toast.warning('레이아웃을 적용할 노드가 없습니다.');
+            return;
           }
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('[IdeaMapStore] 설정 로드 실패:', errorMessage);
-          logger.error('[IdeaMapStore] 설정 로드 실패:', errorMessage);
-          set({ 
-            settingsError: `설정 로드 실패: ${errorMessage}`, 
-            isSettingsLoading: false 
+          
+          // 노드 및 엣지 데이터 가져오기
+          const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+            currentNodes,
+            edges,
+            direction === 'auto' ? undefined : direction
+          );
+          
+          // 레이아웃 적용
+          reactFlowInstance.setNodes(layoutedNodes);
+          if (layoutedEdges) {
+            set({ edges: layoutedEdges });
+          }
+          
+          // 뷰포트 조정 (선택적)
+          setTimeout(() => {
+            if (reactFlowInstance) {
+              reactFlowInstance.fitView({ padding: 0.2 });
+            }
+          }, 100);
+          
+          set({ hasUnsavedChanges: true });
+          
+          logger.debug('레이아웃 적용 완료:', { 
+            nodeCount: layoutedNodes.length, 
+            edgeCount: layoutedEdges ? layoutedEdges.length : edges.length 
           });
+        } else {
+          logger.error('React Flow 인스턴스가 없어 레이아웃을 적용할 수 없습니다.');
+          toast.error('레이아웃을 적용할 수 없습니다. 페이지를 새로고침 해보세요.');
         }
+      },
+      
+      applyGridLayout: () => {
+        logger.debug('그리드 레이아웃 적용');
+        const { reactFlowInstance } = get();
+        
+        if (reactFlowInstance) {
+          const currentNodes = reactFlowInstance.getNodes();
+          
+          if (currentNodes.length === 0) {
+            logger.warn('그리드 레이아웃을 적용할 노드가 없습니다.');
+            toast.warning('그리드 레이아웃을 적용할 노드가 없습니다.');
+            return;
+          }
+          
+          // 그리드 레이아웃 계산
+          const gridLayoutNodes = getGridLayout(currentNodes);
+          
+          // 레이아웃 적용
+          reactFlowInstance.setNodes(gridLayoutNodes);
+          
+          // 뷰포트 조정 (선택적)
+          setTimeout(() => {
+            if (reactFlowInstance) {
+              reactFlowInstance.fitView({ padding: 0.2 });
+            }
+          }, 100);
+          
+          set({ hasUnsavedChanges: true });
+          
+          logger.debug('그리드 레이아웃 적용 완료:', { nodeCount: gridLayoutNodes.length });
+        } else {
+          logger.error('React Flow 인스턴스가 없어 그리드 레이아웃을 적용할 수 없습니다.');
+          toast.error('그리드 레이아웃을 적용할 수 없습니다. 페이지를 새로고침 해보세요.');
+        }
+      },
+      
+      // 저장 관련 함수
+      saveEdges: (edgesToSave) => {
+        const edgesToUse = edgesToSave || get().edges;
+        if (edgesToUse && edgesToUse.length > 0) {
+          try {
+            localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edgesToUse));
+            logger.debug('엣지 데이터 저장 완료:', { edgeCount: edgesToUse.length });
+            return true;
+          } catch (error) {
+            logger.error('엣지 데이터 저장 중 오류 발생:', error);
+            return false;
+          }
+        }
+        logger.debug('저장할 엣지 데이터가 없습니다.');
+        return false;
+      },
+      
+      saveAllLayoutData: () => {
+        logger.debug('모든 레이아웃 데이터 저장 시작');
+        
+        const { saveEdges, saveViewport } = get();
+        
+        // 엣지 저장
+        const edgesSaved = saveEdges();
+        
+        // 뷰포트 저장
+        saveViewport();
+        
+        set({ hasUnsavedChanges: false });
+        
+        logger.debug('모든 레이아웃 데이터 저장 완료:', { 
+          edgesSaved
+        });
+        
+        return edgesSaved;
+      },
+      
+      // 리액트 플로우 인스턴스 관련 상태 및 함수
+      reactFlowInstance: null,
+      setReactFlowInstance: (instance) => {
+        logger.debug('React Flow 인스턴스 설정:', !!instance);
+        set({ reactFlowInstance: instance });
       },
       
       // 엣지 생성 함수
       createEdgeOnDrop: (sourceId, targetId) => {
         const { ideaMapSettings } = get();
-        return {
-          id: `edge-${sourceId}-${targetId}-${Date.now()}`,
+        
+        const newEdge: Edge = {
+          id: `edge-${sourceId}-${targetId}`,
           source: sourceId,
           target: targetId,
-          type: 'custom',
-          animated: ideaMapSettings.animated,
+          type: 'smoothstep',
+          animated: ideaMapSettings.animated || false,
           style: {
-            stroke: ideaMapSettings.edgeColor,
-            strokeWidth: ideaMapSettings.strokeWidth,
+            stroke: ideaMapSettings.edgeColor || '#C1C1C1',
+            strokeWidth: ideaMapSettings.strokeWidth || 2,
           },
-          markerEnd: ideaMapSettings.markerEnd ? {
-            type: ideaMapSettings.markerEnd,
-            width: ideaMapSettings.markerSize,
-            height: ideaMapSettings.markerSize,
-            color: ideaMapSettings.edgeColor,
-          } : undefined,
-          data: {
-            edgeType: ideaMapSettings.connectionLineType,
-            settings: {
-              animated: ideaMapSettings.animated,
-              connectionLineType: ideaMapSettings.connectionLineType,
-              strokeWidth: ideaMapSettings.strokeWidth,
-              edgeColor: ideaMapSettings.edgeColor,
-              selectedEdgeColor: ideaMapSettings.selectedEdgeColor,
-            }
-          }
+          markerEnd: {
+            type: MarkerType.Arrow,
+            color: ideaMapSettings.edgeColor || '#C1C1C1',
+            width: ideaMapSettings.markerSize || 15,
+            height: ideaMapSettings.markerSize || 15,
+          },
         };
+        
+        // 새 엣지를 상태에 추가
+        set(state => ({
+          edges: [...state.edges, newEdge],
+          hasUnsavedChanges: true
+        }));
+        
+        logger.debug('드롭으로 엣지 생성:', { 
+          sourceId, 
+          targetId, 
+          edgeId: newEdge.id 
+        });
+        
+        return newEdge;
       },
       
-      // 변경 사항 추적
+      // 변경 사항 추적 상태 및 함수
       hasUnsavedChanges: false,
       setHasUnsavedChanges: (value) => set({ hasUnsavedChanges: value }),
       
-      // 리액트 플로우 인스턴스
-      reactFlowInstance: null,
-      setReactFlowInstance: (instance) => set({ reactFlowInstance: instance }),
+      // 아이디어맵 데이터 로딩 상태 및 액션
+      isIdeaMapLoading: false,
+      ideaMapError: null,
+      loadedViewport: null,
+      needsFitView: false,
+      loadIdeaMapData: async () => {
+        logger.info('아이디어맵 데이터 로드 시작');
+        
+        set({ isIdeaMapLoading: true, ideaMapError: null });
+        
+        try {
+          // 로드된 데이터가 있을 경우 상태 업데이트
+          set({ 
+            isIdeaMapLoading: false,
+            needsFitView: true
+          });
+          
+          logger.info('아이디어맵 데이터 로드 완료');
+          
+        } catch (error) {
+          logger.error('아이디어맵 데이터 로드 중 오류 발생:', error);
+          set({ 
+            isIdeaMapLoading: false, 
+            ideaMapError: error instanceof Error ? error.message : '데이터 로드 중 오류가 발생했습니다.'
+          });
+        }
+      },
+      
+      // 추가된 상태 및 액션
+      viewportToRestore: null,
+      isSettingsLoading: false,
+      settingsError: null,
+      
+      // 서버 동기화 함수
+      loadIdeaMapSettingsFromServerIfAuthenticated: async (isAuthenticated, userId) => {
+        if (!isAuthenticated || !userId) {
+          logger.debug('인증되지 않았거나 사용자 ID가 없어 설정을 로드하지 않습니다.');
+          return;
+        }
+        
+        set({ isSettingsLoading: true, settingsError: null });
+        
+        try {
+          const serverSettings = await loadSettingsFromServer(userId);
+          
+          if (serverSettings) {
+            logger.debug('서버에서 설정 로드 성공:', serverSettings);
+            set({ 
+              ideaMapSettings: serverSettings,
+              isSettingsLoading: false
+            });
+            
+            // 엣지 스타일 업데이트
+            get().updateEdgeStyles(serverSettings);
+          } else {
+            logger.debug('서버에 저장된 설정이 없습니다.');
+            set({ isSettingsLoading: false });
+          }
+        } catch (error) {
+          logger.error('서버에서 설정 로드 중 오류 발생:', error);
+          set({ 
+            isSettingsLoading: false, 
+            settingsError: error instanceof Error ? error.message : '설정 로드 중 오류가 발생했습니다.'
+          });
+        }
+      },
       
       // useIdeaMapUtils에서 이전된 액션들
       loadAndApplyIdeaMapSettings: async (userId) => {
+        set({ isSettingsLoading: true, settingsError: null });
+        
         try {
-          set({ isSettingsLoading: true, settingsError: null });
-          
           // 서버에서 설정 로드
-          const settings = await loadSettingsFromServer(userId);
+          const serverSettings = await loadSettingsFromServer(userId);
           
-          // 설정이 로드되면 적용
-          if (settings) {
-            set({ ideaMapSettings: settings });
+          if (serverSettings) {
+            logger.debug('서버에서 설정 로드 및 적용:', serverSettings);
+            
+            // 설정 적용
+            set({ ideaMapSettings: serverSettings });
             
             // 엣지 스타일 업데이트
-            const updatedEdges = applyIdeaMapEdgeSettings(get().edges, settings);
-            set({ edges: updatedEdges });
+            get().updateEdgeStyles(serverSettings);
+            
+            // 로컬 스토리지에도 저장
+            saveSettings(serverSettings);
           } else {
-            // 낙관적 업데이트 구현 후, 기본값을 로컬 스토리지에 저장하고 바로 DB에도 저장하는 로직 구현 (추가 예정)
-            // TODO: 여기서 DEFAULT_IDEAMAP_SETTINGS를 서버에 바로 저장하여 새 사용자 경험 개선 필요
-            logger.warn('저장된 아이디어맵 설정이 없어 기본값을 사용합니다');
+            logger.debug('서버에 저장된 설정이 없습니다. 로컬 설정을 유지합니다.');
           }
           
           set({ isSettingsLoading: false });
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('아이디어맵 설정 로드 실패:', errorMessage);
-          logger.error('[useIdeaMapStore] 아이디어맵 설정 로드 실패:', errorMessage);
+        } catch (error) {
+          logger.error('설정 로드 및 적용 중 오류 발생:', error);
+          set({ 
+            isSettingsLoading: false, 
+            settingsError: error instanceof Error ? error.message : '설정 로드 및 적용 중 오류가 발생했습니다.'
+          });
         }
       },
       
       updateAndSaveIdeaMapSettings: async (newSettings, userId) => {
         const currentSettings = get().ideaMapSettings;
-        // 설정 업데이트
         const updatedSettings = { ...currentSettings, ...newSettings };
+        
+        // 로컬 상태 업데이트
+        set({ ideaMapSettings: updatedSettings });
+        
+        // 엣지 스타일 업데이트
+        get().updateEdgeStyles(updatedSettings);
         
         // 로컬 스토리지에 저장
         saveSettings(updatedSettings);
         
-        // 전역 상태 업데이트
-        set({ ideaMapSettings: updatedSettings });
-        
-        // 엣지 스타일 업데이트
-        const updatedEdges = applyIdeaMapEdgeSettings(get().edges, updatedSettings);
-        set({ edges: updatedEdges });
-        
-        // 인증된 사용자면 서버에도 저장
+        // 서버에 저장 (인증된 사용자인 경우)
         if (userId) {
           try {
             await saveSettingsToServer(updatedSettings, userId);
-            // toast.success('아이디어맵 설정이 저장되었습니다');
-          } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-            // console.error('설정 저장 실패:', errorMessage);
-            logger.error('[useIdeaMapStore] 설정 저장 실패:', errorMessage);
+            logger.debug('서버에 설정 저장 성공:', { userId });
+          } catch (error) {
+            logger.error('서버에 설정 저장 중 오류 발생:', error);
+            toast.error('설정을 서버에 저장하는 중 오류가 발생했습니다.');
           }
         }
       },
       
       saveViewport: () => {
         const { reactFlowInstance } = get();
-        if (!reactFlowInstance) return;
         
-        try {
-          const viewport = reactFlowInstance.getViewport() as ExtendedViewport;
+        if (reactFlowInstance) {
+          const viewport = reactFlowInstance.getViewport();
           
-          // 로컬 스토리지에 저장
-          localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
-          logger.info('[IdeaMapStore] 뷰포트 저장 완료:', viewport);
-          
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('뷰포트 저장 실패:', errorMessage);
-          // console.error('[뷰포트 저장 실패]', errorMessage);
+          try {
+            localStorage.setItem(IDEAMAP_TRANSFORM_STORAGE_KEY, JSON.stringify(viewport));
+            logger.debug('뷰포트 저장 완료:', viewport);
+          } catch (error) {
+            logger.error('뷰포트 저장 중 오류 발생:', error);
+          }
         }
       },
       
       restoreViewport: () => {
-        const { reactFlowInstance, viewportToRestore } = get();
+        const { reactFlowInstance, viewportToRestore, loadedViewport } = get();
+        const targetViewport = viewportToRestore || loadedViewport;
         
-        if (!reactFlowInstance || !viewportToRestore) {
-          console.log('[IdeaMapStore] 뷰포트를 복원할 수 없음');
-          return;
-        }
-        
-        try {
-          // 뷰포트 복원
-          reactFlowInstance.setViewport(viewportToRestore);
-          logger.info('[IdeaMapStore] 뷰포트 복원 완료:', viewportToRestore);
-          
-          // 복원 후 상태 초기화
-          set({ viewportToRestore: null });
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('[뷰포트 복원 실패]', errorMessage);
-          logger.error('뷰포트 저장 실패:', errorMessage);
-        }
-      },
-      
-      // 노드를 주어진 위치에 추가하는 액션
-      addNodeAtPosition: async (type, position, data = {}) => {
-        try {
-          // 1. 새 노드 ID 생성
-          const newNodeId = `node-${Date.now()}`;
-          
-          // 2. 기본 노드 데이터 생성
-          const newNode: Node<CardData> = {
-            id: newNodeId,
-            type,
-            position,
-            data: {
-              id: newNodeId,
-              title: data.title as string || '새 카드',
-              content: data.content as string || '',
-              tags: data.tags as string[] || [],
-              ...Object.fromEntries(
-                Object.entries(data).filter(([key]) => !['id', 'title', 'content', 'tags'].includes(key))
-              )
-            },
-          };
-          
-          // 3. 노드 저장
-          const { nodes } = get();
-          set({
-            nodes: [...nodes, newNode],
-            hasUnsavedChanges: true
-          });
-          
-          return newNode;
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('노드 추가 실패:', errorMessage);
-          logger.error('[useIdeaMapStore] 노드 추가 실패:', errorMessage);
-          // toast.error('노드를 추가하는데 실패했습니다');
-          return null;
-        }
-      },
-
-      // 카드를 중앙 위치에 추가하는 액션
-      addCardAtCenterPosition: async (cardData: CardData) => {
-        const state = get();
-        const reactFlowInstance = state.reactFlowInstance;
-        
-        if (!reactFlowInstance) {
-          logger.error('ReactFlow 인스턴스가 초기화되지 않았습니다');
-          return null;
-        }
-        
-        try {
-          // 뷰포트 중앙 또는 기본 위치 계산
-          const viewport = reactFlowInstance.getViewport() as ExtendedViewport;
-          const centerPosition = {
-            x: viewport.x + (viewport.width || 0) / 2 - 75, // 카드 너비의 절반 만큼 조정
-            y: viewport.y + (viewport.height || 0) / 2 - 50  // 카드 높이의 절반 만큼 조정
-          };
-          
-          return await state.addNodeAtPosition('card', centerPosition, cardData);
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('[addCardAtCenterPosition Action] 카드 추가 실패:', errorMessage);
-          logger.error(`중앙에 카드 추가 실패: ${errorMessage}`);
-          return null;
-        }
-      },
-
-      // 엣지와 노드를 동시에 생성하는 액션
-      createEdgeAndNodeOnDrop: async (cardData: CardData, position, connectingNodeId, handleType) => {
-        const state = get();
-        
-        try {
-          // 1. 노드 추가
-          const newNode = await state.addNodeAtPosition('card', position, cardData);
-          
-          if (!newNode) {
-            throw new Error('노드 생성 실패');
-          }
-          
-          // 2. 엣지 추가
-          let connection: Connection;
-          
-          if (handleType === 'source') {
-            // 연결 노드가 출발점
-            connection = {
-              source: connectingNodeId,
-              target: newNode.id,
-              sourceHandle: null,
-              targetHandle: null
-            };
-          } else {
-            // 연결 노드가 도착점
-            connection = {
-              source: newNode.id,
-              target: connectingNodeId,
-              sourceHandle: null,
-              targetHandle: null
-            };
-          }
-          
-          // 엣지 생성 및 추가
-          state.onConnect(connection);
-          
-          // 3. 데이터 저장
-          state.saveIdeaMapState();
-          
-          // toast.success('카드 및 연결선이 생성되었습니다');
-          return newNode;
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('[createEdgeAndNodeOnDrop Action] 노드 및 엣지 생성 실패:', errorMessage);
-          // toast.error(`카드 및 연결선 생성 실패: ${errorMessage}`);
-          return null;
+        if (reactFlowInstance && targetViewport) {
+          // setTimeout으로 지연 실행 (React Flow 초기화 시간 확보)
+          setTimeout(() => {
+            reactFlowInstance.setViewport(targetViewport);
+            logger.debug('뷰포트 복원 완료:', targetViewport);
+          }, 250);
         }
       },
       
       saveIdeaMapState: () => {
-        const state = get();
-        const layoutSaved = state.saveLayout();
-        const edgesSaved = state.saveEdges();
+        logger.debug('아이디어맵 상태 저장 시작');
         
-        // 뷰포트 저장
-        state.saveViewport();
+        const { saveAllLayoutData } = get();
         
-        if (layoutSaved && edgesSaved) {
+        // 모든 레이아웃 데이터 저장
+        const saved = saveAllLayoutData();
+        
+        if (saved) {
+          logger.debug('아이디어맵 상태 저장 완료');
           set({ hasUnsavedChanges: false });
-          // toast.success('아이디어맵 상태가 저장되었습니다');
-          return true;
+        } else {
+          logger.warn('아이디어맵 상태 저장 실패 또는 저장할 데이터 없음');
         }
         
-        logger.error('아이디어맵 상태 저장에 실패했습니다');
-        return false;
+        return saved;
       },
-      
-      /**
-       * applyNodeChangesAction: 노드 변경사항을 적용하는 액션
-       * @param changes 노드 변경 사항 배열
-       */
-      applyNodeChangesAction: (changes: NodeChange[]) => {
-        logger.info('[useIdeaMapStore] applyNodeChangesAction 호출:', { 
-          변경수: changes.length,
-          변경유형: changes.map(c => c.type).join(', ')
-        });
-        
-        // 삭제된 노드가 있는지 확인
-        const deleteChanges = changes.filter(change => change.type === 'remove');
-        
-        // 삭제된 노드가 있으면 로컬 스토리지에서도 해당 노드 정보를 제거
-        if (deleteChanges.length > 0) {
-          const deletedNodeIds = deleteChanges.map(change => change.id);
-          logger.info('[useIdeaMapStore] 노드 삭제 감지:', { deletedNodeIds });
-          get().removeNodesAndRelatedEdgesFromStorage(deletedNodeIds);
-        }
-        
-        // 위치 변경이 있는 경우 저장 상태 업데이트
-        const positionChanges = changes.filter(
-          change => change.type === 'position' && change.dragging === false
-        );
-        
-        if (positionChanges.length > 0) {
-          logger.info('[useIdeaMapStore] 노드 위치 변경 확정 감지:', { 
-            변경노드수: positionChanges.length 
-          });
-        }
-        
-        if (positionChanges.length > 0 || deleteChanges.length > 0) {
-          set({ hasUnsavedChanges: true });
-        }
-        
-        // 노드 변경 적용
+
+      // 엣지 관련 액션
+      applyEdgeChangesAction: (changes) => {
         set(state => {
-          const updatedNodes = applyNodeChanges(changes, state.nodes) as Node<CardData>[];
-          logger.info('[useIdeaMapStore] 노드 변경 적용 완료:', { 
-            이전노드수: state.nodes.length,
-            변경후노드수: updatedNodes.length
+          const updatedEdges = applyEdgeChanges(changes, state.edges);
+          logger.debug('엣지 변경 적용:', { 
+            changeCount: changes.length, 
+            edgeCount: updatedEdges.length 
           });
-          return { nodes: updatedNodes };
+          return { edges: updatedEdges, hasUnsavedChanges: true };
         });
       },
-      
-      /**
-       * removeNodesAndRelatedEdgesFromStorage: 로컬 스토리지에서 노드와 관련 엣지 정보를 제거하는 액션
-       * @param deletedNodeIds 삭제된 노드 ID 배열
-       */
-      removeNodesAndRelatedEdgesFromStorage: (deletedNodeIds: string[]) => {
-        console.log('[useIdeaMapStore] 노드 및 관련 엣지 스토리지에서 제거 시도:', { deletedNodeIds });
+
+      removeEdgesFromStorage: (deletedEdgeIds) => {
         try {
-          // 현재 저장된 노드 위치 정보 가져오기
-          const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-          if (savedPositionsStr) {
-            // 새로운 데이터 구조 적용
-            const savedPositions = JSON.parse(savedPositionsStr) as Record<string, { position: XYPosition }>;
+          const storedEdgesString = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
+          
+          if (storedEdgesString) {
+            const storedEdges = JSON.parse(storedEdgesString) as Edge[];
+            const filteredEdges = storedEdges.filter(
+              edge => !deletedEdgeIds.includes(edge.id)
+            );
             
-            // 삭제된 노드 ID 제거
-            const updatedPositions = Object.entries(savedPositions)
-              .filter(([nodeId]) => !deletedNodeIds.includes(nodeId))
-              .reduce((acc, [nodeId, data]) => {
-                acc[nodeId] = data;
-                return acc;
-              }, {} as Record<string, { position: XYPosition }>);
-              
-            // 업데이트된 위치 정보 저장
-            localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(updatedPositions));
-            logger.info('[useIdeaMapStore] 노드 위치 정보 업데이트:', {
-              이전노드수: Object.keys(savedPositions).length,
-              현재노드수: Object.keys(updatedPositions).length
-            });
-            
-            // 엣지 정보도 업데이트 (삭제된 노드와 연결된 엣지 제거)
-            const savedEdgesStr = localStorage.getItem(IDEAMAP_EDGES_STORAGE_KEY);
-            if (savedEdgesStr) {
-              const savedEdges = JSON.parse(savedEdgesStr) as Edge[];
-              const updatedEdges = savedEdges.filter(
-                edge => 
-                  !deletedNodeIds.includes(edge.source) && 
-                  !deletedNodeIds.includes(edge.target)
-              );
-              
-              localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(updatedEdges));
-              logger.info('[useIdeaMapStore] 엣지 정보 업데이트:', {
-                이전엣지수: savedEdges.length,
-                현재엣지수: updatedEdges.length
-              });
-            }
-          }
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('[useIdeaMapStore] 스토리지에서 노드 제거 실패:', errorMessage);
-        }
-      },
-      
-      /**
-       * addNodeAction: 새 노드를 추가하는 액션
-       * @param newNodeData 새 노드 데이터 (id와 position 제외)
-       * @returns 생성된 노드 또는 null (실패 시)
-       */
-      addNodeAction: async (newNodeData) => {
-        try {
-          // 카드 데이터 생성
-          const cardData = newNodeData.data as CardData;
-          
-          // 노드 ID 생성
-          const nodeId = `node-${Date.now()}`;
-          
-          // 노드 위치 설정
-          const nodePosition = newNodeData.position || { x: 0, y: 0 };
-          
-          // 노드 생성
-          const newNode: Node<CardData> = {
-            id: nodeId,
-            type: newNodeData.type || 'card',
-            position: nodePosition,
-            data: {
-              id: nodeId,
-              title: cardData.title || '새 카드',
-              content: cardData.content || '',
-              tags: cardData.tags || [],
-              ...Object.fromEntries(
-                Object.entries(cardData).filter(([key]) => !['id', 'title', 'content', 'tags'].includes(key))
-              )
-            },
-            ...(newNodeData.draggable !== undefined ? { draggable: newNodeData.draggable } : {}),
-            ...(newNodeData.selectable !== undefined ? { selectable: newNodeData.selectable } : {}),
-          };
-          
-          // 현재 노드 목록에 추가
-          const currentNodes = get().nodes;
-          const updatedNodes = [...currentNodes, newNode];
-          set({ nodes: updatedNodes, hasUnsavedChanges: true });
-          
-          return newNode;
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          logger.error('[useIdeaMapStore] 노드 추가 중 오류 발생:', errorMessage);
-          // toast.error(`노드 추가 실패: ${errorMessage}`);
-          return null;
-        }
-      },
-      
-      /**
-       * deleteNodeAction: 노드를 삭제하는 액션
-       * @param nodeId 삭제할 노드 ID
-       */
-      deleteNodeAction: (nodeId) => {
-        try {
-          // 노드 데이터 가져오기 (토스트 메시지용)
-          const nodeToDelete = get().nodes.find(node => node.id === nodeId);
-          const { nodes, edges } = get();
-          
-          // 업데이트된 상태 계산
-          const updatedNodes = nodes.filter(node => node.id !== nodeId);
-          const updatedEdges = edges.filter(edge => 
-            edge.source !== nodeId && edge.target !== nodeId
-          );
-          
-          // 단일 set 호출로 상태 업데이트
-          set({
-            nodes: updatedNodes,
-            edges: updatedEdges,
-            hasUnsavedChanges: true
-          });
-          
-          // 로컬 스토리지에서 삭제
-          get().removeNodesAndRelatedEdgesFromStorage([nodeId]);
-          
-          // 성공 메시지
-          if (nodeToDelete) {
-            // toast.success(`'${nodeToDelete.data.title}' 노드가 삭제되었습니다`);
-            logger.info(`'${nodeToDelete.data.title}' 노드가 삭제되었습니다`);
-          } else {
-            // toast.success('노드가 삭제되었습니다');
-            logger.info('노드가 삭제되었습니다');
-          }
-          
-        } catch (err) {
-          logger.error('노드 삭제 실패:', err);
-          // toast.error('노드 삭제에 실패했습니다');
-        }
-      },
-      
-      /**
-       * saveNodesAction: 노드 위치 정보를 로컬 스토리지에 저장하는 액션
-       * @returns 저장 성공 여부
-       */
-      saveNodesAction: () => {
-        try {
-          const nodes = get().nodes;
-          
-          // 노드 ID와 위치만 저장
-          const nodePositions = nodes.reduce((acc: Record<string, { position: XYPosition }>, node: Node<CardData>) => {
-            acc[node.id] = { position: node.position };
-            return acc;
-          }, {});
-          
-          localStorage.setItem(IDEAMAP_LAYOUT_STORAGE_KEY, JSON.stringify(nodePositions));
-          
-          // 변경 사항 플래그 업데이트
-          set({ hasUnsavedChanges: false });
-          
-          // toast.success('노드 레이아웃이 저장되었습니다');
-          logger.info('노드 레이아웃이 저장되었습니다');
-          return true;
-        } catch (err) {
-          // console.error('레이아웃 저장 실패:', err);
-          logger.error('[useIdeaMapStore] 레이아웃 저장 실패:', err);
-          return false;
-        }
-      },
-      
-      // 엣지 관련 새 액션들
-      
-      /**
-       * applyEdgeChangesAction: 엣지 변경 사항을 적용하는 액션
-       * @param changes 엣지 변경 사항 배열
-       */
-      applyEdgeChangesAction: (changes: EdgeChange[]) => {
-        logger.info('[useIdeaMapStore] applyEdgeChangesAction 호출됨', { changesCount: changes.length });
-        
-        // 삭제된 엣지 ID 식별
-        const deleteChanges = changes.filter(change => change.type === 'remove');
-        const deletedEdgeIds = deleteChanges.map(change => change.id);
-        
-        // 상태 업데이트 - Zustand 상태만 업데이트 (Three-Layer-Standard 준수)
-        set((state) => {
-          const prevEdgeCount = state.edges.length;
-          const nextEdges = applyEdgeChanges(changes, state.edges);
-          logger.info('[useIdeaMapStore] applyEdgeChanges 적용 완료', { 
-            prevCount: prevEdgeCount, 
-            nextCount: nextEdges.length,
-            deletedCount: deletedEdgeIds.length
-          });
-          
-          return { 
-            edges: nextEdges,
-            hasUnsavedChanges: true // 변경사항이 있음을 표시
-          };
-        });
-        
-        // 참고: 이제 DB 동기화는 TanStack Query 훅(useDeleteEdge 등)을 통해 처리해야 함
-        // 로컬 스토리지 저장 로직은 삭제 (Three-Layer-Standard에 따라 Zustand는 UI 상태만 관리)
-      },
-      
-      /**
-       * removeEdgesFromStorage: 삭제된 엣지를 스토리지에서 제거하는 액션
-       * 참고: 이 함수는 레거시 호환성을 위해 유지하지만, 실제 DB 삭제는 
-       * TanStack Query의 useDeleteEdge 훅을 사용해야 함
-       * @param deletedEdgeIds 삭제된 엣지 ID 배열
-       * @deprecated DB 동기화는 TanStack Query 사용 권장
-       */
-      removeEdgesFromStorage: (deletedEdgeIds: string[]) => {
-        logger.info('[useIdeaMapStore] removeEdgesFromStorage 호출됨. 참고: 실제 DB 삭제는 useDeleteEdge 훅 사용 권장');
-        // 이제 이 함수는 로그만 남기고 실제 동작은 하지 않음 (Three-Layer-Standard 준수)
-      },
-      
-      /**
-       * connectNodesAction: 노드 간 연결을 생성하는 액션
-       * 참고: 이 함수는 UI 상태 업데이트만 담당하며, 실제 DB 저장은
-       * TanStack Query의 useCreateEdge 훅을 사용해야 함
-       * @param connection 연결 파라미터
-       */
-      connectNodesAction: (connection: Connection) => {
-        const { ideaMapSettings, edges, nodes } = get();
-        
-        // 노드가 없을 때는 연결 시도를 무시
-        if (nodes.length === 0) {
-          logger.debug('노드가 없어 노드 연결 요청을 무시합니다.');
-          return;
-        }
-        
-        const newEdge: Edge = {
-          ...connection,
-          id: `edge-${connection.source}-${connection.target}-${Date.now()}`,
-          type: 'custom',
-          animated: ideaMapSettings.animated,
-          style: {
-            stroke: ideaMapSettings.edgeColor,
-            strokeWidth: ideaMapSettings.strokeWidth,
-          },
-          markerEnd: ideaMapSettings.markerEnd ? {
-            type: ideaMapSettings.markerEnd,
-            width: ideaMapSettings.markerSize,
-            height: ideaMapSettings.markerSize,
-            color: ideaMapSettings.edgeColor,
-          } : undefined,
-          data: {
-            edgeType: ideaMapSettings.connectionLineType,
-            settings: {
-              animated: ideaMapSettings.animated,
-              connectionLineType: ideaMapSettings.connectionLineType,
-              strokeWidth: ideaMapSettings.strokeWidth,
-              edgeColor: ideaMapSettings.edgeColor,
-              selectedEdgeColor: ideaMapSettings.selectedEdgeColor,
-            }
-          }
-        };
-        
-        const updatedEdges = [...edges, newEdge];
-        set({ edges: updatedEdges, hasUnsavedChanges: true });
-        
-        // DB에 엣지 저장을 위한 이벤트 발행
-        // Three-Layer-Standard에 따라 DB 저장은 여기서 직접 하지 않고,
-        // 이 액션이 호출된 후 useCreateEdge 훅이 실행되어야 함
-        
-        // useAppStore에서 activeProjectId 가져오기 (IdeaMapStore에서는 접근 불가)
-        // 엣지 생성에 필요한 정보 로깅
-        logger.info('[useIdeaMapStore] 노드 연결 생성 완료. DB 저장 위한 정보:', {
-          source: connection.source,
-          target: connection.target,
-          sourceHandle: connection.sourceHandle,
-          targetHandle: connection.targetHandle
-        });
-      },
-      
-      /**
-       * saveEdgesAction: 현재 엣지 상태를 저장하는 액션
-       * 참고: 이 함수는 레거시 호환성을 위해 유지하지만, 실제 DB 저장은
-       * TanStack Query의 useCreateEdge 또는 useUpdateEdge 훅을 사용해야 함
-       * @returns 저장 성공 여부
-       * @deprecated DB 동기화는 TanStack Query 사용 권장
-       */
-      saveEdgesAction: () => {
-        logger.info('[useIdeaMapStore] saveEdgesAction 호출됨. 참고: 실제 DB 저장은 useCreateEdge/useUpdateEdge 훅 사용 권장');
-        // Three-Layer-Standard를 준수하여 Zustand는 UI 상태만 관리
-        set({ hasUnsavedChanges: false }); // UI 상태 업데이트
-        return true; // 호환성을 위해 성공 반환
-      },
-      
-      /**
-       * updateAllEdgeStylesAction: 아이디어맵 설정에 따라 모든 엣지 스타일을 업데이트하는 액션
-       */
-      updateAllEdgeStylesAction: () => {
-        const { edges, ideaMapSettings } = get();
-        
-        if (edges.length === 0) return;
-        
-        try {
-          // applyIdeaMapEdgeSettings 함수는 새 엣지 배열을 반환함
-          const updatedEdges = applyIdeaMapEdgeSettings(edges, ideaMapSettings);
-          
-          // 엣지 배열 자체가 변경된 경우에만 setEdges 호출
-          if (JSON.stringify(updatedEdges) !== JSON.stringify(edges)) {
-            set({
-              edges: updatedEdges,
-              hasUnsavedChanges: true
+            localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(filteredEdges));
+            logger.debug('스토리지에서 엣지 제거 완료:', { 
+              삭제된엣지수: deletedEdgeIds.length,
+              남은엣지수: filteredEdges.length
             });
           }
         } catch (error) {
-          // console.error('엣지 스타일 업데이트 중 오류:', error);
-          logger.error('[useIdeaMapStore] 엣지 스타일 업데이트 중 오류:', error);
-        }
-      },
-      
-      /**
-       * createEdgeOnDropAction: 드롭 이벤트에 대한 새 엣지를 생성하는 액션
-       * @param sourceId 소스 노드 ID
-       * @param targetId 타겟 노드 ID
-       * @returns 생성된 엣지 객체
-       */
-      createEdgeOnDropAction: (sourceId: string, targetId: string) => {
-        const { ideaMapSettings: settings } = get();
-        
-        const newEdge: Edge = {
-          id: `edge-${sourceId}-${targetId}-${Date.now()}`,
-          source: sourceId,
-          target: targetId,
-          type: 'custom',
-          animated: settings.animated,
-          style: {
-            stroke: settings.edgeColor,
-            strokeWidth: settings.strokeWidth,
-          },
-          markerEnd: settings.markerEnd ? {
-            type: settings.markerEnd,
-            width: settings.markerSize,
-            height: settings.markerSize,
-            color: settings.edgeColor,
-          } : undefined,
-          data: {
-            edgeType: settings.connectionLineType,
-            settings: {
-              animated: settings.animated,
-              connectionLineType: settings.connectionLineType,
-              strokeWidth: settings.strokeWidth,
-              edgeColor: settings.edgeColor,
-              selectedEdgeColor: settings.selectedEdgeColor,
-            }
-          }
-        };
-        
-        const styledEdge = applyIdeaMapEdgeSettings([newEdge], settings)[0];
-        return styledEdge;
-      },
-
-      // 추가된 함수: 드래그 앤 드롭으로 새 노드 추가하기
-      onDrop: (event: React.DragEvent, position: XYPosition) => {
-        event.preventDefault();
-        
-        try {
-          const cardData = JSON.parse(event.dataTransfer.getData('application/reactflow')) as Record<string, unknown>;
-          
-          if (!cardData || !cardData.title) {
-            throw new Error('유효하지 않은 카드 데이터');
-          }
-          
-          // 노드 추가
-          get().addNodeAtPosition('card', position, cardData);
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-          // console.error('드롭된 데이터 처리 중 오류 발생:', errorMessage);
-          logger.error('[useIdeaMapStore] 드롭된 데이터 처리 중 오류 발생:', errorMessage);
+          logger.error('스토리지에서 엣지 제거 중 오류 발생:', error);
         }
       },
 
-      // 새로 추가한 액션
-      syncCardsWithNodes: (forceRefresh = false) => {
-        const appStoreCards = useAppStore.getState().cards;
-        const currentNodes = get().nodes;
-        const currentEdges = get().edges;
-        
-        logger.debug('syncCardsWithNodes 시작', {
-          강제실행: forceRefresh,
-          카드개수: appStoreCards.length,
-          현재노드개수: currentNodes.length,
-          현재엣지수: currentEdges.length
-        });
-        
-        // 카드가 없는 경우 특별 처리
-        if (appStoreCards.length === 0) {
-          logger.warn('카드가 없습니다. 노드만 초기화하고 엣지는 유지합니다.');
-          // 노드와 엣지를 함께 원자적으로 업데이트 (엣지는 유지)
-          set({ 
-            nodes: [],
-            edges: currentEdges, // 현재 엣지 상태 유지
-            hasUnsavedChanges: true
+      connectNodesAction: (connection) => {
+        logger.debug('노드 연결:', connection);
+        set(state => {
+          const newEdge = addEdge({
+            ...connection,
+            type: 'smoothstep',
+            animated: state.ideaMapSettings.animated || false,
+            style: {
+              stroke: state.ideaMapSettings.edgeColor || '#C1C1C1',
+              strokeWidth: state.ideaMapSettings.strokeWidth || 2,
+            },
+            markerEnd: {
+              type: MarkerType.Arrow,
+              color: state.ideaMapSettings.edgeColor || '#C1C1C1',
+              width: state.ideaMapSettings.markerSize || 15,
+              height: state.ideaMapSettings.markerSize || 15,
+            },
+          }, state.edges);
+          
+          logger.debug('새 연결 생성:', { 
+            sourceId: connection.source, 
+            targetId: connection.target 
           });
           
+          return { edges: newEdge, hasUnsavedChanges: true };
+        });
+      },
+
+      saveEdgesAction: () => {
+        const { edges } = get();
+        if (edges.length > 0) {
+          try {
+            localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edges));
+            logger.debug('엣지 저장 완료:', { edgeCount: edges.length });
+            return true;
+          } catch (error) {
+            logger.error('엣지 저장 중 오류 발생:', error);
+            return false;
+          }
+        }
+        return false;
+      },
+
+      updateAllEdgeStylesAction: () => {
+        const { ideaMapSettings, edges } = get();
+        
+        const updatedEdges = edges.map(edge => ({
+          ...edge,
+          animated: ideaMapSettings.animated || false,
+          style: {
+            ...edge.style,
+            stroke: ideaMapSettings.edgeColor || '#C1C1C1',
+            strokeWidth: ideaMapSettings.strokeWidth || 2,
+          },
+          markerEnd: {
+            ...(edge.markerEnd as any),
+            type: MarkerType.Arrow,
+            color: ideaMapSettings.edgeColor || '#C1C1C1',
+            width: ideaMapSettings.markerSize || 15,
+            height: ideaMapSettings.markerSize || 15,
+          },
+        }));
+        
+        set({ edges: updatedEdges });
+        logger.debug('모든 엣지 스타일 업데이트 완료:', { edgeCount: edges.length });
+      },
+
+      createEdgeOnDropAction: (sourceId, targetId) => {
+        const { ideaMapSettings } = get();
+        
+        const newEdge: Edge = {
+          id: `edge-${sourceId}-${targetId}`,
+          source: sourceId,
+          target: targetId,
+          type: 'smoothstep',
+          animated: ideaMapSettings.animated || false,
+          style: {
+            stroke: ideaMapSettings.edgeColor || '#C1C1C1',
+            strokeWidth: ideaMapSettings.strokeWidth || 2,
+          },
+          markerEnd: {
+            type: MarkerType.Arrow,
+            color: ideaMapSettings.edgeColor || '#C1C1C1',
+            width: ideaMapSettings.markerSize || 15,
+            height: ideaMapSettings.markerSize || 15,
+          },
+        };
+        
+        set(state => ({
+          edges: [...state.edges, newEdge],
+          hasUnsavedChanges: true
+        }));
+        
+        logger.debug('드롭으로 엣지 생성:', { 
+          sourceId, 
+          targetId, 
+          edgeId: newEdge.id 
+        });
+        
+        return newEdge;
+      },
+      
+      // 드래그 앤 드롭으로 새 노드 추가하기
+      onDrop: (event, position) => {
+        event.preventDefault();
+        
+        const dataTransfer = event.dataTransfer;
+        const cardDataString = dataTransfer.getData('application/json');
+        
+        if (!cardDataString) {
+          logger.warn('드롭된 데이터가 없거나 적절한 형식이 아닙니다.');
           return;
         }
         
-        // 변경이 필요한지 확인
-        let needsUpdate = forceRefresh;
+        try {
+          const cardData = JSON.parse(cardDataString) as CardData;
+          logger.debug('카드 데이터가 드롭됨:', { 
+            cardId: cardData.id, 
+            position, 
+            title: cardData.title 
+          });
+        } catch (error) {
+          logger.error('드롭된 데이터 파싱 중 오류 발생:', error);
+        }
+      },
+
+      // React Query 카드 데이터 변경 시 노드 선택적 업데이트
+      updateNodesSelectively: (cards) => {
+        logger.debug('카드 데이터로 노드 선택적 업데이트:', { cardCount: cards.length });
         
-        if (!needsUpdate) {
-          // 카드 수와 노드 수가 다르면 업데이트 필요
-          if (appStoreCards.length !== currentNodes.length) {
-            needsUpdate = true;
-            logger.debug('카드 수와 노드 수가 달라 업데이트 필요:', 
-              { 카드: appStoreCards.length, 노드: currentNodes.length });
-          } else {
-            // 각 카드가 노드에 제대로 반영되어 있는지 확인
-            needsUpdate = appStoreCards.some(card => {
-              const matchingNode = currentNodes.find(node => node.id === card.id);
+        // ReactFlow 인스턴스 확인
+        const { reactFlowInstance, nodes } = get();
+        if (!reactFlowInstance) {
+          logger.debug('ReactFlow 인스턴스가 없습니다. nodes 상태를 직접 업데이트합니다.');
+          
+          try {
+            // 현재 노드에서 업데이트할 노드 찾기
+            const updatedNodes = [...nodes];
+            let hasChanges = false;
+            
+            // 각 카드에 대해 해당하는 노드 찾아 데이터 업데이트
+            cards.forEach(card => {
+              const nodeIndex = updatedNodes.findIndex(node => node.data?.id === card.id);
               
-              // 매칭되는 노드가 없거나 타이틀이 다르면 업데이트 필요
-              if (!matchingNode) {
-                logger.debug(`카드 ${card.id}에 대응하는 노드가 없음`);
-                return true;
+              if (nodeIndex !== -1) {
+                // 기존 노드 찾음 - 데이터 업데이트
+                const nodeToUpdate = updatedNodes[nodeIndex];
+                updatedNodes[nodeIndex] = {
+                  ...nodeToUpdate,
+                  data: {
+                    ...nodeToUpdate.data,
+                    ...card, // 카드 데이터로 업데이트
+                    label: card.title || '제목 없음', // 라벨 업데이트
+                  }
+                };
+                hasChanges = true;
               }
-              
-              if (matchingNode.data.title !== card.title) {
-                logger.debug(`카드와 노드의 타이틀 불일치 (ID: ${card.id}):`, {
-                  카드타이틀: card.title,
-                  노드타이틀: matchingNode.data.title
-                });
-                return true;
-              }
-              
-              return false;
             });
+            
+            // 변경사항이 있으면 노드 상태 업데이트
+            if (hasChanges) {
+              logger.debug('노드 데이터 업데이트 적용 (직접 상태 업데이트)');
+              set({
+                nodes: updatedNodes
+              });
+            }
+            return;
+          } catch (error) {
+            logger.error('노드 선택적 업데이트(비인스턴스) 중 오류 발생:', error);
+            return;
           }
         }
         
-        // 업데이트가 필요하면 노드 배열 업데이트
-        if (needsUpdate) {
-          logger.debug('카드와 노드 동기화 수행 시작');
+        try {
+          // 현재 노드 가져오기
+          const currentNodes = reactFlowInstance.getNodes();
+          const updatedNodes = [...currentNodes];
+          let hasChanges = false;
           
-          if (appStoreCards.length === 0) {
-            logger.warn('카드가 없습니다. 빈 노드 배열로 업데이트하고 엣지는 유지합니다.');
-            set({ 
-              nodes: [],
-              edges: currentEdges, // 현재 엣지 상태 유지
-              hasUnsavedChanges: true
-            });
+          // 각 카드에 대해 해당하는 노드 찾아 데이터 업데이트
+          cards.forEach(card => {
+            const nodeIndex = updatedNodes.findIndex(node => node.data?.id === card.id);
             
+            if (nodeIndex !== -1) {
+              // 기존 노드 찾음 - 데이터 업데이트
+              const nodeToUpdate = updatedNodes[nodeIndex];
+              updatedNodes[nodeIndex] = {
+                ...nodeToUpdate,
+                data: {
+                  ...nodeToUpdate.data,
+                  ...card, // 카드 데이터로 업데이트
+                  label: card.title || '제목 없음', // 라벨 업데이트
+                }
+              };
+              hasChanges = true;
+            }
+          });
+          
+          // 변경사항이 있으면 노드 업데이트
+          if (hasChanges) {
+            logger.debug('노드 데이터 업데이트 적용 (reactFlowInstance 사용)');
+            reactFlowInstance.setNodes(updatedNodes);
+          }
+        } catch (error) {
+          logger.error('노드 선택적 업데이트 중 오류 발생:', error);
+        }
+      },
+      
+      // 특정 위치에 새 노드 추가
+      addNodeAtPosition: (type, position, data) => {
+        logger.debug('특정 위치에 노드 추가:', { type, position, id: data.id });
+        
+        // ReactFlow 인스턴스 확인
+        const { reactFlowInstance } = get();
+        if (!reactFlowInstance) {
+          logger.warn('ReactFlow 인스턴스가 없어 노드를 추가할 수 없습니다.');
+          return;
+        }
+        
+        try {
+          // 현재 노드 가져오기
+          const currentNodes = reactFlowInstance.getNodes();
+          
+          // 새 노드 ID 생성
+          const nodeId = `${type}-${data.id}`;
+          
+          // 이미 존재하는 노드인지 확인
+          const existingNodeIndex = currentNodes.findIndex(node => node.id === nodeId);
+          if (existingNodeIndex !== -1) {
+            logger.debug('이미 존재하는 노드, 추가하지 않음:', nodeId);
             return;
           }
           
-          try {
-            // 1. 먼저 로컬 스토리지에서 저장된 노드 위치 정보 확인
-            const savedPositions: Record<string, XYPosition> = {};
-            try {
-              const savedPositionsStr = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-              if (savedPositionsStr) {
-                const parsedData = JSON.parse(savedPositionsStr);
-                // 중첩된 position 구조를 처리
-                Object.entries(parsedData).forEach(([nodeId, data]) => {
-                  if (typeof data === 'object' && data !== null && 'position' in data) {
-                    savedPositions[nodeId] = (data as { position: XYPosition }).position;
-                  } else {
-                    // 이전 구조로 저장된 경우 (직접 위치 좌표가 저장된 경우)
-                    savedPositions[nodeId] = data as unknown as XYPosition;
-                  }
-                });
-                logger.debug('저장된 노드 위치 정보 로드 성공:', { 
-                  노드수: Object.keys(savedPositions).length 
-                });
-              }
-            } catch (err) {
-              logger.warn('로컬 스토리지 위치 정보 로드 실패:', err);
-            }
-            
-            // 2. 그 다음 현재 노드 위치 정보 백업 (로컬 스토리지에 없는 노드용)
-            const currentPositions: Record<string, XYPosition> = {};
-            currentNodes.forEach(node => {
-              if (!savedPositions[node.id]) {
-                currentPositions[node.id] = node.position;
-              }
-            });
-            logger.debug('현재 노드 위치 정보 백업 완료:', { 
-              백업노드수: Object.keys(currentPositions).length 
-            });
-            
-            // 3. 새 노드 배열 생성
-            const updatedNodes = appStoreCards.map((card, index) => {
-              // 위치 결정 우선순위:
-              // 1. 로컬 스토리지의 저장된 위치
-              // 2. 현재 노드 배열의 위치
-              // 3. 기본 위치 계산
-              let position: XYPosition;
-              
-              if (savedPositions[card.id]) {
-                position = savedPositions[card.id];
-                logger.debug(`카드 ${card.id}의 저장된 위치 사용`);
-              } else if (currentPositions[card.id]) {
-                position = currentPositions[card.id];
-                logger.debug(`카드 ${card.id}의 현재 노드 위치 사용`);
-              } else {
-                position = calculateNodePosition(index, appStoreCards.length);
-                logger.debug(`카드 ${card.id}의 새 위치 계산`);
-              }
-
-              // 태그 처리
-              const tags = card.cardTags && card.cardTags.length > 0
-                ? card.cardTags.map((cardTag: {tag: {name: string}}) => cardTag.tag.name)
-                : (card.tags || []);
-              
-              const node = {
-                id: card.id,
-                type: NODE_TYPES_KEYS.card, // 명시적으로 카드 타입 지정
-                position,
-                data: {
-                  ...card,
-                  tags,
-                  // 클라이언트 측 사용을 위한 추가 메타데이터
-                  _syncedAt: new Date().toISOString(),
-                  _nodeType: NODE_TYPES_KEYS.card
-                },
-              };
-              
-              return node;
-            });
-            
-            // 4. 한 번에 set 호출
-            // 엣지 업데이트 - 기존 노드와 연결된 엣지만 유지
-            const currentEdges = get().edges;
-            const validNodeIds = updatedNodes.map(node => node.id);
-            
-            // 엣지 유효성 검사 - 유효하지 않은 노드를 참조하는 엣지가 있는 경우에만 필터링
-            // 이렇게 하면 카드 데이터가 아직 로드되지 않은 경우에도 엣지가 보존됨
-            let edgesToUse = currentEdges;
-            
-            // 현재 엣지 중에 유효하지 않은 노드를 참조하는 것이 있는지 확인
-            const hasInvalidEdges = currentEdges.some(edge => 
-              !validNodeIds.includes(edge.source) || !validNodeIds.includes(edge.target)
-            );
-            
-            // 유효하지 않은 엣지가 있는 경우에만 필터링 수행
-            if (hasInvalidEdges) {
-              const validEdges = currentEdges.filter(edge => 
-                validNodeIds.includes(edge.source) && validNodeIds.includes(edge.target)
-              );
-              
-              logger.debug('유효하지 않은 엣지 제거:', {
-                기존엣지: currentEdges.length,
-                유효엣지: validEdges.length,
-                제거됨: currentEdges.length - validEdges.length
-              });
-              
-              // 필터링된 엣지로 업데이트
-              edgesToUse = validEdges;
-            } else {
-              logger.debug('모든 엣지가 유효함, 필터링 건너뜀');
-            }
-            
-            // 노드와 필요한 경우에만 엣지를 업데이트하여 상태 설정
-            set({ 
-              nodes: updatedNodes,
-              edges: edgesToUse, // 항상 edges를 업데이트하여 원자적으로 처리
-              hasUnsavedChanges: true 
-            });
-            
-            // 로컬 스토리지에 엣지 저장 (필요한 경우에만)
-            if (hasInvalidEdges) {
-              try {
-                localStorage.setItem(IDEAMAP_EDGES_STORAGE_KEY, JSON.stringify(edgesToUse));
-              } catch (err) {
-                logger.error('엣지 정보 저장 중 오류:', err);
-              }
-            }
-            
-            logger.debug('카드-노드 동기화 완료, 새 노드 배열 설정:', { 
-              노드수: updatedNodes.length,
-              엣지수: edgesToUse.length,
-              엣지필터링됨: hasInvalidEdges
-            });
-            
-          } catch (err) {
-            logger.error('카드-노드 동기화 중 오류 발생:', err);
-            // toast.error('카드와 노드 동기화 중 오류가 발생했습니다');
-          }
-        } else {
-          logger.debug('카드-노드 동기화 불필요, 업데이트 건너뜀');
+          // 새 노드 생성
+          const newNode = {
+            id: nodeId,
+            type: type, // 노드 타입 (card, note, etc)
+            position,
+            data: {
+              ...data,
+              id: data.id,
+              label: data.title || '제목 없음',
+            },
+          };
+          
+          // 노드 추가
+          const updatedNodes = [...currentNodes, newNode];
+          reactFlowInstance.setNodes(updatedNodes);
+          
+          logger.debug('새 노드 추가 완료:', { nodeId, type });
+        } catch (error) {
+          logger.error('노드 추가 중 오류 발생:', error);
         }
       },
       
-      // 선택적 노드 업데이트 함수 - 변경된 카드에 대해서만 노드 업데이트
-      updateNodesSelectively: (changedCards: any[]) => {
-        const state = get();
-        const cardIds = changedCards.map(card => card.id);
+      // 카드 데이터로 중앙 위치에 노드 추가
+      addCardAtCenterPosition: (cardData) => {
+        logger.debug('카드 데이터로 중앙에 노드 추가:', { cardId: cardData.id });
         
-        logger.debug('선택적 노드 업데이트 실행:', { 
-          변경된카드수: changedCards.length,
-          현재노드수: state.nodes.length,
-          현재엣지수: state.edges.length
-        });
-        
-        if (changedCards.length === 0) {
-          logger.debug('변경된 카드가 없습니다. 업데이트를 건너뜁니다.');
+        // ReactFlow 인스턴스 확인
+        const { reactFlowInstance } = get();
+        if (!reactFlowInstance) {
+          logger.warn('ReactFlow 인스턴스가 없어 노드를 추가할 수 없습니다.');
           return;
         }
         
-        // 1. 현재 노드 맵 생성 (빠른 검색을 위해)
-        const currentNodesMap = state.nodes.reduce((acc, node) => {
-          acc[node.id] = node;
-          return acc;
-        }, {} as Record<string, Node<CardData>>);
-        
-        // 2. 저장된 위치 정보 로드
-        const savedPositions = loadIdeaMapPositions();
-        
-        // 현재 노드들의 위치 정보 맵 생성
-        const currentPositions: Record<string, XYPosition> = {};
-        state.nodes.forEach(node => {
-          currentPositions[node.id] = node.position;
-        });
-        
-        // 3. 변경된 카드에 대해서만 노드 생성/업데이트
-        const updatedNodes = state.nodes.map(node => {
-          // 변경된 카드에 해당하는 노드인 경우에만 업데이트
-          if (cardIds.includes(node.id)) {
-            const card = changedCards.find(c => c.id === node.id);
-            if (card) {
-              logger.debug(`노드 ${node.id} 데이터 업데이트`);
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  ...card,
-                  tags: card.cardTags 
-                    ? card.cardTags.map((cardTag: any) => cardTag.tag.name) 
-                    : (card.tags || []),
-                  _syncedAt: new Date().toISOString()
-                }
-              };
-            }
-          }
+        try {
+          // 중앙 위치 계산
+          const viewport = reactFlowInstance.getViewport();
+          const centerX = (window.innerWidth / 2) / viewport.zoom - viewport.x / viewport.zoom;
+          const centerY = (window.innerHeight / 2) / viewport.zoom - viewport.y / viewport.zoom;
           
-          // 변경 없음
-          return node;
+          // 위치에 노드 추가 함수 호출
+          get().addNodeAtPosition('card', { x: centerX, y: centerY }, cardData);
+        } catch (error) {
+          logger.error('중앙에 카드 노드 추가 중 오류 발생:', error);
+        }
+      },
+      
+      // 엣지 드롭으로 노드 생성 및 엣지 추가
+      createEdgeAndNodeOnDrop: (cardData, position, connectingNodeId, handleType) => {
+        logger.debug('엣지 드롭으로 노드 생성 및 엣지 추가:', {
+          cardId: cardData.id,
+          position,
+          connectingNodeId,
+          handleType
         });
         
-        // 4. 새로 추가된 카드에 대한 노드 생성
-        const existingNodeIds = updatedNodes.map(node => node.id);
-        const newCards = changedCards.filter(card => !existingNodeIds.includes(card.id));
-        
-        if (newCards.length > 0) {
-          logger.debug('새로 추가된 카드 감지:', { 개수: newCards.length, IDs: newCards.map(c => c.id) });
+        // ReactFlow 인스턴스 확인
+        const { reactFlowInstance } = get();
+        if (!reactFlowInstance) {
+          logger.warn('ReactFlow 인스턴스가 없어 노드와 엣지를 추가할 수 없습니다.');
+          return;
         }
         
-        const newNodes = newCards.map((card, index) => {
-          // 위치 결정: 저장된 위치 > 현재 노드 위치 > 계산된 위치
-          let position: XYPosition;
+        try {
+          // 새 노드 ID 생성
+          const newNodeId = `card-${cardData.id}`;
           
-          if (savedPositions[card.id]) {
-            position = savedPositions[card.id];
-            logger.debug(`카드 ${card.id}의 저장된 위치 사용`);
-          } else if (currentPositions[card.id]) {
-            position = currentPositions[card.id];
-            logger.debug(`카드 ${card.id}의 현재 노드 위치 사용`);
-          } else {
-            position = calculateNodePosition(index, newCards.length);
-            logger.debug(`카드 ${card.id}의 새 위치 계산`);
-          }
+          // 노드 추가
+          get().addNodeAtPosition('card', position, cardData);
           
-          return {
-            id: card.id,
-            type: NODE_TYPES_KEYS.card,
-            position,
-            data: {
-              ...card,
-              tags: card.cardTags 
-                ? card.cardTags.map((cardTag: any) => cardTag.tag.name) 
-                : (card.tags || []),
-              _syncedAt: new Date().toISOString(),
-              _nodeType: NODE_TYPES_KEYS.card
-            }
-          };
-        });
-        
-        // 변경된 내용이 있는 경우에만 상태 업데이트
-        if (newNodes.length > 0 || updatedNodes.some((node, idx) => node !== state.nodes[idx])) {
-          logger.debug('노드 상태 업데이트:', {
-            업데이트된노드: updatedNodes.length,
-            새노드: newNodes.length,
-            유지할엣지수: state.edges.length
+          // 엣지 연결 - handleType에 따라 소스와 타겟 결정
+          const connection: Connection = handleType === 'source'
+            ? { source: newNodeId, target: connectingNodeId, sourceHandle: null, targetHandle: null }
+            : { source: connectingNodeId, target: newNodeId, sourceHandle: null, targetHandle: null };
+          
+          // 엣지 생성 (onConnect 함수 사용)
+          get().onConnect(connection);
+          
+          logger.debug('엣지 드롭으로 노드 및 엣지 추가 완료:', {
+            newNodeId,
+            connectingNodeId,
+            handleType
           });
-          
-          // 최종 노드 배열과 현재 엣지를 함께 원자적으로 업데이트
-          set({ 
-            nodes: [...updatedNodes, ...newNodes],
-            edges: state.edges, // 현재 엣지 상태 유지하면서 함께 업데이트
-            hasUnsavedChanges: true
-          });
-          
-          // 카드-노드 변경 후 레이아웃 저장
-          setTimeout(() => {
-            get().saveLayout();
-          }, 200);
-        } else {
-          logger.debug('변경 사항이 없어 노드 업데이트를 건너뜁니다.');
+        } catch (error) {
+          logger.error('엣지 드롭으로 노드 및 엣지 추가 중 오류 발생:', error);
         }
       },
     }),
     {
       name: 'ideamap-store',
       partialize: (state) => ({
-        ideaMapSettings: state.ideaMapSettings
-      })
+        // 퍼시스트할 상태만 선택
+        edges: state.edges,
+        nodes: state.nodes, // nodes 상태도 퍼시스트
+        ideaMapSettings: state.ideaMapSettings,
+        loadedViewport: state.loadedViewport,
+        needsFitView: state.needsFitView,
+        viewportToRestore: state.viewportToRestore,
+      }),
     }
   )
 );
-
-/**
- * calculateNodePosition: 노드의 위치를 계산
- * @param index - 노드 인덱스
- * @param totalNodes - 전체 노드 수
- * @returns 노드 좌표 {x, y}
- */
-const calculateNodePosition = (index: number, totalNodes: number) => {
-  const angle = (index / totalNodes) * 2 * Math.PI;
-  const radius = Math.min(200, totalNodes * 30); // 노드 수에 따라 반지름 조정
-  const x = 400 + radius * Math.cos(angle);
-  const y = 300 + radius * Math.sin(angle);
-  return { x, y };
-}; 
-
-// 로컬 스토리지에서 저장된 노드 위치를 로드하는 함수
-const loadIdeaMapPositions = (): Record<string, XYPosition> => {
-  try {
-    const savedLayout = localStorage.getItem(IDEAMAP_LAYOUT_STORAGE_KEY);
-    if (savedLayout) {
-      const parsed = JSON.parse(savedLayout);
-      logger.debug('저장된 레이아웃 로드:', { nodeCount: Object.keys(parsed).length });
-      
-      // 중첩된 position 객체 구조 처리
-      const positions: Record<string, XYPosition> = {};
-      Object.entries(parsed).forEach(([nodeId, data]) => {
-        if (typeof data === 'object' && data !== null && 'position' in data) {
-          positions[nodeId] = (data as { position: XYPosition }).position;
-        } else {
-          positions[nodeId] = data as XYPosition;
-        }
-      });
-      
-      return positions;
-    }
-  } catch (error) {
-    logger.error('레이아웃 로드 오류:', error);
-  }
-  
-  return {};
-};

@@ -1,58 +1,48 @@
 /**
- * 파일명: useEdges.test.tsx
- * 목적: useEdges 커스텀 훅 테스트
- * 역할: 엣지 관련 훅이 useIdeaMapStore 액션을 올바르게 호출하는지 검증
- * 작성일: 2025-03-28
- * 수정일: 2025-04-11 (리팩토링)
+ * 파일명: src/components/ideamap/hooks/useEdges.test.tsx
+ * 목적: useIdeaMapEdges 훅 테스트
+ * 역할: useIdeaMapEdges 훅의 기능 검증
+ * 작성일: 2025-04-21
+ * 수정일: 2025-04-21 : useEdges에서 useIdeaMapEdges로 이름 변경
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { Edge, Connection, Node, MarkerType, ConnectionLineType, Position, EdgeChange } from '@xyflow/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
-
-// 모든 모킹은 파일 최상단에 위치
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn(),
-  }
-}));
+import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
+import { Edge, Connection, Node, EdgeChange, Position, ConnectionLineType, MarkerType } from '@xyflow/react';
+import { IdeaMapSettings } from '@/components/ideamap/types/ideamap-types';
 
 // useIdeaMapStore 모킹
 vi.mock('@/store/useIdeaMapStore', () => {
+  // 모킹할 함수들을 정의
   const mockApplyEdgeChangesAction = vi.fn();
   const mockConnectNodesAction = vi.fn();
   const mockSaveEdgesAction = vi.fn().mockReturnValue(true);
   const mockUpdateAllEdgeStylesAction = vi.fn();
   const mockCreateEdgeOnDropAction = vi.fn();
   const mockSetEdges = vi.fn();
-
-  const edges = [{
-    id: 'edge-1',
-    source: 'node-1',
-    target: 'node-2',
-    type: 'custom',
-  }];
+  const edges: Edge[] = [
+    {
+      id: 'edge-1',
+      source: 'node-1',
+      target: 'node-2',
+      type: 'custom',
+    }
+  ];
 
   return {
-    useIdeaMapStore: (selector: ((state: any) => any) | undefined) => {
-      if (typeof selector === 'function') {
-        const state = {
-          edges,
-          setEdges: mockSetEdges,
-          applyEdgeChangesAction: mockApplyEdgeChangesAction,
-          connectNodesAction: mockConnectNodesAction,
-          saveEdgesAction: mockSaveEdgesAction,
-          updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
-          createEdgeOnDropAction: mockCreateEdgeOnDropAction,
-          hasUnsavedChanges: false
-        };
-        return selector(state);
-      }
-      return {
+    // useIdeaMapStore 훅 자체를 모킹
+    useIdeaMapStore: (selector?: ((state: any) => any) | undefined) => {
+      // selector 함수가 전달된 경우 실행, 아니면 전체 상태 객체 반환
+      return selector ? selector({
+        edges,
+        setEdges: mockSetEdges,
+        applyEdgeChangesAction: mockApplyEdgeChangesAction,
+        connectNodesAction: mockConnectNodesAction,
+        saveEdgesAction: mockSaveEdgesAction,
+        updateAllEdgeStylesAction: mockUpdateAllEdgeStylesAction,
+        createEdgeOnDropAction: mockCreateEdgeOnDropAction,
+        hasUnsavedChanges: false
+      }) : {
         edges,
         setEdges: mockSetEdges,
         applyEdgeChangesAction: mockApplyEdgeChangesAction,
@@ -77,7 +67,7 @@ vi.mock('@xyflow/react', async () => {
 // 테스트할 훅 임포트
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
-import { useEdges } from './useEdges';
+import { useIdeaMapEdges } from './useIdeaMapEdges';
 
 // 테스트용 보드 설정
 const mockIdeaMapSettings: IdeaMapSettings = {
@@ -109,7 +99,7 @@ const mockNodes: Node[] = [
   }
 ];
 
-describe('useEdges', () => {
+describe('useIdeaMapEdges', () => {
   beforeEach(() => {
     // 모든 모킹 초기화
     vi.clearAllMocks();
@@ -121,7 +111,7 @@ describe('useEdges', () => {
   });
 
   it('초기 상태가 올바르게 반환되어야 함', () => {
-    const { result } = renderHook(() => useEdges({
+    const { result } = renderHook(() => useIdeaMapEdges({
       ideaMapSettings: mockIdeaMapSettings,
       nodes: mockNodes
     }));
@@ -135,7 +125,7 @@ describe('useEdges', () => {
   });
 
   it('handleEdgesChange가 applyEdgeChangesAction을 호출해야 함', () => {
-    const { result } = renderHook(() => useEdges({
+    const { result } = renderHook(() => useIdeaMapEdges({
       ideaMapSettings: mockIdeaMapSettings,
       nodes: mockNodes
     }));
@@ -157,7 +147,7 @@ describe('useEdges', () => {
   });
 
   it('onConnect가 connectNodesAction을 호출해야 함', () => {
-    const { result } = renderHook(() => useEdges({
+    const { result } = renderHook(() => useIdeaMapEdges({
       ideaMapSettings: mockIdeaMapSettings,
       nodes: mockNodes
     }));
@@ -181,7 +171,7 @@ describe('useEdges', () => {
   });
 
   it('saveEdges가 setEdges와 saveEdgesAction을 호출해야 함', () => {
-    const { result } = renderHook(() => useEdges({
+    const { result } = renderHook(() => useIdeaMapEdges({
       ideaMapSettings: mockIdeaMapSettings,
       nodes: mockNodes
     }));
@@ -218,7 +208,7 @@ describe('useEdges', () => {
   });
 
   it('updateEdgeStyles가 updateAllEdgeStylesAction을 호출해야 함', () => {
-    const { result } = renderHook(() => useEdges({
+    const { result } = renderHook(() => useIdeaMapEdges({
       ideaMapSettings: mockIdeaMapSettings,
       nodes: mockNodes
     }));
@@ -234,7 +224,7 @@ describe('useEdges', () => {
   });
 
   it('createEdgeOnDrop이 createEdgeOnDropAction을 호출해야 함', () => {
-    const { result } = renderHook(() => useEdges({
+    const { result } = renderHook(() => useIdeaMapEdges({
       ideaMapSettings: mockIdeaMapSettings,
       nodes: mockNodes
     }));

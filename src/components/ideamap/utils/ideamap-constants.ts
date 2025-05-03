@@ -4,6 +4,7 @@
  * 역할: 보드 컴포넌트에서 사용되는 모든 상수값 제공
  * 작성일: 2025-03-28
  * 수정일: 2025-03-30
+ * 수정일: 2025-05-12 : IDEAMAP_LAYOUT_STORAGE_KEY와 IDEAMAP_EDGES_STORAGE_KEY 상수 추가
  */
 
 import { ConnectionLineType, Position } from '@xyflow/react';
@@ -70,4 +71,8 @@ export const ZOOM_SETTINGS = {
 };
 
 // 툴팁 표시 지연 (밀리초)
-export const TOOLTIP_DELAY = 500; 
+export const TOOLTIP_DELAY = 500;
+
+// 로컬스토리지 키 설정
+export const IDEAMAP_LAYOUT_STORAGE_KEY = 'backyard-board-layout';
+export const IDEAMAP_EDGES_STORAGE_KEY = 'backyard-board-edges'; 

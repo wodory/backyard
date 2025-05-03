@@ -9,6 +9,7 @@
  * 수정일: 2025-04-21 : deleteEdgeAPI 함수 URL 경로 수정 - Task 2.6 요구사항 반영
  * 수정일: 2025-04-21 : createEdgeAPI 함수 로깅 및 에러 처리 개선 - Task 2.6 요구사항 반영
  * 수정일: 2025-05-01 : 오류 처리 및 로깅 개선 - 인증 오류 구분 및 상세 오류 정보 로깅
+ * 수정일: 2025-04-21 : source/target 필드명을 sourceCardNodeId/targetCardNodeId로 변경하여 Prisma 스키마와 일치시킴
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchEdges
@@ -94,20 +95,20 @@ export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edg
     if (Array.isArray(input)) {
       // 배열의 각 항목 검사
       input.forEach((edge, index) => {
-        if (!edge.source || !edge.target || !edge.projectId) {
+        if (!edge.sourceCardNodeId || !edge.targetCardNodeId || !edge.projectId) {
           logger.error(`[edgeService] 엣지 데이터 #${index}에 필수 필드가 누락됨:`, { 
-            source: !!edge.source, 
-            target: !!edge.target, 
+            sourceCardNodeId: !!edge.sourceCardNodeId, 
+            targetCardNodeId: !!edge.targetCardNodeId, 
             projectId: !!edge.projectId 
           });
         }
       });
     } else {
       // 단일 항목 검사
-      if (!input.source || !input.target || !input.projectId) {
+      if (!input.sourceCardNodeId || !input.targetCardNodeId || !input.projectId) {
         logger.error('[edgeService] 엣지 데이터에 필수 필드가 누락됨:', { 
-          source: !!input.source, 
-          target: !!input.target, 
+          sourceCardNodeId: !!input.sourceCardNodeId, 
+          targetCardNodeId: !!input.targetCardNodeId, 
           projectId: !!input.projectId 
         });
       }
@@ -116,11 +117,16 @@ export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edg
     // API 호출 시작 시간 기록 (성능 측정용)
     const startTime = Date.now();
     
-    const response = await fetch('/api/edges', {
+    // 요청 URL 디버깅을 위해 로깅
+    const requestUrl = '/api/edges';
+    logger.debug(`[edgeService] API 요청 URL: ${requestUrl}`);
+    
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include', // 쿠키 포함 (인증 정보)
       body: JSON.stringify(input),
     });
     
@@ -128,15 +134,27 @@ export async function createEdgeAPI(input: EdgeInput | EdgeInput[]): Promise<Edg
     const endTime = Date.now();
     const requestDuration = endTime - startTime;
     
+    // 응답 상태 로깅
+    logger.debug(`[edgeService] API 응답 상태: ${response.status} ${response.statusText}`);
+    
     // 응답 분석
     if (!response.ok) {
       let errorData = '';
       try {
-        // JSON 응답인 경우
-        errorData = JSON.stringify(await response.json());
-      } catch {
-        // 일반 텍스트 응답인 경우
-        errorData = await response.text();
+        // 응답 본문 로깅 (디버깅용)
+        const responseText = await response.text();
+        logger.debug(`[edgeService] 에러 응답 본문: ${responseText}`);
+        
+        try {
+          // JSON 형식이면 파싱
+          errorData = JSON.stringify(JSON.parse(responseText));
+        } catch {
+          // JSON이 아니면 그대로 사용
+          errorData = responseText;
+        }
+      } catch (readError) {
+        logger.error(`[edgeService] 응답 본문 읽기 오류:`, readError);
+        errorData = '응답 본문을 읽을 수 없습니다.';
       }
       
       // HTTP 상태 코드에 따른 오류 처리

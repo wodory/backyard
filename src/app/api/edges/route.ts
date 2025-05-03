@@ -11,6 +11,14 @@
  * 수정일: 2025-05-02 : 엣지 생성 에러 처리 세분화 및 구체적인 에러 응답 추가
  * 수정일: 2025-05-02 : Prisma 클라이언트 모델 이름을 스키마에 맞게 수정
  * 수정일: 2025-05-02 : 타입 단언을 사용하여 Prisma 클라이언트 타입 오류 해결
+ * 수정일: 2025-05-02 : 디버그 로그 추가하여 요청 추적 용이하게 개선
+ * 수정일: 2025-05-02 : 테스트용 POST 핸들러 추가 후 원래 기능으로 복원
+ * 수정일: 2025-05-02 : 간단한 브라우저 테스트용 POST 핸들러로 교체
+ * 수정일: 2025-04-21 : 테스트 핸들러에서 원래 엣지 생성 로직으로 복원 및 디버깅 로그 개선
+ * 수정일: 2025-04-21 : source/target 필드와 sourceCardNodeId/targetCardNodeId 필드 간 매핑 로직 추가
+ * 수정일: 2025-05-21 : 인증 디버깅을 위한 상세 로그 추가
+ * 수정일: 2025-05-21 : 카드노드 미존재 시 상태 코드를 404에서 400으로 변경하고 에러 코드 명확화
+ * 수정일: 2025-04-21 : source/target 조회 시 card 테이블 대신 cardNode 테이블 사용 및 검증 로직 개선
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,6 +27,7 @@ import { auth } from '@/lib/auth-server';
 import createLogger from '@/lib/logger';
 import { EdgeInput } from '@/types/edge';
 import { Prisma } from '@prisma/client';
+import { headers } from 'next/headers'; // 헤더 임포트 추가
 
 const logger = createLogger('api:edges');
 
@@ -31,7 +40,24 @@ interface CardWithProject {
   [key: string]: any; // 기타 필드
 }
 
+// 클라이언트 요청 형식 (source/target 필드 사용)
+interface EdgeRequest {
+  source?: string;
+  target?: string;
+  sourceCardNodeId?: string;
+  targetCardNodeId?: string;
+  projectId: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  type?: string;
+  animated?: boolean;
+  style?: Record<string, any>;
+  data?: Record<string, any>;
+  [key: string]: any;
+}
+
 export async function GET(request: NextRequest) {
+  logger.debug('GET 요청 수신', { url: request.url });
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -63,290 +89,261 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * POST 핸들러: 새 엣지 생성
- * - 단일 엣지 또는 여러 엣지(배열)를 동시에 생성 가능
- * - body: EdgeInput | EdgeInput[]
- */
 export async function POST(request: NextRequest) {
-  // 사용자 인증 확인
-  const session = await auth();
-  if (!session?.user?.id) {
-    logger.warn('엣지 생성 시도 중 인증 실패');
-    return NextResponse.json({ 
-      error: 'Unauthorized', 
-      code: 'AUTH_REQUIRED',
-      message: '인증이 필요합니다. 로그인 후 다시 시도해주세요.' 
-    }, { status: 401 });
+  console.log('--- [API /edges] POST 요청 수신 시작 ---');
+  logger.debug('[/api/edges] POST 요청 수신됨');
+  
+  // 쿠키 헤더 확인
+  try {
+    const headerList = await headers();
+    const cookieHeader = headerList.get('cookie');
+    console.log('[API /edges] 수신된 Cookie 헤더 (앞 100자):', cookieHeader ? cookieHeader.substring(0, 100) + '...' : '없음');
+  } catch (error) {
+    console.error('[API /edges] 쿠키 헤더 가져오기 실패:', error);
   }
+  
+  // 인증 확인
+  console.log('[API /edges] auth() 함수 호출하여 세션 확인 시작...');
+  const session = await auth();
+  console.log('[API /edges] auth() 함수 호출 완료. 세션:', session ? `사용자 ID: ${session.user.id}` : '세션 없음');
+  
+  if (!session?.user?.id) {
+    console.error('[API /edges] 인증 실패! 유효한 세션 없음. 401 반환.');
+    return NextResponse.json(
+      { error: 'Unauthorized', code: 'AUTH_REQUIRED', message: '인증이 필요합니다. 로그인 후 다시 시도해주세요.' },
+      { status: 401 }
+    );
+  }
+  
   const userId = session.user.id;
-
+  console.log(`[API /edges] 인증 성공. 사용자 ID: ${userId}`);
+  
   try {
     // 요청 본문 파싱
-    const body = await request.json();
-    const isArray = Array.isArray(body);
-    const edgeInputs: EdgeInput[] = isArray ? body : [body];
-
-    // 입력값 기본 검증
-    if (edgeInputs.length === 0) {
-      logger.warn('빈 엣지 데이터로 생성 시도');
+    const rawData = await request.json();
+    console.log('[API /edges] 원본 요청 데이터:', JSON.stringify(rawData, null, 2));
+    logger.debug('요청 본문 파싱 완료', { 
+      isArray: Array.isArray(rawData),
+      bodyLength: Array.isArray(rawData) ? rawData.length : 1,
+      body: rawData
+    });
+    
+    // source/target 필드를 sourceCardNodeId/targetCardNodeId로 매핑 (개선된 버전)
+    const mapFieldNames = (data: EdgeRequest) => {
+      const result: Record<string, any> = { ...data };
+      
+      // 원본 데이터 로깅
+      console.log('[API /edges] 필드 매핑 전 데이터:', {
+        source: data.source,
+        target: data.target,
+        sourceCardNodeId: result.sourceCardNodeId,
+        targetCardNodeId: result.targetCardNodeId,
+      });
+      
+      // source를 sourceCardNodeId로 매핑
+      if (data.source !== undefined) {
+        result.sourceCardNodeId = data.source;
+        console.log(`[API /edges] source 필드(${data.source})를 sourceCardNodeId로 매핑함`);
+      }
+      
+      // target을 targetCardNodeId로 매핑
+      if (data.target !== undefined) {
+        result.targetCardNodeId = data.target;
+        console.log(`[API /edges] target 필드(${data.target})를 targetCardNodeId로 매핑함`);
+      }
+      
+      // 매핑 결과 로깅
+      console.log('[API /edges] 필드 매핑 후 데이터:', {
+        source: data.source,
+        target: data.target,
+        sourceCardNodeId: result.sourceCardNodeId,
+        targetCardNodeId: result.targetCardNodeId,
+      });
+      
+      return result as EdgeInput;
+    };
+    
+    // 단일 객체 또는 배열 처리
+    const dataArray = Array.isArray(rawData) ? rawData : [rawData];
+    const edgesInput: EdgeInput[] = dataArray.map(mapFieldNames);
+    
+    console.log('[API /edges] 매핑된 엣지 입력 데이터:', JSON.stringify(edgesInput, null, 2));
+    
+    // 필수 필드 검증 - sourceCardNodeId, targetCardNodeId, projectId가 반드시 존재해야 함
+    for (const edge of edgesInput) {
+      if (!edge.sourceCardNodeId || !edge.targetCardNodeId || !edge.projectId) {
+        const missingFields = {
+          sourceCardNodeId: !edge.sourceCardNodeId,
+          targetCardNodeId: !edge.targetCardNodeId,
+          projectId: !edge.projectId
+        };
+        logger.warn('필수 필드 누락:', missingFields);
+        console.error('[API /edges] 필수 필드 누락! 400 반환.', missingFields);
+        return NextResponse.json({ 
+          error: 'Required fields missing',
+          details: missingFields
+        }, { status: 400 });
+      }
+    }
+    
+    // 요청 데이터 파싱 후 사용할 변수들 로깅
+    const edgeInput = edgesInput[0]; // 첫 번째 엣지 사용 (배열로 요청이 들어올 수 있음)
+    const sourceCardNodeId = edgeInput.sourceCardNodeId;
+    const targetCardNodeId = edgeInput.targetCardNodeId;
+    const projectId = edgeInput.projectId;
+    const currentUserId = userId;
+    
+    console.log('[API /edges] 수신된 엣지 생성 데이터:', { 
+      sourceCardNodeId, 
+      targetCardNodeId, 
+      projectId, 
+      currentUserId,
+      sourceHandle: edgeInput.sourceHandle,
+      targetHandle: edgeInput.targetHandle,
+      type: edgeInput.type
+    });
+    
+    // 프로젝트 유효성 검증
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true }
+    });
+    
+    if (!project) {
+      logger.warn('존재하지 않는 프로젝트로 엣지 생성 시도:', { projectId });
+      console.error(`[API /edges] 존재하지 않는 프로젝트 ID! ${projectId}. 400 반환.`);
       return NextResponse.json({ 
         error: 'Bad Request', 
-        code: 'EMPTY_INPUT',
-        message: '엣지 데이터가 제공되지 않았습니다.' 
+        code: 'PROJECT_NOT_FOUND',
+        message: '프로젝트가 존재하지 않습니다.'
       }, { status: 400 });
     }
-
-    // 각 필드 검증 및 구체적인 에러 메시지
-    const missingFields: { index: number; fields: string[] }[] = [];
     
-    edgeInputs.forEach((input, index) => {
-      const missing: string[] = [];
-      if (!input.source) missing.push('source');
-      if (!input.target) missing.push('target');
-      if (!input.projectId) missing.push('projectId');
-      
-      if (missing.length > 0) {
-        missingFields.push({ index, fields: missing });
+    // 사용자 권한 검증
+    const membership = await prisma.projectMember.findUnique({
+      where: { 
+        projectId_userId: { 
+          projectId, 
+          userId 
+        } 
       }
     });
-
-    if (missingFields.length > 0) {
-      logger.warn('필수 필드가 누락된 엣지 생성 시도', { missingFields });
-      return NextResponse.json({
-        error: 'Bad Request',
-        code: 'MISSING_REQUIRED_FIELDS',
-        message: '필수 필드가 누락되었습니다.',
-        details: missingFields
-      }, { status: 400 });
+    
+    if (!membership) {
+      logger.warn('권한 없는 프로젝트에 엣지 생성 시도:', { projectId, userId });
+      console.error(`[API /edges] 해당 프로젝트에 권한 없음! 프로젝트 ID: ${projectId}. 403 반환.`);
+      return NextResponse.json({ 
+        error: 'Forbidden',
+        message: '해당 프로젝트에 접근 권한이 없습니다.'
+      }, { status: 403 });
     }
-
-    // 프로젝트 존재 여부 확인
-    for (const input of edgeInputs) {
-      // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-      const project = await prisma.project.findUnique({
-        where: { id: input.projectId }
-      });
-      
-      if (!project) {
-        logger.warn(`존재하지 않는 프로젝트로 엣지 생성 시도: ${input.projectId}`);
-        return NextResponse.json({
-          error: 'Bad Request',
-          code: 'PROJECT_NOT_FOUND',
-          message: '지정된 프로젝트가 존재하지 않습니다.',
-          projectId: input.projectId
-        }, { status: 404 });
-      }
-      
-      // 프로젝트 멤버십 확인 (사용자가 해당 프로젝트에 속해 있는지)
-      // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-      const membership = await prisma.projectMember.findFirst({
-        where: {
-          projectId: input.projectId,
-          userId
-        }
-      });
-      
-      if (!membership) {
-        logger.warn(`사용자(${userId})가 접근 권한이 없는 프로젝트(${input.projectId})에 엣지 생성 시도`);
-        return NextResponse.json({
-          error: 'Forbidden',
-          code: 'PROJECT_ACCESS_DENIED',
-          message: '해당 프로젝트에 대한 접근 권한이 없습니다.',
-          projectId: input.projectId
-        }, { status: 403 });
-      }
-    }
-
-    // 카드 존재 여부 확인
-    for (const input of edgeInputs) {
-      // source 카드 확인
-      // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-      const sourceCard = await prisma.card.findUnique({
-        where: { id: input.source }
-      }) as CardWithProject | null;
-      
-      if (!sourceCard) {
-        logger.warn(`존재하지 않는 source 카드로 엣지 생성 시도: ${input.source}`);
-        return NextResponse.json({
-          error: 'Bad Request',
-          code: 'SOURCE_CARD_NOT_FOUND',
-          message: '출발점 카드가 존재하지 않습니다.',
-          source: input.source
-        }, { status: 404 });
-      }
-      
-      // 카드가 프로젝트에 속해 있는지 확인
-      if (sourceCard.projectId !== input.projectId) {
-        logger.warn(`다른 프로젝트의 카드로 엣지 생성 시도: source=${input.source}, projectId=${input.projectId}`);
-        return NextResponse.json({
-          error: 'Bad Request',
-          code: 'SOURCE_CARD_PROJECT_MISMATCH',
-          message: '출발점 카드가 해당 프로젝트에 속하지 않습니다.',
-          source: input.source,
-          projectId: input.projectId
-        }, { status: 400 });
-      }
-      
-      // target 카드 확인
-      // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-      const targetCard = await prisma.card.findUnique({
-        where: { id: input.target }
-      }) as CardWithProject | null;
-      
-      if (!targetCard) {
-        logger.warn(`존재하지 않는 target 카드로 엣지 생성 시도: ${input.target}`);
-        return NextResponse.json({
-          error: 'Bad Request',
-          code: 'TARGET_CARD_NOT_FOUND',
-          message: '도착점 카드가 존재하지 않습니다.',
-          target: input.target
-        }, { status: 404 });
-      }
-      
-      // 카드가 프로젝트에 속해 있는지 확인
-      if (targetCard.projectId !== input.projectId) {
-        logger.warn(`다른 프로젝트의 카드로 엣지 생성 시도: target=${input.target}, projectId=${input.projectId}`);
-        return NextResponse.json({
-          error: 'Bad Request',
-          code: 'TARGET_CARD_PROJECT_MISMATCH',
-          message: '도착점 카드가 해당 프로젝트에 속하지 않습니다.',
-          target: input.target,
-          projectId: input.projectId
-        }, { status: 400 });
-      }
-      
-      // 중복 엣지 확인
-      // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-      const existingEdge = await prisma.edge.findFirst({
-        where: {
-          projectId: input.projectId,
-          source: input.source,
-          target: input.target
-        }
-      });
-      
-      if (existingEdge) {
-        logger.warn('중복 엣지 생성 시도', { 
-          projectId: input.projectId, 
-          source: input.source, 
-          target: input.target 
-        });
-        return NextResponse.json({
-          error: 'Conflict',
-          code: 'EDGE_ALREADY_EXISTS',
-          message: '동일한 연결이 이미 존재합니다.',
-          existingEdge: {
-            id: existingEdge.id,
-            source: existingEdge.source,
-            target: existingEdge.target,
-            projectId: existingEdge.projectId
-          }
-        }, { status: 409 });
-      }
-    }
-
-    try {
-      // 여러 엣지 한번에 생성 (트랜잭션 사용)
-      const createdEdges = await prisma.$transaction(
-        edgeInputs.map(input => 
-          // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-          prisma.edge.create({
-            data: {
-              ...input,
-              userId, // 현재 인증된 사용자 ID 추가
-            }
-          })
-        )
+    
+    // 소스 카드 존재 여부 확인 (cardNode 테이블 사용으로 수정)
+    console.log(`[API /edges] Source CardNode 조회 시작 - 조건: { id: '${sourceCardNodeId}' }`); // 로그 업데이트
+    const sourceNode = await prisma.cardNode.findUnique({ // card -> cardNode
+      where: { id: sourceCardNodeId },
+      include: { card: { select: { projectId: true } } } // card 포함 및 projectId 선택
+    });
+    console.log(`[API /edges] Source CardNode 조회 결과:`, sourceNode ? `{ id: ${sourceNode.id}, cardProjectId: ${sourceNode.card?.projectId} }` : 'null'); // 로그 업데이트
+    
+    if (!sourceNode || sourceNode.card?.projectId !== projectId) { // sourceNode 확인 및 projectId 비교 추가
+       console.log(`[API /edges] Source CardNode를 찾을 수 없거나 프로젝트 불일치! ID=${sourceCardNodeId}, 요청 projectId=${projectId}, 실제 projectId=${sourceNode?.card?.projectId}`); // 로그 업데이트
+       logger.warn('존재하지 않는 source CardNode 또는 프로젝트 불일치로 엣지 생성 시도:', { source: sourceCardNodeId, projectId }); // 로그 업데이트
+       return NextResponse.json(
+        { error: 'Bad Request', code: 'SOURCE_CARDNODE_NOT_FOUND', message: '출발점 노드를 찾을 수 없거나 프로젝트가 일치하지 않습니다.', source: sourceCardNodeId }, // 메시지 업데이트
+        { status: 400 }
       );
-
-      logger.debug(`Created ${createdEdges.length} new edges`);
-      return NextResponse.json(createdEdges, { status: 201 });
-    } catch (dbError: any) {
-      // Prisma 데이터베이스 오류 세분화
-      if (dbError.code === 'P2002') {
-        // 고유 제약 조건 위반 (unique constraint)
-        logger.warn('고유 제약 조건 위반으로 엣지 생성 실패', { error: dbError });
-        return NextResponse.json({
-          error: 'Conflict',
-          code: 'UNIQUE_CONSTRAINT_VIOLATION',
-          message: '동일한 연결이 이미 존재합니다.',
-          details: {
-            target: dbError.meta?.target || '알 수 없음'
-          }
-        }, { status: 409 });
-      } else if (dbError.code === 'P2003') {
-        // 외래 키 제약 조건 위반 (foreign key constraint)
-        logger.warn('외래 키 제약 조건 위반으로 엣지 생성 실패', { error: dbError });
-        return NextResponse.json({
-          error: 'Bad Request',
-          code: 'FOREIGN_KEY_CONSTRAINT_VIOLATION',
-          message: '참조하는 카드 또는 프로젝트가 존재하지 않습니다.',
-          details: {
-            field: dbError.meta?.field_name || '알 수 없음'
-          }
-        }, { status: 400 });
-      } else if (dbError.code === 'P2025') {
-        // 레코드를 찾을 수 없음
-        logger.warn('필요한 레코드를 찾을 수 없어 엣지 생성 실패', { error: dbError });
-        return NextResponse.json({
-          error: 'Not Found',
-          code: 'RECORD_NOT_FOUND',
-          message: '참조하는 데이터를 찾을 수 없습니다.',
-          details: dbError.meta
-        }, { status: 404 });
-      }
-      
-      // 기타 Prisma 오류
-      logger.error('Prisma 오류로 엣지 생성 실패', { error: dbError });
-      return NextResponse.json({
-        error: 'Database Error',
-        code: 'DATABASE_ERROR',
-        message: '데이터베이스 작업 중 오류가 발생했습니다.',
-        details: {
-          code: dbError.code,
-          name: dbError.name,
-          message: dbError.message
-        }
-      }, { status: 500 });
-    }
-  } catch (error: any) {
-    // JSON 파싱 오류
-    if (error instanceof SyntaxError && error.message.includes('JSON')) {
-      logger.warn('JSON 파싱 오류로 엣지 생성 실패', { error });
-      return NextResponse.json({
-        error: 'Bad Request',
-        code: 'INVALID_JSON',
-        message: '유효하지 않은 JSON 형식입니다.',
-        details: error.message
-      }, { status: 400 });
     }
     
-    // API 요청 본문 파싱 오류
-    if (error.name === 'TypeError' && error.message.includes('body')) {
-      logger.warn('API 요청 본문 파싱 오류로 엣지 생성 실패', { error });
-      return NextResponse.json({
-        error: 'Bad Request', 
-        code: 'BODY_PARSING_ERROR',
-        message: 'API 요청 본문을 파싱할 수 없습니다.',
-        details: error.message
-      }, { status: 400 });
-    }
-    
-    // 기타 모든 예상치 못한 오류
-    logger.error('예상치 못한 오류로 엣지 생성 실패', { 
-      error: error.message,
-      stack: error.stack,
-      name: error.name 
+    // 타겟 카드 존재 여부 확인 (cardNode 테이블 사용으로 수정)
+    console.log(`[API /edges] Target CardNode 조회 시작 - 조건: { id: '${targetCardNodeId}' }`); // 로그 추가
+    const targetNode = await prisma.cardNode.findUnique({ // card -> cardNode
+      where: { id: targetCardNodeId },
+      include: { card: { select: { projectId: true } } } // card 포함 및 projectId 선택
     });
-    return NextResponse.json({
+    console.log(`[API /edges] Target CardNode 조회 결과:`, targetNode ? `{ id: ${targetNode.id}, cardProjectId: ${targetNode.card?.projectId} }` : 'null'); // 로그 추가
+    
+    if (!targetNode || targetNode.card?.projectId !== projectId) { // targetNode 확인 및 projectId 비교 추가
+      console.log(`[API /edges] Target CardNode를 찾을 수 없거나 프로젝트 불일치! ID=${targetCardNodeId}, 요청 projectId=${projectId}, 실제 projectId=${targetNode?.card?.projectId}`); // 로그 업데이트
+      logger.warn('존재하지 않는 target CardNode 또는 프로젝트 불일치로 엣지 생성 시도:', { target: targetCardNodeId, projectId }); // 로그 업데이트
+      return NextResponse.json(
+        { error: 'Bad Request', code: 'TARGET_CARDNODE_NOT_FOUND', message: '도착점 노드를 찾을 수 없거나 프로젝트가 일치하지 않습니다.', target: targetCardNodeId }, // 메시지 업데이트
+        { status: 400 }
+      );
+    }
+    
+    // 프로젝트 ID 일치 확인 - 이제 이 검증은 위에서 수행하므로 불필요함
+    // if (sourceNode.card?.projectId !== projectId || targetNode.card?.projectId !== projectId) {
+    //   logger.warn('프로젝트 ID 불일치:', { 
+    //     edgeProjectId: projectId,
+    //     sourceCardProjectId: sourceNode.card?.projectId,
+    //     targetCardProjectId: targetNode.card?.projectId
+    //   });
+    //   return NextResponse.json({ 
+    //     error: 'Bad Request',
+    //     code: 'PROJECT_ID_MISMATCH',
+    //     message: '카드와 엣지의 프로젝트가 일치하지 않습니다.'
+    //   }, { status: 400 });
+    // }
+    
+    // 엣지 배열 준비
+    const edgesToCreate = edgesInput.map(edge => ({
+      sourceCardNodeId: edge.sourceCardNodeId,
+      targetCardNodeId: edge.targetCardNodeId,
+      projectId: edge.projectId,
+      userId,              // 현재 인증된 사용자 ID 추가
+      sourceHandle: edge.sourceHandle,
+      targetHandle: edge.targetHandle,
+      type: edge.type,
+      animated: edge.animated,
+      style: edge.style || Prisma.JsonNull,  // Prisma.JsonNull 사용
+      data: edge.data || Prisma.JsonNull     // Prisma.JsonNull 사용
+    }));
+    
+    console.log('[API /edges] 생성할 엣지 데이터:', JSON.stringify(edgesToCreate, null, 2));
+    logger.debug('엣지 생성 시작:', { count: edgesToCreate.length });
+    
+    // 트랜잭션으로 모든 엣지 생성
+    const createdEdges = await prisma.$transaction(
+      edgesToCreate.map(edge => 
+        // @ts-ignore - Prisma 클라이언트 타입 문제 해결
+        prisma.edge.create({ data: edge })
+      )
+    );
+    
+    console.log('[API /edges] 생성된 엣지:', JSON.stringify(createdEdges, null, 2));
+    logger.debug('엣지 생성 완료:', { count: createdEdges.length });
+    
+    // 단일 객체 또는 배열 반환 (요청 형식에 맞춤)
+    return Array.isArray(rawData)
+      ? NextResponse.json(createdEdges)
+      : NextResponse.json(createdEdges[0]);
+  } catch (error) {
+    // 오류 유형에 따른 처리
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Prisma 에러 처리
+      if (error.code === 'P2002') {
+        logger.error('중복 엣지 생성 시도:', error);
+        return NextResponse.json({ 
+          error: 'Bad Request',
+          code: 'DUPLICATE_EDGE',
+          message: '이미 동일한 엣지가 존재합니다.'
+        }, { status: 409 });
+      } else if (error.code === 'P2003') {
+        logger.error('외래 키 제약 위반:', error);
+        return NextResponse.json({ 
+          error: 'Bad Request',
+          code: 'FOREIGN_KEY_CONSTRAINT',
+          message: '참조된 카드가 존재하지 않습니다.'
+        }, { status: 400 });
+      }
+    }
+    
+    // 그 외 모든 오류
+    logger.error('엣지 생성 중 오류 발생:', error);
+    return NextResponse.json({ 
       error: 'Internal Server Error',
-      code: 'UNKNOWN_ERROR',
-      message: '서버 내부 오류가 발생했습니다.',
-      details: process.env.NODE_ENV === 'development' ? {
-        message: error.message,
-        name: error.name
-      } : undefined
+      message: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
     }, { status: 500 });
   }
 }

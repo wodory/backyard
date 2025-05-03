@@ -14,6 +14,8 @@
  * 수정일: 2025-05-11 : queryKey 일관성 확보 및 낙관적 업데이트 개선
  * 수정일: 2025-04-21 : three-layer-standard 규칙에 따라 쿼리 키 구조를 ['edges', projectId]로 통일하여 일관성 확보
  * 수정일: 2025-05-21 : useDeleteMultipleEdges 뮤테이션 훅 추가 - 다중 엣지 동시 삭제 지원
+ * 수정일: 2025-04-21 : source/target 필드명을 sourceCardNodeId/targetCardNodeId로 변경하여 Prisma 스키마와 일치시킴
+ * 수정일: 2025-04-21 : DB Edge 타입과 ReactFlow Edge 타입의 명확한 구분
  */
 
 /**
@@ -25,7 +27,7 @@
 import { useQuery, useMutation, UseQueryResult, UseMutationResult, useQueryClient } from '@tanstack/react-query';
 import { fetchEdges, createEdgeAPI, deleteEdgeAPI, deleteEdgesAPI } from '@/services/edgeService';
 import { Edge as DBEdge, EdgeInput } from '@/types/edge';
-import { Edge, Connection } from '@xyflow/react';
+import { Edge as ReactFlowEdge, Connection } from '@xyflow/react';
 import { toast } from 'sonner';
 import createLogger from '@/lib/logger';
 import { useAppStore } from '@/store/useAppStore';
@@ -36,12 +38,12 @@ const logger = createLogger('useEdges');
 /**
  * transformDbEdgeToFlowEdge: DB 엣지를 React Flow 엣지로 변환하는 함수
  * @param {DBEdge} dbEdge - API에서 받아온 엣지 데이터
- * @returns {Edge} React Flow에서 사용할 수 있는 Edge 객체
+ * @returns {ReactFlowEdge} React Flow에서 사용할 수 있는 Edge 객체
  */
-const transformDbEdgeToFlowEdge = (dbEdge: DBEdge): Edge => ({
+const transformDbEdgeToFlowEdge = (dbEdge: DBEdge): ReactFlowEdge => ({
     id: dbEdge.id,
-    source: dbEdge.source, // Prisma 스키마의 source 필드 사용
-    target: dbEdge.target, // Prisma 스키마의 target 필드 사용
+    source: dbEdge.sourceCardNodeId, // DB의 sourceCardNodeId를 React Flow의 source로 변환
+    target: dbEdge.targetCardNodeId, // DB의 targetCardNodeId를 React Flow의 target으로 변환
     type: dbEdge.type || 'custom', // dbEdge에서 type 가져오거나 'custom' 사용
     animated: dbEdge.animated || false,
     style: dbEdge.style || undefined,
@@ -54,11 +56,11 @@ const transformDbEdgeToFlowEdge = (dbEdge: DBEdge): Edge => ({
  * 엣지 생성을 위한 입력 데이터 타입 (Connection 필드명과 API 필드명 매핑)
  */
 export interface CreateEdgeInput {
-  // Connection에서는 source/target이지만 API에서는 sourceCardId/targetCardId로 매핑
-  sourceCardId?: string; // 실제 API에서는 source로 변환됨
-  targetCardId?: string; // 실제 API에서는 target으로 변환됨
-  source?: string;      // 직접 source를 받을 수도 있음
-  target?: string;      // 직접 target을 받을 수도 있음
+  // React Flow에서는 source/target 필드를 사용하지만 API에서는 sourceCardNodeId/targetCardNodeId로 매핑
+  sourceCardId?: string; // 이전 버전 호환성을 위해 유지
+  targetCardId?: string; // 이전 버전 호환성을 위해 유지
+  source?: string;      // React Flow의 source 필드
+  target?: string;      // React Flow의 target 필드
   sourceHandle?: string; // 소스 노드의 핸들 ID
   targetHandle?: string; // 타겟 노드의 핸들 ID
   projectId: string;
@@ -71,8 +73,8 @@ export interface CreateEdgeInput {
 // CreateEdgeInput을 EdgeInput으로 변환하는 함수
 const mapToEdgeInput = (input: CreateEdgeInput): EdgeInput => {
   return {
-    source: input.source || input.sourceCardId || '',
-    target: input.target || input.targetCardId || '',
+    sourceCardNodeId: input.source || input.sourceCardId || '',
+    targetCardNodeId: input.target || input.targetCardId || '',
     projectId: input.projectId,
     sourceHandle: input.sourceHandle,
     targetHandle: input.targetHandle,
@@ -94,9 +96,9 @@ export const getEdgesQueryKey = (projectId?: string) =>
 /**
  * useEdges: 아이디어맵 엣지 데이터를 조회하는 TanStack Query 훅
  * @param {string} projectId - 현재 프로젝트 ID
- * @returns {UseQueryResult<Edge[], Error>} 쿼리 결과 (로딩, 에러, 데이터 상태 포함)
+ * @returns {UseQueryResult<ReactFlowEdge[], Error>} 쿼리 결과 (로딩, 에러, 데이터 상태 포함)
  */
-export function useEdges(projectId?: string): UseQueryResult<Edge[], Error> {
+export function useEdges(projectId?: string): UseQueryResult<ReactFlowEdge[], Error> {
   return useQuery({
     queryKey: getEdgesQueryKey(projectId),
     queryFn: async () => {
@@ -213,7 +215,7 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
       await queryClient.cancelQueries({ queryKey });
       
       // 이전 엣지 데이터 백업 (롤백용)
-      const previousEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+      const previousEdges = queryClient.getQueryData<ReactFlowEdge[]>(queryKey) || [];
       
       logger.debug('이전 엣지 데이터 백업 완료:', { 
         count: previousEdges.length,
@@ -223,8 +225,8 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
       // 임시 ID 생성 (낙관적 업데이트용)
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
-      // 낙관적 엣지 생성
-      const optimisticEdge: Edge = {
+      // 낙관적 엣지 생성 (React Flow는 source/target 필드를 사용)
+      const optimisticEdge: ReactFlowEdge = {
         id: tempId,
         source: newEdgeData.source || newEdgeData.sourceCardId || '',
         target: newEdgeData.target || newEdgeData.targetCardId || '',
@@ -237,7 +239,7 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
       };
       
       // UI에 낙관적 엣지 추가
-      queryClient.setQueryData<Edge[]>(
+      queryClient.setQueryData<ReactFlowEdge[]>(
         queryKey,
         old => [...(old || []), optimisticEdge]
       );
@@ -258,62 +260,19 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
     },
     onSuccess: (data, variables, context) => {
       logger.debug('엣지 생성 성공:', {
-        count: data.length,
-        edges: data.map(edge => ({ id: edge.id, source: edge.source, target: edge.target }))
+        newEdge: data 
       });
       
-      if (context?.tempId && data.length > 0) {
-        // 쿼리 키 가져오기 (일관성을 위해 컨텍스트에서 가져오거나 공통 함수 사용)
-        const queryKey = context.queryKey || getEdgesQueryKey(variables.projectId);
-        
-        const currentEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
-        
-        // 임시 엣지 제거하고 실제 엣지로 교체
-        const updatedEdges = currentEdges
-          .filter(edge => edge.id !== context.tempId)
-          .concat(data.map(transformDbEdgeToFlowEdge));
-        
-        // 업데이트된 엣지 세트 적용
-        queryClient.setQueryData(queryKey, updatedEdges);
-        
-        logger.debug('낙관적 엣지를 실제 데이터로 교체 완료:', {
-          tempId: context.tempId,
-          realIds: data.map(edge => edge.id),
-          queryKey
-        });
-      } else {
-        // 컨텍스트가 없는 경우(낙관적 업데이트가 실패했거나 건너뛴 경우)에 대한 처리
-        const queryKey = getEdgesQueryKey(variables.projectId);
-        
-        // 현재 캐시된 데이터 가져오기
-        const currentEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
-        
-        // 새 엣지 추가 (중복 방지)
-        const newEdgeIds = data.map(edge => edge.id);
-        const filteredCurrentEdges = currentEdges.filter(
-          edge => !edge.id.startsWith('temp-') && !newEdgeIds.includes(edge.id)
-        );
-        
-        const updatedEdges = [
-          ...filteredCurrentEdges,
-          ...data.map(transformDbEdgeToFlowEdge)
-        ];
-        
-        // 업데이트된 엣지 세트 적용
-        queryClient.setQueryData(queryKey, updatedEdges);
-        
-        logger.debug('엣지 데이터 캐시 업데이트 완료:', {
-          newEdgeCount: data.length,
-          totalEdgeCount: updatedEdges.length,
-          queryKey
-        });
-      }
+      // 쿼리 키 가져오기
+      const queryKey = getEdgesQueryKey(variables.projectId);
       
-      // 엣지 쿼리 무효화하여 필요시 다시 가져오게 함
+      // 엣지 쿼리 무효화 - 이것이 가장 간단하고 권장되는 방식
       queryClient.invalidateQueries({ 
-        queryKey: getEdgesQueryKey(variables.projectId),
-        // 즉시 refetch는 하지 않음 (이미 위에서 최신 데이터로 업데이트함)
-        refetchType: 'none'
+        queryKey: queryKey
+      });
+      
+      logger.debug('엣지 쿼리 무효화 완료, 리페치가 수행됩니다:', {
+        queryKey
       });
       
       toast.success('엣지가 성공적으로 생성되었습니다.');
@@ -356,13 +315,6 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
       logger.debug('엣지 생성 뮤테이션 완료:', { 
         success: !error,
         projectId: variables.projectId
-      });
-      
-      // 모든 상황(성공/실패)에서 캐시를 최신 상태로 유지하기 위해 쿼리 무효화
-      queryClient.invalidateQueries({ 
-        queryKey: getEdgesQueryKey(variables.projectId),
-        // 성공 시에는 자동 리페치 방지 (onSuccess에서 이미 처리)
-        refetchType: error ? 'active' : 'none'
       });
     },
     // 재시도 방지 (인증 오류, 중복 등은 재시도해도 해결되지 않음)
@@ -410,10 +362,10 @@ export function useDeleteEdge(): UseMutationResult<void, Error, { id: string; pr
       await queryClient.cancelQueries({ queryKey });
       
       // 이전 엣지 데이터 백업
-      const previousEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+      const previousEdges = queryClient.getQueryData<ReactFlowEdge[]>(queryKey) || [];
       
       // 낙관적으로 UI에서 엣지 제거
-      queryClient.setQueryData<Edge[]>(
+      queryClient.setQueryData<ReactFlowEdge[]>(
         queryKey,
         previousEdges.filter(edge => edge.id !== variables.id)
       );
@@ -500,10 +452,10 @@ export function useDeleteMultipleEdges(): UseMutationResult<void, Error, { ids: 
       await queryClient.cancelQueries({ queryKey });
       
       // 이전 엣지 데이터 백업
-      const previousEdges = queryClient.getQueryData<Edge[]>(queryKey) || [];
+      const previousEdges = queryClient.getQueryData<ReactFlowEdge[]>(queryKey) || [];
       
       // 낙관적으로 UI에서 엣지들 제거
-      queryClient.setQueryData<Edge[]>(
+      queryClient.setQueryData<ReactFlowEdge[]>(
         queryKey,
         previousEdges.filter(edge => !variables.ids.includes(edge.id))
       );

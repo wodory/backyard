@@ -8,6 +8,8 @@
  * 수정일: 2025-04-21 : useCreateEdge 훅을 사용하여 엣지 DB 연동 구현
  * 수정일: 2025-04-21 : onConnect 함수에서 낙관적 업데이트 제거하여 무한 루프 방지
  * 수정일: 2025-05-11 : useCreateEdge 훅 임포트 경로 수정 및 queryKey 일관성 확보
+ * 수정일: 2025-05-12 : useEffect 의존성 배열 수정 및 빈 노드 상태 UI 개선
+ * 수정일: 2025-05-12 : handleNodesChange useCallback 의존성 배열 수정으로 TypeError 방지
  */
 
 'use client';
@@ -29,7 +31,7 @@ import createLogger from '@/lib/logger';
 // 보드 관련 컴포넌트 임포트
 import IdeaMapCanvas from './IdeaMapCanvas';
 // 보드 관련 훅 임포트
-import { useEdges } from '../hooks/useEdges';
+import { useIdeaMapEdges } from '../hooks/useIdeaMapEdges';
 import { useIdeaMapData } from '../hooks/useIdeaMapData';
 import { useIdeaMapHandlers } from '../hooks/useIdeaMapHandlers';
 import { useNodeClickHandlers } from '../hooks/useNodes';
@@ -44,6 +46,7 @@ import {
 } from '../types/ideamap-types';
 import { IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
 import { Node } from '@xyflow/react';
+import { CardData } from '@/components/ideamap/types/ideamap-types';
 
 // 로거 생성
 const logger = createLogger('IdeaMap');
@@ -98,7 +101,6 @@ function IdeaMap({
   const saveViewport = useIdeaMapStore(state => state.saveViewport);
   const loadAndApplyIdeaMapSettings = useIdeaMapStore(state => state.loadAndApplyIdeaMapSettings);
   const applyNodeChangesAction = useIdeaMapStore(state => state.applyNodeChangesAction);
-  const saveLayout = useIdeaMapStore(state => state.saveLayout);
 
   // 엣지 생성 mutation 훅 사용
   const createEdgeMutation = useCreateEdge();
@@ -141,7 +143,7 @@ function IdeaMap({
     onConnect: originalOnConnect,
     hasUnsavedChanges: hasUnsavedEdgesChanges,
     setEdges
-  } = useEdges({
+  } = useIdeaMapEdges({
     ideaMapSettings,
     nodes: ideaMapStoreNodes,
     initialEdges: ideaMapStoreEdges
@@ -159,11 +161,11 @@ function IdeaMap({
         hasProjectId: !!activeProjectId
       });
 
-      if (!activeProjectId) {
-        toast.error('프로젝트 ID가 없어 엣지를 생성할 수 없습니다.');
-      } else {
-        toast.error('엣지 생성에 필요한 노드 정보가 누락되었습니다.');
-      }
+      // if (!activeProjectId) {
+      //   toast.error('프로젝트 ID가 없어 엣지를 생성할 수 없습니다.');
+      // } else {
+      //   toast.error('엣지 생성에 필요한 노드 정보가 누락되었습니다.');
+      // }
       return;
     }
 
@@ -203,7 +205,11 @@ function IdeaMap({
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {
     await loadNodesAndEdges();
-    return { nodes: ideaMapStoreNodes, edges: ideaMapStoreEdges };
+    // 타입 캐스팅을 통해 CardData 타입 지정
+    return {
+      nodes: ideaMapStoreNodes as unknown as Node<CardData>[],
+      edges: ideaMapStoreEdges
+    };
   }, [loadNodesAndEdges, ideaMapStoreNodes, ideaMapStoreEdges]);
 
   // useIdeaMapHandlers 훅 사용
@@ -305,11 +311,11 @@ function IdeaMap({
   useEffect(() => {
     logger.debug('fitView 보장 Effect, 상태:', {
       hasReactFlowInstance: !!reactFlowInstance,
-      nodeCount: ideaMapStoreNodes.length
+      nodeCount: ideaMapStoreNodes?.length || 0
     });
 
     // ReactFlow 인스턴스와 노드가 모두 있는 경우에만 실행
-    if (reactFlowInstance && ideaMapStoreNodes.length > 0) {
+    if (reactFlowInstance && ideaMapStoreNodes && ideaMapStoreNodes.length > 0) {
       logger.debug('노드와 ReactFlow 인스턴스 모두 준비됨, fitView 실행');
 
       // 약간의 지연 후 fitView 호출 (DOM이 완전히 업데이트된 후)
@@ -329,7 +335,7 @@ function IdeaMap({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [reactFlowInstance, ideaMapStoreNodes.length]);
+  }, [reactFlowInstance, ideaMapStoreNodes]);
 
   // viewportToRestore가 변경되면 뷰포트 복원
   useEffect(() => {
@@ -352,12 +358,12 @@ function IdeaMap({
   // 카드-노드 동기화 - 기존 코드 개선
   useEffect(() => {
     logger.debug('카드-노드 동기화 Effect, 상태:', {
-      nodeCount: ideaMapStoreNodes.length,
+      nodeCount: ideaMapStoreNodes?.length || 0,
       hasReactFlowInstance: !!reactFlowInstance
     });
 
     // 초기 마운트시 노드 동기화
-    if (reactFlowInstance && ideaMapStoreNodes.length === 0) {
+    if (reactFlowInstance && ideaMapStoreNodes && ideaMapStoreNodes.length === 0) {
       logger.debug('노드가 없음 - 데이터 동기화 시도');
 
       // 동기화 함수
@@ -370,7 +376,7 @@ function IdeaMap({
       const timeoutId = setTimeout(syncNodesFromStore, 100);
       return () => clearTimeout(timeoutId);
     }
-  }, [ideaMapStoreNodes.length, reactFlowInstance]);
+  }, [ideaMapStoreNodes, reactFlowInstance]);
 
   // 저장되지 않은 변경사항이 있을 때 페이지 이탈 경고
   useEffect(() => {
@@ -444,65 +450,29 @@ function IdeaMap({
     handleEdgeDropCardCreatedFromHook
   ]);
 
-  // 노드 위치 변경 시 호출되는 React Flow의 onNodesChange 콜백을 래핑
+  // 노드 변경 핸들러 - 노드 드래그 등 처리
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
-    // 디버깅을 위한 상세 로그 추가
-    logger.debug('노드 변경 감지:', {
-      changeCount: changes.length,
-      changeTypes: changes.map(c => c.type).join(', '),
-      changes: changes.map(c => ({
-        type: c.type,
-        id: 'id' in c ? c.id : 'unknown',
-        dragging: 'dragging' in c ? c.dragging : 'N/A',
-        position: 'position' in c ? c.position : 'N/A'
-      }))
-    });
-
-    // position 타입의 변경이면서 dragging이 false인 변경 감지 (드래그 완료)
-    const positionChanges = changes.filter(
-      change => change.type === 'position'
-    );
-
-    const dragCompleted = positionChanges.some(
-      change => 'dragging' in change && (change as any).dragging === false
-    );
-
-    // 노드 변경사항 적용 (상태 업데이트)
+    // 노드 상태 업데이트 (Zustand 스토어 사용)
     applyNodeChangesAction(changes);
 
-    // 드래그가 완료되면 레이아웃 저장
-    if (dragCompleted) {
-      logger.debug('노드 드래그 완료 감지, 레이아웃 저장 시도:', {
-        노드수: ideaMapStoreNodes.length
-      });
+    // 변경 사항 중에 드래그가 완료된 경우를 감지
+    const dragCompleted = changes.some(
+      (change) => change.type === 'position' && 'dragging' in change && change.dragging === false
+    );
 
-      // 약간의 딜레이 후 저장 (상태 업데이트가 완료된 후)
-      setTimeout(() => {
-        try {
-          const saved = saveLayout();
-          logger.debug('레이아웃 저장 결과:', saved);
-
-          if (saved) {
-            // 성공 알림 필요 없음 (사용자 경험 개선)
-            // toast.success('노드 위치가 저장되었습니다.');
-          } else {
-            toast.error('노드 위치 저장에 실패했습니다.');
-          }
-        } catch (err) {
-          logger.error('레이아웃 저장 중 오류:', err);
-          toast.error('노드 위치 저장 중 오류가 발생했습니다.');
-        }
-      }, 200); // 200ms로 늘려 상태 업데이트가 확실히 완료된 후 저장
-    }
-
-    // 변경사항 중에 노드가 삭제된 경우에도 저장
+    // 변경 사항 중에 노드가 삭제된 경우를 감지
     const hasNodeDeleted = changes.some(change => change.type === 'remove');
-    if (hasNodeDeleted) {
-      logger.debug('노드 삭제 감지, 레이아웃 저장');
-      // 약간의 딜레이 후 저장 (상태 업데이트가 완료된 후)
-      setTimeout(() => saveLayout(), 200); // 200ms로 늘림
+
+    // 드래그가 완료되면 로깅만 수행 (위치 저장은 IdeaMapCanvas에서 담당)
+    if (dragCompleted) {
+      logger.debug('노드 위치 변경 감지됨 (드래그 완료)');
     }
-  }, [applyNodeChangesAction, saveLayout, ideaMapStoreNodes.length]);
+
+    // 노드 삭제 감지 로깅
+    if (hasNodeDeleted) {
+      logger.debug('노드 삭제 감지됨');
+    }
+  }, [applyNodeChangesAction, ideaMapStoreNodes]);
 
   // 뷰포트 변경 감지 및 저장 - 디바운스 적용
   const onViewportChange = useCallback(() => {
@@ -552,7 +522,7 @@ function IdeaMap({
           if (savedEdges.length > 0) {
             // 타입 오류 해결: 명시적으로 Edge[] 타입으로 캐스팅
             setEdges(savedEdges);
-            toast.success(`엣지 데이터 ${savedEdges.length}개를 복구했습니다.`);
+            // toast.success(`엣지 데이터 ${savedEdges.length}개를 복구했습니다.`);
           } else {
             logger.debug('로컬 스토리지에 저장된 엣지가 없음');
           }
@@ -564,6 +534,50 @@ function IdeaMap({
       }
     }
   }, [edges.length, setEdges]);
+
+  // 노드가 없을 때 안내 메시지
+  if (ideaMapStoreNodes && ideaMapStoreNodes.length === 0 && !isLoading && !error) {
+    logger.info('노드가 없음, 안내 메시지 표시');
+    return (
+      <div className="w-full h-full relative">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50 z-10">
+          <p className="text-gray-500 text-lg font-medium mb-4">카드를 아이디어맵에 추가하세요</p>
+          <button
+            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            onClick={toggleCreateModal}
+          >
+            카드 만들기
+          </button>
+        </div>
+
+        {/* 빈 상태에서도 드롭 이벤트 처리를 위해 캔버스는 유지 */}
+        <IdeaMapCanvas
+          nodes={[]}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={onConnect}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+          ideaMapSettings={ideaMapSettings}
+          onViewportChange={onViewportChange}
+          showControls={showControls}
+          wrapperRef={reactFlowWrapper}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        />
+
+        {/* 카드 생성 모달 */}
+        <CreateCardModal
+          autoOpen={isCreateModalOpen}
+          onClose={toggleCreateModal}
+          onCardCreated={handleModalCardCreated}
+        />
+      </div>
+    );
+  }
 
   // 오류 메시지가 있으면 표시
   if (error) {
@@ -593,7 +607,7 @@ function IdeaMap({
     <div className={`w-full h-full relative ${className}`}>
       {/* 캔버스 컴포넌트 */}
       <IdeaMapCanvas
-        nodes={ideaMapStoreNodes}
+        nodes={ideaMapStoreNodes || []}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
@@ -611,7 +625,7 @@ function IdeaMap({
       />
 
       {/* 노드 검사기 - 개발 모드일 때만 표시 */}
-      {process.env.NODE_ENV === 'development' && <NodeInspector nodes={ideaMapStoreNodes} />}
+      {process.env.NODE_ENV === 'development' && <NodeInspector nodes={ideaMapStoreNodes || []} />}
 
       {/* 카드 생성 모달 */}
       <CreateCardModal

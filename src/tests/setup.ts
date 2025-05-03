@@ -22,7 +22,7 @@ expect.extend(matchers);
 beforeAll(() => {
   // fetch 타임아웃 관련 이슈 해결을 위해 bypass 모드 사용
   server.listen({ 
-    onUnhandledRequest: 'bypass',
+    onUnhandledRequest: 'warn',
   });
   
   // 타이머 모킹 제거 - wait-for가 정상적으로 작동하도록 수정

@@ -56,6 +56,7 @@ model Project {
   members   ProjectMember[]
   owner     User            @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tags      Tag[]
+  cardNodes CardNode[]
 
   @@map("projects")
   @@schema("public")
@@ -85,10 +86,32 @@ model Card {
   cardTags                  CardTag[]
   project                   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user                      User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  edges_edges_sourceTocards Edge[]    @relation("edges_sourceTocards")
-  edges_edges_targetTocards Edge[]    @relation("edges_targetTocards")
+  cardNodes                 CardNode[]
 
   @@map("cards")
+  @@schema("public")
+}
+
+model CardNode {
+  id        String   @id @default(uuid()) @db.Uuid
+  positionX Float    @map("position_x")
+  positionY Float    @map("position_y")
+
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId    String   @map("card_id") @db.Uuid
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String   @map("project_id") @db.Uuid
+
+  styleJson Json?    @map("style_json") @db.JsonB
+  dataJson  Json?    @map("data_json") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sourceEdges Edge[] @relation("EdgeSource")
+  targetEdges Edge[] @relation("EdgeTarget")
+
+  @@map("card_nodes") // 테이블 이름 snake_case 로 명시
   @@schema("public")
 }
 
@@ -109,25 +132,25 @@ model Tag {
 }
 
 model Edge {
-  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId                 String   @map("project_id") @db.Uuid
-  userId                    String?  @map("user_id") @db.Uuid
-  source                    String   @db.Uuid
-  target                    String   @db.Uuid
-  sourceHandle              String?  @map("source_handle")
-  targetHandle              String?  @map("target_handle")
+  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId                 String    @map("project_id") @db.Uuid
+  userId                    String?   @map("user_id") @db.Uuid
+  sourceCardNodeId          String    @map("source_node_id") @db.Uuid
+  targetCardNodeId          String    @map("target_node_id") @db.Uuid
+  sourceHandle              String?   @map("source_handle")
+  targetHandle              String?   @map("target_handle")
   type                      String?
-  animated                  Boolean? @default(false)
-  style                     Json?
-  data                      Json?
-  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  project                   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  cards_edges_sourceTocards Card     @relation("edges_sourceTocards", fields: [source], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "edges_source_card_id_fkey")
-  cards_edges_targetTocards Card     @relation("edges_targetTocards", fields: [target], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "edges_target_card_id_fkey")
-  user                      User?    @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  animated                  Boolean?  @default(false)
+  style                     Json?     @db.JsonB // Json 타입에 @db.JsonB 명시 권장
+  data                      Json?     @db.JsonB // Json 타입에 @db.JsonB 명시 권장
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project                   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sourceNode                CardNode  @relation("EdgeSource", fields: [sourceCardNodeId], references: [id], onDelete: Cascade) // CardNode 참조
+  targetNode                CardNode  @relation("EdgeTarget", fields: [targetCardNodeId], references: [id], onDelete: Cascade) // CardNode 참조
+  user                      User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
-  @@unique([projectId, source, target], map: "edges_project_source_target_unique")
+  @@unique([projectId, sourceCardNodeId, targetCardNodeId], map: "edges_project_source_node_target_node_unique")
   @@index([userId, projectId], map: "idx_edges_user_project")
   @@map("edges")
   @@schema("public")

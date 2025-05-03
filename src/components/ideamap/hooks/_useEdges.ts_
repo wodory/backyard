@@ -1,26 +1,27 @@
 /**
- * 파일명: useEdges.ts
+ * 파일명: useIdeaMapEdges.ts
  * 목적: 엣지 관련 상태 및 로직 관리
  * 역할: useIdeaMapStore의 엣지 관련 액션들을 사용하는 래퍼 훅
  * 작성일: 2025-03-28
  * 수정일: 2025-04-11
+ * 수정일: 2025-04-21 : 파일명 및 함수명 변경 (useEdges -> useIdeaMapEdges)
  */
 
 import { useCallback } from 'react';
 
 import { Edge, Connection, Node, EdgeChange } from '@xyflow/react';
 
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
+import { IdeaMapSettings } from '@/components/ideamap/types/ideamap-types';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 /**
- * useEdges: useIdeaMapStore의 엣지 관련 액션들을 사용하는 래퍼 훅
+ * useIdeaMapEdges: useIdeaMapStore의 엣지 관련 액션들을 사용하는 래퍼 훅
  * @param ideaMapSettings 아이디어맵 설정 객체
  * @param nodes 노드 배열
  * @param initialEdges 초기 엣지 데이터 (옵션)
  * @returns 엣지 관련 상태 및 함수들
  */
-export function useEdges({
+export function useIdeaMapEdges({
   ideaMapSettings,
   nodes,
   initialEdges = []

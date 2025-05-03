@@ -4,12 +4,14 @@
  * 역할: 노드, 엣지 처리를 위한 순수 유틸리티 함수 제공
  * 작성일: 2025-03-28
  * 수정일: 2025-04-21 : 중첩된 position 객체 구조 수정으로 리액트 플로우 초기화 오류 해결
+ * 수정일: 2025-05-12 : 상수 import 경로 수정 (@/lib/ideamap-constants → @/components/ideamap/utils/ideamap-constants)
+ * 수정일: 2025-05-12 : IdeaMapSettings 타입을 Settings으로 변경
  */
 
 import { Node, Edge, XYPosition, Position, MarkerType } from '@xyflow/react';
 
-import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/lib/ideamap-constants';
-import { IdeaMapSettings } from '@/lib/ideamap-utils';
+import { IDEAMAP_LAYOUT_STORAGE_KEY, IDEAMAP_EDGES_STORAGE_KEY } from '@/components/ideamap/utils/ideamap-constants';
+import { Settings } from '@/lib/ideamap-utils';
 
 /**
  * 레이아웃을 로컬 스토리지에 저장
@@ -221,7 +223,7 @@ export const arraysEqual = (a: string[], b: string[]): boolean => {
  * @param ideaMapSettings 보드 설정
  * @returns 새 엣지 객체
  */
-export const createEdge = (source: string, target: string, ideaMapSettings: IdeaMapSettings): Edge => {
+export const createEdge = (source: string, target: string, ideaMapSettings: Settings): Edge => {
   // 엣지 ID 생성 - 소스ID-타겟ID-타임스탬프
   const edgeId = `${source}-${target}-${Date.now()}`;
   
