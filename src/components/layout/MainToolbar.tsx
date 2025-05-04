@@ -10,17 +10,20 @@ import {
 import CreateCardModal from '@/components/cards/CreateCardModal';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/useAppStore';
+import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 export function MainToolbar() {
   const {
     applyLayout,
-    saveBoardLayout: saveIdeaMapLayout,
-    layoutDirection
-  } = useAppStore();
+    saveAllLayoutData
+  } = useIdeaMapStore();
+
+  const layoutDirection = useAppStore(state => state.layoutDirection);
 
   return (
     <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-lg shadow-md border p-1 px-2 z-10">
       <CreateCardModal
+        placeNodeOnMap={true}
         customTrigger={
           <Button
             variant="ghost"
@@ -77,7 +80,7 @@ export function MainToolbar() {
         size="icon"
         title="레이아웃 저장"
         className="rounded-full h-[60px] w-[60px]"
-        onClick={saveIdeaMapLayout}
+        onClick={saveAllLayoutData}
       >
         <Save className="h-8 w-8" />
         <span className="sr-only">레이아웃 저장</span>

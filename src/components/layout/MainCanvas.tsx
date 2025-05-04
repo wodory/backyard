@@ -11,14 +11,12 @@ export function MainCanvas() {
   const { selectCard } = useAppStore();
 
   return (
-    <ReactFlowProvider>
-      <div className="w-full h-full pt-14">
-        <Board
-          onSelectCard={selectCard}
-          className="bg-background"
-          showControls={true}
-        />
-      </div>
-    </ReactFlowProvider>
+    <div className="w-full h-full pt-14">
+      <Board
+        onSelectCard={selectCard}
+        className="bg-background"
+        showControls={true}
+      />
+    </div>
   );
 } 

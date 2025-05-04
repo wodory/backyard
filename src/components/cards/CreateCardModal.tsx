@@ -7,6 +7,7 @@
  * 수정일: 2025-04-21 : DEFAULT_USER_ID 상수 대신 useAuthStore를 사용하도록 수정
  * 수정일: 2025-04-21 : 카드 생성 시 projectId 추가
  * 수정일: 2025-04-29 : 직접 프로젝트 로딩 로직 제거 및 useAppStore에서 projects 및 activeProjectId 사용
+ * 수정일: 2025-04-21 : 카드 생성 시 아이디어맵에 노드 배치 기능 추가 (의존성 주입 패턴 적용)
  */
 
 "use client";
@@ -14,6 +15,7 @@
 import React, { useState, useRef, useEffect } from "react";
 
 import { X, Loader2, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
 
 import TiptapEditor from "@/components/editor/TiptapEditor";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAppStore } from "@/store/useAppStore";
+import { useIdeaMapStore } from "@/store/useIdeaMapStore";
 import { useCreateCard } from "@/hooks/useCreateCard";
 import { CreateCardInput, Card } from "@/types/card";
 
@@ -46,6 +49,7 @@ interface CreateCardModalProps {
   autoOpen?: boolean; // 자동으로 모달을 열지 여부
   onClose?: () => void; // 모달이 닫힐 때 콜백
   customTrigger?: React.ReactNode; // 커스텀 트리거 버튼
+  placeNodeOnMap?: boolean; // 카드 생성 후 아이디어맵에 노드를 배치할지 여부
 }
 
 export default function CreateCardModal({
@@ -53,6 +57,7 @@ export default function CreateCardModal({
   autoOpen = false,
   onClose,
   customTrigger,
+  placeNodeOnMap = false, // 기본값은 false
 }: CreateCardModalProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -66,17 +71,40 @@ export default function CreateCardModal({
   const activeProjectId = useAppStore(state => state.activeProjectId);
   const isAppLoading = useAppStore(state => state.isLoading);
 
+  // IdeaMapStore에서 노드 배치 액션 가져오기
+  const requestNodePlacement = useIdeaMapStore(state => state.requestNodePlacementForCard);
+
   // 프로젝트 관련 상태 - 선택된 프로젝트 ID는 activeProjectId를 기본값으로 사용
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 
   // useAuthStore에서 사용자 ID 가져오기
   const userId = useAuthStore((state) => state.profile?.id);
 
-  // useCreateCard 훅 사용
-  const createCardMutation = useCreateCard();
-  const { mutate: createCard } = createCardMutation;
-  const isLoading = createCardMutation.isPending;
-  const { isSuccess, error } = createCardMutation;
+  // useCreateCard 훅 사용 (옵션 객체 전달)
+  const { mutate: createCard, isPending: isLoading, isSuccess, error } = useCreateCard({
+    // placeNodeOnMap prop 값에 따라 콜백 주입 결정
+    onPlaceNodeRequest: placeNodeOnMap ? (cardId, projectId) => {
+      console.log('[CreateCardModal] Requesting node placement for card:', { cardId, projectId, placeNodeOnMap });
+      // 생성된 카드를 찾아 중앙에 노드로 추가
+      requestNodePlacement(cardId, projectId);
+    } : undefined,
+    // 이 컴포넌트 특화 성공 로직 (모달 닫기, 폼 리셋, 토스트 알림)
+    onSuccess: (newCards) => {
+      const newCard = Array.isArray(newCards) ? newCards[0] : newCards;
+      toast.success('카드가 성공적으로 생성되었습니다.');
+
+      // 콜백이 제공된 경우 실행
+      if (onCardCreated && newCard) {
+        onCardCreated(newCard);
+      }
+
+      // 폼 리셋 및 모달 닫기는 useEffect에서 처리됨
+    },
+    onError: (err) => {
+      console.error('카드 생성 오류 (Modal):', err);
+      toast.error(err.message || '카드 생성에 실패했습니다.');
+    }
+  });
 
   // 컴포넌트 마운트 시 activeProjectId 설정
   useEffect(() => {
@@ -189,14 +217,8 @@ export default function CreateCardModal({
       tags: tags,
     };
 
-    createCard(cardInput, {
-      onSuccess: (createdCards) => {
-        // 콜백이 제공된 경우 실행
-        if (onCardCreated && createdCards.length > 0) {
-          onCardCreated(createdCards[0]);
-        }
-      }
-    });
+    // createCard 호출 시 필요한 형태로 데이터 전달
+    createCard({ cardData: cardInput });
   };
 
   // 태그 입력 중 쉼표가 입력되면 태그 추가 처리

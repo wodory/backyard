@@ -31,13 +31,11 @@ export default function IdeaMapPage() {
 
   return (
     <div className="w-full h-full relative">
-      <ReactFlowProvider>
-        <IdeaMap
-          onSelectCard={selectCard}
-          className="bg-background"
-          showControls={true}
-        />
-      </ReactFlowProvider>
+      <IdeaMap
+        onSelectCard={selectCard}
+        className="bg-background"
+        showControls={true}
+      />
     </div>
   );
 } 

@@ -10,6 +10,7 @@
  * 수정일: 2025-05-11 : useCreateEdge 훅 임포트 경로 수정 및 queryKey 일관성 확보
  * 수정일: 2025-05-12 : useEffect 의존성 배열 수정 및 빈 노드 상태 UI 개선
  * 수정일: 2025-05-12 : handleNodesChange useCallback 의존성 배열 수정으로 TypeError 방지
+ * 수정일: 2025-04-21 : 카드 생성 시 아이디어맵에 노드 자동 배치 기능 추가
  */
 
 'use client';
@@ -18,11 +19,13 @@ import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { toast } from 'sonner';
 
 import { useReactFlow, Connection, addEdge } from '@xyflow/react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import CreateCardModal from '@/components/cards/CreateCardModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useAddNodeOnEdgeDrop } from '@/hooks/useAddNodeOnEdgeDrop';
 import { useCreateEdge } from '@/hooks/useEdges';
+import { useCreateCardNode } from '@/hooks/useCardNodes';
 import { useIdeaMapSync } from '@/hooks/useIdeaMapSync';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
@@ -101,9 +104,17 @@ function IdeaMap({
   const saveViewport = useIdeaMapStore(state => state.saveViewport);
   const loadAndApplyIdeaMapSettings = useIdeaMapStore(state => state.loadAndApplyIdeaMapSettings);
   const applyNodeChangesAction = useIdeaMapStore(state => state.applyNodeChangesAction);
+  // 노드 배치 요청 관련 상태 및 액션
+  const nodePlacementRequest = useIdeaMapStore(state => state.nodePlacementRequest);
+  const clearNodePlacementRequest = useIdeaMapStore(state => state.clearNodePlacementRequest);
+
+  // TanStack Query 클라이언트
+  const queryClient = useQueryClient();
 
   // 엣지 생성 mutation 훅 사용
   const createEdgeMutation = useCreateEdge();
+  // 카드노드 생성 mutation 훅 사용
+  const { mutate: createCardNode } = useCreateCardNode();
 
   // useIdeaMapData 훅 사용 부분 수정 (타입 오류 해결)
   // 타입 안전성을 위해 onSelectCard를 항상 함수로 전달
@@ -201,6 +212,98 @@ function IdeaMap({
       projectId: activeProjectId
     });
   }, [activeProjectId, createEdgeMutation, ideaMapSettings]);
+
+  // 노드 배치 요청을 감지하고 처리하는 useEffect
+  useEffect(() => {
+    // 노드 배치 요청이 없는 경우 처리하지 않음
+    if (!nodePlacementRequest) {
+      return;
+    }
+
+    logger.debug('[IdeaMap] 노드 배치 요청 처리 시작:', {
+      cardId: nodePlacementRequest.cardId,
+      projectId: nodePlacementRequest.projectId,
+      hasReactFlowInstance: !!reactFlowInstance,
+      hasWrapper: !!reactFlowWrapper.current
+    });
+
+    // ReactFlow 인스턴스 및 wrapper가 없는 경우 처리하지 않음
+    if (!reactFlowInstance || !reactFlowWrapper.current) {
+      logger.warn('[IdeaMap] ReactFlow 인스턴스 또는 래퍼가 없어 노드 배치 요청을 처리할 수 없습니다.', {
+        hasReactFlowInstance: !!reactFlowInstance,
+        hasWrapper: !!reactFlowWrapper.current
+      });
+      clearNodePlacementRequest();
+      return;
+    }
+
+    try {
+      // 중앙 좌표 계산
+      const { width, height } = reactFlowWrapper.current.getBoundingClientRect();
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      logger.debug('[IdeaMap] 화면 중앙 좌표 계산:', { centerX, centerY, width, height });
+
+      // 화면 좌표를 ReactFlow 좌표로 변환
+      const flowPosition = reactFlowInstance.screenToFlowPosition({
+        x: centerX,
+        y: centerY
+      });
+
+      logger.debug('[IdeaMap] 화면 좌표를 Flow 좌표로 변환:', flowPosition);
+
+      // 노드 겹침을 방지하기 위한 랜덤 오프셋 (±50px)
+      const offsetX = (Math.random() - 0.5) * 100;
+      const offsetY = (Math.random() - 0.5) * 100;
+
+      // 오프셋을 적용한 최종 위치
+      const finalPosition = {
+        x: flowPosition.x + offsetX,
+        y: flowPosition.y + offsetY
+      };
+
+      logger.debug('[IdeaMap] 오프셋 적용한 최종 위치:', {
+        finalPosition,
+        offsetX,
+        offsetY
+      });
+
+      // cardNode 생성 mutate 호출
+      logger.debug('[IdeaMap] createCardNode 뮤테이션 호출 직전:', {
+        cardId: nodePlacementRequest.cardId,
+        projectId: nodePlacementRequest.projectId,
+        x: finalPosition.x,
+        y: finalPosition.y
+      });
+
+      // useCreateCardNode의 mutate 함수 호출
+      createCardNode({
+        cardId: nodePlacementRequest.cardId,
+        projectId: nodePlacementRequest.projectId,
+        positionX: finalPosition.x,
+        positionY: finalPosition.y,
+        // 스타일 및 데이터는 서버에서 기본값으로 설정됨
+      }, {
+        onSuccess: (data) => {
+          logger.debug('[IdeaMap] 카드 노드 생성 성공:', data);
+          toast.success('카드 노드가 생성되었습니다.');
+          // 성공 후 요청 상태 초기화
+          clearNodePlacementRequest();
+        },
+        onError: (error) => {
+          logger.error('[IdeaMap] 카드 노드 생성 실패:', error);
+          toast.error('카드 노드 생성에 실패했습니다.');
+          // 실패 후에도 요청 상태 초기화
+          clearNodePlacementRequest();
+        }
+      });
+    } catch (error) {
+      logger.error('[IdeaMap] 노드 배치 중 오류 발생:', error);
+      toast.error('노드 배치 중 오류가 발생했습니다.');
+      clearNodePlacementRequest();
+    }
+  }, [nodePlacementRequest, reactFlowInstance, createCardNode, clearNodePlacementRequest]);
 
   // loadNodesAndEdges 함수를 안전하게 래핑
   const fetchCards = useCallback(async () => {
@@ -539,7 +642,7 @@ function IdeaMap({
   if (ideaMapStoreNodes && ideaMapStoreNodes.length === 0 && !isLoading && !error) {
     logger.info('노드가 없음, 안내 메시지 표시');
     return (
-      <div className="w-full h-full relative">
+      <div className="w-full h-full relative" ref={reactFlowWrapper}>
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50 z-10">
           <p className="text-gray-500 text-lg font-medium mb-4">카드를 아이디어맵에 추가하세요</p>
           <button
@@ -583,7 +686,7 @@ function IdeaMap({
   if (error) {
     logger.info('오류 발생, 오류 UI 렌더링');
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center" ref={reactFlowWrapper}>
         <div className="bg-destructive text-white p-4 rounded shadow-lg">
           <h3 className="font-bold text-lg">오류 발생</h3>
           <p>{error.toString()}</p>
@@ -604,7 +707,7 @@ function IdeaMap({
     return;
   }
   return (
-    <div className={`w-full h-full relative ${className}`}>
+    <div className={`w-full h-full relative ${className}`} ref={reactFlowWrapper}>
       {/* 캔버스 컴포넌트 */}
       <IdeaMapCanvas
         nodes={ideaMapStoreNodes || []}

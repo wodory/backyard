@@ -23,6 +23,7 @@
  * 수정일: 2025-04-30 : Settings 인터페이스와 일치하도록 속성명 수정 (animate→animated, color→edgeColor, markerType→markerEnd)
  * 수정일: 2025-05-12 : updateNodesSelectively, addNodeAtPosition 등 누락된 함수 추가
  * 수정일: 2025-05-12 : applyNodeChangesAction 함수 추가 - 노드 위치 변경 처리
+ * 수정일: 2025-04-21 : nodePlacementRequest 상태 및 관련 액션 추가 - 카드 생성 시 아이디어맵에 노드 자동 배치 기능 지원
  */
 import { 
   Edge, 
@@ -60,6 +61,12 @@ import createLogger from '@/lib/logger';
 import { useAppStore } from './useAppStore';
 // 로거 생성
 const logger = createLogger('useIdeaMapStore');
+
+// 노드 배치 요청 인터페이스
+interface NodePlacementRequest {
+  cardId: string;
+  projectId: string;
+}
 
 // 확장된 Viewport 타입 (width, height 속성 포함)
 interface ExtendedViewport extends Viewport {
@@ -150,6 +157,11 @@ export interface IdeaMapState {
     connectingNodeId: string, 
     handleType: 'source' | 'target'
   ) => void;
+  
+  // 노드 배치 요청 관련 상태 및 액션
+  nodePlacementRequest: NodePlacementRequest | null;
+  requestNodePlacementForCard: (cardId: string, projectId: string) => void;
+  clearNodePlacementRequest: () => void;
 }
 
 // 아이디어맵 스토어 생성
@@ -968,6 +980,20 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         } catch (error) {
           logger.error('엣지 드롭으로 노드 및 엣지 추가 중 오류 발생:', error);
         }
+      },
+
+      // 노드 배치 요청 관련 상태 및 액션
+      nodePlacementRequest: null,
+      requestNodePlacementForCard: (cardId, projectId) => {
+        logger.debug('[useIdeaMapStore] 노드 배치 요청 수신:', { cardId, projectId });
+        set({ 
+          nodePlacementRequest: { cardId, projectId },
+          hasUnsavedChanges: true  
+        });
+      },
+      clearNodePlacementRequest: () => {
+        logger.debug('[useIdeaMapStore] 노드 배치 요청 초기화');
+        set({ nodePlacementRequest: null });
       },
     }),
     {

@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
-## **Rule Title**  
+# **Rule Title**  
 Three-Layer-Standard
 
 > “**Zustand → MSW → TanStack Query** 3-계층 표준”  
@@ -12,14 +12,14 @@ Three-Layer-Standard
 
 ---
 
-### 0. 이 룰이 해결하려는 문제
+## 0. 이 룰이 해결하려는 문제
 1. 리팩토링 후 **Zustand**·**TanStack Query** 역할이 뒤섞여 발생하는 책임 혼란 방지  
 2. “어디에서 무엇을 모킹해야 하나?”를 명확히 규정 → **테스트 경계** 불일치 제거  
 3. Cursor Agent가 **파일 생성/수정·테스트 작성**을 할 때 항상 같은 패턴으로 동작하게 함
 
 ---
 
-### 1. 3-계층 책임 정의 (Layer)
+## 1. 3-계층 책임 정의 (Layer)
 
 | Layer | 코드 범위 | 책임 | **금지 사항** |
 |-------|-----------|------|---------------|
@@ -29,9 +29,35 @@ Three-Layer-Standard
 
 > **MSW**는 Service 함수가 내보내는 HTTP 경계를 **가장 바깥**에서 Stub 하는 전용 도구.
 
+## 2. **단일 진실(single source of truth)** 판단 기준. 
+### 2.1. **서버 데이터** → **TanStack Query 캐시**  
+   - 데이터를 **어디서**(API) 가져오고 **언제**(staleTime, refetchInterval) 갱신할지 결정하는 주체는 React Query 캐시 ([Server state or client state, which when? : r/reactjs - Reddit](https://www.reddit.com/r/reactjs/comments/ppzd21/server_state_or_client_state_which_when/?utm_source=chatgpt.com)).  
+   - “서버에 가장 최신 상태가 있다”는 관점에서, 로컬 스토어에 복제본을 두지 않고 React Query 캐시를 중심에 둘 것  ([Server State vs Client State in React for Beginners - DEV Community](https://dev.to/jeetvora331/server-state-vs-client-state-in-react-for-beginners-3pl6?utm_source=chatgpt.com)).  
+
+### 2.2 **클라이언트 데이터** → **Zustand 스토어**  
+   - 화면 전환·모달·토글·폼 같은 **순수 UI 상태**는 서버와 상관없이 동작하므로, React Query로 관리하지 않고 Zustand 스토어를 SSOT로 사용. ([Zustand and react-query : r/reactjs - Reddit](https://www.reddit.com/r/reactjs/comments/yvym1g/zustand_and_reactquery/?utm_source=chatgpt.com)).  
+
+### 2.3. **경계 설정**  
+   - “이 상태를 서버 API와 동기화해야 하나?” 질문에 **예**면 React Query, **아니오**면 Zustand 로 분류.
+   - 예를 들어, “사용자 프로필”은 변경될 때 백엔드에 반영해야 하므로 React Query 훅을, “사이드바 확장 여부”는 사용자 경험 차원에서만 필요하므로 Zustand 스토어를 씁니다  ([TkDodo's Blog | TanStack Query React Docs](https://tanstack.com/query/v4/docs/framework/react/community/tkdodos-blog?utm_source=chatgpt.com)).
+
+
+## 2. 데이터별 단일 진실 공급원 
+
+| 데이터 종류                    | 단일 진실 공급원 (권장)                                    | 비고                                                                                                                               |
+| :----------------------------- | :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| 카드 목록                    | TanStack Query Cache (`['cards']`)                       | 서버 상태                                                                                                                          |
+| 아이디어맵 노드 목록         | TanStack Query Cache (`['cardNodes', projectId]`)          | 서버 상태                                                                                                                          |
+| 아이디어맵 엣지 목록         | TanStack Query Cache (`['edges', projectId]`)            | 서버 상태                                                                                                                          |
+| 앱 설정 (UI 반영)            | Zustand (`useAppStore`/`useIdeaMapStore`)                | 클라이언트 상태. 서버 동기화 시 TanStack Query와 연동 필요.                                                                            |
+| 앱 UI 상태 (사이드바 등)     | Zustand (`useAppStore`)                                  | 순수 클라이언트 상태                                                                                                                   |
+| 프로젝트 목록                | TanStack Query Cache (`['projects']`)                    | 서버 상태                                                                                                                          |
+| 현재 활성 프로젝트 ID        | Zustand (`useAppStore`)                                  | 클라이언트 선택 상태                                                                                                                   |
+| 사용자 인증 상태/프로필    | `@supabase/ssr` (근본) + Zustand (`useAuthStore`) (미러) | Zustand는 클라이언트에서의 접근성과 반응성을 위함. 실제 인증은 Supabase 라이브러리가 처리.                                              |
+
 ---
 
-### 2. 룰 태그 4종 (테스트·코드 작성 시 선택)
+### 3. 룰 태그 4종 (테스트·코드 작성 시 선택)
 
 | 태그 | 테스트 대상 | Mock 전략 | 핵심 검증 |
 |------|-------------|-----------|-----------|
@@ -42,7 +68,7 @@ Three-Layer-Standard
 
 ---
 
-### 3. 파일·폴더 컨벤션
+### 4. 파일·폴더 컨벤션
 
 | 코드 | 위치 |
 |------|------|
@@ -54,7 +80,7 @@ Three-Layer-Standard
 
 ---
 
-### 4. 테스트 작성 체크리스트
+### 5. 테스트 작성 체크리스트
 
 1. **Zustand 액션 단위 테스트**  
    ```mdc
@@ -88,7 +114,7 @@ Three-Layer-Standard
 
 ---
 
-### 5. Cursor Agent가 따라야 할 코딩 규칙
+### 6. Cursor Agent가 따라야 할 코딩 규칙
 
 | 규칙 코드 | 내용 |
 |-----------|------|
@@ -100,7 +126,7 @@ Three-Layer-Standard
 
 ---
 
-### 6. 규칙 적용 예시 (End-to-End)
+### 7. 규칙 적용 예시 (End-to-End)
 
 ```mermaid
 sequenceDiagram
@@ -137,7 +163,7 @@ graph TD
 
 ---
 
-### 7. 파일 헤더 샘플 (자동 생성시 Cursor Agent가 넣을 주석)
+### 8. 파일 헤더 샘플 (자동 생성시 Cursor Agent가 넣을 주석)
 
 ```ts
 /**
@@ -150,7 +176,7 @@ graph TD
 
 ---
 
-### 8. 코드 추가 이후 반드시 해야 할 일
+### 9. 코드 추가 이후 반드시 해야 할 일
 
 - 파일 헤더에 rule, layer, tag를 주석으로 추가.
 - Server Side/Client Side 구분을 명확히 해서 설명에 추가

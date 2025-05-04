@@ -149,6 +149,9 @@ export default function IdeaMapCanvas({
 
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
+  // 추가: useIdeaMapStore에서 setReactFlowInstance 가져오기
+  const setReactFlowInstance = useIdeaMapStore(state => state.setReactFlowInstance);
+
   // 컴포넌트 마운트/언마운트 로깅
   useEffect(() => {
     logger.info('컴포넌트 마운트', { 노드수: nodes.length, 엣지수: edges.length });
@@ -161,6 +164,10 @@ export default function IdeaMapCanvas({
   const onInit = useCallback((instance: ReactFlowInstance) => {
     logger.info('ReactFlow 인스턴스 초기화 시작');
     reactFlowInstance.current = instance;
+
+    // 추가: 스토어에 ReactFlow 인스턴스 저장
+    setReactFlowInstance(instance);
+
     logger.info('ReactFlow 인스턴스 초기화 완료', {
       viewport: instance.getViewport(),
       nodes: instance.getNodes().length,
@@ -208,7 +215,7 @@ export default function IdeaMapCanvas({
     else {
       logger.info('노드가 없습니다. 기본 뷰포트 설정');
     }
-  }, [nodes]);
+  }, [nodes, setReactFlowInstance]);
 
   // 활성 프로젝트 ID 가져오기
   const activeProjectId = useAppStore(state => state.activeProjectId);
