@@ -1,52 +1,62 @@
 {
-  "autoSaveIntervalMinutes": 1,
-  "ideaMap": {
-    "snapToGrid": false,
-    "snapGrid": [
-      15,
-      15
-    ],
-    "connectionLineType": "bezier",
-    "markerEnd": "arrowclosed",
-    "strokeWidth": 2,
-    "markerSize": 20,
-    "edgeColor": "#C1C1C1",
-    "animated": false,
-    "selectedEdgeColor": "#000000"
-  },
-  "card": {
-    "defaultWidth": 130,
-    "backgroundColor": "#FFFFFF",
-    "borderRadius": 8,
-    "tagBackgroundColor": "#F2F2F2",
-    "fontSizes": {
-      "default": 16,
-      "title": 16,
-      "content": 14,
-      "tags": 12
-    }
-  },
-  "handles": {
-    "size": 10,
-    "backgroundColor": "#FFFFFF",
-    "borderColor": "#555555",
-    "borderWidth": 1
-  },
-  "layout": {
-    "defaultPadding": 20,
-    "defaultSpacing": {
-      "horizontal": 30,
-      "vertical": 30
+  "DEFAULT_SETTINGS": {
+    "ideamap": {
+      "snapToGrid": false,
+      "snapGrid": [
+        15,
+        15
+      ],
+      "graphSettings": {
+        "nodesep": 60,
+        "ranksep": 100,
+        "edgesep": 100
+      },
+      "layout": {
+        "defaultPadding": 20,
+        "defaultSpacing": {
+          "horizontal": 30,
+          "vertical": 30
+        }
+      },
+      "edge": {
+        "connectionLineType": "bezier",
+        "markerEnd": "arrowclosed",
+        "strokeWidth": 2,
+        "markerSize": 20,
+        "edgeColor": "#C1C1C1",
+        "animated": false,
+        "selectedEdgeColor": "#000000"
+      },
+      "cardNode": {
+        "defaultWidth": 130,
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 8,
+        "tagBackgroundColor": "#F2F2F2",
+        "fontSizes": {
+          "default": 16,
+          "title": 16,
+          "content": 14,
+          "tags": 12
+        },
+        "nodeSize": {
+          "width": 500,
+          "height": 48,
+          "maxHeight": 180
+        },
+        "handles": {
+          "size": 10,
+          "backgroundColor": "#FFFFFF",
+          "borderColor": "#555555",
+          "borderWidth": 1
+        }
+      }
     },
-    "nodeSize": {
-      "width": 500,
-      "height": 48,
-      "maxHeight": 180
+    "general": {
+      "autoSaveIntervalMinutes": 1
     },
-    "graphSettings": {
-      "nodesep": 60,
-      "ranksep": 100,
-      "edgesep": 100
+    "theme": {
+      "mode": "light",
+      "accentColor": "#3498db"
     }
   }
 }

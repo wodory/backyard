@@ -5,26 +5,28 @@
  * 작성일: 2025-03-06
  * 수정일: 2025-03-27
  * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore(themeSlice) 사용으로 변경
+ * 수정일: 2025-04-21 : uiOptions.json 구조 변경에 맞게 참조 경로 수정
  */
 
 import { Node, Edge, Position } from '@xyflow/react';
 import dagre from 'dagre';
 
-import defaultConfig from '../config/uiOptions.json';
+import defaultSeetingJson from '../config/uiOptions.json';
 import { useAppStore } from '@/store/useAppStore';
 
+const ideamapSettings = defaultSeetingJson.DEFAULT_SETTINGS.ideamap;
 // 기본 노드 크기 설정 (ThemeContext가 없을 때 폴백용)
-const DEFAULT_NODE_WIDTH = defaultConfig.layout.nodeSize?.width || 130;
-const DEFAULT_NODE_HEIGHT = defaultConfig.layout.nodeSize?.height || 48;
+const DEFAULT_NODE_WIDTH = ideamapSettings.cardNode.nodeSize.width || 130;
+const DEFAULT_NODE_HEIGHT = ideamapSettings.cardNode.nodeSize.height || 48;
 
 // 그래프 간격 설정 - 설정 파일에서 가져오기
 const GRAPH_SETTINGS = {
   rankdir: 'LR', // 방향: LR(수평) 또는 TB(수직)
-  nodesep: defaultConfig.layout.graphSettings.nodesep, // 같은 레벨의 노드 간 거리 (픽셀)
-  ranksep: defaultConfig.layout.graphSettings.ranksep, // 레벨 간 거리 (픽셀)
-  edgesep: defaultConfig.layout.graphSettings.edgesep, // 엣지 간 거리
-  marginx: defaultConfig.layout.defaultPadding || 20, // 가로 마진은 defaultPadding 사용
-  marginy: defaultConfig.layout.defaultPadding || 20  // 세로 마진은 defaultPadding 사용
+  nodesep: ideamapSettings.graphSettings.nodesep, // 같은 레벨의 노드 간 거리 (픽셀)
+  ranksep: ideamapSettings.graphSettings.ranksep, // 레벨 간 거리 (픽셀)
+  edgesep: ideamapSettings.graphSettings.edgesep, // 엣지 간 거리
+  marginx: ideamapSettings.layout.defaultPadding || 20, // 가로 마진은 defaultPadding 사용
+  marginy: ideamapSettings.layout.defaultPadding || 20  // 세로 마진은 defaultPadding 사용
 };
 
 /**
@@ -256,15 +258,15 @@ export function getLayoutedElements(
  */
 export function getGridLayout(nodes: Node[], cardsPerRow: number = 3) {
   // 설정 파일에서 간격 값 가져오기
-  const horizontalSpacing = defaultConfig.layout.defaultSpacing?.horizontal || 30;
-  const verticalSpacing = defaultConfig.layout.defaultSpacing?.vertical || 30;
+  const horizontalSpacing = ideamapSettings.layout.defaultSpacing.horizontal || 30;
+  const verticalSpacing = ideamapSettings.layout.defaultSpacing.vertical || 30;
   
   // 간격 계산 - 상수 값 대신 설정 파일의 값을 기반으로 계산
   const HORIZONTAL_GAP = DEFAULT_NODE_WIDTH + horizontalSpacing;
   const VERTICAL_GAP = DEFAULT_NODE_HEIGHT + verticalSpacing * 3;
   
   // 기본 마진 값
-  const baseMargin = defaultConfig.layout.defaultPadding || 20;
+  const baseMargin = ideamapSettings.layout.defaultPadding || 20;
   
   return nodes.map((node, index) => ({
     ...node,

@@ -4,12 +4,16 @@
  * 역할: 설정을 서버와 통신하는 순수 함수들 제공
  * 작성일: 2025-04-21
  * 수정일: 2025-04-30 : console.log에서 logger로 변경 및 에러 처리 개선
+ * 수정일: 2025-05-05 : Three-Layer-Standard 아키텍처와 Error-Handling 지침 준수하도록 리팩토링
+ * 수정일: 2025-05-05 : 에러 타입을 SERVER_ERROR로 통일하여 테스트와 일치시킴
+ * 수정일: 2025-05-05 : ApiError 타입 사용하도록 개선
+ * 수정일: 2025-04-21 : API 응답 구조 처리 로직 수정
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchSettings
  */
 
-import { Settings } from '@/lib/ideamap-utils';
+import { SettingsData, ApiError } from '@/types/settings';
 import createLogger from '@/lib/logger';
 
 const logger = createLogger('settingsService');
@@ -23,132 +27,243 @@ const getApiUrl = (): string => {
 };
 
 /**
- * fetchSettings: 사용자의 설정을 조회
- * @param {string} userId - 사용자 ID
- * @returns {Promise<Settings | null>} 설정 객체 또는 null
+ * API 응답 에러 핸들링
+ * @param {Response} response - fetch API 응답 객체
+ * @returns {Promise<any>} - 성공 시 JSON 응답, 실패 시 에러 객체 throw
  */
-export const fetchSettings = async (userId: string): Promise<Settings | null> => {
+const handleApiError = async (response: Response) => {
+  if (!response.ok) {
+    const status = response.status;
+    let error: ApiError = { code: status, type: 'SERVER_ERROR', message: `서버 오류가 발생했습니다.` };
+    
+    try {
+      const errorJson = await response.json();
+      if (errorJson.error) {
+        error = { ...error, ...errorJson.error };
+      }
+    } catch (err) {
+      logger.error('[settingsService] API 오류 응답 파싱 실패', { status, error: err });
+      error = { 
+        ...error, 
+        originalError: err
+      };
+    }
+    
+    logger.error('[settingsService] API 오류 응답', { status, error });
+    throw error;
+  }
+  return response.json();
+};
+
+/**
+ * fetchSettings: 사용자 설정 가져오기
+ * @param {string} userId - 사용자 아이디
+ * @returns {Promise<SettingsData>} - 사용자 설정 데이터
+ * @throws {ApiError} - 오류 발생 시 구조화된 오류 객체
+ */
+export const fetchSettings = async (userId?: string): Promise<SettingsData> => {
+  if (!userId) {
+    logger.warn('[settingsService] 사용자 ID 없음, 설정 로드 스킵');
+    throw { code: 400, type: 'VALIDATION_ERROR', message: '사용자 ID는 필수입니다.' } as ApiError;
+  }
+
+  logger.debug('[settingsService] 서버에서 설정 로드 시작', { userId });
+
   try {
-    if (!userId) {
-      logger.warn('[settingsService] 사용자 ID 없음, 설정 로드 스킵');
-      return null;
+    const response = await fetch(`${getApiUrl()}/api/settings?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await handleApiError(response);
+    
+    // API 응답 구조 검증 - 서버가 { settingsData: ... } 형식으로 반환함
+    if (!data || typeof data !== 'object') {
+      logger.error('[settingsService] 잘못된 API 응답 형식', { data });
+      throw { code: 500, type: 'SERVER_ERROR', message: '서버 응답 형식이 올바르지 않습니다.' } as ApiError;
     }
 
-    logger.debug('[settingsService] 서버에서 설정 로드 시작', { userId });
-    
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/settings?userId=${encodeURIComponent(userId)}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '응답 내용을 확인할 수 없음');
-      logger.error(`[settingsService] 설정 조회 실패 (${response.status}): ${errorText}`);
-      throw new Error(`서버에서 설정을 불러오는데 실패했습니다. 상태: ${response.status}`);
+    // settingsData 필드에서 실제 설정 데이터 추출
+    if (data.settingsData && typeof data.settingsData === 'object') {
+      logger.debug('[settingsService] 설정 로드 성공', { userId });
+      return data.settingsData;
+    } else {
+      logger.error('[settingsService] 잘못된 API 응답 형식: settingsData 필드 누락', { data });
+      throw { code: 500, type: 'SERVER_ERROR', message: '서버 응답 형식이 올바르지 않습니다.' } as ApiError;
     }
-
-    const data = await response.json();
-    logger.debug('[settingsService] 설정 로드 성공', { userId });
-    return data.settings;
   } catch (error) {
-    logger.error('[settingsService] 설정 조회 중 오류 발생:', error);
-    // API 오류는 null을 반환하여 기본값을 사용하도록 함
-    return null;
+    if ((error as Error).message === 'Failed to fetch') {
+      throw { code: 503, type: 'SERVER_ERROR', message: '서버에 연결할 수 없습니다.' } as ApiError;
+    }
+    
+    // 이미 구조화된 오류면 그대로 던짐
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      throw error as ApiError;
+    }
+    
+    // 기타 예상치 못한 오류
+    throw { code: 500, type: 'SERVER_ERROR', message: '설정을 불러오는 중 오류가 발생했습니다.', originalError: error } as ApiError;
   }
 };
 
 /**
- * updateSettings: 설정을 부분 업데이트
- * @param {string} userId - 사용자 ID
- * @param {Partial<Settings>} settings - 업데이트할 설정 일부
- * @returns {Promise<Settings | null>} 업데이트된 설정 또는 null
+ * updateSettings: 사용자 설정 부분 업데이트
+ * @param {string} userId - 사용자 아이디
+ * @param {Partial<SettingsData>} partialUpdate - 업데이트할 설정 데이터 일부
+ * @returns {Promise<SettingsData>} - 업데이트된 사용자 설정 데이터
+ * @throws {ApiError} - 오류 발생 시 구조화된 오류 객체
  */
 export const updateSettings = async (
-  userId: string, 
-  settings: Partial<Settings>
-): Promise<Settings | null> => {
-  try {
-    if (!userId) {
-      logger.warn('[settingsService] 사용자 ID 없음, 설정 업데이트 스킵');
-      return null;
-    }
+  userId?: string,
+  partialUpdate?: Partial<SettingsData>
+): Promise<SettingsData> => {
+  if (!userId) {
+    logger.warn('[settingsService] 사용자 ID 없음, 설정 업데이트 스킵');
+    throw { code: 400, type: 'VALIDATION_ERROR', message: '사용자 ID는 필수입니다.' } as ApiError;
+  }
 
-    // 요청 데이터 깊은 복사 및 문자열 변환 확인
-    const safeSettings = JSON.parse(JSON.stringify(settings));
-    
-    logger.debug('[settingsService] 설정 업데이트 요청:', {
-      userId,
-      settings: safeSettings
-    });
-    
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/settings`, {
+  if (!partialUpdate || Object.keys(partialUpdate).length === 0) {
+    logger.warn('[settingsService] 빈 업데이트 요청', { userId });
+    throw { code: 400, type: 'VALIDATION_ERROR', message: '업데이트할 설정 데이터가 비어있습니다.' } as ApiError;
+  }
+
+  logger.debug('[settingsService] 설정 업데이트 요청:', { userId, partialUpdate });
+
+  try {
+    const response = await fetch(`${getApiUrl()}/api/settings`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         userId,
-        settings: safeSettings,
+        partialUpdate,
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
-      logger.error('[settingsService] 설정 업데이트 실패:', errorData);
-      throw new Error(
-        errorData.details || errorData.error || '설정을 업데이트하는 데 실패했습니다.'
-      );
+    const responseData = await handleApiError(response);
+    
+    // API 응답 구조 검증 - 서버가 { settingsData: ... } 형식으로 반환함
+    if (!responseData || typeof responseData !== 'object') {
+      logger.error('[settingsService] 잘못된 API 응답 형식', { responseData });
+      throw { code: 500, type: 'SERVER_ERROR', message: '서버 응답 형식이 올바르지 않습니다.' } as ApiError;
     }
 
-    const responseData = await response.json();
-    logger.debug('[settingsService] 설정 업데이트 성공');
-    return responseData.settings || null;
+    // settingsData 필드에서 실제 설정 데이터 추출
+    if (responseData.settingsData && typeof responseData.settingsData === 'object') {
+      logger.debug('[settingsService] 설정 업데이트 성공');
+      return responseData.settingsData;
+    } else {
+      logger.error('[settingsService] 잘못된 API 응답 형식: settingsData 필드 누락', { responseData });
+      throw { code: 500, type: 'SERVER_ERROR', message: '서버 응답 형식이 올바르지 않습니다.' } as ApiError;
+    }
   } catch (error) {
-    logger.error('[settingsService] 설정 업데이트 중 오류:', error);
-    return null;
+    if ((error as Error).message === 'Failed to fetch') {
+      throw { code: 503, type: 'SERVER_ERROR', message: '서버에 연결할 수 없습니다.' } as ApiError;
+    }
+    
+    // 이미 구조화된 오류면 그대로 던짐
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      throw error as ApiError;
+    }
+    
+    // 기타 예상치 못한 오류
+    throw { code: 500, type: 'SERVER_ERROR', message: '설정을 업데이트하는 중 오류가 발생했습니다.', originalError: error } as ApiError;
   }
 };
 
 /**
- * createSettings: 새 설정 생성
- * @param {string} userId - 사용자 ID
- * @param {Settings} settings - 생성할 전체 설정
- * @returns {Promise<Settings | null>} 생성된 설정 또는 null
+ * createInitialSettings: 사용자 초기 설정 생성
+ * @param {string} userId - 사용자 아이디
+ * @param {SettingsData} settingsData - 생성할 초기 설정 데이터
+ * @returns {Promise<SettingsData>} - 생성된 사용자 설정 데이터
+ * @throws {ApiError} - 오류 발생 시 구조화된 오류 객체
  */
-export const createSettings = async (
-  userId: string,
-  settings: Settings
-): Promise<Settings | null> => {
+export const createInitialSettings = async (
+  userId?: string,
+  settingsData?: SettingsData
+): Promise<SettingsData> => {
+  if (!userId) {
+    logger.warn('[settingsService] 사용자 ID 없음, 설정 생성 스킵');
+    throw { code: 400, type: 'VALIDATION_ERROR', message: '사용자 ID는 필수입니다.' } as ApiError;
+  }
+
+  if (!settingsData) {
+    logger.warn('[settingsService] 초기 설정 데이터 없음', { userId });
+    throw { code: 400, type: 'VALIDATION_ERROR', message: '초기 설정 데이터가 필요합니다.' } as ApiError;
+  }
+
+  logger.debug('[settingsService] 새 설정 생성 요청:', { userId });
+
   try {
-    if (!userId) {
-      logger.warn('[settingsService] 사용자 ID 없음, 설정 생성 스킵');
-      return null;
-    }
-    
-    logger.debug('[settingsService] 새 설정 생성 요청:', { userId });
-    
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/settings`, {
+    const response = await fetch(`${getApiUrl()}/api/settings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         userId,
-        settings,
+        settingsData,
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
-      logger.error('[settingsService] 설정 생성 실패:', errorData);
-      throw new Error(errorData.details || errorData.error || '설정 생성에 실패했습니다.');
+    const data = await handleApiError(response);
+    
+    // API 응답 구조 검증 - 서버가 { settingsData: ... } 형식으로 반환함
+    if (!data || typeof data !== 'object') {
+      logger.error('[settingsService] 잘못된 API 응답 형식', { data });
+      throw { code: 500, type: 'SERVER_ERROR', message: '서버 응답 형식이 올바르지 않습니다.' } as ApiError;
     }
 
-    const data = await response.json();
-    logger.debug('[settingsService] 설정 생성 성공');
-    return data.settings || settings;
+    // settingsData 필드에서 실제 설정 데이터 추출
+    if (data.settingsData && typeof data.settingsData === 'object') {
+      logger.debug('[settingsService] 설정 생성 성공');
+      return data.settingsData;
+    } else {
+      logger.error('[settingsService] 잘못된 API 응답 형식: settingsData 필드 누락', { data });
+      throw { code: 500, type: 'SERVER_ERROR', message: '서버 응답 형식이 올바르지 않습니다.' } as ApiError;
+    }
   } catch (error) {
-    logger.error('[settingsService] 설정 생성 중 오류:', error);
-    return null;
+    if ((error as Error).message === 'Failed to fetch') {
+      throw { code: 503, type: 'SERVER_ERROR', message: '서버에 연결할 수 없습니다.' } as ApiError;
+    }
+    
+    // 이미 구조화된 오류면 그대로 던짐
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      throw error as ApiError;
+    }
+    
+    // 기타 예상치 못한 오류
+    throw { code: 500, type: 'SERVER_ERROR', message: '설정을 생성하는 중 오류가 발생했습니다.', originalError: error } as ApiError;
   }
-}; 
+};
+
+/**
+ * mermaid 다이어그램:
+ * ```mermaid
+ * sequenceDiagram
+ *     participant TQ_Hook as TanStack Query 훅
+ *     participant Service as settingsService
+ *     participant API as API (/api/settings)
+ *     participant DB as 데이터베이스
+ *     
+ *     TQ_Hook->>Service: fetchSettings(userId)
+ *     Service->>API: GET /api/settings?userId={userId}
+ *     API->>DB: 사용자 설정 조회
+ *     DB-->>API: 설정 데이터 반환
+ *     API-->>Service: 설정 데이터 JSON 반환
+ *     Service-->>TQ_Hook: 처리된 설정 데이터 반환
+ *     
+ *     TQ_Hook->>Service: updateSettings(userId, partialUpdate)
+ *     Service->>API: PATCH /api/settings
+ *     API->>DB: 기존 설정 조회
+ *     DB-->>API: 기존 설정 반환
+ *     API->>API: 설정 병합
+ *     API->>DB: 업데이트된 설정 저장
+ *     DB-->>API: 성공 응답
+ *     API-->>Service: 업데이트된 전체 설정 반환
+ *     Service-->>TQ_Hook: 업데이트된 설정 데이터 반환
+ * ```
+ */ 

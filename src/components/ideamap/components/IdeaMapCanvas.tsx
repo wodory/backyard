@@ -16,6 +16,8 @@
  * 수정일: 2025-05-21 : 다중 엣지 삭제 처리 기능 추가
  * 수정일: 2025-04-21 : 노드 삭제 시 CardNode 삭제 로직 추가
  * 수정일: 2025-04-21 : 노드 드래그 종료 시 CardNode 위치 업데이트 로직 추가
+ * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - useIdeaMapSettings 훅 사용
+ * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
  */
 
 'use client';
@@ -55,9 +57,11 @@ import { cn } from '@/lib/utils';
 
 import { createLogger } from '@/lib/logger';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, selectActiveProject } from '@/store/useAppStore';
+import { useAuthStore, selectUserId } from '@/store/useAuthStore';
 import { useCreateEdge, useDeleteEdge, useDeleteMultipleEdges } from '@/hooks/useEdges'; // useDeleteMultipleEdges 추가
 import { useDeleteCardNode, useUpdateCardNodePosition } from '@/hooks/useCardNodes'; // CardNode 삭제 훅 및 위치 업데이트 훅 추가
+import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings'; // 설정 정보를 가져오는 React Query 훅 추가
 import { toast } from 'sonner';
 
 const logger = createLogger('IdeaMapCanvas');
@@ -81,8 +85,6 @@ interface IdeaMapCanvasProps {
   onNodeClick: (e: React.MouseEvent, node: Node) => void;
   /** 빈 공간 클릭 핸들러 */
   onPaneClick: (e: React.MouseEvent) => void;
-  /** 아이디어맵 설정 */
-  ideaMapSettings: Settings;
   /** 컨트롤 표시 여부 */
   showControls?: boolean;
   /** 래퍼 ref */
@@ -111,7 +113,6 @@ export default function IdeaMapCanvas({
   onConnectEnd,
   onNodeClick,
   onPaneClick,
-  ideaMapSettings,
   showControls = true,
   wrapperRef,
   className = "",
@@ -119,6 +120,16 @@ export default function IdeaMapCanvas({
   onDrop,
   onViewportChange
 }: IdeaMapCanvasProps) {
+
+  // 활성 프로젝트 ID 가져오기
+  const activeProjectId = useAppStore(state => state.activeProjectId);
+  const activeProject = useAppStore(selectActiveProject);
+
+  // 인증된 사용자 ID 가져오기 (useAuthStore에서 직접)
+  const userId = useAuthStore(selectUserId);
+
+  // TanStack Query를 통해 설정 정보 가져오기
+  const { data: ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings(userId);
 
   // 엣지 데이터 확인을 위한 로그 추가
   useEffect(() => {
@@ -130,6 +141,18 @@ export default function IdeaMapCanvas({
 
   // 기본 엣지 옵션 메모이제이션
   const defaultEdgeOptions = useMemo(() => {
+    // 설정 정보가 없으면 기본값 사용
+    if (!ideaMapSettings) {
+      return {
+        type: 'custom',
+        animated: false,
+        style: {
+          strokeWidth: 2,
+          stroke: '#C1C1C1'
+        }
+      };
+    }
+
     const options = {
       type: 'custom',
       animated: ideaMapSettings.animated,
@@ -216,9 +239,6 @@ export default function IdeaMapCanvas({
       logger.info('노드가 없습니다. 기본 뷰포트 설정');
     }
   }, [nodes, setReactFlowInstance]);
-
-  // 활성 프로젝트 ID 가져오기
-  const activeProjectId = useAppStore(state => state.activeProjectId);
 
   // CardNode 삭제를 위한 TanStack Query 훅
   const deleteCardNodeMutation = useDeleteCardNode();
@@ -460,6 +480,50 @@ export default function IdeaMapCanvas({
     }
   }, [activeProjectId, updateCardNodePositionMutation]);
 
+  // 설정 로딩 중이면 로딩 표시
+  if (isLoading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center" data-testid="loading-settings">
+        <div className="bg-background/80 p-4 rounded-lg shadow-md">
+          아이디어맵 설정 로딩 중...
+        </div>
+      </div>
+    );
+  }
+
+  // 설정 로딩 중 에러가 발생했으면 에러 메시지 표시
+  if (isError) {
+    console.error("IdeaMap 설정 로드 오류:", error);
+    return (
+      <div className="h-full w-full flex items-center justify-center" data-testid="error-settings">
+        <div className="bg-background/80 p-4 rounded-lg shadow-md text-red-500">
+          아이디어맵 설정을 불러오는데 실패했습니다. 오류: {error instanceof Error ? error.message : '알 수 없는 오류'}
+        </div>
+      </div>
+    );
+  }
+
+  // 데이터 없음 상태 처리 (로딩과 에러가 아닌 경우)
+  if (!ideaMapSettings) {
+    // userId가 없는 경우인지, API가 빈 객체를 반환한 경우인지 구분
+    const reason = !userId
+      ? "사용자 ID가 없습니다."
+      : "설정 데이터를 사용할 수 없습니다.";
+
+    console.warn("IdeaMap 설정 데이터를 사용할 수 없습니다.", {
+      userId,
+      projectId: activeProject?.id
+    });
+
+    return (
+      <div className="h-full w-full flex items-center justify-center" data-testid="no-settings">
+        <div className="bg-background/80 p-4 rounded-lg shadow-md text-amber-500">
+          아이디어맵 설정 데이터를 사용할 수 없습니다. {reason} (Project ID: {activeProject?.id ?? '없음'})
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn("h-full w-full flex flex-col relative", className)}
@@ -491,37 +555,55 @@ export default function IdeaMapCanvas({
         }}
         onNodeDragStop={handleNodeDragStop}
         onViewportChange={handleViewportChange}
+        onInit={onInit}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
         connectionMode={ConnectionMode.Loose}
         connectionLineType={ideaMapSettings.connectionLineType as ConnectionLineType}
         snapToGrid={ideaMapSettings.snapToGrid}
         snapGrid={ideaMapSettings.snapGrid}
-        fitView={nodes.length > 0}
-        fitViewOptions={{
-          padding: 0.3,
-          includeHiddenNodes: false,
-          minZoom: 0.5,
-          maxZoom: 1.5
-        }}
-        minZoom={0.1}
-        maxZoom={2.5}
-        defaultViewport={{
-          x: 0,
-          y: 0,
-          zoom: 1
-        }}
-        attributionPosition="bottom-right"
         defaultEdgeOptions={defaultEdgeOptions}
-        onInit={onInit}
+        fitView
+        attributionPosition="bottom-right"
       >
         {showControls && (
-          <>
-            <Background />
-            <Controls />
-          </>
+          <Controls
+            position="bottom-right"
+            style={{
+              marginRight: 10,
+              marginBottom: 10,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '5px',
+            }}
+          />
         )}
+        <Background color="#aaa" gap={ideaMapSettings.snapGrid ? ideaMapSettings.snapGrid[0] : 20} />
       </ReactFlow>
     </div>
   );
-} 
+}
+
+/**
+ * mermaid 다이어그램:
+ * ```mermaid
+ * sequenceDiagram
+ *   participant UI as IdeaMapCanvas
+ *   participant TQ as useIdeaMapSettings
+ *   participant Service as settingsService
+ *   participant API as /api/settings
+ *   participant DB as 데이터베이스
+ *   participant RF as ReactFlow
+ * 
+ *   UI->>+TQ: useIdeaMapSettings(userId)
+ *   TQ->>+Service: fetchSettings(userId)
+ *   Service->>+API: GET /api/settings
+ *   API->>+DB: 설정 조회
+ *   DB-->>-API: 설정 데이터 반환
+ *   API-->>-Service: 설정 데이터 응답
+ *   Service-->>-TQ: 설정 데이터 반환
+ *   TQ-->>-UI: 설정 데이터 반환
+ *   UI->>+RF: 설정 적용 및 캔버스 렌더링
+ *   RF-->>-UI: 렌더링 완료
+ * ```
+ */ 

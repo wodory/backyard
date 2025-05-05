@@ -1,0 +1,48 @@
+sequenceDiagram
+    participant User as 사용자
+    participant UI_Control as 설정 UI (ProjectToolbar)
+    participant TQ_Mutation as useUpdateSettingsMutation
+    participant SettingsService as settingsService
+    participant API_Settings as PATCH /api/settings
+    participant DB_Settings as DB (settings 테이블)
+    participant TQ_Cache as TanStack Query Cache
+
+    participant TQ_Hook_Base as useUserSettingsQuery (내부)
+    participant TQ_Hook_Feature as 기능별 TQ 훅 (예: useIdeaMapSettings)
+    participant Zustand_Store as Zustand 스토어 (클라이언트 상태)
+    participant UI_Consumer as UI 컴포넌트 (예: IdeaMapCanvas)
+
+    %% --- 설정 변경 및 서버 상태 업데이트 ---
+    User->>+UI_Control: 설정 변경 (예: 엣지 두께 조절)
+    UI_Control->>+TQ_Mutation: mutate({ ideamap: { strokeWidth: 3 } }, { userId }) 호출
+    TQ_Mutation->>+SettingsService: updateSettings(userId, partialUpdate) 호출
+    SettingsService->>+API_Settings: PATCH /api/settings 요청 (Body: 변경된 부분)
+    API_Settings->>+DB_Settings: 설정 조회, 병합, 저장 (settingsData 업데이트)
+    DB_Settings-->>-API_Settings: 업데이트 성공
+    API_Settings-->>-SettingsService: 성공 응답 (업데이트된 전체 settingsData)
+    SettingsService-->>-TQ_Mutation: 성공 응답 반환
+    TQ_Mutation->>+TQ_Cache: invalidateQueries(['userSettings', userId]) 호출 (핵심!)
+    Note over TQ_Cache: ['userSettings', userId] 캐시 무효화
+
+    %% --- 서버 상태 Refetch 및 가공 ---
+    TQ_Cache->>+TQ_Hook_Base: (자동 Refetch) queryFn 실행 요청
+    TQ_Hook_Base->>+SettingsService: fetchSettings(userId) 호출 (GET /api/settings)
+    SettingsService->>API_Settings: GET /api/settings 요청
+    API_Settings->>DB_Settings: 최신 전체 settingsData 조회
+    DB_Settings-->>API_Settings: 최신 전체 settingsData 반환
+    API_Settings-->>SettingsService: 성공 응답
+    SettingsService-->>TQ_Hook_Base: 최신 전체 settingsData 반환
+    TQ_Hook_Base->>TQ_Cache: ['userSettings', userId] 캐시 업데이트
+
+    %% --- 기능별 훅 업데이트 및 UI 리렌더링 ---
+    TQ_Cache-->>+TQ_Hook_Feature: 캐시 업데이트 알림 -> select 함수 재실행
+    TQ_Hook_Feature->>TQ_Hook_Feature: 최신 전체 데이터에서 필요한 부분(ideamap) 추출 + 기본값 병합
+    TQ_Hook_Feature-->>-UI_Consumer: 업데이트된 최종 설정 객체(ideamap) 반환
+    UI_Consumer->>UI_Consumer: 새 설정값으로 리렌더링
+
+    %% --- (선택적) 파생된 클라이언트 상태 업데이트 ---
+    Note over TQ_Hook_Feature, Zustand_Store: 특정 설정값(예: 테마) 변경 시,\nuseEffect 등으로 감지하여\n파생된 UI 상태(예: 실제 적용 테마)를\nZustand에 업데이트할 수 있음
+    opt 파생 상태 업데이트
+        TQ_Hook_Feature->>Zustand_Store: setEffectiveTheme('dark') 등 액션 호출
+        Zustand_Store-->>UI_Consumer: 업데이트된 클라이언트 상태 제공 -> 리렌더링
+    end

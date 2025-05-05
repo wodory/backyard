@@ -3,11 +3,18 @@
  * 목적: 중앙화된 테마 관리 시스템 구현
  * 역할: React Flow 노드 및 엣지 스타일링을 위한 전역 테마 컨텍스트 제공
  * 작성일: 2025-03-27
+ * 수정일: 2025-04-21 : uiOptions.json 구조 변경에 맞게 참조 경로 수정
+ * 수정일: 2025-04-21 : 가독성 개선을 위한 상수 추출
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 import defaultConfig from '../config/uiOptions.json';
+
+// 설정 상수 정의 - 가독성 개선
+const ideamapSettings = defaultConfig.DEFAULT_SETTINGS.ideamap;
+const cardNodeSettings = ideamapSettings.cardNode;
+const edgeSettings = ideamapSettings.edge;
 
 export interface NodeTheme {
   width: number;
@@ -58,39 +65,39 @@ export interface Theme {
 // 기본 테마 설정 - 기존 JSON 파일의 값 사용
 const defaultTheme: Theme = {
   node: {
-    width: defaultConfig.layout.nodeSize.width,
-    height: defaultConfig.layout.nodeSize.height,
-    maxHeight: defaultConfig.layout.nodeSize.maxHeight,
-    backgroundColor: defaultConfig.card.backgroundColor,
+    width: cardNodeSettings.nodeSize.width,
+    height: cardNodeSettings.nodeSize.height,
+    maxHeight: cardNodeSettings.nodeSize.maxHeight,
+    backgroundColor: cardNodeSettings.backgroundColor,
     borderColor: '#C1C1C1',
     borderWidth: 1,
-    borderRadius: defaultConfig.card.borderRadius,
+    borderRadius: cardNodeSettings.borderRadius,
     selectedBorderColor: '#0071e3',
     font: {
       family: 'Pretendard, sans-serif',
-      titleSize: defaultConfig.card.fontSizes.title,
-      contentSize: defaultConfig.card.fontSizes.content,
-      tagsSize: defaultConfig.card.fontSizes.tags,
+      titleSize: cardNodeSettings.fontSizes.title,
+      contentSize: cardNodeSettings.fontSizes.content,
+      tagsSize: cardNodeSettings.fontSizes.tags,
     }
   },
   edge: {
-    color: defaultConfig.ideaMap.edgeColor,
-    width: defaultConfig.ideaMap.strokeWidth,
-    selectedColor: defaultConfig.ideaMap.selectedEdgeColor,
-    animated: defaultConfig.ideaMap.animated,
+    color: edgeSettings.edgeColor,
+    width: edgeSettings.strokeWidth,
+    selectedColor: edgeSettings.selectedEdgeColor,
+    animated: edgeSettings.animated,
   },
   handle: {
-    size: defaultConfig.handles.size,
-    backgroundColor: defaultConfig.handles.backgroundColor,
-    borderColor: defaultConfig.handles.borderColor,
-    borderWidth: defaultConfig.handles.borderWidth,
+    size: cardNodeSettings.handles.size,
+    backgroundColor: cardNodeSettings.handles.backgroundColor,
+    borderColor: cardNodeSettings.handles.borderColor,
+    borderWidth: cardNodeSettings.handles.borderWidth,
   },
   layout: {
     spacing: {
-      horizontal: defaultConfig.layout.defaultSpacing.horizontal,
-      vertical: defaultConfig.layout.defaultSpacing.vertical,
+      horizontal: ideamapSettings.layout.defaultSpacing.horizontal,
+      vertical: ideamapSettings.layout.defaultSpacing.vertical,
     },
-    padding: defaultConfig.layout.defaultPadding,
+    padding: ideamapSettings.layout.defaultPadding,
   },
 };
 

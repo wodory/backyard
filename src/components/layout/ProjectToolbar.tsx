@@ -1,3 +1,13 @@
+/**
+ * 파일명: src/components/layout/ProjectToolbar.tsx
+ * 목적: 프로젝트 도구 모음 컴포넌트
+ * 역할: 아이디어맵의 설정 변경 및 프로젝트 관리 UI 제공
+ * 작성일: 2025-03-15
+ * 수정일: 2025-04-21 : 기능 추가 - 프로젝트 기본 정보 표시 및 로그아웃
+ * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - Zustand 직접 업데이트 제거
+ * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
+ */
+
 'use client';
 
 import React, { useCallback, useEffect } from 'react';
@@ -43,6 +53,7 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { useUpdateIdeaMapSettingsMutation } from '@/hooks/useIdeaMapSettings';
+import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings';
 import {
   SNAP_GRID_OPTIONS,
   CONNECTION_TYPE_OPTIONS,
@@ -61,6 +72,7 @@ import {
 import createLogger from '@/lib/logger';
 import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
 import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import { useAuthStore, selectUserId } from '@/store/useAuthStore';
 
 // 모듈별 로거 생성
 const logger = createLogger('ProjectToolbar');
@@ -74,8 +86,6 @@ export function ProjectToolbar() {
     // layoutDirection,
     // setLayoutDirection,
     // rename board -> ideaMap
-    ideaMapSettings,
-    updateIdeaMapSettings,
     saveIdeaMapLayout,
     logoutAction,
     projects,
@@ -85,11 +95,17 @@ export function ProjectToolbar() {
     // setActiveProject
   } = useAppStore();
 
-  // TanStack Query mutation 훅 사용
-  const { mutate: updateSettings } = useUpdateIdeaMapSettingsMutation();
-
   // 활성 프로젝트 정보 가져오기
   const activeProject = useAppStore(selectActiveProject);
+
+  // 인증된 사용자 ID 가져오기 (useAuthStore에서 직접)
+  const userId = useAuthStore(selectUserId);
+
+  // TanStack Query mutation 훅 사용
+  const { mutate: updateSettings, isPending } = useUpdateIdeaMapSettingsMutation();
+
+  // TanStack Query를 통해 설정 정보 가져오기
+  const { data: ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings(userId);
 
   // 프로젝트 이름과 작성자 정보 표시
   const displayProjectName = activeProject
@@ -146,184 +162,202 @@ export function ProjectToolbar() {
 
   // 스냅 그리드 값 변경 핸들러
   const handleSnapGridChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
-    const gridSize = parseInt(value, 10);
-    updateIdeaMapSettings({
-      snapGrid: [gridSize, gridSize] as [number, number],
-      snapToGrid: gridSize > 0, // 그리드 크기가 0보다 크면 스냅 활성화
-    });
+    if (!userId) return;
 
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: {
-          snapGrid: [gridSize, gridSize] as [number, number],
-          snapToGrid: gridSize > 0
-        }
-      });
-    }
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+    const gridSize = parseInt(value, 10);
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: {
+        snapGrid: [gridSize, gridSize] as [number, number],
+        snapToGrid: gridSize > 0
+      }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('그리드 설정이 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
+    });
+  }, [updateSettings, userId]);
 
   // 연결선 타입 변경 핸들러
   const handleConnectionTypeChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
-    updateIdeaMapSettings({
-      connectionLineType: value as ConnectionLineType,
+    if (!userId) return;
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { connectionLineType: value as ConnectionLineType }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('연결선 스타일이 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { connectionLineType: value as ConnectionLineType }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 마커 타입 변경 핸들러
   const handleMarkerTypeChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
-    updateIdeaMapSettings({
-      markerEnd: value === 'null' ? null : value as MarkerType,
+    if (!userId) return;
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { markerEnd: value === 'null' ? null : value as MarkerType }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('화살표 스타일이 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { markerEnd: value === 'null' ? null : value as MarkerType }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 스냅 그리드 토글 핸들러
   const handleSnapToGridToggle = useCallback(() => {
-    // 1. UI 상태 업데이트 (Zustand)
-    const newValue = !ideaMapSettings.snapToGrid;
-    updateIdeaMapSettings({
-      snapToGrid: newValue,
-    });
+    if (!userId || !ideaMapSettings) return;
 
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { snapToGrid: newValue }
-      });
-    }
-  }, [ideaMapSettings.snapToGrid, updateIdeaMapSettings, updateSettings, activeProject]);
+    const newValue = !ideaMapSettings.snapToGrid;
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { snapToGrid: newValue }
+    }, {
+      onSuccess: () => {
+        toast.success(`격자 맞춤이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
+    });
+  }, [updateSettings, userId, ideaMapSettings]);
 
   // 연결선 두께 변경 핸들러
   const handleStrokeWidthChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
+    if (!userId) return;
+
     const newValue = parseInt(value, 10);
-    updateIdeaMapSettings({
-      strokeWidth: newValue,
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { strokeWidth: newValue }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('연결선 두께가 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { strokeWidth: newValue }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 마커 크기 변경 핸들러
   const handleMarkerSizeChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
+    if (!userId) return;
+
     const newValue = parseInt(value, 10);
-    updateIdeaMapSettings({
-      markerSize: newValue,
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { markerSize: newValue }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('화살표 크기가 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { markerSize: newValue }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 연결선 색상 변경 핸들러
   const handleEdgeColorChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
-    updateIdeaMapSettings({
-      edgeColor: value,
+    if (!userId) return;
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { edgeColor: value }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('연결선 색상이 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { edgeColor: value }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 선택된 연결선 색상 변경 핸들러
   const handleSelectedEdgeColorChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
-    updateIdeaMapSettings({
-      selectedEdgeColor: value,
+    if (!userId) return;
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { selectedEdgeColor: value }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success('선택된 연결선 색상이 저장되었습니다.');
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { selectedEdgeColor: value }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 연결선 애니메이션 변경 핸들러
   const handleAnimatedChange = useCallback((value: string) => {
-    // 1. UI 상태 업데이트 (Zustand)
+    if (!userId) return;
+
     const newValue = value === 'true';
-    updateIdeaMapSettings({
-      animated: newValue,
+
+    // 서버 상태만 업데이트 (TanStack Query → Service)
+    updateSettings({
+      userId: userId,
+      settings: { animated: newValue }
+    }, {
+      onSuccess: () => {
+        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
+        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+        updateAllEdgeStyles();
+        toast.success(`연결선 애니메이션이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
+      },
+      onError: (error) => {
+        toast.error(`설정 저장 중 오류 발생: ${error.message}`);
+      }
     });
-
-    // 2. 서버 상태 업데이트 (TanStack Query → Service)
-    if (activeProject?.userId) {
-      updateSettings({
-        userId: activeProject.userId,
-        settings: { animated: newValue }
-      });
-    }
-
-    // 3. 현재 맵의 모든 엣지에 새 스타일 적용
-    const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-    updateAllEdgeStyles();
-  }, [updateIdeaMapSettings, updateSettings, activeProject]);
+  }, [updateSettings, userId]);
 
   // 내보내기 핸들러
   const handleExport = useCallback(() => {
@@ -358,6 +392,39 @@ export function ProjectToolbar() {
       logger.error('프로젝트가 없습니다.');
     }
   }, [projects.length, createProject]);
+
+  // 로딩 중이면 로딩 표시
+  if (isLoading) {
+    return <div className="fixed top-3 left-3 p-2 bg-background/80 rounded-lg shadow-md" data-testid="loading-settings">아이디어맵 설정 로딩 중...</div>;
+  }
+
+  // 에러가 발생했으면 에러 메시지 표시
+  if (isError) {
+    console.error("아이디어맵 설정 로드 오류:", error);
+    return (
+      <div className="fixed top-3 left-3 p-2 bg-background/80 rounded-lg shadow-md text-red-500" data-testid="error-settings">
+        설정을 불러오는데 실패했습니다. 오류: {error instanceof Error ? error.message : '알 수 없는 오류'}
+      </div>
+    );
+  }
+
+  // 데이터 없음 상태 처리 (로딩과 에러가 아닌 경우)
+  if (!ideaMapSettings) {
+    // userId가 없는 경우인지, API가 빈 객체를 반환한 경우인지 구분
+    const reason = !userId
+      ? "사용자 ID가 없습니다."
+      : "설정 데이터를 사용할 수 없습니다.";
+
+    console.warn("아이디어맵 설정 데이터를 사용할 수 없습니다.", {
+      userId: userId,
+    });
+
+    return (
+      <div className="fixed top-3 left-3 p-2 bg-background/80 rounded-lg shadow-md text-amber-500" data-testid="no-settings">
+        설정 데이터를 사용할 수 없습니다. {reason}
+      </div>
+    );
+  }
 
   return (
     <div className="fixed top-3 left-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-lg shadow-md border p-1 px-3 z-10">
@@ -411,13 +478,14 @@ export function ProjectToolbar() {
                     <DropdownMenuCheckboxItem
                       checked={ideaMapSettings.snapToGrid}
                       onCheckedChange={handleSnapToGridToggle}
+                      disabled={isPending}
                     >
                       격자에 맞추기 활성화
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.snapGrid[0].toString()}
-                      onValueChange={handleSnapGridChange}
+                      value={ideaMapSettings.snapGrid?.[0].toString()}
+                      onValueChange={isPending ? undefined : handleSnapGridChange}
                     >
                       {SNAP_GRID_OPTIONS.map(option => (
                         <DropdownMenuRadioItem key={option.value} value={option.value.toString()}>
@@ -439,7 +507,7 @@ export function ProjectToolbar() {
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
                       value={ideaMapSettings.connectionLineType}
-                      onValueChange={handleConnectionTypeChange}
+                      onValueChange={isPending ? undefined : handleConnectionTypeChange}
                     >
                       {CONNECTION_TYPE_OPTIONS.map(option => (
                         <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -459,7 +527,7 @@ export function ProjectToolbar() {
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
                       value={ideaMapSettings.markerEnd === null ? 'null' : ideaMapSettings.markerEnd}
-                      onValueChange={handleMarkerTypeChange}
+                      onValueChange={isPending ? undefined : handleMarkerTypeChange}
                     >
                       {MARKER_TYPE_OPTIONS.map(option => (
                         <DropdownMenuRadioItem key={option.value ?? 'null'} value={option.value === null ? 'null' : option.value}>
@@ -478,8 +546,8 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.strokeWidth.toString()}
-                      onValueChange={handleStrokeWidthChange}
+                      value={ideaMapSettings.strokeWidth?.toString()}
+                      onValueChange={isPending ? undefined : handleStrokeWidthChange}
                     >
                       {STROKE_WIDTH_OPTIONS.map(option => (
                         <DropdownMenuRadioItem key={option.value} value={option.value.toString()}>
@@ -498,8 +566,8 @@ export function ProjectToolbar() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.markerSize.toString()}
-                      onValueChange={handleMarkerSizeChange}
+                      value={ideaMapSettings.markerSize?.toString()}
+                      onValueChange={isPending ? undefined : handleMarkerSizeChange}
                     >
                       {MARKER_SIZE_OPTIONS.map(option => (
                         <DropdownMenuRadioItem key={option.value} value={option.value.toString()}>
@@ -510,7 +578,7 @@ export function ProjectToolbar() {
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
-                {/* 연결선 색상 설정 */}
+                {/* 엣지 색상 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Paintbrush className="mr-1.5 h-4 w-4" />
@@ -519,55 +587,58 @@ export function ProjectToolbar() {
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
                       value={ideaMapSettings.edgeColor}
-                      onValueChange={handleEdgeColorChange}
+                      onValueChange={isPending ? undefined : handleEdgeColorChange}
                     >
                       {EDGE_COLOR_OPTIONS.map(option => (
-                        <DropdownMenuRadioItem key={option.value} value={option.value} className="flex items-center">
-                          <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: option.color }} />
-                          {option.label}
+                        <DropdownMenuRadioItem key={option.value} value={option.value}>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: option.value }}></div>
+                            {option.label}
+                          </div>
                         </DropdownMenuRadioItem>
                       ))}
                     </DropdownMenuRadioGroup>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
-                {/* 선택된 연결선 색상 설정 */}
+                {/* 선택된 엣지 색상 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Paintbrush className="mr-1.5 h-4 w-4" />
-                    <span>선택된 연결선 색상</span>
+                    <span>선택 연결선 색상</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
                       value={ideaMapSettings.selectedEdgeColor}
-                      onValueChange={handleSelectedEdgeColorChange}
+                      onValueChange={isPending ? undefined : handleSelectedEdgeColorChange}
                     >
                       {EDGE_COLOR_OPTIONS.map(option => (
-                        <DropdownMenuRadioItem key={option.value} value={option.value} className="flex items-center">
-                          <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: option.color }} />
-                          {option.label}
+                        <DropdownMenuRadioItem key={option.value} value={option.value}>
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: option.value }}></div>
+                            {option.label}
+                          </div>
                         </DropdownMenuRadioItem>
                       ))}
                     </DropdownMenuRadioGroup>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
 
-                {/* 연결선 애니메이션 설정 */}
+                {/* 애니메이션 설정 */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <svg className="mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12Z" stroke="currentColor" strokeWidth="2" />
-                      <path d="M14 10L19 12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    <span>연결선 애니메이션</span>
+                    <span>애니메이션</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.animated.toString()}
-                      onValueChange={handleAnimatedChange}
+                      value={ideaMapSettings.animated ? 'true' : 'false'}
+                      onValueChange={isPending ? undefined : handleAnimatedChange}
                     >
                       {EDGE_ANIMATION_OPTIONS.map(option => (
-                        <DropdownMenuRadioItem key={option.value.toString()} value={option.value.toString()}>
+                        <DropdownMenuRadioItem key={String(option.value)} value={String(option.value)}>
                           {option.label}
                         </DropdownMenuRadioItem>
                       ))}
@@ -577,15 +648,38 @@ export function ProjectToolbar() {
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-1.5 h-4 w-4" />
             로그아웃
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <h1 className="text-l font-semibold pr-2">{displayProjectName}</h1>
+      <span className="text-sm text-foreground/80 truncate max-w-[200px]">{displayProjectName}</span>
+      {isPending && <span className="text-xs text-foreground/60 ml-1">저장 중...</span>}
     </div>
   );
-} 
+}
+
+/**
+ * mermaid 다이어그램:
+ * ```mermaid
+ * sequenceDiagram
+ *   participant UI as ProjectToolbar
+ *   participant TQ_Mutation as useUpdateSettingsMutation
+ *   participant Service as settingsService
+ *   participant API as /api/settings
+ *   participant DB as 데이터베이스
+ * 
+ *   UI->>+TQ_Mutation: mutate({ userId, settings: { strokeWidth: 3 } })
+ *   TQ_Mutation->>+Service: updateSettings(userId, { ideamap: { strokeWidth: 3 } })
+ *   Service->>+API: PATCH /api/settings
+ *   API->>+DB: 설정 업데이트
+ *   DB-->>-API: 업데이트 성공
+ *   API-->>-Service: 성공 응답
+ *   Service-->>-TQ_Mutation: 성공 응답
+ *   TQ_Mutation->>TQ_Mutation: invalidateQueries(['userSettings', userId])
+ *   TQ_Mutation-->>-UI: 성공 상태 반환
+ *   UI->>UI: 성공 토스트 메시지 표시
+ * ```
+ */ 

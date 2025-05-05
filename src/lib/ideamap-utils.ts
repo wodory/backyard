@@ -4,10 +4,14 @@
  * 역할: 아이디어맵 설정 관리 및 스타일 적용 유틸리티 제공
  * 작성일: 2024-05-22
  * 수정일: 2024-05-29 : API URL 환경 변수를 사용하도록 수정
+ * 수정일: 2025-04-21 : uiOptions.json 구조 변경에 맞게 DEFAULT_SETTINGS 수정
+ * 수정일: 2025-04-21 : lint 에러 수정 - snapGrid 타입 단언 추가
+ * 수정일: 2025-04-21 : 가독성 개선을 위한 상수 추출
  */
 
 import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
 
+import defaultConfig from '@/config/uiOptions.json';
 import { SETTINGS_STORAGE_KEY } from './ideamap-constants';
 
 // API URL 가져오기
@@ -15,6 +19,9 @@ const getApiUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   return apiUrl;
 };
+
+// 설정 상수 정의 - 가독성 개선
+const ideamapSettings = defaultConfig.DEFAULT_SETTINGS.ideamap;
 
 export interface Settings {
   // 그리드 설정
@@ -31,20 +38,20 @@ export interface Settings {
   animated: boolean;
 }
 
-// 기본 설정
+// 기본 설정 - uiOptions.json에서 가져옴
 export const DEFAULT_SETTINGS: Settings = {
   // 그리드 설정
-  snapToGrid: false,
-  snapGrid: [15, 15],
+  snapToGrid: ideamapSettings.snapToGrid,
+  snapGrid: ideamapSettings.snapGrid as [number, number],
   
   // 연결선 설정
-  connectionLineType: ConnectionLineType.SmoothStep,
-  markerEnd: MarkerType.Arrow,
-  strokeWidth: 2,
-  markerSize: 20,
-  edgeColor: '#C1C1C1',
-  selectedEdgeColor: '#FF0072',
-  animated: false,
+  connectionLineType: ideamapSettings.edge.connectionLineType as ConnectionLineType,
+  markerEnd: ideamapSettings.edge.markerEnd as MarkerType,
+  strokeWidth: ideamapSettings.edge.strokeWidth,
+  markerSize: ideamapSettings.edge.markerSize,
+  edgeColor: ideamapSettings.edge.edgeColor,
+  selectedEdgeColor: ideamapSettings.edge.selectedEdgeColor,
+  animated: ideamapSettings.edge.animated,
 };
 
 /**

@@ -1,0 +1,173 @@
+sequenceDiagram
+    participant User
+    participant Browser
+    participant NextClient as Next.js Client
+    participant RootLayout as app/layout.tsx
+    participant RQueryProvider as app/ReactQueryProvider.tsx
+    participant ClientLayout as components/layout/ClientLayout.tsx
+    participant useAuth as hooks/useAuth.ts
+    participant AuthStore as store/useAuthStore.ts
+    participant SupabaseClient as lib/supabase/client.ts
+    participant AppStore as store/useAppStore.ts
+    participant SettingsHook as hooks/useIdeaMapSettings.ts
+    participant SettingsService as services/settingsService.ts
+    participant SettingsAPI as app/api/settings/route.ts
+    participant ProjectAPI as app/api/projects/route.ts
+    participant HomePage as app/page.tsx (Server Component)
+    participant AuthServer as lib/auth-server.ts
+    participant SupabaseServer as lib/supabase/server.ts
+    participant DashboardLayout as components/layout/DashboardLayout.tsx
+    participant IdeaMapComp as components/ideamap/components/IdeaMap.tsx
+    participant IdeaMapDataHook as hooks/useIdeaMapData.ts
+    participant CardsHook as hooks/useCards.ts
+    participant CardService as services/cardService.ts
+    participant CardAPI as app/api/cards/route.ts
+    participant EdgesHook as hooks/useEdges.ts
+    participant EdgeService as services/edgeService.ts
+    participant EdgeAPI as app/api/edges/route.ts
+    participant IdeaMapStore as store/useIdeaMapStore.ts
+    participant IdeaMapSyncHook as hooks/useIdeaMapSync.ts
+    participant ReactFlow as @xyflow/react
+    participant Prisma as lib/prisma.ts
+    participant DB as Database
+
+    %% 1. Initial Page Request & Server-Side Auth Check %%
+    User->>Browser: Access App URL (e.g., /)
+    Browser->>NextClient: Request page /
+    NextClient->>HomePage: Render Server Component
+    activate HomePage
+    HomePage->>AuthServer: auth() call
+    activate AuthServer
+    AuthServer->>SupabaseServer: createClient()
+    SupabaseServer->>SupabaseServer: auth.getSession()
+    SupabaseServer-->>AuthServer: Session or null
+    deactivate AuthServer
+    alt No Session
+        HomePage->>NextClient: redirect('/login')
+    else Session Exists
+        HomePage->>DashboardLayout: Render DashboardLayout
+    end
+    deactivate HomePage
+
+    %% 2. Client-Side Hydration & Initial Setup %%
+    NextClient->>Browser: Send initial HTML & JS
+    Browser->>RootLayout: Start Hydration / Render
+    RootLayout->>RQueryProvider: Initialize QueryClient
+    RQueryProvider->>ClientLayout: Render
+    activate ClientLayout
+    ClientLayout->>useAuth: Initialize Auth State Hook
+    activate useAuth
+    useAuth->>SupabaseClient: createClient()
+    useAuth->>SupabaseClient: auth.getSession() (client-side check)
+    useAuth->>SupabaseClient: auth.onAuthStateChange() (subscribe)
+    SupabaseClient-->>useAuth: Initial session/user data
+    useAuth->>AuthStore: setProfile(), setLoading(false)
+    deactivate useAuth
+
+    %% 3. Fetching Global/Initial Data (Triggered from ClientLayout/IdeaMapDataHook) %%
+    ClientLayout->>IdeaMapDataHook: (Triggered by useEffect or initial render)
+    activate IdeaMapDataHook
+    Note over IdeaMapDataHook: Reads userId from AuthStore
+    IdeaMapDataHook->>AppStore: Check projects.length
+    alt Projects Not Loaded
+        IdeaMapDataHook->>AppStore: fetchProjects() action call
+        activate AppStore
+        AppStore->>ProjectAPI: fetch('/api/projects')
+        activate ProjectAPI
+        ProjectAPI-->>AppStore: Response (Default Project Array)
+        deactivate ProjectAPI
+        AppStore->>AppStore: set({ projects, activeProjectId = projects[0]?.id })
+        deactivate AppStore
+        Note over IdeaMapDataHook: Now activeProjectId is set
+    else Projects Already Loaded
+        Note over IdeaMapDataHook: Skips fetch, checks activeProjectId
+        alt ActiveProjectID is Null
+             IdeaMapDataHook->>AppStore: setActiveProject(projects[0].id)
+        end
+    end
+
+    ClientLayout->>SettingsHook: useIdeaMapSettings(userId) call
+    activate SettingsHook
+    SettingsHook->>SettingsService: fetchSettings(userId)
+    activate SettingsService
+    SettingsService->>SettingsAPI: GET /api/settings?userId=...
+    activate SettingsAPI
+    SettingsAPI->>Prisma: settings.findFirst(...)
+    Prisma->>DB: Query settings
+    DB-->>Prisma: Settings data or null
+    Prisma-->>SettingsAPI: Settings data
+    alt Settings Not Found in DB
+        SettingsAPI->>Prisma: settings.create(DEFAULT_SETTINGS)
+        Prisma->>DB: Insert default settings
+        DB-->>Prisma: Success
+        Prisma-->>SettingsAPI: Default Settings
+    end
+    SettingsAPI-->>SettingsService: Settings JSON
+    deactivate SettingsAPI
+    SettingsService-->>SettingsHook: Settings Data
+    deactivate SettingsService
+    SettingsHook->>AppStore: updateIdeaMapSettings(settingsData)
+    deactivate SettingsHook
+    deactivate ClientLayout
+
+    %% 4. Rendering IdeaMap & Fetching Contextual Data %%
+    DashboardLayout->>IdeaMapComp: Render
+    activate IdeaMapComp
+    IdeaMapComp->>IdeaMapDataHook: Initialize
+    Note over IdeaMapDataHook: Reads activeProjectId (now should be available)
+    IdeaMapDataHook->>CardsHook: useCards({ projectId: activeProjectId })
+    activate CardsHook
+    CardsHook->>CardService: fetchCards({ projectId: activeProjectId })
+    activate CardService
+    CardService->>CardAPI: GET /api/cards?projectId=...
+    activate CardAPI
+    CardAPI->>Prisma: card.findMany(...)
+    Prisma->>DB: Query cards
+    DB-->>Prisma: Card[]
+    Prisma-->>CardAPI: Cards
+    CardAPI-->>CardService: Response (Card[])
+    deactivate CardAPI
+    CardService-->>CardsHook: Return Card[]
+    deactivate CardService
+    Note over CardsHook: QueryClient caches Card[] data for ['cards', {projectId}]
+    deactivate CardsHook
+
+    IdeaMapDataHook->>EdgesHook: useEdges(userId, activeProjectId)
+    activate EdgesHook
+    EdgesHook->>EdgeService: fetchEdges(activeProjectId)
+    activate EdgeService
+    EdgeService->>EdgeAPI: GET /api/edges?projectId=...
+    activate EdgeAPI
+    EdgeAPI->>Prisma: edge.findMany(...)
+    Prisma->>DB: Query edges
+    DB-->>Prisma: Edge[] (DB format)
+    Prisma-->>EdgeAPI: Edges
+    EdgeAPI-->>EdgeService: Response (ApiEdge[])
+    deactivate EdgeAPI
+    EdgeService-->>EdgesHook: Return ApiEdge[]
+    deactivate EdgeService
+    EdgesHook->>EdgesHook: Transform ApiEdge[] to Flow Edge[]
+    Note over EdgesHook: QueryClient caches Edge[] data for ['edges', userId, projectId]
+    deactivate EdgesHook
+    deactivate IdeaMapDataHook
+
+    %% 5. Syncing Data to UI State & Rendering React Flow %%
+    IdeaMapComp->>IdeaMapSyncHook: Initialize / Subscribe to Cache
+    activate IdeaMapSyncHook
+    Note right of CardsHook: Card data is ready in cache
+    IdeaMapSyncHook->>QueryClient: Reads ['cards', {projectId}] cache
+    IdeaMapSyncHook->>IdeaMapStore: updateNodesSelectively(cardData)
+    activate IdeaMapStore
+    Note over IdeaMapStore: Combines cardData with layout (from localStorage initially) -> setNodes()
+    IdeaMapStore-->>IdeaMapComp: Updated nodes state
+    deactivate IdeaMapStore
+
+    IdeaMapDataHook->>IdeaMapStore: (via useEffect) setEdges(flowEdgesData from EdgesHook)
+    activate IdeaMapStore
+    IdeaMapStore-->>IdeaMapComp: Updated edges state
+    deactivate IdeaMapStore
+
+    IdeaMapComp->>ReactFlow: Render with nodes & edges from IdeaMapStore
+    ReactFlow->>Browser: Display Idea Map UI
+    deactivate IdeaMapComp
+    deactivate IdeaMapSyncHook

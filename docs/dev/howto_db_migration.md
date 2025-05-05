@@ -14,7 +14,7 @@ yarn prisma generate
 npx prisma migrate diff \
           --from-url "postgresql://postgres.rsycayyhmgmbdmmtzewz:SH1HpNpMW4ZSL21d@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres" \
           --to-schema-datamodel prisma/schema.prisma \
-          --script > supabase/migrations/20250501113700_add_node_to_edge.sql
+          --script > supabase/migrations/20250505213000_fix_setting_schema.sql
 
 #supabase가 링크한 DB 마이그레이션
 npx supabase migration up --linked

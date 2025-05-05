@@ -1,7 +1,21 @@
+/**
+ * 파일명: src/lib/ideamap-ui-config.ts
+ * 목적: 아이디어맵 UI 설정 타입 및 유틸리티 함수 제공
+ * 역할: UI 설정 로드, 기본값 정의, CSS 변수 접근 기능 제공
+ * 작성일: 2025-03-06
+ * 수정일: 2025-04-21 : uiOptions.json 구조 변경에 맞게 설정 로직 수정
+ * 수정일: 2025-04-21 : 가독성 개선을 위한 상수 추출
+ */
+
 import { MarkerType, ConnectionLineType } from '@xyflow/react';
 // import { I } from 'vitest/dist/chunks/reporters.d.CfRkRKN2.js';
 
 import defaultConfig from '../config/uiOptions.json';
+
+// 설정 상수 정의 - 가독성 개선
+const defaultSettings = defaultConfig.DEFAULT_SETTINGS;
+const ideamapSettings = defaultSettings.ideamap;
+const generalSettings = defaultSettings.general;
 
 // 카드 보드 UI 설정 타입 정의
 export interface IdeaMapUIConfig {
@@ -75,15 +89,44 @@ export function getCssVariableAsNumber(name: string, fallback: number): number {
   return fallback;
 }
 
+// 새로운 구조에서 타입 매핑
+const settingsMap = {
+  autoSaveIntervalMinutes: generalSettings.autoSaveIntervalMinutes,
+  ideaMap: {
+    snapToGrid: ideamapSettings.snapToGrid,
+    snapGrid: ideamapSettings.snapGrid,
+    connectionLineType: ideamapSettings.edge.connectionLineType,
+    markerEnd: ideamapSettings.edge.markerEnd,
+    strokeWidth: ideamapSettings.edge.strokeWidth,
+    markerSize: ideamapSettings.edge.markerSize,
+    edgeColor: ideamapSettings.edge.edgeColor,
+    animated: ideamapSettings.edge.animated,
+    selectedEdgeColor: ideamapSettings.edge.selectedEdgeColor
+  },
+  card: {
+    defaultWidth: ideamapSettings.cardNode.defaultWidth,
+    backgroundColor: ideamapSettings.cardNode.backgroundColor,
+    borderRadius: ideamapSettings.cardNode.borderRadius,
+    tagBackgroundColor: ideamapSettings.cardNode.tagBackgroundColor,
+    fontSizes: ideamapSettings.cardNode.fontSizes
+  },
+  handles: ideamapSettings.cardNode.handles,
+  layout: {
+    defaultPadding: ideamapSettings.layout.defaultPadding,
+    defaultSpacing: ideamapSettings.layout.defaultSpacing,
+    nodeSize: ideamapSettings.cardNode.nodeSize,
+    graphSettings: ideamapSettings.graphSettings
+  }
+};
+
 // 기본 설정값 (타입 변환 포함)
 export const DEFAULT_UI_CONFIG: IdeaMapUIConfig = {
-  ...defaultConfig as IdeaMapUIConfig,
+  ...settingsMap as unknown as IdeaMapUIConfig,
   ideaMap: {
-    ...defaultConfig.ideaMap,
-    connectionLineType: defaultConfig.ideaMap.connectionLineType as ConnectionLineType,
-    markerEnd: defaultConfig.ideaMap.markerEnd as MarkerType,
-    selectedEdgeColor: '#000000',
-    snapGrid: defaultConfig.ideaMap.snapGrid as number[],
+    ...settingsMap.ideaMap,
+    connectionLineType: settingsMap.ideaMap.connectionLineType as ConnectionLineType,
+    markerEnd: settingsMap.ideaMap.markerEnd as MarkerType,
+    snapGrid: settingsMap.ideaMap.snapGrid as number[],
   }
 };
 

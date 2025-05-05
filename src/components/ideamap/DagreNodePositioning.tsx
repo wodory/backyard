@@ -5,6 +5,8 @@
  * 작성일: 2023-04-10
  * 수정일: 2024-05-30 : prefer-const 린트 규칙 적용
  * 수정일: 2025-05-07 : 미사용 변수 제거 (nodesPositioned)
+ * 수정일: 2025-04-21 : uiOptions.json 구조 변경에 맞게 참조 경로 수정
+ * 수정일: 2025-04-21 : 가독성 개선을 위한 상수 추출
  */
 
 import React, { useEffect } from 'react';
@@ -22,9 +24,12 @@ interface DagreNodePositioningProps {
   SetViewIsFit: (value: boolean) => void;
 }
 
+// 설정 상수 정의 - 가독성 개선
+const ideamapSettings = defaultConfig.DEFAULT_SETTINGS.ideamap;
+
 // 기본 CardNode의 크기 - 설정 파일에서 일관되게 가져오기
-const nodeWidth = defaultConfig.layout.nodeSize?.width || 130;
-const nodeHeight = defaultConfig.layout.nodeSize?.height || 48;
+const nodeWidth = ideamapSettings.cardNode.nodeSize.width || 130;
+const nodeHeight = ideamapSettings.cardNode.nodeSize.height || 48;
 
 const DagreNodePositioning: React.FC<DagreNodePositioningProps> = ({ Options, Edges, SetEdges, SetNodes, SetViewIsFit }) => {
   const { fitView, getNodes } = useReactFlow();

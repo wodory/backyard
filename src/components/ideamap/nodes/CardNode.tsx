@@ -5,6 +5,7 @@
  * 작성일: 2025-03-05
  * 수정일: 2025-03-31
  * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore(themeSlice) 사용으로 변경
+ * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
  */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
@@ -18,7 +19,9 @@ import { EditCardModal } from '@/components/cards/EditCardModal';
 import TiptapViewer from '@/components/editor/TiptapViewer';
 import { loadDefaultIdeaMapUIConfig } from '@/lib/ideamap-ui-config';
 import { cn } from '@/lib/utils';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, selectActiveProject } from '@/store/useAppStore';
+import { useAuthStore, selectUserId } from '@/store/useAuthStore';
+import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings';
 
 // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
 const COMPONENT_ID = 'CardNode_from_nodes_directory';
@@ -69,19 +72,11 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   // ReactFlow 인스턴스 가져오기
   const reactFlowInstance = useReactFlow();
 
-  // 컴포넌트 초기화 로그 - 상세 정보 추가
-  // console.log(`[${COMPONENT_ID}] 컴포넌트 렌더링 시작:`, {
-  //   id: id,
-  //   title: data.title,
-  //   type: data.type,
-  //   expectedType: NODE_TYPES_KEYS.card,
-  //   isTypeValid: data.type === NODE_TYPES_KEYS.card,
-  //   componentId: COMPONENT_ID,
-  //   isExpanded: isExpanded
-  // });
+  // 인증된 사용자 ID 가져오기 (useAuthStore에서 직접)
+  const userId = useAuthStore(selectUserId);
 
-  // Zustand 스토어에서 테마 설정 가져오기
-  const ideaMapSettings = useAppStore(state => state.ideaMapSettings);
+  // TanStack Query를 통해 아이디어맵 설정 정보 가져오기
+  const { data: ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings(userId);
 
   // 선택 및 확장 관련 상태와 함수들을 스토어에서 가져오기
   const selectCard = useAppStore((state) => state.selectCard);
@@ -130,19 +125,60 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
   // 보드 설정 가져오기 - 기존 설정 유지 (폴백용)
   const uiConfig = loadDefaultIdeaMapUIConfig();
 
-  // 필요한 값들 추출 - Zustand 스토어에서 가져오기
-  const defaultCardWidth = ideaMapSettings.nodeWidth || 250;
-  const cardHeaderHeight = ideaMapSettings.nodeSpacing || 50;
-  const cardMaxHeight = ideaMapSettings.maxNodeHeight || 300;
+  // 필요한 값들 추출 - TanStack Query에서 가져온 설정 또는 기본값 사용
+  const defaultSettings = useMemo(() => ({
+    layout: {
+      nodeSize: {
+        width: 250,
+        height: 50,
+        maxHeight: 300
+      },
+      defaultSpacing: {
+        horizontal: 20,
+        vertical: 50
+      }
+    },
+    card: {
+      borderRadius: 8,
+      fontSizes: {
+        title: 14,
+        content: 14
+      }
+    }
+  }), []);
+
+  // 유효한 설정 (서버에서 가져온 설정 또는 기본값)
+  const effectiveSettings = useMemo(() => {
+    // 로딩 중이거나 에러 발생 시 기본값 사용
+    if (isLoading || isError || !ideaMapSettings) {
+      if (isError) {
+        console.warn("CardNode: 설정 로드 중 오류 발생, 기본값 사용:", error);
+      }
+      return defaultSettings;
+    }
+
+    // SettingsData에는 layout과 card 설정이 있어야 하지만, 
+    // useIdeaMapSettings 훅은 ideaMap 설정만 반환하므로
+    // 기본값과 병합해서 사용
+    return {
+      ...defaultSettings,
+      ideamap: ideaMapSettings
+    };
+  }, [ideaMapSettings, isLoading, isError, error, defaultSettings]);
+
+  // 실제 사용할 설정값
+  const defaultCardWidth = effectiveSettings.layout.nodeSize.width;
+  const cardHeaderHeight = effectiveSettings.layout.defaultSpacing.vertical;
+  const cardMaxHeight = effectiveSettings.layout.nodeSize.maxHeight;
   const borderWidth = 1;
-  const borderRadius = ideaMapSettings.nodeBorderRadius || 8;
+  const borderRadius = effectiveSettings.card.borderRadius;
   const backgroundColor = '#ffffff';
   const borderColor = '#d1d5db';
   const selectedBorderColor = '#0071e3';
 
   // 폰트 크기 
-  const titleFontSize = ideaMapSettings.nodeFontSize || 14;
-  const contentFontSize = ideaMapSettings.nodeFontSize || 14;
+  const titleFontSize = effectiveSettings.card.fontSizes.title;
+  const contentFontSize = effectiveSettings.card.fontSizes.content;
   const tagsFontSize = 12;
 
   // 핸들 관련 설정

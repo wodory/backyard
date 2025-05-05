@@ -23,7 +23,7 @@ model User {
   profiles           Profile?
   projectMemberships ProjectMember[]
   ownedProjects      Project[]       @relation("ProjectOwner")
-  settings           settings?
+  settings           Settings?
   tags               Tag[]
   users              users           @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -76,34 +76,34 @@ model ProjectMember {
 }
 
 model Card {
-  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId                 String    @map("project_id") @db.Uuid
-  userId                    String?   @map("user_id") @db.Uuid
-  title                     String
-  content                   String?
-  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  cardTags                  CardTag[]
-  project                   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user                      User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  cardNodes                 CardNode[]
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String     @map("project_id") @db.Uuid
+  userId    String?    @map("user_id") @db.Uuid
+  title     String
+  content   String?
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cardTags  CardTag[]
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User?      @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  cardNodes CardNode[]
 
   @@map("cards")
   @@schema("public")
 }
 
 model CardNode {
-  id        String   @id @default(uuid()) @db.Uuid
-  positionX Float    @map("position_x")
-  positionY Float    @map("position_y")
+  id        String @id @default(uuid()) @db.Uuid
+  positionX Float  @map("position_x")
+  positionY Float  @map("position_y")
 
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  cardId    String   @map("card_id") @db.Uuid
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String   @map("project_id") @db.Uuid
+  card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId    String  @map("card_id") @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String  @map("project_id") @db.Uuid
 
-  styleJson Json?    @map("style_json") @db.JsonB
-  dataJson  Json?    @map("data_json") @db.JsonB
+  styleJson Json? @map("style_json") @db.JsonB
+  dataJson  Json? @map("data_json") @db.JsonB
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -132,23 +132,23 @@ model Tag {
 }
 
 model Edge {
-  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId                 String    @map("project_id") @db.Uuid
-  userId                    String?   @map("user_id") @db.Uuid
-  sourceCardNodeId          String    @map("source_node_id") @db.Uuid
-  targetCardNodeId          String    @map("target_node_id") @db.Uuid
-  sourceHandle              String?   @map("source_handle")
-  targetHandle              String?   @map("target_handle")
-  type                      String?
-  animated                  Boolean?  @default(false)
-  style                     Json?     @db.JsonB // Json 타입에 @db.JsonB 명시 권장
-  data                      Json?     @db.JsonB // Json 타입에 @db.JsonB 명시 권장
-  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  project                   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  sourceNode                CardNode  @relation("EdgeSource", fields: [sourceCardNodeId], references: [id], onDelete: Cascade) // CardNode 참조
-  targetNode                CardNode  @relation("EdgeTarget", fields: [targetCardNodeId], references: [id], onDelete: Cascade) // CardNode 참조
-  user                      User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId        String   @map("project_id") @db.Uuid
+  userId           String?  @map("user_id") @db.Uuid
+  sourceCardNodeId String   @map("source_node_id") @db.Uuid
+  targetCardNodeId String   @map("target_node_id") @db.Uuid
+  sourceHandle     String?  @map("source_handle")
+  targetHandle     String?  @map("target_handle")
+  type             String?
+  animated         Boolean? @default(false)
+  style            Json?    @db.JsonB // Json 타입에 @db.JsonB 명시 권장
+  data             Json?    @db.JsonB // Json 타입에 @db.JsonB 명시 권장
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sourceNode       CardNode @relation("EdgeSource", fields: [sourceCardNodeId], references: [id], onDelete: Cascade) // CardNode 참조
+  targetNode       CardNode @relation("EdgeTarget", fields: [targetCardNodeId], references: [id], onDelete: Cascade) // CardNode 참조
+  user             User?    @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
   @@unique([projectId, sourceCardNodeId, targetCardNodeId], map: "edges_project_source_node_target_node_unique")
   @@index([userId, projectId], map: "idx_edges_user_project")
@@ -165,6 +165,18 @@ model CardTag {
 
   @@id([cardId, tagId])
   @@map("card_tags")
+  @@schema("public")
+}
+
+model Settings {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  data      Json     @default("{}") @map("data") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") // @updatedAt은 자동 업데이트 처리
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
   @@schema("public")
 }
 
@@ -483,19 +495,6 @@ model users {
   @@index([instance_id])
   @@index([is_anonymous])
   @@schema("auth")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model settings {
-  id         String   @id(map: "board_settings_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @unique(map: "board_settings_user_id_key") @db.Uuid
-  settings   Json     @default("{}")
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-  users      User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "board_settings_user_id_fkey")
-
-  @@schema("public")
 }
 
 enum aal_level {

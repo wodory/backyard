@@ -1,0 +1,246 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+알겠습니다. `doc/rules.md` 파일에 들어갈 마크다운 형식의 메뉴얼로 정리하고, AI(Cursor Agent)가 정확하게 이해할 수 있도록 기계 친화적인 규칙 중심 서술 방식으로 작성하겠습니다.
+
+Next.js 및 Prisma 기반 API에서 클라이언트 오류 응답을 구조화하고, 예외 처리를 일관되게 적용하는 방법을 룰 기반 문서로 구성해드릴게요.
+
+# Next.js + Prisma API 오류 처리 규칙
+
+### Rule: 오류 응답 JSON 형식 통일
+**설명:** 클라이언트로 전달되는 모든 오류 응답은 `{ code, type, message }` 필드를 갖는 구조화된 JSON 형태로 **통일**해야 한다. 서버 내부 오류(500 오류)뿐만 아니라 모든 에러 응답에 일관된 JSON 형식을 사용함으로써, 프런트엔드나 에이전트가 응답을 기계적으로 파싱하고 처리하기 쉽도록 한다. HTTP 상태 코드에 대응하는 `code` 값을 포함하고, `type`에는 오류 유형에 대한 식별자(예: `INTERNAL_SERVER_ERROR` 등), `message`에는 사용자 친화적인 오류 설명을 담는다.
+
+**예외 타입:** 모든 API 예외 상황 (서버 런타임 오류, 처리되지 않은 예외 등)에 적용된다. 특별히 처리되지 않은 일반 오류들은 이 규칙에 따라 일관된 형식으로 클라이언트에 전달되어야 한다.
+
+**응답 형식:** 오류 응답의 JSON 예시는 다음과 같다. (HTTP 500 내부 서버 오류의 경우)
+
+```json
+{
+  "code": 500,
+  "type": "INTERNAL_SERVER_ERROR",
+  "message": "Internal server error"
+}
+```
+
+모든 오류에 대해 이와 같은 키를 사용하고, 필요에 따라 `code`와 `type`, `message`의 값을 상황에 맞게 변경한다.
+
+**코드 예시:**
+```typescript
+// 예: try-catch 블록에서 오류 발생 시 통일된 JSON 형식으로 응답
+try {
+  // ... 비즈니스 로직 수행
+} catch (error) {
+  logger.error(error);  // 오류 로깅 (규칙 4 참조)
+  return res.status(500).json({
+    code: 500,
+    type: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error'
+  });
+}
+```
+위와 같이 모든 에러 발생 지점에서 `res.status(...).json({ code, type, message })` 형태로 응답하도록 구현한다.
+
+**적용 기준:** Next.js API 라우트 핸들러에서 에러 응답을 보낼 때는 항상 이 JSON 구조를 따라야 한다. HTTP 4xx 또는 5xx 범주의 어떤 오류든지 클라이언트에 전송될 때는 HTML이나 단순 문자열이 아닌 위 형식의 JSON으로 반환되도록 코드를 작성한다. Cursor Agent는 이 규칙을 통해 오류 응답이 일관된 포맷인지 검증하거나 생성 시 준수하게 된다.
+
+---
+
+### Rule: Prisma 오류 코드별 처리
+**설명:** Prisma Client를 사용할 때 발생하는 `PrismaClientKnownRequestError`와 같은 **Prisma 특정 오류**는 `error.code` 값을 확인하여 세분화된 처리를 해야 한다. 예를 들어, **고유 제약 조건 위반 오류**(Prisma 오류 코드 `P2002`)가 발생하면 이는 데이터 중복 등에 의한 **충돌(Conflict)** 상황이므로 HTTP 409 상태 코드로 응답한다. Prisma의 오류 코드를 기준으로 적절한 HTTP 상태와 메시지를 매핑함으로써, 데이터베이스 제약 조건 위반 등의 오류를 클라이언트에 명확하게 전달하고 불필요한 500 오류로 처리되지 않도록 한다.
+
+**예외 타입:** Prisma ORM 사용 중 발생하는 `Prisma.PrismaClientKnownRequestError` 예외에 적용된다. (예: 고유 키 중복, 외래키 제약 오류 등 Prisma에서 **코드**를 제공하는 알려진 요청 오류들)
+
+**응답 형식:** Prisma 오류 코드에 따라 HTTP 상태 코드와 응답 내용을 결정한다. 특히:
+- **고유 제약 위반** (`error.code === 'P2002'`): HTTP 409 Conflict로 응답하고, JSON 본문에 해당 상황을 나타내는 정보를 담는다. 예시:
+  ```json
+  {
+    "code": 409,
+    "type": "UNIQUE_CONSTRAINT",
+    "message": "Unique constraint violation"
+  }
+  ```
+  (`type`은 예시로 `"UNIQUE_CONSTRAINT"` 사용. 프로젝트 컨벤션에 따라 `"DUPLICATE_ENTRY"` 등으로 정의 가능)  
+- 그 외 PrismaClientKnownRequestError의 다른 코드에 대해서도 상황에 맞게 처리한다. 명시적으로 다루지 않은 Prisma 오류는 기본적으로 내부 서버 오류로 간주하거나, 입력 오류에 해당하면 400대로 매핑한다. (예: 존재하지 않는 외래키 참조 `P2003` 등은 400 Bad Request 혹은 409 Conflict로 분류하고, 적절한 메시지 전달)
+
+**코드 예시:**
+```typescript
+try {
+  const result = await prisma.user.create({ data: newUser });
+} catch (error) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
+      logger.error(error);
+      // 고유 제약 조건 위반 -> 409 Conflict 응답
+      return res.status(409).json({
+        code: 409,
+        type: 'UNIQUE_CONSTRAINT',
+        message: 'Duplicate entry.'  // 예: "이미 존재하는 값입니다."
+      });
+    }
+    // 다른 Prisma 알려진 오류 코드들에 대한 처리 가능
+    // ... (필요에 따라 추가 분기)
+  }
+  // Prisma 오류가 아니거나 처리 범위를 벗어난 경우, 일반 오류로 처리
+  logger.error(error);
+  return res.status(500).json({
+    code: 500,
+    type: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error'
+  });
+}
+```
+위 코드에서는 Prisma의 특정 오류코드(P2002)를 인지하여 별도 처리하고, 그렇지 않은 경우 기본 오류 처리에 위임하고 있다.
+
+**적용 기준:** Prisma를 통해 DB 요청을 수행하는 모든 코드에서 이 규칙을 적용한다. `PrismaClientKnownRequestError`를 catch하여 `error.code`별로 분기 처리를 구현해야 한다. 특히 P2002 오류는 흔히 발생하므로 반드시 409 응답으로 처리하고, 다른 Prisma 오류들도 필요에 따라 적절한 응답을 보내도록 한다. Cursor Agent는 이 규칙을 통해 Prisma 오류 처리 분기가 존재하는지, 그리고 P2002의 처리에 409가 사용되는지 등을 확인하게 된다.
+
+**공식 문서** Prisma의 에러 코드는 https://www.prisma.io/docs/orm/reference/error-reference 참고. 
+
+---
+
+### Rule: 인증 및 JSON 파싱 오류 응답
+**설명:** **인증 실패**나 **잘못된 요청 형식**에 대한 오류는 알맞은 HTTP 상태 코드와 표준화된 JSON으로 응답해야 한다. 인증 토큰이 없거나 유효하지 않을 경우 **401 Unauthorized** 상태 코드를 사용하고, `type`은 `"UNAUTHORIZED"`로 설정한다. 또한 요청 본문의 JSON 구문이 잘못되어 파싱에 실패한 경우 **400 Bad Request**로 처리하고, `type`은 `"INVALID_JSON"`으로 설정한다. 이렇게 명시적인 상태 코드와 타입을 사용함으로써, 클라이언트가 오류 원인을 식별하고 적절히 대응할 수 있게 한다 (예: 401을 받으면 재인증 시도, 400을 받으면 요청 형식 수정).
+
+**예외 타입:** 
+- **인증 오류:** 유저 인증에 실패한 모든 경우 (예: 토큰 미제공 또는 유효하지 않은 토큰으로 인한 `UNAUTHORIZED` 상황).
+- **JSON 파싱 오류:** 잘못된 JSON 문법이나 형식으로 인해 `SyntaxError` 등이 발생한 경우 (`INVALID_JSON` 상황).
+
+**응답 형식:** 각 오류 유형에 따라 다음과 같은 JSON 구조로 응답한다.
+- 401 Unauthorized (인증 실패) 오류 예시:  
+  ```json
+  {
+    "code": 401,
+    "type": "UNAUTHORIZED",
+    "message": "Unauthorized"
+  }
+  ```
+- 400 Invalid JSON (JSON 파싱 실패) 오류 예시:  
+  ```json
+  {
+    "code": 400,
+    "type": "INVALID_JSON",
+    "message": "Invalid JSON format"
+  }
+  ```
+`message` 필드는 상황에 맞게 `"Unauthorized"` (인증 필요 또는 실패 안내)나 `"Invalid JSON format"` 등으로 설정한다.
+
+**코드 예시:**
+```typescript
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  // 인증 토큰 검사
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !isValidToken(authHeader)) {
+    return res.status(401).json({
+      code: 401,
+      type: 'UNAUTHORIZED',
+      message: 'Unauthorized'  // 인증 실패 시 응답 메시지
+    });
+  }
+
+  // JSON 파싱 검사
+  let data;
+  try {
+    data = JSON.parse(req.body);
+  } catch (e) {
+    return res.status(400).json({
+      code: 400,
+      type: 'INVALID_JSON',
+      message: 'Invalid JSON'  // JSON 구문 오류 시 응답 메시지
+    });
+  }
+
+  // ... 나머지 핸들러 로직 (정상 처리)
+}
+```
+위 코드에서는 요청 처리 초기에 인증 헤더를 확인하여 없거나 유효하지 않으면 즉시 401 응답을 보내고, 본문 파싱 시 `JSON.parse`에서 오류가 발생하면 400 응답을 반환한다. 이처럼 오류 종류에 따라 401 또는 400으로 분기하여 응답한다.
+
+**적용 기준:** 사용자 인증이 필요한 모든 엔드포인트에서 인증 검증 실패 시 반드시 401 코드를 사용하며, JSON 본문을 수신하는 엔드포인트에서는 파싱 오류에 대비해 try-catch를 구현하고 400으로 응답해야 한다. Cursor Agent는 이 규칙을 통해 코드 내에 인증 실패나 JSON 파싱 오류 발생 시 올바른 상태 코드(401, 400)와 대응 타입을 사용하고 있는지 검사한다.
+
+---
+
+### Rule: 상세 오류 로깅
+**설명:** 오류 발생 시 **내부 로깅**은 최대한 상세한 정보를 포함하도록 해야 한다. `logger.error` 등을 사용할 때 단순 메시지뿐만 아니라 오류 객체의 `message`, `stack`(스택 트레이스), `meta`(추가 정보) 그리고 **관련 사용자 ID** 등 디버깅에 도움이 될만한 컨텍스트를 모두 기록한다. 이를 통해 개발자는 프로덕션 환경에서 발생한 에러를 재현하거나 원인을 분석하기 쉬워지며, 추후 문제 해결에 필요한 단서를 확보할 수 있다. (예: 어떤 사용자의 어떤 입력으로 오류 발생했는지 추적 가능)
+
+**예외 타입:** 모든 예외 상황에 대해 로깅을 수행할 때 적용한다. 애플리케이션 오류, DB 오류를 포함한 *모든* 오류 객체는 이 규칙에 따라 로깅되어야 한다.
+
+**응답 형식:** 해당 규칙은 서버 측 로그에 관한 것이다. 클라이언트로 보내는 응답 형식에는 직접 영향이 없으며, 내부적으로 남겨두는 로그의 내용만을 다룬다 (클라이언트에는 여전히 구조화된 JSON 오류만 보임).
+
+**코드 예시:**
+```typescript
+catch (error) {
+  logger.error({
+    message: error.message,
+    stack: error.stack,
+    meta: error.meta,
+    userId: currentUser?.id
+  });
+  // ... (이후 클라이언트 응답 처리)
+}
+```
+위 예시는 catch 블록에서 `logger.error`로 에러 정보를 로깅하는 모습이다. `message`와 `stack`으로 기본 에러 정보를 담고, Prisma와 같은 경우 `error.meta`가 있다면 추가로 기록하며, `currentUser.id` 등을 통해 어느 사용자의 요청에서 발생한 에러인지 남긴다. 로거가 구조화된 로그를 지원하지 않는다면, 각 정보를 한 문자열에 포함시키거나 개별 필드를 로그에 출력하도록 한다.
+
+**적용 기준:** 에러를 처리하는 **모든 catch 블록** 또는 전역 에러 핸들러에서 이 규칙을 적용한다. 클라이언트에 응답을 보내기 전에 우선적으로 `logger.error`에 충분한 정보를 기록해야 한다. 개발 및 운영 환경에서 이 로그는 파일, 콘솔, 외부 로깅 시스템 등에 저장되며, 추후 Cursor Agent도 코드상에서 `logger.error` 호출에 적절한 정보가 포함되어 있는지 검사하게 된다.
+
+---
+
+### Rule: 내부 정보 비노출
+**설명:** 클라이언트에게 반환되는 오류 응답에는 **내부 시스템 정보**를 포함해서는 안 된다. 즉, 앞서 로깅한 상세 정보 중 `stack` 트레이스나 데이터베이스 오류의 `meta` 내용 등은 **절대로** 응답 JSON에 넣지 않는다. 클라이언트에는 필요한 최소한의 메시지만 제공하고, 내부 구현 세부사항이나 민감한 정보(예: 데이터베이스 쿼리, 시스템 경로, 환경 설정 값 등)가 노출되지 않도록 한다. 이를 통해 보안 및 사용자 경험을 향상시키며, 공격자가 내부 구조를 유추하지 못하게 예방한다.
+
+**예외 타입:** 모든 오류 응답에 적용된다. 특히 **프레임워크나 DB에서 자동으로 제공하는 에러 내용**(예: Prisma의 `error.meta` 필드, 또는 Node의 오류 스택 등)은 클라이언트로 전달하지 않는다.
+
+**응답 형식:** 클라이언트로 보내는 JSON에는 오직 규정된 필드(`code`, `type`, `message`)만 포함되어야 한다. 다음 항목들은 응답에 **포함하지 않는다**:
+- `stack` (스택 추적 정보)
+- `meta` (데이터베이스 등의 내부 부가 정보)
+- 그 밖의 내부 디버깅용 세부 정보
+
+예를 들어, 내부적으로 Prisma 오류 `P2002`가 발생해 `error.meta = { target: ['email'] }`와 같은 정보가 있어도, 응답에는 해당 내용을 넣지 않고 `"message": "Email already exists."` 등으로 필요 최소한으로 가공해 전달한다.
+
+**코드 예시:**
+```typescript
+// 잘못된 예: 내부 정보까지 응답에 포함 (금지)
+res.status(500).json({
+  code: 500,
+  type: 'INTERNAL_SERVER_ERROR',
+  message: error.message,
+  stack: error.stack      // 노출 금지
+});
+
+// 올바른 예: 내부 정보 제외 후 응답
+res.status(500).json({
+  code: 500,
+  type: 'INTERNAL_SERVER_ERROR',
+  message: 'Internal server error'  // 사용자에게는 일반적인 메시지만 제공
+});
+```
+위 예시에서 잘못된 경우는 `stack`과 같은 내부 정보를 그대로 전달하는 케이스이고, 올바른 경우는 내부 정보 없이 기본적인 에러 코드와 메시지만 전달한다. 또한 Prisma 오류의 경우도 `error.meta` 내용을 응답에 넣지 않고, 필요하다면 해당 정보를 활용해 **메시지만** 적절히 조합한다.
+
+**적용 기준:** 모든 클라이언트 대상 오류 응답 생성 시 이 규칙을 엄격히 지킨다. 개발자는 오류 처리 코드를 작성할 때 응답 객체에 포함된 필드를 검토하고, 내부 정보가 섞여 있지 않은지 확인해야 한다. Cursor Agent는 생성된 코드에서 응답 JSON에 불필요한 내부 정보 필드가 포함되어 있는지 검사하며, 이 규칙 위반 시 수정이 요구된다.
+
+---
+
+### Rule: 에러 모니터링 연동
+**설명:** 발생한 오류를 **외부 모니터링 서비스**(예: Sentry, Logtail 등)에 전파하여 기록하는 것을 권장한다. 이러한 서비스 연동을 통해 프로덕션 환경에서 실시간으로 에러를 수집하고 분석할 수 있으며, 심각한 문제를 조기에 발견할 수 있다. `logger.error`로 남긴 로그와 별도로, 전역 에러 처리 시점에 Sentry 등의 SDK를 통해 예외를 캡처(capture)하면 호출 스택, 사용자 정보, 환경정보 등이 대시보드에 기록된다. 단, 전파 시 **개인식별정보(PII)**나 비밀 정보는 제외하거나 마스킹하여 프라이버시를 보호해야 한다.
+
+**예외 타입:** 특별히 특정 예외에만 적용되는 것은 아니며, **모든 심각한 오류** 발생 시 모니터링 서비스로 전달한다. (예: 500 내부 오류나 처리되지 않은 예외, 예상치 못한 실패 등)
+
+**응답 형식:** 이 규칙은 모니터링 및 로깅과 관련된 것으로, 클라이언트로의 응답 내용에는 영향을 주지 않는다. 클라이언트는 여전히 앞서 정의한 JSON 오류 응답을 받지만, 백엔드에서는 추가로 오류 정보를 외부 서비스에 보낼 뿐이다.
+
+**코드 예시:**
+```typescript
+import * as Sentry from '@sentry/node';
+
+try {
+  // ... 앱 로직
+} catch (error) {
+  logger.error(error);
+  Sentry.captureException(error);  // Sentry로 에러 전파
+  return res.status(500).json({
+    code: 500,
+    type: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error'
+  });
+}
+```
+위 코드에서는 catch 블록에서 Sentry로 예외를 보내는 모습이다. 이때 필요에 따라 `Sentry.setUser({ id: user.id })` 등으로 사용자 식별자 정도는 함께 보내되, 비밀번호나 개인정보와 같은 민감한 정보는 포함하지 않는다. Logtail 등의 로그 관리 서비스도 마찬가지로, 해당 서비스의 로거나 API를 통해 오류 내용을 전송하면 된다.
+
+**적용 기준:** 운영 환경에서 애플리케이션의 전역 오류 처리 부분에 이 규칙을 적용하는 것이 바람직하다. 개발 단계에서는 선택 사항이나, 프로덕션에서는 Sentry 등으로 에러가 보고되도록 설정하여 장애 대응 속도를 높인다. Cursor Agent는 코드 내에 Sentry/Logtail 연동이 존재하는지, 그리고 캡처 시 불필요한 개인 정보가 배제되고 있는지를 확인함으로써 이 규칙 준수를 평가할 수 있다.
