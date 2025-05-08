@@ -1,4 +1,3 @@
-```mermaid
 sequenceDiagram
     participant User as 사용자
     participant ReactComponent as UI 컴포넌트 (Modal/Form)
@@ -32,4 +31,3 @@ sequenceDiagram
     API-->>ReactQueryHook: API 응답 (200 OK, 카드 목록)
     ReactQueryHook->>ReactComponent: 최신 카드 목록 데이터 전달
     ReactComponent->>User: 업데이트된 카드 목록 표시 (새 카드 포함)
-```

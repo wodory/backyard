@@ -7,18 +7,28 @@
  * 수정일: 2025-04-21 : uiOptions.json 구조 변경에 맞게 DEFAULT_SETTINGS 수정
  * 수정일: 2025-04-21 : lint 에러 수정 - snapGrid 타입 단언 추가
  * 수정일: 2025-04-21 : 가독성 개선을 위한 상수 추출
+ * 수정일: 2025-04-21 : 엣지 설정 적용 로직 개선 및 우선순위 명확화
+ * 수정일: 2025-04-21 : 스타일 우선순위 처리를 위한 유틸리티 함수 추가
+ * 수정일: 2025-04-21 : lint 에러 수정 - CSSProperties 타입 임포트 및 타입 오류 수정
+ * 수정일: 2025-04-21 : 마커 타입 관련 에러 해결을 위해 any 타입 사용
+ * 수정일: 2025-04-21 : 진단용 로그 추가 및 createLogger import
  */
 
-import { Edge, MarkerType, ConnectionLineType } from '@xyflow/react';
+import { Edge, MarkerType, ConnectionLineType, EdgeProps, EdgeMarker } from '@xyflow/react';
+import { CSSProperties } from 'react';
 
 import defaultConfig from '@/config/uiOptions.json';
 import { SETTINGS_STORAGE_KEY } from './ideamap-constants';
+import createLogger from './logger';
 
 // API URL 가져오기
 const getApiUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   return apiUrl;
 };
+
+// 로거 생성
+const logger = createLogger('ideamap-utils');
 
 // 설정 상수 정의 - 가독성 개선
 const ideamapSettings = defaultConfig.DEFAULT_SETTINGS.ideamap;
@@ -242,53 +252,233 @@ export async function updateSettingsOnServer(userId: string, partialSettings: Pa
 }
 
 /**
+ * applyStylePriority - 스타일 우선순위에 따라 속성값을 결정하는 유틸리티 함수
+ * 
+ * @param baseProp - ReactFlow에서 전달되는 기본 속성 (props)
+ * @param globalSettings - 사용자 설정값 (TanStack Query의 useIdeaMapSettings에서 가져옴)
+ * @param individualSettings - 개별 요소 설정값 (개별 노드/엣지 데이터에서 추출)
+ * @param defaultValue - 기본값 (속성이 없을 경우 사용할 값)
+ * @returns 우선순위에 따라 결정된 속성값
+ * 
+ * 우선순위: 개별값 > 사용자 설정값 > props > 기본값
+ */
+export function applyStylePriority<T>(
+  baseProp: T | undefined,
+  globalSettings: T | undefined,
+  individualSettings: T | undefined,
+  defaultValue: T
+): T {
+  // undefined 체크를 통해 null값은 유효한 설정으로 간주
+  if (individualSettings !== undefined) return individualSettings;
+  if (globalSettings !== undefined) return globalSettings;
+  if (baseProp !== undefined) return baseProp;
+  return defaultValue;
+}
+
+/**
+ * mergeEdgeStyles - 엣지 스타일을 우선순위에 따라 병합하는 함수
+ * 
+ * @param props - ReactFlow에서 전달된 엣지 속성
+ * @param globalSettings - 사용자 설정값 (TanStack Query에서 가져온 전역 설정)
+ * @param data - 엣지에 저장된 사용자 정의 데이터 (개별 설정 포함)
+ * @returns 병합된 스타일 객체와 효과적인 설정값들
+ */
+export function mergeEdgeStyles(
+  props: EdgeProps,
+  globalSettings: Record<string, any>,
+  data?: { settings?: Record<string, any> }
+): {
+  edgeStyle: CSSProperties;
+  effectiveEdgeType: ConnectionLineType;
+  isAnimated: boolean;
+  markerEndType: MarkerType | null;
+} {
+  // 개별 엣지 설정 (아직 미구현 - 향후 확장 가능)
+  const individualSettings = data?.settings || {};
+  
+  // 선택 상태
+  const selected = props.selected;
+
+  // 엣지 타입 결정 - props.data.edgeType 사용
+  const propsEdgeType = props.data?.edgeType as ConnectionLineType | undefined;
+  
+  const effectiveEdgeType = applyStylePriority<ConnectionLineType>(
+    propsEdgeType,
+    globalSettings.connectionLineType as ConnectionLineType,
+    individualSettings.connectionLineType as ConnectionLineType,
+    ConnectionLineType.Bezier
+  );
+  
+  // 애니메이션 여부 결정
+  const isAnimated = applyStylePriority<boolean>(
+    props.animated,
+    globalSettings.animated,
+    individualSettings.animated,
+    false
+  );
+  
+  // 마커 타입 결정
+  const markerEndType = applyStylePriority<MarkerType | null>(
+    (props.markerEnd as any)?.type as MarkerType,
+    globalSettings.markerEnd as MarkerType,
+    individualSettings.markerEnd as MarkerType,
+    null
+  );
+  
+  // 선 두께 결정
+  const strokeWidth = applyStylePriority<number>(
+    props.style?.strokeWidth as number,
+    globalSettings.strokeWidth,
+    individualSettings.strokeWidth,
+    2
+  );
+  
+  // 색상 결정 (선택 여부에 따라 다름)
+  const edgeColor = selected 
+    ? applyStylePriority<string>(
+        props.style?.stroke as string,
+        globalSettings.selectedEdgeColor,
+        individualSettings.selectedEdgeColor,
+        '#FF0072'
+      )
+    : applyStylePriority<string>(
+        props.style?.stroke as string,
+        globalSettings.edgeColor,
+        individualSettings.edgeColor,
+        '#C1C1C1'
+      );
+      
+  // 최종 스타일 객체 생성
+  const edgeStyle: CSSProperties = {
+    strokeWidth,
+    stroke: edgeColor,
+    transition: 'stroke 0.2s, stroke-width 0.2s',
+  };
+  
+  return {
+    edgeStyle,
+    effectiveEdgeType,
+    isAnimated,
+    markerEndType
+  };
+}
+
+/**
  * 설정에 따라 엣지 스타일을 적용하는 함수
  * 모든 연결선에 설정이 즉시 반영되도록 함
+ * 
+ * 설정 우선순위:
+ * 개별값 > 사용자 설정값 > props > 기본값
  */
 export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edge[] {
+  // 진단용 로그 추가: 설정 값 확인
+  logger.debug('applyIdeaMapEdgeSettings 호출됨', {
+    settingsInput: {
+      strokeWidth: settings.strokeWidth,
+      edgeColor: settings.edgeColor,
+      connectionLineType: settings.connectionLineType,
+      animated: settings.animated,
+      markerEnd: settings.markerEnd
+    },
+    edgeCount: edges.length
+  });
+  
+  if (edges.length > 0) {
+    logger.debug('첫 번째 엣지 원본 상태 확인', {
+      id: edges[0].id,
+      style: edges[0].style,
+      animated: edges[0].animated,
+      type: edges[0].type,
+      data: edges[0].data
+    });
+  }
+  
   // 각 엣지에 새 설정을 적용
-  return edges.map(edge => {
-    // 기존 속성은 유지하면서 새로운 속성 추가
-    const updatedEdge: Edge = {
-      ...edge,                             // 기존 속성 유지
-      id: edge.id,                         // 엣지 ID 유지
-      source: edge.source,                 // 소스 노드 유지
-      target: edge.target,                 // 타겟 노드 유지
-      type: 'custom',                      // 커스텀 엣지 타입 사용 - 렌더링 컴포넌트 지정
-      data: {
-        ...edge.data,                      // 기존 데이터 보존
-        edgeType: settings.connectionLineType, // 연결선 타입을 data로 전달
-        settings: {                        // 설정 정보 추가
-          animated: settings.animated,
-          connectionLineType: settings.connectionLineType,
-          strokeWidth: settings.strokeWidth,
-          edgeColor: settings.edgeColor,
-          selectedEdgeColor: settings.selectedEdgeColor,
-        }
-      },
-      animated: settings.animated,         // 애니메이션 설정
-      
-      // 스타일 속성 설정
-      style: {
-        ...(edge.style || {}),             // 기존 스타일 보존
-        strokeWidth: settings.strokeWidth, // 선 굵기 설정
-        stroke: edge.selected ? settings.selectedEdgeColor : settings.edgeColor, // 선 색상
-      },
+  const updatedEdges = edges.map(edge => {
+    // ReactFlow props 형태로 변환하여 mergeEdgeStyles에 전달
+    const edgeProps: EdgeProps = {
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      style: edge.style,
+      selected: edge.selected,
+      animated: edge.animated,
+      markerEnd: edge.markerEnd,
+      type: edge.type,
+      data: edge.data
     };
     
-    // 마커 설정 (있을 경우에만)
-    if (settings.markerEnd) {
+    // 스타일 병합 유틸리티 사용
+    const { edgeStyle, effectiveEdgeType, isAnimated, markerEndType } = 
+      mergeEdgeStyles(edgeProps, settings, edge.data);
+    
+    // 업데이트된 엣지 생성
+    const updatedEdge: Edge = {
+      ...edge,
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      type: 'custom',
+      animated: isAnimated,
+      style: edgeStyle,
+      data: {
+        ...edge.data,
+        edgeType: effectiveEdgeType,
+        settings: {
+          ...(edge.data?.settings || {}),
+          // 현재 적용된 설정 값들을 data.settings에 저장
+          // 이는 CustomEdge가 렌더링 시 이 값들을 참조할 수 있게 함
+          animated: isAnimated,
+          connectionLineType: effectiveEdgeType,
+          edgeColor: settings.edgeColor,
+          selectedEdgeColor: settings.selectedEdgeColor,
+          strokeWidth: edgeStyle.strokeWidth,
+          markerEnd: markerEndType,
+          markerSize: settings.markerSize
+        }
+      }
+    };
+    
+    // 마커 설정 - 타입 호환성 이슈로 임시로 any 타입 사용
+    if (markerEndType) {
+      // @ts-ignore - 마커 타입 호환성 이슈. 추후 타입 정의 개선 필요
       updatedEdge.markerEnd = {
-        type: settings.markerEnd,          // 마커 타입 설정
-        width: settings.markerSize,        // 마커 너비
-        height: settings.markerSize,       // 마커 높이
-        color: edge.selected ? settings.selectedEdgeColor : settings.edgeColor, // 마커 색상
+        type: markerEndType,
+        width: settings.markerSize,
+        height: settings.markerSize,
+        color: edgeStyle.stroke
       };
     } else {
-      // 마커 제거
       updatedEdge.markerEnd = undefined;
     }
     
     return updatedEdge;
   });
+  
+  // 처리 완료된 첫 번째 엣지 확인
+  if (updatedEdges.length > 0) {
+    logger.debug('첫 번째 엣지 스타일 적용 후 상태', {
+      id: updatedEdges[0].id,
+      style: updatedEdges[0].style,
+      animated: updatedEdges[0].animated,
+      type: updatedEdges[0].type,
+      data: updatedEdges[0].data,
+      markerEnd: updatedEdges[0].markerEnd
+    });
+    
+    // 원본과 비교 - 무엇이 변경되었는지 명확히 확인
+    if (edges.length > 0) {
+      const firstOrig = edges[0];
+      const firstUpdated = updatedEdges[0];
+      
+      logger.debug('첫 번째 엣지 스타일 변경 확인', {
+        styleChanged: JSON.stringify(firstOrig.style) !== JSON.stringify(firstUpdated.style),
+        animatedChanged: firstOrig.animated !== firstUpdated.animated,
+        typeChanged: firstOrig.type !== firstUpdated.type,
+        dataSettingsChanged: JSON.stringify(firstOrig.data?.settings) !== JSON.stringify(firstUpdated.data?.settings)
+      });
+    }
+  }
+  
+  return updatedEdges;
 } 

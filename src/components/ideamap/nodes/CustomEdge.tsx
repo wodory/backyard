@@ -10,15 +10,21 @@
  * 수정일: 2025-04-30 : 스토어 설정값을 직접 참조하여 엣지 스타일(색상, 굵기) 적용
  * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - useIdeaMapSettings 훅 사용
  * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
+ * 수정일: 2025-05-06 : React.memo 적용하여 불필요한 리렌더링 방지
+ * 수정일: 2025-04-21 : data.settings에서 설정 우선순위를 올바르게 적용하도록 수정
+ * 수정일: 2025-04-21 : 설정 우선순위 순서 변경: individualSettings > globalSettings > defaultEdgeSettings > data
+ * 수정일: 2025-04-21 : 코드 단순화: defaultEdgeSettings 제거, 우선순위를 individualSettings > globalSettings > props로 변경
+ * 수정일: 2025-04-21 : ideamap-utils.ts의 mergeEdgeStyles 유틸리티 함수 사용하도록 개선
+ * 수정일: 2025-04-21 : lint 에러 수정 - mergeEdgeStyles 호출 시 전체 EdgeProps 객체 전달
+ * 수정일: 2025-04-21 : type 속성 제거 관련 린트 에러 수정
+ * 수정일: 2025-04-21 : animated 속성 오류 수정 - boolean 대신 className으로만 처리
  */
 
 import React, { useMemo } from 'react';
-
-import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
+import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath } from '@xyflow/react';
 
 import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings'; // React Query 훅으로 변경
-import { useAppStore, selectActiveProject } from '@/store/useAppStore';
-import { useAuthStore, selectUserId } from '@/store/useAuthStore';
+import { mergeEdgeStyles } from '@/lib/ideamap-utils';
 import createLogger from '@/lib/logger';
 
 // 모듈별 로거 생성
@@ -27,22 +33,15 @@ const logger = createLogger('CustomEdge');
 // 고유 식별자 추가 - 이 컴포넌트가 정확히 어느 파일에서 로드되었는지 확인
 const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
 
-// 확장된 엣지 Props 인터페이스
-interface CustomEdgeProps extends EdgeProps {
-  type?: string;
-  animated?: boolean;
-  data?: {
-    edgeType?: ConnectionLineType;
-    settings?: Record<string, unknown>;
-  };
-}
-
 /**
  * 커스텀 엣지 컴포넌트
  * - TanStack Query 훅을 사용하여 설정을 가져오는 방식으로 변경:
  *   1. 중앙 집중식 설정 소스 참조
  *   2. 서버와 클라이언트 설정의 자동 동기화
  *   3. 설정 변경 시 모든 엣지가 동일하게 업데이트됨
+ * 
+ * 설정 우선순위:
+ * 개별값(individualSettings) > 사용자 설정값(globalSettings) > props(ReactFlow에서 전달)
  */
 function CustomEdge({
   sourceX,
@@ -51,18 +50,10 @@ function CustomEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  style = {},
-  markerEnd,
-  selected,
-  animated,
-  data,
   ...restProps
-}: CustomEdgeProps) {
-  // 인증된 사용자 ID 가져오기 (useAuthStore에서 직접)
-  const userId = useAuthStore(selectUserId);
-
+}: EdgeProps) {
   // TanStack Query를 통해 설정 정보 가져오기
-  const { data: ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings(userId);
+  const { ideaMapSettings, isLoading, isError } = useIdeaMapSettings();
 
   // 개발 환경에서만 디버깅 로그
   if (process.env.NODE_ENV === 'development') {
@@ -70,38 +61,10 @@ function CustomEdge({
       id: restProps.id,
       source: restProps.source,
       target: restProps.target,
-      settings: ideaMapSettings
+      reactflow_current_data: restProps.data?.settings, // 개별 엣지 설정
+      globalSettings: ideaMapSettings // 전역 설정(사용자 설정/기본값)
     });
   }
-
-  // 기본 설정값 (설정을 가져오지 못했을 때 사용)
-  const defaultSettings = useMemo(() => ({
-    strokeWidth: 2,
-    edgeColor: '#C1C1C1',
-    selectedEdgeColor: '#FF0072',
-    connectionLineType: 'bezier',
-    animated: false,
-    markerEnd: null
-  }), []);
-
-  // 유효한 설정 (서버에서 가져온 설정 또는 기본값)
-  const effectiveSettings = useMemo(() => {
-    // 로딩 중이거나 에러 발생 시 기본값 사용
-    if (isLoading || isError || !ideaMapSettings) {
-      if (isError && process.env.NODE_ENV === 'development') {
-        console.warn("CustomEdge: 설정 로드 중 오류 발생, 기본값 사용:", error);
-      }
-      return defaultSettings;
-    }
-    return ideaMapSettings;
-  }, [ideaMapSettings, isLoading, isError, error, defaultSettings]);
-
-  // 글로벌 설정과 로컬 설정 결합
-  const effectiveConfig = useMemo(() => {
-    // 로컬 설정이 있으면 우선적으로 사용, 없으면 글로벌 설정 사용
-    const localSettings = data?.settings;
-    return localSettings ? { ...effectiveSettings, ...localSettings } : effectiveSettings;
-  }, [effectiveSettings, data?.settings]);
 
   // 엣지 연결 좌표 계산 (useMemo로 최적화)
   const edgeParams = useMemo(() => ({
@@ -113,71 +76,63 @@ function CustomEdge({
     targetPosition,
   }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
 
-  // 엣지 타입 결정: data.edgeType > effectiveConfig.connectionLineType > 기본값
-  const effectiveEdgeType = useMemo(() => {
-    // data.edgeType이 있으면 우선 사용
-    if (data?.edgeType) {
-      return data.edgeType;
+  // 전체 엣지 속성 구성 (mergeEdgeStyles 함수 호출용)
+  const fullEdgeProps = useMemo(() => ({
+    ...restProps,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition
+  }), [restProps, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
+
+  // 통합 스타일 유틸리티 사용
+  const { edgeStyle, effectiveEdgeType, isAnimated } = useMemo(() => {
+    if (isLoading || isError || !ideaMapSettings) {
+      // 로딩 중이거나 에러 시 기본 스타일 반환
+      return {
+        edgeStyle: {
+          strokeWidth: 2,
+          stroke: restProps.selected ? '#FF0072' : '#C1C1C1',
+          transition: 'stroke 0.2s, stroke-width 0.2s'
+        },
+        effectiveEdgeType: 'bezier',
+        isAnimated: false,
+        markerEndType: null
+      };
     }
-    // 글로벌 설정의 connectionLineType 사용
-    return effectiveConfig.connectionLineType || 'bezier';
-  }, [data?.edgeType, effectiveConfig.connectionLineType]);
+
+    // 전체 엣지 속성을 포함하여 스타일 병합 유틸리티 사용
+    return mergeEdgeStyles(fullEdgeProps, ideaMapSettings, restProps.data);
+  }, [fullEdgeProps, ideaMapSettings, isLoading, isError, restProps.data, restProps.selected]);
 
   // 엣지 패스 계산 (연결선 타입에 따라)
   const [edgePath] = useMemo(() => {
     // 타입에 따라 적절한 경로 생성 함수 사용
     switch (effectiveEdgeType) {
-      case ConnectionLineType.Straight:
+      case 'straight':
         return getStraightPath(edgeParams);
-      case ConnectionLineType.Step:
+      case 'step':
         return getSmoothStepPath({
           ...edgeParams,
           borderRadius: 0, // 직각
         });
-      case ConnectionLineType.SmoothStep:
+      case 'smoothstep':
         return getSmoothStepPath({
           ...edgeParams,
           borderRadius: 10, // 부드러운 모서리
         });
-      case ConnectionLineType.SimpleBezier:
+      case 'simplebezier':
         return getBezierPath({
           ...edgeParams,
           curvature: 0.25,
         });
-      case ConnectionLineType.Bezier:
+      case 'bezier':
       default:
         return getBezierPath(edgeParams);
     }
   }, [effectiveEdgeType, edgeParams]);
-
-  // 실제 애니메이션 여부는 보드 설정과 컴포넌트 prop 결합
-  const isAnimated = useMemo(() =>
-    animated !== undefined ? animated : effectiveConfig.animated,
-    [animated, effectiveConfig.animated]);
-
-  // 스타일 적용 우선순위 변경 - props로 전달된 style을 우선시
-  const edgeStyle = useMemo(() => {
-    // 1. 기본 스타일 (설정에서 가져옴)
-    const baseStyle = {
-      strokeWidth: effectiveConfig.strokeWidth, // 스토어 값 사용
-      stroke: effectiveConfig.edgeColor,        // 스토어 값 사용
-      transition: 'stroke 0.2s, stroke-width 0.2s',
-    };
-
-    // 2. 선택 상태에 따른 스타일
-    const selectedStyle = selected ? {
-      // 선택 시 굵기를 약간 더 굵게 할 수 있음 (선택 사항)
-      // strokeWidth: effectiveConfig.strokeWidth * 1.5,
-      stroke: effectiveConfig.selectedEdgeColor, // 선택된 엣지 색상 사용
-    } : {};
-
-    // 3. 스타일 병합 (props의 style이 가장 우선)
-    return {
-      ...baseStyle,
-      ...selectedStyle,
-      ...style, // props의 style을 마지막에 적용하여 우선시
-    };
-  }, [style, selected, effectiveConfig]); // effectiveConfig 의존성 추가
 
   // clean props - 불필요한 prop 제거
   const cleanProps = useMemo(() => {
@@ -191,48 +146,40 @@ function CustomEdge({
       source,
       target,
       id,
-      type,
+      animated,
       ...cleanProps
     } = restProps;
     return cleanProps;
   }, [restProps]);
 
-  // 설정 로딩 중에는 기본 스타일로 표시
-  if (isLoading) {
-    // 기본 스타일로 엣지 그리기
-    return (
-      <BaseEdge
-        path={edgePath}
-        markerEnd={markerEnd}
-        style={{ ...edgeStyle, opacity: 0.5 }}
-        className={isAnimated ? 'edge-animated' : ''}
-        data-selected={selected ? 'true' : 'false'}
-        data-component-id={COMPONENT_ID}
-        {...cleanProps}
-      />
-    );
-  }
+  // 애니메이션 CSS 클래스 결정
+  const animatedClassName = useMemo(() => {
+    return isAnimated ? 'edge-animated' : '';
+  }, [isAnimated]);
 
   return (
     <BaseEdge
       path={edgePath}
-      markerEnd={markerEnd}
+      markerEnd={restProps.markerEnd}
       style={edgeStyle}
-      className={isAnimated ? 'edge-animated' : ''}
-      data-selected={selected ? 'true' : 'false'}
+      className={animatedClassName}
+      data-selected={restProps.selected ? 'true' : 'false'}
       data-component-id={COMPONENT_ID}
+      data-animated={isAnimated ? 'true' : 'false'}
       {...cleanProps}
     />
   );
 }
 
-export default CustomEdge;
+// React.memo로 컴포넌트를 감싸 props가 변경되지 않으면 리렌더링 방지
+export default React.memo(CustomEdge);
 
 /**
  * mermaid 다이어그램:
  * ```mermaid
  * sequenceDiagram
  *   participant UI as CustomEdge
+ *   participant Utils as ideamap-utils
  *   participant TQ as useIdeaMapSettings
  *   participant Service as settingsService
  *   participant API as /api/settings
@@ -246,6 +193,8 @@ export default CustomEdge;
  *   API-->>-Service: 설정 데이터 응답
  *   Service-->>-TQ: 설정 데이터 반환
  *   TQ-->>-UI: 설정 데이터 반환
- *   UI->>UI: 엣지 스타일 계산 및 렌더링
+ *   UI->>Utils: mergeEdgeStyles(props, settings, data)
+ *   Utils-->>UI: 병합된 스타일 객체
+ *   UI->>UI: 엣지 스타일 적용 및 렌더링
  * ```
  */ 

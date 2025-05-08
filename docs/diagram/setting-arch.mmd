@@ -1,0 +1,22 @@
+---
+config:
+  layout: elk
+  elk:
+    nodePlacementStrategy: NETWORK_SIMPLEX
+---
+
+graph TD
+    A["CustomEdge 컴포넌트"] -->|설정 참조| B["useIdeaMapStore<br/>(Zustand)"]
+    B -->|렌더링용 설정 정보| A
+
+    C["ProjectToolbar"] -->|설정 변경 UI| D["useIdeaMapSettings<br/>(TanStack Query)"]
+    D -->|설정 가져오기| E["API: /api/settings"]
+    E -->|DB 조회| F["settings 테이블"]
+
+    D -->|설정 업데이트| B
+    D -->|무효화 & 재요청| D
+
+    B -->|엣지 스타일 적용| G["applyIdeaMapEdgeSettings<br/>유틸리티"]
+    G -->|스타일 병합| H["mergeEdgeStyles<br/>유틸리티"]
+
+    A -->|렌더링| I["React Flow<br/>엣지 컴포넌트"]

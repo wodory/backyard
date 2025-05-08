@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         data: {
           // 필드명 'settings'에서 'data'로 변경
           data: settingsData as any,
-          updated_at: new Date()
+          updatedAt: new Date()
         } as any
       });
       
@@ -266,11 +266,15 @@ export async function PATCH(request: NextRequest) {
       return createErrorResponse(400, 'INVALID_JSON', 'JSON 형식이 올바르지 않습니다');
     }
     
-    const { settings: partialSettings, userId } = data;
+    const { userId, partialUpdate } = data;
     
     // 필수 필드 확인
-    if (!partialSettings || !userId) {
-      return createErrorResponse(400, 'MISSING_PARAMETER', '업데이트할 설정 데이터와 사용자 ID가 필요합니다');
+    if (!userId) {
+      return createErrorResponse(400, 'MISSING_PARAMETER', '사용자 ID가 필요합니다');
+    }
+    
+    if (!partialUpdate || typeof partialUpdate !== 'object' || Object.keys(partialUpdate).length === 0) {
+      return createErrorResponse(400, 'MISSING_PARAMETER', '업데이트할 설정 데이터가 필요합니다');
     }
     
     // 인증 검증: 자신의 설정만 수정 가능
@@ -278,41 +282,49 @@ export async function PATCH(request: NextRequest) {
       return createErrorResponse(403, 'FORBIDDEN', '권한이 없습니다');
     }
     
-    if (!session?.user) {
-      return createErrorResponse(401, 'UNAUTHORIZED', '인증이 필요합니다');
-    }
+    logger.info(`설정 부분 업데이트 요청 (userId: ${userId})`, { partialUpdate });
     
-    logger.info(`설정 부분 업데이트 요청 (userId: ${userId})`);
-    
-    // 기존 설정 확인
-    const existingSettings = await prisma.settings.findFirst({
+    // 기존 설정 조회
+    const existingSettings = await prisma.settings.findUnique({
       where: { userId: userId }
     });
     
-    let updatedSettingsData;
+    let updatedSettings;
     
     if (existingSettings) {
-      // 기존 설정과 깊은 병합 (lodash.merge 사용)
-      updatedSettingsData = merge({}, (existingSettings as any).data, partialSettings);
+      // 현재 데이터를 가져와 깊은 병합
+      const currentData = (existingSettings as any).data || {};
+      const newData = merge({}, currentData, partialUpdate);
+      
+      logger.debug('기존 설정과 병합 결과', {
+        currentData: JSON.stringify(currentData).substring(0, 100) + '...',
+        newData: JSON.stringify(newData).substring(0, 100) + '...',
+      });
       
       // 설정 업데이트
-      await prisma.settings.update({
+      updatedSettings = await prisma.settings.update({
         where: { id: existingSettings.id },
         data: {
-          data: updatedSettingsData as any,
-          updated_at: new Date()
+          data: newData as any, // 필드명 'settings'에서 'data'로 변경
+          updatedAt: new Date()
         } as any
       });
       
-      logger.info(`설정 부분 업데이트 완료 (userId: ${userId})`);
+      logger.info(`설정 업데이트 완료 (userId: ${userId})`);
     } else {
-      // 기존 설정이 없으면 기본값과 병합하여 새 설정 생성
-      updatedSettingsData = merge({}, getDefaultSettings(), partialSettings);
+      // 기본 설정과 병합
+      const defaultSettings = getDefaultSettings();
+      const newData = merge({}, defaultSettings, partialUpdate);
+      
+      logger.debug('기본 설정과 병합 결과', {
+        defaultSettings: JSON.stringify(defaultSettings).substring(0, 100) + '...',
+        newData: JSON.stringify(newData).substring(0, 100) + '...',
+      });
       
       // 새 설정 생성
-      await prisma.settings.create({
+      updatedSettings = await prisma.settings.create({
         data: {
-          data: updatedSettingsData as any, // 필드명 변경
+          data: newData as any, // 필드명 변경
           user: { // user 관계 필드를 통해 연결 방식 지정
             connect: { // 기존 User에 연결
               id: userId
@@ -324,9 +336,10 @@ export async function PATCH(request: NextRequest) {
       logger.info(`새 설정 생성 완료 (userId: ${userId})`);
     }
     
+    // 응답 구조 개선: 업데이트된 전체 설정 데이터를 반환
     return NextResponse.json({ 
-      success: true, 
-      settingsData: updatedSettingsData
+      success: true,
+      settingsData: (updatedSettings as any).data
     });
   } catch (error) {
     // 상세 오류 로깅

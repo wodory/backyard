@@ -8,28 +8,25 @@
 4. 개별값 : 각 노드/엣지 등에 개별적으로 설정한 속성값. 설정값 안에서 선택할 수 있음. (지금은 구현하지 않았음)
 
 # 우선 순위 
-개별값 > 사용자 설정값/전체 설정값 > 기본값
+1. 개별값(individualSettings) - 개별 노드/엣지에 적용된 설정
+2. 사용자 설정값(globalSettings) - useIdeaMapSettings()에서 가져온 값
+3. ReactFlow props - ReactFlow에서 전달받은 props 값
+4. 기본값(defaultValue) - 속성이 없을 경우 사용할 하드코딩된 값
+
+# setting 포멧
 
 # 앱 최초 실행
-1. **기본값을 로드:** 앱을 시작하면 /Users/wodory/Development/apps/backyard/src/config/uiOptions.json 파일에서 기본값 로드.
+1. **기본값을 로드:** 
+    - 앱을 시작하면 /Users/wodory/Development/apps/backyard/src/config/uiOptions.json 파일에서 기본값 로드.
+    - reactflow 랜더링에 사용
+    - 이후부터는 reactflow의 data나 props 활용. 
     - 내부에서 쓰이는 다른 default setting도 모두 이 파일로 통합 필요함. 
 2. **초기 랜더링:** 기본값 중 아이디어맵의 엣지, 노드 및 기능 초기화에 필요한 값=아이디어맵 UI 랜더링에 필요한 값을 사용해서 아이디어맵 랜더링 
 3. **사용자 설정 레코드 생성:** 
     - 사용자가 처음 로그인하거나 앱을 사용하는 시점에 **기본값 중에서 사용자 설정값 변경 가능한 항목들(즉, 설정값의 기본 상태)**을 추출하여
     - DB settings 테이블에 해당 사용자의 레코드를 **생성 및 저장**합니다.
     - 이후 설정을 수정(UPDATE) 할 때 대상 레코드가 항상 존재하도록 보장합니다.
-    ```Project Toolbar에서 사용자가 UI로 정의할 수 있는 옵션
-        "style": {
-            "stroke": "#C1C1C1",
-            "strokeWidth": 2
-            "edgeType": "default",
-            "animated": true,
-            "edgeColor": "#000000",
-            "strokeWidth": 1,
-            "selectedEdgeColor": "#FF0072",
-            "connectionLineType": "default"
-        }
-    ```
+
 4. **개별값 필드 초기화:** 아이디어맵에 노드나 엣지가 최초로 생성될 때, 해당 DB 레코드(card_nodes, edges)의 style 컬럼은 {} (빈 객체)로 초기화합니다.
 
 # 앱 실행 후 로드 (최초 실행 제외)
@@ -40,7 +37,7 @@
 3.  **기능별 설정 구성 및 제공 (Feature Hooks with `select`):**
     *   **`useIdeaMapSettings`** 훅:
         *   내부적으로 `queryKey: ['userSettings', userId]`를 구독합니다.
-        *   **`select` 옵션**을 사용하여 캐시된 전체 설정값(`fullSettings`)에서 `ideamap` 부분 (`fullSettings?.settingsData?.ideamap`)을 **추출**합니다.
+        *   **`select` 옵션**을 사용하여 캐시된 전체 설정값(`fullSettings`)에서 `ideamap` 부분 (`fullSettings?.settingsData?.ideamap`)을 **추출**할 수 있습니다.
         *   추출된 `ideamap` 설정값과 `uiOptions.json`에서 가져온 `DEFAULT_SETTINGS.ideamap` (기본값)을 **병합**합니다 (`{ ...DEFAULT_SETTINGS.ideamap, ...(extractedIdeamapSettings || {}) }`).
         *   최종적으로 조합된 **아이디어맵 전용 설정 객체**를 `data`로 반환합니다.
     *   **`useThemeSettings`, `useGeneralSettings`** 등 다른 기능별 훅도 동일한 방식으로 `select` 옵션을 사용하여 필요한 부분을 추출하고 해당 기본값과 병합하여 반환합니다.
@@ -63,10 +60,76 @@
 4.  **UI 리렌더링:** 기능별 훅(`useIdeaMapSettings` 등)을 구독하고 있는 UI 컴포넌트들은 업데이트된 최종 설정 객체를 받아 리렌더링됩니다.
 
 
-# (TODO) 개별 엣지/노드 설정 적용
+# 개별 엣지/노드 설정 적용 (향후 구현)
 1.  **개별값 설정 UI:** 사용자가 특정 노드나 엣지를 선택하고 스타일(색상, 두께 등)을 변경할 수 있는 UI를 제공합니다.
 2.  **DB 저장:** 변경된 스타일 정보는 해당 노드/엣지의 DB 레코드(`card_nodes`, `edges`)의 `style` 컬럼(JSON)에 저장됩니다.
 3.  **렌더링 시 우선순위 적용:**
-    *   `CardNode`, `CustomEdge` 등 렌더링 컴포넌트는 props로 전달받은 개별 `style` 객체와, **`useIdeaMapSettings`** 훅을 통해 얻은 **최종 렌더링 설정**(전역 설정 + 기본값 조합)을 비교/병합합니다.
-    *   **우선순위(`개별값 > 설정값 > 기본값`)**에 따라 최종 스타일을 결정합니다.
-    *   이 병합 로직은 재사용 가능한 유틸리티 함수로 만드는 것이 좋습니다.
+    *   `CardNode`, `CustomEdge` 등 렌더링 컴포넌트는 이제 `mergeEdgeStyles`, `applyStylePriority` 등의 유틸리티 함수를 사용해 다음 우선순위로 스타일을 결정합니다:
+        * 개별값(individualSettings) - 개별 노드/엣지에 적용된 설정
+        * 사용자 설정값(globalSettings) - useIdeaMapSettings()에서 가져온 값
+        * ReactFlow props - ReactFlow에서 전달받은 props 값
+        * 기본값(defaultValue) - 속성이 없을 경우 사용할 하드코딩된 값
+    *   이 병합 로직은 재사용 가능한 유틸리티 함수로 `src/lib/ideamap-utils.ts`에 구현되어 있습니다.
+
+# setting 포멧
+```
+{
+    "theme": {
+        "mode": "light",
+        "accentColor": "#3498db"
+    },
+    "general": {
+        "autoSaveIntervalMinutes": 1
+    },
+    "ideamap": {
+        "edge": {
+            "animated": false,             
+            "edgeColor": "#C1C1C1",        
+            "markerEnd": "arrowclosed",    
+            "markerSize": 20,
+            "strokeWidth": 3,
+            "selectedEdgeColor": "#000000",
+            "connectionLineType": "bezier"
+        },
+        "layout": {
+            "defaultPadding": 20,
+            "defaultSpacing": {
+                "vertical": 30,
+                "horizontal": 30
+            }
+        },
+        "cardNode": {
+            "handles": {
+                "size": 10,
+                "borderColor": "#555555",
+                "borderWidth": 1,
+                "backgroundColor": "#FFFFFF"
+            },
+            "nodeSize": {
+                "width": 500,
+                "height": 48,
+                "maxHeight": 180
+            },
+            "fontSizes": {
+                "tags": 12,
+                "title": 16,
+                "content": 14,
+                "default": 16
+            },
+            "borderRadius": 8,
+            "defaultWidth": 130,
+            "backgroundColor": "#FFFFFF",
+            "tagBackgroundColor": "#F2F2F2"
+        },
+        "snapGrid": [
+            15,
+            15
+        ],
+        "graphSettings": {
+            "edgesep": 100,
+            "nodesep": 60,
+            "ranksep": 100
+        }
+    }
+}
+```

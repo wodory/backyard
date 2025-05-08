@@ -249,6 +249,67 @@ describe('@testcase.mdc 아이디어맵 유틸리티 테스트', () => {
       
       expect(updatedEdges[0].markerEnd).toBeUndefined();
     });
+
+    it('개별 엣지 설정이 전역 설정보다 우선 적용됨', () => {
+      const globalSettings = getTestSettings();
+      
+      // 일부 개별 설정이 있는 엣지 생성
+      const edges: Edge[] = [{
+        id: 'edge-1',
+        source: 'node-1',
+        target: 'node-2',
+        data: {
+          settings: {
+            strokeWidth: 5, // 전역 설정과 다른 값
+            edgeColor: '#FF0000', // 전역 설정과 다른 값
+          }
+        }
+      }];
+      
+      const updatedEdges = applyIdeaMapEdgeSettings(edges, globalSettings);
+      
+      // 개별 설정값이 전역 설정보다 우선되어야 함
+      expect(updatedEdges[0].style).toEqual(
+        expect.objectContaining({
+          strokeWidth: 5, // 개별 설정값 적용
+          stroke: '#FF0000' // 개별 설정값 적용
+        })
+      );
+      
+      // data.settings에도 병합된 설정이 저장되어야 함
+      expect(updatedEdges[0].data?.settings).toEqual(
+        expect.objectContaining({
+          strokeWidth: 5,
+          edgeColor: '#FF0000',
+          animated: globalSettings.animated, // 개별 설정에 없는 속성은 전역 설정 값 사용
+          connectionLineType: globalSettings.connectionLineType
+        })
+      );
+    });
+
+    it('data.settings 객체를 올바른 위치에 저장', () => {
+      const settings = getTestSettings();
+      const edges: Edge[] = [
+        { id: 'edge-1', source: 'node-1', target: 'node-2' }
+      ];
+      
+      const updatedEdges = applyIdeaMapEdgeSettings(edges, settings);
+      
+      // data.settings에 전역 설정이 복사되어야 함
+      expect(updatedEdges[0].data).toBeDefined();
+      expect(updatedEdges[0].data?.settings).toBeDefined();
+      expect(updatedEdges[0].data?.settings).toEqual(
+        expect.objectContaining({
+          animated: settings.animated,
+          connectionLineType: settings.connectionLineType,
+          strokeWidth: settings.strokeWidth,
+          edgeColor: settings.edgeColor,
+          selectedEdgeColor: settings.selectedEdgeColor,
+          markerEnd: settings.markerEnd,
+          markerSize: settings.markerSize
+        })
+      );
+    });
   });
   
   describe('설정 부분 업데이트', () => {

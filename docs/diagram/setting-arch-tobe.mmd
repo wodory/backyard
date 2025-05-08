@@ -1,0 +1,58 @@
+graph TD
+    subgraph UserInteraction["사용자 인터페이스 (설정 UI)"]
+        direction LR
+        SettingsPanel["설정 패널/툴바 (UI)"]
+    end
+
+    subgraph ClientLogic["클라이언트 로직 (설정)"]
+        direction LR
+        HandleChange["설정 변경 핸들러"]
+        TQ_Mutation_UpdateSettings["useUpdateSettingsMutation (RQ)"]
+        Store_OptimisticSettings["Zustand (낙관적 설정 반영)"]
+    end
+
+    subgraph ServiceLayer["서비스 계층"]
+        direction LR
+        SettingsService["settingsService.ts"]
+    end
+    
+    subgraph ServerLogic["서버 로직"]
+        direction LR
+        API_Settings["PATCH /api/settings"]
+        DB_Settings[(설정 DB 테이블)]
+    end
+
+    subgraph DataSync["데이터 동기화 & UI 갱신 (설정)"]
+        direction LR
+        TQ_Query_UserSettings["useUserSettingsQuery (RQ)"]
+        UI_Components_Relying_On_Settings["설정 의존 UI 컴포넌트 (예: CustomEdge)"]
+    end
+
+    %% 설정 변경 요청 흐름
+    SettingsPanel -- "변경 값" --> HandleChange
+    HandleChange -- "부분 설정 전달" --> TQ_Mutation_UpdateSettings
+
+    %% 낙관적 업데이트
+    TQ_Mutation_UpdateSettings -- "onMutate: 즉시 UI 반영 (Step 1)" --> Store_OptimisticSettings
+    Store_OptimisticSettings -- "임시 설정 적용 (Step 2)" --> UI_Components_Relying_On_Settings
+
+    %% API 호출 및 서버 처리
+    TQ_Mutation_UpdateSettings -- "API 요청 (Step 3)" --> SettingsService
+    SettingsService -- "PATCH 요청 (Step 4)" --> API_Settings
+    API_Settings -- "DB 업데이트 (Step 5)" --> DB_Settings
+    DB_Settings -- "저장 결과 (Step 6)" --> API_Settings
+    API_Settings -- "성공/실패 응답 (Step 7)" --> SettingsService
+    SettingsService -- "API 응답 (Step 8)" --> TQ_Mutation_UpdateSettings
+
+    %% TanStack Query 캐시 업데이트 및 UI 최종 갱신
+    TQ_Mutation_UpdateSettings -- "onSuccess: 캐시 무효화 (Step 9)" --> TQ_Query_UserSettings
+    TQ_Query_UserSettings -- "최신 설정 요청 (Step 10)" --> SettingsService_Fetch["settingsService.fetchSettings"]
+    SettingsService_Fetch -- "GET /api/settings" --> API_Settings_Fetch["API: /api/settings"]
+    API_Settings_Fetch -- "DB 조회" --> DB_Settings
+    DB_Settings -- "최신 설정" --> API_Settings_Fetch
+    API_Settings_Fetch -- "최신 데이터" --> SettingsService_Fetch
+    SettingsService_Fetch -- "최신 데이터" --> TQ_Query_UserSettings
+    TQ_Query_UserSettings -- "최신 설정 제공 (SSOT) (Step 11)" --> UI_Components_Relying_On_Settings
+
+    %% 에러 처리
+    TQ_Mutation_UpdateSettings -- "onError: 롤백 (Step 12)" --> Store_OptimisticSettings

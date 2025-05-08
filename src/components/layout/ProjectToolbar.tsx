@@ -6,6 +6,7 @@
  * 수정일: 2025-04-21 : 기능 추가 - 프로젝트 기본 정보 표시 및 로그아웃
  * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - Zustand 직접 업데이트 제거
  * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
+ * 수정일: 2025-05-06 : React.memo 적용하여 불필요한 리렌더링 방지
  */
 
 'use client';
@@ -77,7 +78,8 @@ import { useAuthStore, selectUserId } from '@/store/useAuthStore';
 // 모듈별 로거 생성
 const logger = createLogger('ProjectToolbar');
 
-export function ProjectToolbar() {
+// React.memo를 적용하여 불필요한 리렌더링 방지
+const ProjectToolbar = React.memo(function ProjectToolbarInner() {
   // useRouter 훅 호출
   const router = useRouter();
 
@@ -105,7 +107,7 @@ export function ProjectToolbar() {
   const { mutate: updateSettings, isPending } = useUpdateIdeaMapSettingsMutation();
 
   // TanStack Query를 통해 설정 정보 가져오기
-  const { data: ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings(userId);
+  const { ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings();
 
   // 프로젝트 이름과 작성자 정보 표시
   const displayProjectName = activeProject
@@ -176,9 +178,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('그리드 설정이 저장되었습니다.');
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('그리드 설정이 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -197,9 +203,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('연결선 스타일이 저장되었습니다.');
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('연결선 스타일이 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -218,9 +228,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('화살표 스타일이 저장되었습니다.');
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('화살표 스타일이 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -240,7 +254,11 @@ export function ProjectToolbar() {
       settings: { snapToGrid: newValue }
     }, {
       onSuccess: () => {
-        toast.success(`격자 맞춤이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
+        try {
+          toast.success(`격자 맞춤이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
+        } catch (error) {
+          logger.error('토스트 메시지 표시 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -261,9 +279,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('연결선 두께가 저장되었습니다.');
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('연결선 두께가 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -284,9 +306,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('화살표 크기가 저장되었습니다.');
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('화살표 크기가 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -298,6 +324,13 @@ export function ProjectToolbar() {
   const handleEdgeColorChange = useCallback((value: string) => {
     if (!userId) return;
 
+    // 성능 최적화: 값이 동일하면 서버 호출 건너뛰기
+    const currentEdgeColor = useIdeaMapStore.getState().ideaMapSettings.edgeColor;
+    if (currentEdgeColor === value) {
+      logger.debug('동일한 색상값으로 변경 시도, 업데이트 건너뜀');
+      return;
+    }
+
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
@@ -305,9 +338,14 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('연결선 색상이 저장되었습니다.');
+        try {
+          // 성능 최적화: state 직접 접근 없이 함수만 가져오기
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('연결선 색상이 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -326,9 +364,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success('선택된 연결선 색상이 저장되었습니다.');
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success('선택된 연결선 색상이 저장되었습니다.');
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -349,9 +391,13 @@ export function ProjectToolbar() {
     }, {
       onSuccess: () => {
         // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-        updateAllEdgeStyles();
-        toast.success(`연결선 애니메이션이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
+        try {
+          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+          updateAllEdgeStyles();
+          toast.success(`연결선 애니메이션이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
+        } catch (error) {
+          logger.error('엣지 스타일 업데이트 실패:', error);
+        }
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -659,7 +705,12 @@ export function ProjectToolbar() {
       {isPending && <span className="text-xs text-foreground/60 ml-1">저장 중...</span>}
     </div>
   );
-}
+});
+
+export default ProjectToolbar;
+
+// 기존 export와 기능들을 유지하기 위해 별도 export 추가
+export { ProjectToolbar };
 
 /**
  * mermaid 다이어그램:

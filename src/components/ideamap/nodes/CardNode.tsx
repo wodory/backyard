@@ -6,6 +6,7 @@
  * 수정일: 2025-03-31
  * 수정일: 2025-04-21 : ThemeContext 대신 useAppStore(themeSlice) 사용으로 변경
  * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
+ * 수정일: 2025-05-06 : React.memo 적용하여 불필요한 리렌더링 방지
  */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
@@ -61,7 +62,7 @@ const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 // 카드 노드 컴포넌트 정의
-export default function CardNode({ data, isConnectable, selected, id }: NodeProps) {
+function CardNode({ data, isConnectable, selected, id }: NodeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { setNodes } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -648,4 +649,7 @@ export default function CardNode({ data, isConnectable, selected, id }: NodeProp
       )}
     </>
   );
-} 
+}
+
+// React.memo로 컴포넌트를 감싸 props가 변경되지 않으면 리렌더링 방지
+export default React.memo(CardNode); 

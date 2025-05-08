@@ -18,6 +18,7 @@
  * 수정일: 2025-04-21 : 노드 드래그 종료 시 CardNode 위치 업데이트 로직 추가
  * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - useIdeaMapSettings 훅 사용
  * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
+ * 수정일: 2025-05-06 : React.memo 적용하여 불필요한 리렌더링 방지
  */
 
 'use client';
@@ -103,7 +104,7 @@ interface IdeaMapCanvasProps {
  * IdeaMapCanvas: ReactFlow 캔버스 렌더링 컴포넌트
  * ReactFlow와 관련된 UI 렌더링을 담당하며, 실제 로직은 상위 컴포넌트(IdeaMap)에서 처리
  */
-export default function IdeaMapCanvas({
+function IdeaMapCanvas({
   nodes,
   edges,
   onNodesChange,
@@ -129,7 +130,30 @@ export default function IdeaMapCanvas({
   const userId = useAuthStore(selectUserId);
 
   // TanStack Query를 통해 설정 정보 가져오기
-  const { data: ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings(userId);
+  const { ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings();
+
+  // 설정이 변경될 때마다 모든 엣지의 스타일을 업데이트
+  useEffect(() => {
+    if (ideaMapSettings) {
+      // 설정이 로드된 경우, 모든 엣지 스타일 업데이트
+      logger.debug('설정 변경 감지, 모든 엣지 스타일 업데이트', {
+        connectionLineType: ideaMapSettings.connectionLineType,
+        strokeWidth: ideaMapSettings.strokeWidth,
+        edgeColor: ideaMapSettings.edgeColor,
+        edgeCount: edges.length
+      });
+
+      // useIdeaMapStore에서 updateAllEdgeStylesAction 함수 직접 호출
+      const updateAllStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
+      updateAllStyles();
+
+      // 엣지 데이터 확인
+      logger.debug('엣지 데이터 확인:', {
+        firstEdge: edges.length > 0 ? edges[0] : null,
+        currentEdges: edges.length
+      });
+    }
+  }, [ideaMapSettings, edges.length]);
 
   // 엣지 데이터 확인을 위한 로그 추가
   useEffect(() => {
@@ -458,6 +482,7 @@ export default function IdeaMapCanvas({
     });
 
     // 프로젝트 ID가 있는 경우에만 노드 위치 업데이트
+    // TODO : 프로젝트 ID가 있는 경우 + 노드 좌표가 변경되었을 경우 노드 위치 업데이트
     if (activeProjectId) {
       updateCardNodePositionMutation.mutate(
         {
@@ -583,6 +608,9 @@ export default function IdeaMapCanvas({
     </div>
   );
 }
+
+// React.memo로 컴포넌트를 감싸 props가 변경되지 않으면 리렌더링 방지
+export default React.memo(IdeaMapCanvas);
 
 /**
  * mermaid 다이어그램:

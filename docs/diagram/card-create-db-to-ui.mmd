@@ -1,0 +1,54 @@
+graph TD
+    subgraph UserInteraction["사용자 인터페이스"]
+        direction LR
+        UI_Button["카드 추가 버튼 (UI)"]
+        UI_Form["카드 정보 입력 폼 (UI)"]
+    end
+
+    subgraph ClientLogic["클라이언트 로직"]
+        direction LR
+        Hook_HandleAddCard["addCard 핸들러 (컴포넌트 내)"]
+        Hook_UseCreateCardMutation["useCreateCardMutation (RQ Mutation Hook)"]
+        Store_OptimisticUI["Zustand/RQ 캐시 (낙관적 업데이트)"]
+    end
+
+    subgraph ServerLogic["서버 로직"]
+        direction LR
+        API_CreateCard["POST /api/cards (API Route)"]
+        Service_CardService["cardService (서버 서비스)"]
+        DB_Cards[(카드 DB 테이블)]
+    end
+
+    subgraph DataFlow["데이터 동기화 & UI 갱신"]
+        direction LR
+        Hook_UseCardsQuery["useCardsQuery (RQ Query Hook)"]
+        UI_CardList["카드 목록 (UI)"]
+    end
+
+    %% 카드 생성 요청 흐름
+    UI_Button -->|클릭| UI_Form
+    UI_Form -->|데이터 제출| Hook_HandleAddCard
+    Hook_HandleAddCard -->|카드 데이터 전달| Hook_UseCreateCardMutation
+
+    %% 낙관적 업데이트
+    Hook_UseCreateCardMutation -->|즉시 UI 업데이트| Store_OptimisticUI
+    Store_OptimisticUI -->|임시 카드 표시| UI_CardList
+
+    %% API 호출 및 서버 처리
+    Hook_UseCreateCardMutation -->|API 요청| API_CreateCard
+    API_CreateCard -->|서비스 로직 호출| Service_CardService
+    Service_CardService -->|DB에 카드 저장| DB_Cards
+    DB_Cards -->|저장 결과| Service_CardService
+    Service_CardService -->|성공/실패 응답| API_CreateCard
+    API_CreateCard -->|API 응답| Hook_UseCreateCardMutation
+
+    %% 캐시 무효화 & 최신 데이터 요청 흐름
+    Hook_UseCreateCardMutation -->|"성공 시 캐시 무효화 (cards)"| Hook_UseCardsQuery
+    Hook_UseCardsQuery -->|최신 카드 목록 요청| API_GetCards["GET /api/cards"]
+    API_GetCards -->|DB 조회| DB_Cards
+    DB_Cards -->|최신 카드 목록| API_GetCards
+    API_GetCards -->|최신 데이터 제공| Hook_UseCardsQuery
+    Hook_UseCardsQuery -->|최신 카드 목록 제공| UI_CardList
+
+    %% 에러 처리
+    Hook_UseCreateCardMutation --> |"실패 시 롤백"| Store_OptimisticUI
