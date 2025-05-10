@@ -19,6 +19,7 @@
  * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - useIdeaMapSettings 훅 사용
  * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
  * 수정일: 2025-05-06 : React.memo 적용하여 불필요한 리렌더링 방지
+ * 수정일: 2025-05-21 : Zustand Store 의존성 제거 - useIdeaMapSettings만 사용하도록 개선
  */
 
 'use client';
@@ -132,41 +133,30 @@ function IdeaMapCanvas({
   // TanStack Query를 통해 설정 정보 가져오기
   const { ideaMapSettings, isLoading, isError, error } = useIdeaMapSettings();
 
-  // 설정이 변경될 때마다 모든 엣지의 스타일을 업데이트
+  // 설정이 변경될 때마다 로그만 남기고 CustomEdge 컴포넌트가 자체적으로 설정을 적용하도록 함
   useEffect(() => {
     if (ideaMapSettings) {
-      // 설정이 로드된 경우, 모든 엣지 스타일 업데이트
-      logger.debug('설정 변경 감지, 모든 엣지 스타일 업데이트', {
-        connectionLineType: ideaMapSettings.connectionLineType,
-        strokeWidth: ideaMapSettings.strokeWidth,
-        edgeColor: ideaMapSettings.edgeColor,
+      // 설정이 로드되었을 때 로그만 남김
+      logger.debug('설정 변경 감지 (엣지 자동 업데이트됨)', {
+        connectionLineType: ideaMapSettings.edge?.connectionLineType,
+        strokeWidth: ideaMapSettings.edge?.strokeWidth,
+        edgeColor: ideaMapSettings.edge?.edgeColor,
         edgeCount: edges.length
-      });
-
-      // useIdeaMapStore에서 updateAllEdgeStylesAction 함수 직접 호출
-      const updateAllStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-      updateAllStyles();
-
-      // 엣지 데이터 확인
-      logger.debug('엣지 데이터 확인:', {
-        firstEdge: edges.length > 0 ? edges[0] : null,
-        currentEdges: edges.length
       });
     }
   }, [ideaMapSettings, edges.length]);
 
   // 엣지 데이터 확인을 위한 로그 추가
   useEffect(() => {
-    logger.info('엣지 데이터 확인:', {
-      edgeCount: edges.length,
-      edges: edges
+    logger.debug('엣지 데이터 확인:', {
+      edgeCount: edges.length
     });
   }, [edges]);
 
   // 기본 엣지 옵션 메모이제이션
   const defaultEdgeOptions = useMemo(() => {
     // 설정 정보가 없으면 기본값 사용
-    if (!ideaMapSettings) {
+    if (!ideaMapSettings || !ideaMapSettings.edge) {
       return {
         type: 'custom',
         animated: false,
@@ -179,20 +169,60 @@ function IdeaMapCanvas({
 
     const options = {
       type: 'custom',
-      animated: ideaMapSettings.animated,
+      animated: ideaMapSettings.edge.animated,
       style: {
-        strokeWidth: ideaMapSettings.strokeWidth,
-        stroke: ideaMapSettings.edgeColor
-      },
-      markerEnd: ideaMapSettings.markerEnd ? {
-        type: MarkerType.ArrowClosed,
-        width: ideaMapSettings.markerSize,
-        height: ideaMapSettings.markerSize,
-      } : undefined
+        strokeWidth: ideaMapSettings.edge.strokeWidth,
+        stroke: ideaMapSettings.edge.edgeColor
+      }
     };
-    logger.info('기본 엣지 옵션 생성:', options);
+    logger.debug('기본 엣지 옵션 생성:', options);
     return options;
   }, [ideaMapSettings]);
+
+  // SVG 마커 정의
+  const markers = useMemo(() => {
+    if (!ideaMapSettings?.edge?.markerEnd) return null;
+
+    const markerSize = ideaMapSettings.edge.markerSize || 20;
+    const markerColor = ideaMapSettings.edge.edgeColor || '#C1C1C1';
+
+    return (
+      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+        <defs>
+          <marker
+            id="marker-arrow"
+            markerWidth={markerSize}
+            markerHeight={markerSize}
+            refX={markerSize}
+            refY={markerSize / 2}
+            orient="auto"
+            markerUnits="userSpaceOnUse"
+          >
+            <path
+              d={`M 0 0 L ${markerSize} ${markerSize / 2} L 0 ${markerSize} Z`}
+              fill={markerColor}
+            />
+          </marker>
+          <marker
+            id="marker-arrowclosed"
+            markerWidth={markerSize}
+            markerHeight={markerSize}
+            refX={markerSize}
+            refY={markerSize / 2}
+            orient="auto"
+            markerUnits="userSpaceOnUse"
+          >
+            <path
+              d={`M 0 0 L ${markerSize} ${markerSize / 2} L 0 ${markerSize} Z`}
+              fill={markerColor}
+              stroke={markerColor}
+              strokeWidth="1"
+            />
+          </marker>
+        </defs>
+      </svg>
+    );
+  }, [ideaMapSettings?.edge?.markerEnd, ideaMapSettings?.edge?.markerSize, ideaMapSettings?.edge?.edgeColor]);
 
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
@@ -249,18 +279,7 @@ function IdeaMapCanvas({
         } catch (error) {
           logger.error('fitView 실행 중 오류:', error);
         }
-
-        // 추가 지연 후 노드가 뷰포트에 모두 포함되었는지 확인
-        setTimeout(() => {
-          if (!reactFlowInstance.current) return;
-
-          const currentViewport = reactFlowInstance.current.getViewport();
-          logger.info('최종 뷰포트 확인:', currentViewport);
-        }, 600);
       }, fitViewDelay);
-    }
-    else {
-      logger.info('노드가 없습니다. 기본 뷰포트 설정');
     }
   }, [nodes, setReactFlowInstance]);
 
@@ -487,8 +506,11 @@ function IdeaMapCanvas({
       updateCardNodePositionMutation.mutate(
         {
           id: node.id,
-          position: node.position,
-          projectId: activeProjectId
+          projectId: activeProjectId,
+          position: {
+            x: node.position.x,
+            y: node.position.y
+          }
         },
         {
           onSuccess: () => {
@@ -551,11 +573,11 @@ function IdeaMapCanvas({
 
   return (
     <div
-      className={cn("h-full w-full flex flex-col relative", className)}
       ref={wrapperRef}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      style={{ width: '100%', height: '100%' }}
+      className={cn("react-flow-wrapper", className)}
     >
+      {markers}
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -583,33 +605,22 @@ function IdeaMapCanvas({
         onInit={onInit}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
-        connectionMode={ConnectionMode.Loose}
-        connectionLineType={ideaMapSettings.connectionLineType as ConnectionLineType}
-        snapToGrid={ideaMapSettings.snapToGrid}
-        snapGrid={ideaMapSettings.snapGrid}
         defaultEdgeOptions={defaultEdgeOptions}
-        fitView
-        attributionPosition="bottom-right"
+        connectionMode={ConnectionMode.Loose}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        proOptions={{ hideAttribution: true }}
       >
         {showControls && (
-          <Controls
-            position="bottom-right"
-            style={{
-              marginRight: 10,
-              marginBottom: 10,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '5px',
-            }}
-          />
+          <Controls />
         )}
-        <Background color="#aaa" gap={ideaMapSettings.snapGrid ? ideaMapSettings.snapGrid[0] : 20} />
+
+        <Background />
       </ReactFlow>
     </div>
   );
 }
 
-// React.memo로 컴포넌트를 감싸 props가 변경되지 않으면 리렌더링 방지
 export default React.memo(IdeaMapCanvas);
 
 /**

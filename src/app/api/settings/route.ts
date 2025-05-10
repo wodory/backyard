@@ -7,6 +7,7 @@
  * 수정일: 2025-04-21 : 오류 처리 로직 개선 및 표준화
  * 수정일: 2025-05-05 : Settings-User 관계 필드 설정 수정
  * 수정일: 2025-04-21 : DB 필드명과 API 응답 구조 불일치 수정 (settings → data)
+ * 수정일: 2025-05-21 : Zod 스키마 기반의 Partial<SchemaFullSettings> 구조 지원
  * @rule   three-layer-standard
  * @layer  API
  */
@@ -18,7 +19,8 @@ import { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 import createLogger from '@/lib/logger';
-import { getDefaultSettings } from '@/lib/settings-utils';
+import { getDefaultSettings, validateSettings } from '@/lib/settings-utils';
+import { FullSettings as SchemaFullSettings } from '@/lib/schema/settings-schema';
 
 // 로거 생성
 const logger = createLogger('SettingsAPI');
@@ -29,6 +31,12 @@ type SettingsData = {
   settings_data: any;
   created_at: Date;
   updated_at: Date;
+};
+
+// 설정 부분 업데이트 API에서 사용되는 타입
+type SettingsPartialUpdateBody = {
+  userId: string;
+  [key: string]: any; // SchemaFullSettings의 부분 업데이트 필드들
 };
 
 /**
@@ -80,37 +88,52 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    // 설정이 없는 경우 기본값 반환
-    if (!userSettings) {
-      logger.info(`사용자 설정이 없음, 기본값 반환 (userId: ${userId})`);
+    // 사용자 설정 초기화 로직 개선: 설정이 없거나 비어있는 경우
+    if (!userSettings || !userSettings.data || Object.keys(userSettings.data as any).length === 0) {
+      logger.info(`사용자 ID [${userId}]에 대한 설정 없음 또는 비어있음. 기본값 생성 및 저장.`);
       
-      // 기본 설정 생성 및 저장 (비동기로 처리)
+      // Zod 스키마 기반 완전한 기본 설정 생성
+      const defaultFullSettings = getDefaultSettings('full');
+      
+      // upsert를 통해 레코드 생성 또는 업데이트
       try {
-        await prisma.settings.create({
-          data: {
-            data: getDefaultSettings() as any, // 필드명 'settings'에서 'data'로 변경
-            user: { // user 관계 필드를 통해 연결 방식 지정
-              connect: { // 기존 User에 연결
-                id: userId
-              }
+        const updatedRecord = await prisma.settings.upsert({
+          where: { userId: userId },
+          create: {
+            data: defaultFullSettings as any, // Prisma JSON 타입 호환성
+            user: {
+              connect: { id: userId }
             }
+          },
+          update: {
+            data: defaultFullSettings as any, // Prisma JSON 타입 호환성
+            updatedAt: new Date()
           }
         });
-        logger.info(`기본 설정 생성 완료 (userId: ${userId})`);
+        
+        logger.info(`[API /settings GET] 사용자 ID [${userId}]에 대한 기본 설정 생성 및 저장 완료.`);
+        
+        // 새로 생성된 설정 반환
+        return NextResponse.json({
+          settingsData: (updatedRecord as any).data
+        });
       } catch (error) {
-        // 상세 로깅을 통한 오류 기록
-        logger.error('기본 설정 생성 실패', {
+        // 설정 생성 실패 시 로깅 후 기본값만 반환
+        logger.error('기본 설정 저장 실패', {
           userId,
           message: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
           meta: (error as any)?.meta
         });
+        
+        // DB 저장에 실패해도 기본값 반환
+        return NextResponse.json({
+          settingsData: defaultFullSettings
+        });
       }
-      
-      return NextResponse.json({
-        settingsData: getDefaultSettings()
-      });
     }
+    
+    logger.info(`사용자 ID [${userId}]에 대한 설정 로드 성공.`);
     
     // 올바른 필드명(data)에서 설정 데이터를 가져와 settingsData로 반환
     return NextResponse.json({
@@ -255,9 +278,9 @@ export async function PATCH(request: NextRequest) {
     const userIdFromAuth = session?.user?.id;
     
     // JSON 파싱
-    let data;
+    let body: SettingsPartialUpdateBody;
     try {
-      data = await request.json();
+      body = await request.json();
     } catch (error) {
       logger.error('JSON 파싱 오류', {
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -266,7 +289,7 @@ export async function PATCH(request: NextRequest) {
       return createErrorResponse(400, 'INVALID_JSON', 'JSON 형식이 올바르지 않습니다');
     }
     
-    const { userId, partialUpdate } = data;
+    const { userId, ...partialUpdate } = body;
     
     // 필수 필드 확인
     if (!userId) {
@@ -285,27 +308,38 @@ export async function PATCH(request: NextRequest) {
     logger.info(`설정 부분 업데이트 요청 (userId: ${userId})`, { partialUpdate });
     
     // 기존 설정 조회
-    const existingSettings = await prisma.settings.findUnique({
+    const existingRecord = await prisma.settings.findUnique({
       where: { userId: userId }
     });
     
-    let updatedSettings;
+    let updatedRecord;
     
-    if (existingSettings) {
+    if (existingRecord) {
       // 현재 데이터를 가져와 깊은 병합
-      const currentData = (existingSettings as any).data || {};
-      const newData = merge({}, currentData, partialUpdate);
+      const existingSettingsData = (existingRecord as any).data || {};
+      
+      // 깊은 병합 수행 - lodash.merge 사용
+      const newSettingsData = merge({}, existingSettingsData, partialUpdate);
+      
+      // 병합된 데이터 검증 (Zod 스키마)
+      try {
+        validateSettings('full', newSettingsData, 'safe');
+      } catch (validationError) {
+        logger.error('설정 데이터 검증 실패', { error: validationError, newSettingsData });
+        return createErrorResponse(400, 'VALIDATION_ERROR', '업데이트할 설정 데이터가 올바르지 않습니다');
+      }
       
       logger.debug('기존 설정과 병합 결과', {
-        currentData: JSON.stringify(currentData).substring(0, 100) + '...',
-        newData: JSON.stringify(newData).substring(0, 100) + '...',
+        currentFields: Object.keys(existingSettingsData),
+        updateFields: Object.keys(partialUpdate),
+        resultFields: Object.keys(newSettingsData),
       });
       
       // 설정 업데이트
-      updatedSettings = await prisma.settings.update({
-        where: { id: existingSettings.id },
+      updatedRecord = await prisma.settings.update({
+        where: { id: existingRecord.id },
         data: {
-          data: newData as any, // 필드명 'settings'에서 'data'로 변경
+          data: newSettingsData as any, // 필드명 'settings'에서 'data'로 변경
           updatedAt: new Date()
         } as any
       });
@@ -313,18 +347,27 @@ export async function PATCH(request: NextRequest) {
       logger.info(`설정 업데이트 완료 (userId: ${userId})`);
     } else {
       // 기본 설정과 병합
-      const defaultSettings = getDefaultSettings();
-      const newData = merge({}, defaultSettings, partialUpdate);
+      const defaultSettings = getDefaultSettings('full');
+      const newSettingsData = merge({}, defaultSettings, partialUpdate);
+      
+      // 병합된 데이터 검증 (Zod 스키마)
+      try {
+        validateSettings('full', newSettingsData, 'safe');
+      } catch (validationError) {
+        logger.error('설정 데이터 검증 실패', { error: validationError, newSettingsData });
+        return createErrorResponse(400, 'VALIDATION_ERROR', '업데이트할 설정 데이터가 올바르지 않습니다');
+      }
       
       logger.debug('기본 설정과 병합 결과', {
-        defaultSettings: JSON.stringify(defaultSettings).substring(0, 100) + '...',
-        newData: JSON.stringify(newData).substring(0, 100) + '...',
+        defaultFields: Object.keys(defaultSettings),
+        updateFields: Object.keys(partialUpdate),
+        resultFields: Object.keys(newSettingsData),
       });
       
       // 새 설정 생성
-      updatedSettings = await prisma.settings.create({
+      updatedRecord = await prisma.settings.create({
         data: {
-          data: newData as any, // 필드명 변경
+          data: newSettingsData as any, // 필드명 변경
           user: { // user 관계 필드를 통해 연결 방식 지정
             connect: { // 기존 User에 연결
               id: userId
@@ -339,7 +382,7 @@ export async function PATCH(request: NextRequest) {
     // 응답 구조 개선: 업데이트된 전체 설정 데이터를 반환
     return NextResponse.json({ 
       success: true,
-      settingsData: (updatedSettings as any).data
+      settingsData: (updatedRecord as any).data
     });
   } catch (error) {
     // 상세 오류 로깅

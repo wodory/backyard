@@ -26,6 +26,8 @@
  * 수정일: 2025-04-21 : nodePlacementRequest 상태 및 관련 액션 추가 - 카드 생성 시 아이디어맵에 노드 자동 배치 기능 지원
  * 수정일: 2025-05-12 : ideaMapSettings를 settingsRef로 변경 - TanStack Query와 Three-Layer-Standard 통합
  * 수정일: 2025-05-12 : _updateSettingsRef 함수 개선 - 엣지 스타일 업데이트 자동 호출
+ * 수정일: 2025-04-21 : updateEdgeStyles 함수 수정 - 타입 오류 해결 위해 DEFAULT_SETTINGS 사용
+ * 수정일: 2025-05-21 : settingsRef 및 관련 함수 제거 - RQ를 통한 설정 관리로 전환
  */
 import { 
   Edge, 
@@ -53,7 +55,7 @@ import {
   Settings,
   applyIdeaMapEdgeSettings,
   loadSettingsFromServer, 
-  saveSettingsToServer
+  DEFAULT_SETTINGS
 } from '@/lib/ideamap-utils';
 import { getLayoutedElements, getGridLayout } from '@/lib/layout-utils';
 import createLogger from '@/lib/logger';
@@ -88,12 +90,6 @@ export interface IdeaMapState {
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
   
-  // 아이디어맵 설정 관련 상태
-  settingsRef: SettingsData['ideamap'] | null; // 기존 ideaMapSettings를 settingsRef로 변경
-  _updateSettingsRef: (settings: SettingsData['ideamap']) => void; // 내부용 setter
-  setIdeaMapSettings: (settings: Settings) => void; // 호환성 유지용 함수
-  updateIdeaMapSettings: (settings: Partial<Settings>, isAuthenticated: boolean, userId?: string) => Promise<void>; // 호환성 유지용 함수
-  
   // 레이아웃 관련 함수
   applyLayout: (direction: 'horizontal' | 'vertical' | 'auto') => void;
   applyGridLayout: () => void;
@@ -104,9 +100,6 @@ export interface IdeaMapState {
   
   // 엣지 스타일 업데이트
   updateEdgeStyles: (settings: Settings) => void;
-  
-  // 서버 동기화 함수
-  loadIdeaMapSettingsFromServerIfAuthenticated: (isAuthenticated: boolean, userId?: string) => Promise<void>;
   
   // 엣지 생성 함수
   createEdgeOnDrop: (sourceId: string, targetId: string) => Edge;
@@ -128,22 +121,17 @@ export interface IdeaMapState {
   
   // 추가된 상태 및 액션
   viewportToRestore: Viewport | null;
-  isSettingsLoading: boolean;
-  settingsError: string | null;
   
-  // useIdeaMapUtils에서 이전된 액션들
-  loadAndApplyIdeaMapSettings: (userId: string) => Promise<void>;
-  updateAndSaveIdeaMapSettings: (newSettings: Partial<Settings>, userId?: string) => Promise<void>;
+  // 저장 및 복원 액션
   saveViewport: () => void;
   restoreViewport: () => void;
   saveIdeaMapState: () => boolean;
 
-  // 새로 추가할 엣지 관련 액션들 (useEdges 훅에서 이전)
+  // 엣지 관련 액션들
   applyEdgeChangesAction: (changes: EdgeChange[]) => void;
   removeEdgesFromStorage: (deletedEdgeIds: string[]) => void;
   connectNodesAction: (connection: Connection) => void;
   saveEdgesAction: () => boolean;
-  updateAllEdgeStylesAction: (externalSettings?: Settings, forceUpdate?: boolean) => void;
   createEdgeOnDropAction: (sourceId: string, targetId: string) => Edge;
 
   // 추가된 함수: 드래그 앤 드롭으로 새 노드 추가하기
@@ -214,16 +202,16 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           const newEdge = addEdge({
             ...connection,
             type: 'smoothstep',
-            animated: state.settingsRef?.animated || false,
+            animated: false,
             style: {
-              stroke: state.settingsRef?.edgeColor || '#C1C1C1',
-              strokeWidth: state.settingsRef?.strokeWidth || 2,
+              stroke: '#C1C1C1',
+              strokeWidth: 2,
             },
             markerEnd: {
               type: MarkerType.Arrow,
-              color: state.settingsRef?.edgeColor || '#C1C1C1',
-              width: state.settingsRef?.markerSize || 15,
-              height: state.settingsRef?.markerSize || 15,
+              color: '#C1C1C1',
+              width: 15,
+              height: 15,
             },
           }, state.edges);
           
@@ -238,188 +226,6 @@ export const useIdeaMapStore = create<IdeaMapState>()(
             hasUnsavedChanges: true
           };
         });
-      },
-      
-      // 설정 관련 상태 및 함수
-      settingsRef: null, // 기존 ideaMapSettings를 settingsRef로 변경
-      
-      // 설정 참조를 업데이트하는 내부 함수
-      _updateSettingsRef: (settings) => {
-        logger.debug('_updateSettingsRef 호출:', { settings });
-        set({ settingsRef: settings });
-        
-        // 엣지 스타일 즉시 업데이트 트리거
-        // 참고: forceUpdate를 true로 설정하면 엣지가 없어도 업데이트
-        setTimeout(() => {
-          get().updateAllEdgeStylesAction(undefined, true);
-        }, 0);
-      },
-      
-      // 호환성을 위한 래퍼 함수들
-      setIdeaMapSettings: (settings) => {
-        logger.debug('setIdeaMapSettings 호출: _updateSettingsRef로 위임');
-        get()._updateSettingsRef(settings as SettingsData['ideamap']);
-      },
-      
-      updateIdeaMapSettings: async (settings, isAuthenticated, userId) => {
-        logger.debug('updateIdeaMapSettings 호출:', { settings, isAuthenticated });
-        
-        // 우선 로컬 설정 업데이트
-        get()._updateSettingsRef({
-          ...get().settingsRef,
-          ...settings
-        } as SettingsData['ideamap']);
-        
-        // 인증된 사용자의 경우 서버에도 저장
-        if (isAuthenticated && userId) {
-          try {
-            await saveSettingsToServer(userId, settings);
-            return Promise.resolve();
-          } catch (error) {
-            logger.error('서버 설정 저장 실패:', error);
-            return Promise.reject(error);
-          }
-        }
-        
-        return Promise.resolve();
-      },
-      
-      // 엣지 관련 함수
-      updateEdgeStyles: (settings) => {
-        const state = get();
-        
-        // settingsRef로부터 엣지 설정 사용
-        if (!state.edges || state.edges.length === 0) {
-          logger.debug('updateEdgeStyles: 엣지가 없음');
-          return;
-        }
-        
-        logger.debug('updateEdgeStyles 호출:', { edgeCount: state.edges.length });
-        
-        // 엣지 스타일 업데이트 로직 (기존과 동일)
-        try {
-          // applyIdeaMapEdgeSettings 유틸리티 함수 활용
-          const updatedEdges = applyIdeaMapEdgeSettings(state.edges, settings);
-          
-          // 변경 감지를 위한 속성별 직접 비교 (JSON.stringify 방식 대체)
-          let hasChanges = false;
-          
-          // 첫 번째 엣지에 대해 상세 비교 수행 (로깅용)
-          if (state.edges.length > 0 && updatedEdges.length > 0) {
-            const firstOriginal = state.edges[0];
-            const firstUpdated = updatedEdges[0];
-            
-            // 스타일 객체 비교
-            const styleChanged = 
-              firstOriginal.style?.strokeWidth !== firstUpdated.style?.strokeWidth ||
-              firstOriginal.style?.stroke !== firstUpdated.style?.stroke;
-              
-            // 애니메이션 상태 비교
-            const animatedChanged = firstOriginal.animated !== firstUpdated.animated;
-            
-            // 마커 비교 - 객체 구조 확인
-            const markerChanged = 
-              // 마커가 객체인지 확인 후 타입 비교
-              (typeof firstOriginal.markerEnd === 'object' && firstOriginal.markerEnd && 
-               typeof firstUpdated.markerEnd === 'object' && firstUpdated.markerEnd &&
-               (firstOriginal.markerEnd as any)?.type !== (firstUpdated.markerEnd as any)?.type) ||
-              // 마커 색상 비교 (존재할 경우에만)
-              (typeof firstOriginal.markerEnd === 'object' && firstOriginal.markerEnd && 
-               typeof firstUpdated.markerEnd === 'object' && firstUpdated.markerEnd &&
-               (firstOriginal.markerEnd as any)?.color !== (firstUpdated.markerEnd as any)?.color);
-               
-            // data.settings 비교 - 안전하게 각 속성 존재 여부 확인
-            const origSettings: Record<string, any> = firstOriginal.data?.settings || {};
-            const updSettings: Record<string, any> = firstUpdated.data?.settings || {};
-            
-            // data.edgeType 비교 - connectionLineType과 관련
-            const edgeTypeChanged = firstOriginal.data?.edgeType !== firstUpdated.data?.edgeType;
-            
-            // 개별 속성 비교 전에 로그 추가
-            logger.debug('Settings 비교 세부 값', {
-              orig: {
-                type: firstOriginal.type,
-                edgeType: firstOriginal.data?.edgeType,
-                strokeWidth: origSettings.strokeWidth,
-                edgeColor: origSettings.edgeColor,
-                animated: origSettings.animated,
-                connectionLineType: origSettings.connectionLineType
-              },
-              upd: {
-                type: firstUpdated.type,
-                edgeType: firstUpdated.data?.edgeType,
-                strokeWidth: updSettings.strokeWidth,
-                edgeColor: updSettings.edgeColor,
-                animated: updSettings.animated,
-                connectionLineType: updSettings.connectionLineType
-              }
-            });
-            
-            // 설정 값 비교 - 세부 속성별 비교
-            const settingsChanged = 
-              origSettings.strokeWidth !== updSettings.strokeWidth ||
-              origSettings.edgeColor !== updSettings.edgeColor ||
-              origSettings.animated !== updSettings.animated ||
-              origSettings.connectionLineType !== updSettings.connectionLineType ||
-              origSettings.markerEnd !== updSettings.markerEnd;
-              
-            // 타입 비교 - 노드 타입 변경 체크
-            const typeChanged = firstOriginal.type !== firstUpdated.type;
-            
-            // 최종 변경 여부 판단 - 중요 속성의 변경이 하나라도 있으면 true
-            const firstEdgeChanged = styleChanged || animatedChanged || markerChanged || 
-                                    settingsChanged || typeChanged || edgeTypeChanged;
-            
-            // 상세 비교 결과 로깅
-            logger.debug('첫 번째 엣지 속성 비교 상세', {
-              styleChanged,
-              animatedChanged, 
-              markerChanged,
-              settingsChanged,
-              typeChanged,
-              edgeTypeChanged,
-              firstEdgeChanged
-            });
-            
-            // 모든 엣지에 대한 유사한 비교 수행
-            hasChanges = updatedEdges.some((updatedEdge, index) => {
-              if (index >= state.edges.length) return true; // 새로운 엣지가 추가된 경우
-              
-              const originalEdge = state.edges[index];
-              
-              // 핵심 속성들만 비교 - 성능 최적화
-              return (
-                updatedEdge.animated !== originalEdge.animated ||
-                updatedEdge.type !== originalEdge.type ||
-                updatedEdge.style?.stroke !== originalEdge.style?.stroke ||
-                updatedEdge.style?.strokeWidth !== originalEdge.style?.strokeWidth ||
-                updatedEdge.data?.edgeType !== originalEdge.data?.edgeType ||
-                JSON.stringify(updatedEdge.markerEnd) !== JSON.stringify(originalEdge.markerEnd)
-              );
-            });
-            
-            // 첫 번째 엣지의 변경만으로도 전체 업데이트가 필요하면 최적화
-            hasChanges = hasChanges || firstEdgeChanged;
-            
-            logger.debug('엣지 변경 감지 결과', { 
-              hasChanges,
-              edgeCount: state.edges.length
-            });
-          } else {
-            // 엣지 수가 변경된 경우는 무조건 업데이트
-            hasChanges = state.edges.length !== updatedEdges.length;
-          }
-          
-          // 변경 사항이 있는 경우에만 상태 업데이트
-          if (hasChanges) {
-            logger.debug('엣지 스타일 변경 감지, 상태 업데이트');
-            set({ edges: updatedEdges });
-          } else {
-            logger.debug('엣지 스타일 변경 없음, 상태 업데이트 건너뜀');
-          }
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 중 오류:', error);
-        }
       },
       
       // 레이아웃 함수
@@ -549,44 +355,59 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         set({ reactFlowInstance: instance });
       },
       
-      // 엣지 생성 함수
-      createEdgeOnDrop: (sourceId, targetId) => {
-        const { settingsRef } = get();
+      // 엣지 스타일 업데이트 함수 - 설정 의존성 제거
+      updateEdgeStyles: (settings: Settings) => {
+        logger.debug('updateEdgeStyles 호출:', { settings });
         
-        const newEdge: Edge = {
-          id: `edge-${sourceId}-${targetId}`,
+        set(state => {
+          // 설정 파라미터를 직접 사용해 엣지 스타일 업데이트
+          const updatedEdges = applyIdeaMapEdgeSettings(state.edges, settings);
+          
+          logger.debug('엣지 스타일 업데이트 완료', { 
+            edgeCount: updatedEdges.length,
+            animated: settings.animated,
+            edgeColor: settings.edgeColor
+          });
+          
+          return { 
+            edges: updatedEdges,
+            hasUnsavedChanges: true
+          };
+        });
+      },
+      
+      // 엣지 생성 함수 - 기본 설정 사용
+      createEdgeOnDrop: (sourceId: string, targetId: string) => {
+        // DEFAULT_SETTINGS 사용하도록 수정
+        const edge: Edge = {
+          id: `e-${sourceId}-${targetId}-${Date.now()}`,
           source: sourceId,
           target: targetId,
           type: 'smoothstep',
-          animated: settingsRef?.animated || false,
+          animated: DEFAULT_SETTINGS.animated,
           style: {
-            stroke: settingsRef?.edgeColor || '#C1C1C1',
-            strokeWidth: settingsRef?.strokeWidth || 2,
+            stroke: DEFAULT_SETTINGS.edgeColor,
+            strokeWidth: DEFAULT_SETTINGS.strokeWidth,
           },
           markerEnd: {
             type: MarkerType.Arrow,
-            color: settingsRef?.edgeColor || '#C1C1C1',
-            width: settingsRef?.markerSize || 15,
-            height: settingsRef?.markerSize || 15,
+            color: DEFAULT_SETTINGS.edgeColor,
+            width: DEFAULT_SETTINGS.markerSize,
+            height: DEFAULT_SETTINGS.markerSize,
           },
         };
         
-        // 새 엣지를 상태에 추가
-        set(state => ({
-          edges: [...state.edges, newEdge],
-          hasUnsavedChanges: true
-        }));
-        
         logger.debug('드롭으로 엣지 생성:', { 
           sourceId, 
-          targetId, 
-          edgeId: newEdge.id 
+          targetId,
+          edgeId: edge.id,
+          edgeStyle: edge.style
         });
         
-        return newEdge;
+        return edge;
       },
       
-      // 변경 사항 추적 상태 및 함수
+      // 변경 사항 추적
       hasUnsavedChanges: false,
       setHasUnsavedChanges: (value) => set({ hasUnsavedChanges: value }),
       
@@ -620,38 +441,8 @@ export const useIdeaMapStore = create<IdeaMapState>()(
       
       // 추가된 상태 및 액션
       viewportToRestore: null,
-      isSettingsLoading: false,
-      settingsError: null,
       
-      // 서버 동기화 함수
-      loadIdeaMapSettingsFromServerIfAuthenticated: async (isAuthenticated, userId) => {
-        // 이 함수는 TanStack Query에서 처리하므로 제거됨
-        // 호환성을 위해 빈 함수로 유지
-        logger.debug('TanStack Query로 대체되는 함수 호출됨 - loadAndApplyIdeaMapSettings');
-      },
-      
-      // useIdeaMapUtils에서 이전된 액션들
-      loadAndApplyIdeaMapSettings: async (userId) => {
-        // 이 함수는 TanStack Query에서 처리하므로 제거됨
-        // 호환성을 위해 빈 함수로 유지
-        logger.debug('TanStack Query로 대체되는 함수 호출됨 - loadAndApplyIdeaMapSettings');
-      },
-      
-      updateAndSaveIdeaMapSettings: async (newSettings, userId) => {
-        // 이 함수는 TanStack Query에서 처리하므로 제거됨
-        // 호환성을 위해 최소한의 로컬 상태 업데이트만 유지
-        const currentSettings = get().settingsRef;
-        const updatedSettings = { ...currentSettings, ...newSettings };
-        
-        // 로컬 상태 업데이트만 수행
-        set({ settingsRef: updatedSettings });
-        
-        // 엣지 스타일 업데이트
-        get().updateEdgeStyles(updatedSettings);
-        
-        logger.debug('TanStack Query로 대체되는 함수 호출됨 - updateAndSaveIdeaMapSettings');
-      },
-      
+      // 저장 및 복원 액션
       saveViewport: () => {
         const { reactFlowInstance } = get();
         
@@ -728,32 +519,31 @@ export const useIdeaMapStore = create<IdeaMapState>()(
           const newEdge = addEdge({
             ...connection,
             type: 'custom', // 커스텀 엣지 타입 사용
-            animated: state.settingsRef?.animated || false,
+            animated: DEFAULT_SETTINGS.animated,
             
             // 스타일 직접 지정 - 미리보기 렌더링용
             style: {
-              strokeWidth: state.settingsRef?.strokeWidth,
-              stroke: state.settingsRef?.edgeColor,
+              strokeWidth: DEFAULT_SETTINGS.strokeWidth,
+              stroke: DEFAULT_SETTINGS.edgeColor,
             },
             
             // data 속성에 설정 정보 저장
             data: {
-              edgeType: state.settingsRef?.connectionLineType,
+              edgeType: DEFAULT_SETTINGS.connectionLineType,
               // 개별 설정을 전역 설정의 복사본으로 초기화
               // 향후 개별 설정이 구현되면 여기서 수정 가능
               settings: { 
-                ...state.settingsRef, // 전역 설정을 기본값으로 사용
+                ...DEFAULT_SETTINGS, // 기본 설정을 기본값으로 사용
               }
             },
             
             // 전역 설정에 따른 마커 설정
-            // TODO : 상수 삭제. 값을 읽어들이지 못하면 에러. 
-            markerEnd: state.settingsRef?.markerEnd ? {
-              type: state.settingsRef?.markerEnd,
-              color: state.settingsRef?.edgeColor,
-              width: state.settingsRef?.markerSize || 15, 
-              height: state.settingsRef?.markerSize || 15,
-            } : undefined,
+            markerEnd: {
+              type: MarkerType.Arrow,
+              color: DEFAULT_SETTINGS.edgeColor,
+              width: DEFAULT_SETTINGS.markerSize,
+              height: DEFAULT_SETTINGS.markerSize,
+            },
           }, state.edges);
           
           logger.debug('새 연결 생성:', { 
@@ -781,80 +571,37 @@ export const useIdeaMapStore = create<IdeaMapState>()(
         return false;
       },
 
-      updateAllEdgeStylesAction: (externalSettings, forceUpdate = false) => {
-        const state = get();
+      // 드롭 이벤트로 엣지 생성
+      createEdgeOnDropAction: (sourceId: string, targetId: string) => {
+        logger.debug('createEdgeOnDropAction 호출:', { sourceId, targetId });
         
-        // 설정 가져오기 (externalSettings 또는 settingsRef 사용)
-        const effectiveSettings = externalSettings || state.settingsRef;
-        
-        if (!effectiveSettings) {
-          logger.warn('updateAllEdgeStylesAction: 설정이 없음, 스타일 업데이트 불가');
-          return;
-        }
-        
-        // 엣지가 없거나 강제 업데이트가 아니면 건너뛰기
-        if (!forceUpdate && (!state.edges || state.edges.length === 0)) {
-          logger.debug('updateAllEdgeStylesAction: 엣지가 없고 forceUpdate가 false, 업데이트 건너뜀');
-          return;
-        }
-        
-        // 엣지 스타일 업데이트 로직
-        logger.debug('updateAllEdgeStylesAction: 엣지 스타일 업데이트 시작', { 
-          forceUpdate, 
-          settingsRef: !!effectiveSettings,
-          edgeCount: state.edges.length 
-        });
-        
-        get().updateEdgeStyles(effectiveSettings);
-      },
-
-      createEdgeOnDropAction: (sourceId, targetId) => {
-        const { settingsRef } = get();
-        
-        const newEdge: Edge = {
-          id: `edge-${sourceId}-${targetId}`,
+        const edge: Edge = {
+          id: `e-${sourceId}-${targetId}-${Date.now()}`,
           source: sourceId,
           target: targetId,
-          type: 'custom',
-          animated: settingsRef?.animated || false,
-          
-          // 스타일 직접 지정 - 미리보기 렌더링용
+          type: 'smoothstep',
+          animated: DEFAULT_SETTINGS.animated,
           style: {
-            strokeWidth: settingsRef?.strokeWidth,
-            stroke: settingsRef?.edgeColor,
+            stroke: DEFAULT_SETTINGS.edgeColor,
+            strokeWidth: DEFAULT_SETTINGS.strokeWidth,
           },
-          
-          // data 속성에 설정 정보 저장
-          data: {
-            edgeType: settingsRef?.connectionLineType,
-            // 개별 설정을 전역 설정의 복사본으로 초기화
-            // 향후 개별 설정이 구현되면 여기서 수정 가능
-            settings: { 
-              ...settingsRef, // 전역 설정을 기본값으로 사용
-            }
+          markerEnd: {
+            type: MarkerType.Arrow,
+            color: DEFAULT_SETTINGS.edgeColor,
+            width: DEFAULT_SETTINGS.markerSize,
+            height: DEFAULT_SETTINGS.markerSize,
           },
-          
-          // 전역 설정에 따른 마커 설정
-          markerEnd: settingsRef?.markerEnd ? {
-            type: settingsRef?.markerEnd,
-            color: settingsRef?.edgeColor,
-            width: settingsRef?.markerSize || 15,
-            height: settingsRef?.markerSize || 15,
-          } : undefined,
         };
         
-        set(state => ({
-          edges: [...state.edges, newEdge],
-          hasUnsavedChanges: true
-        }));
-        
-        logger.debug('드롭으로 엣지 생성:', { 
-          sourceId, 
-          targetId, 
-          edgeId: newEdge.id 
+        set(state => {
+          const newEdges = [...state.edges, edge];
+          return { 
+            edges: newEdges,
+            hasUnsavedChanges: true
+          };
         });
         
-        return newEdge;
+        return edge;
       },
       
       // 드래그 앤 드롭으로 새 노드 추가하기
@@ -1091,12 +838,10 @@ export const useIdeaMapStore = create<IdeaMapState>()(
     }),
     {
       name: 'ideamap-store',
-      // 설정 관련 데이터를 제외한 상태만 지속성 유지
       partialize: (state) => ({
-        ...state,
-        settingsRef: undefined, // settingsRef 저장 안 함 (TanStack Query가 책임짐)
-        // 기타 저장하지 않을 상태들
-        // ... existing code ...
+        edges: state.edges,
+        viewportToRestore: state.viewportToRestore,
+        nodePlacementRequest: state.nodePlacementRequest,
       }),
     }
   )

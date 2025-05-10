@@ -4,6 +4,8 @@
  * 역할: 엣지 생성 API 호출 및 쿼리 캐시 무효화 처리
  * 작성일: 2025-04-21
  * 수정일: 2025-04-21 : 새 엣지 생성 시 전역 엣지 설정 적용
+ * 수정일: 2025-05-21 : Zustand Store 의존성 제거 - RQ 설정 훅 사용
+ * 수정일: 2025-05-21 : 설정 객체 구조 접근 방식 수정
  */
 
 /**
@@ -17,7 +19,8 @@ import { toast } from 'sonner';
 
 import { EdgeInput } from '@/types/edge';
 import { createEdgeAPI } from '@/services/edgeService';
-import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings';
+import { DEFAULT_SETTINGS } from '@/lib/ideamap-utils';
 import createLogger from '@/lib/logger';
 
 const logger = createLogger('useCreateEdge');
@@ -28,49 +31,51 @@ const logger = createLogger('useCreateEdge');
  */
 export function useCreateEdge() {
   const queryClient = useQueryClient();
-  // useIdeaMapStore에서 현재 전역 엣지 설정 가져오기
-  const ideaMapSettings = useIdeaMapStore(state => state.ideaMapSettings);
+  // React Query 훅을 사용하여 설정 정보 가져오기
+  const { ideaMapSettings } = useIdeaMapSettings();
 
   return useMutation({
     mutationFn: async (edgeData: EdgeInput) => {
       logger.debug('엣지 생성 요청:', edgeData);
+      
+      // 설정 정보 액세스
+      const edgeSettings = ideaMapSettings?.edge || DEFAULT_SETTINGS;
       
       // 전역 엣지 스타일 설정을 새 엣지에 적용
       const enhancedEdgeData: EdgeInput = {
         ...edgeData,
         // 타입 설정
         type: 'custom',
-        // 애니메이션 설정
-        animated: ideaMapSettings.animated,
         // 스타일 설정
         style: {
           ...(edgeData.style || {}),
-          stroke: ideaMapSettings.edgeColor,
-          strokeWidth: ideaMapSettings.strokeWidth,
+          stroke: edgeSettings.edgeColor,
+          strokeWidth: edgeSettings.strokeWidth,
         },
         // 추가 데이터 설정
         data: {
           ...(edgeData.data || {}),
-          edgeType: ideaMapSettings.connectionLineType,
+          edgeType: edgeSettings.connectionLineType,
+          animated: edgeSettings.animated,
           settings: {
-            animated: ideaMapSettings.animated,
-            connectionLineType: ideaMapSettings.connectionLineType,
-            strokeWidth: ideaMapSettings.strokeWidth,
-            edgeColor: ideaMapSettings.edgeColor,
-            selectedEdgeColor: ideaMapSettings.selectedEdgeColor,
+            animated: edgeSettings.animated,
+            connectionLineType: edgeSettings.connectionLineType,
+            strokeWidth: edgeSettings.strokeWidth,
+            edgeColor: edgeSettings.edgeColor,
+            selectedEdgeColor: edgeSettings.selectedEdgeColor,
           }
         }
       };
       
       // 마커 설정 (있을 경우에만)
-      if (ideaMapSettings.markerEnd) {
+      if (edgeSettings.markerEnd) {
         enhancedEdgeData.data = {
           ...(enhancedEdgeData.data || {}),
           markerEnd: {
-            type: ideaMapSettings.markerEnd,
-            width: ideaMapSettings.markerSize,
-            height: ideaMapSettings.markerSize,
-            color: ideaMapSettings.edgeColor,
+            type: edgeSettings.markerEnd,
+            width: edgeSettings.markerSize,
+            height: edgeSettings.markerSize,
+            color: edgeSettings.edgeColor,
           }
         };
       }

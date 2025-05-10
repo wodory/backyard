@@ -19,6 +19,7 @@
  * 수정일: 2025-05-21 : 인증 디버깅을 위한 상세 로그 추가
  * 수정일: 2025-05-21 : 카드노드 미존재 시 상태 코드를 404에서 400으로 변경하고 에러 코드 명확화
  * 수정일: 2025-04-21 : source/target 조회 시 card 테이블 대신 cardNode 테이블 사용 및 검증 로직 개선
+ * 수정일: 2025-05-08 : animated 속성을 엣지 테이블에서 제거하고 설정에서 가져오도록 수정
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -50,7 +51,7 @@ interface EdgeRequest {
   sourceHandle?: string;
   targetHandle?: string;
   type?: string;
-  animated?: boolean;
+  // animated 필드는 더 이상 엣지에 저장되지 않고 설정에서만 관리됨
   style?: Record<string, any>;
   data?: Record<string, any>;
   [key: string]: any;
@@ -74,18 +75,43 @@ export async function GET(request: NextRequest) {
   try {
     logger.debug(`Fetching edges for projectId: ${projectId}`);
     // @ts-ignore - Prisma 클라이언트 타입 문제 해결
-    const edges = await prisma.edge.findMany({
+    const edgesFromDb = await prisma.edge.findMany({
       where: { 
         userId, 
         projectId 
       },
     });
     
-    logger.debug(`Found ${edges.length} edges for projectId: ${projectId}`);
-    return NextResponse.json(edges);
+    logger.debug(`Found ${edgesFromDb.length} edges for projectId: ${projectId}`);
+    
+    // Prisma로 가져온 데이터를 안전하게 가공하여 반환
+    // animated 속성이 제거되어 있으므로, 클라이언트에서 참조할 때 오류가 발생하지 않도록 명시적으로 처리
+    const safeEdges = edgesFromDb.map(edge => {
+      // JSON으로 직렬화하고 다시 파싱하여 Prisma 객체에서 일반 객체로 변환
+      // 이는 Prisma가 반환하는 객체에 프록시 속성이 있을 수 있기 때문
+      const safeEdge = JSON.parse(JSON.stringify(edge));
+      
+      // 명시적으로 animated 속성이 없는 것을 확인
+      if ('animated' in safeEdge) {
+        delete safeEdge.animated;
+      }
+      
+      return safeEdge;
+    });
+    
+    logger.debug(`Processed ${safeEdges.length} edges for response`);
+    return NextResponse.json(safeEdges);
   } catch (error) {
     logger.error(`Error fetching edges for projectId ${projectId}:`, error);
-    return NextResponse.json({ error: 'Failed to fetch edges' }, { status: 500 });
+    // 오류 세부 정보 추가
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace';
+    logger.error('Detailed error info:', { message: errorMessage, stack: errorStack });
+    
+    return NextResponse.json({ 
+      error: 'Failed to fetch edges',
+      details: errorMessage
+    }, { status: 500 });
   }
 }
 
@@ -295,7 +321,6 @@ export async function POST(request: NextRequest) {
       sourceHandle: edge.sourceHandle,
       targetHandle: edge.targetHandle,
       type: edge.type,
-      animated: edge.animated,
       style: edge.style || Prisma.JsonNull,  // Prisma.JsonNull 사용
       data: edge.data || Prisma.JsonNull     // Prisma.JsonNull 사용
     }));

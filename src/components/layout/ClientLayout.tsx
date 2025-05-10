@@ -9,6 +9,7 @@
  * 수정일: 2025-04-29 : 초기 프로젝트 로딩 및 activeProjectId 설정 로직 추가
  * 수정일: 2025-04-29 : Provider 패턴 적용 - 인증 및 프로젝트 데이터가 로드된 후 자식 컴포넌트 렌더링
  * 수정일: 2025-04-30 : 초기화 시 아이디어맵 설정 로드 및 Zustand 스토어 저장 기능 추가 (Task 3.1)
+ * 수정일: 2025-05-21 : Zustand Store 의존성 제거 - React Query가 설정 데이터의 단일 진실 공급원으로 사용
  */
 
 'use client';
@@ -19,11 +20,9 @@ import { Toaster } from "sonner";
 
 import InitDatabase from "@/components/debug/InitDatabase";
 import { useAuth } from '@/hooks/useAuth';
-import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings';
 import createLogger from '@/lib/logger';
 import { useAuthStore, selectUserId } from '@/store/useAuthStore';
 import { useAppStore } from '@/store/useAppStore';
-import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 
 // 모듈별 로거 생성
 const logger = createLogger('ClientLayout');
@@ -81,31 +80,11 @@ export function ClientLayout({ children }: { children: ReactNode }) {
   const activeProjectId = useAppStore(state => state.activeProjectId);
   const isAppLoading = useAppStore(state => state.isLoading);
 
-  // IdeaMapStore에서 설정 관련 상태 및 액션 가져오기
-  const setIdeaMapSettings = useIdeaMapStore(state => state.setIdeaMapSettings);
-
-  // 아이디어맵 설정 쿼리 훅 사용
-  const {
-    data: ideaMapSettings,
-    isSuccess: isSettingsSuccess,
-    isLoading: isSettingsLoading,
-    error: settingsError
-  } = useIdeaMapSettings(userId || '');
-
   // 프로젝트 로드 여부 확인
   const projectsLoaded = projects.length > 0 && activeProjectId !== null;
 
   // 전체 로딩 상태 계산
   const isLoading = isAuthLoading || isAppLoading || (!isInitialized && !initError);
-
-  // 설정 로드 효과
-  useEffect(() => {
-    if (userId && isSettingsSuccess && ideaMapSettings) {
-      logger.info(`[ClientLayout] 아이디어맵 설정 로드 완료 (사용자 ID: ${userId})`);
-      // Zustand 스토어에 설정 저장
-      setIdeaMapSettings(ideaMapSettings);
-    }
-  }, [userId, isSettingsSuccess, ideaMapSettings, setIdeaMapSettings]);
 
   useEffect(() => {
     logger.info('클라이언트 레이아웃 마운트');
@@ -171,13 +150,8 @@ export function ClientLayout({ children }: { children: ReactNode }) {
     return <ErrorScreen message={`인증 중 오류가 발생했습니다: ${authError.message}`} />;
   }
 
-  // 설정 로드 중 에러 발생 시 로깅 (UI는 중단하지 않음)
-  if (settingsError) {
-    logger.error('[ClientLayout] 설정 로드 중 에러 발생:', settingsError);
-  }
-
   // 로딩 중일 때 로딩 화면 표시
-  if (isLoading || (userId && isSettingsLoading)) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 

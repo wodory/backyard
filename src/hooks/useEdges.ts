@@ -16,6 +16,7 @@
  * 수정일: 2025-05-21 : useDeleteMultipleEdges 뮤테이션 훅 추가 - 다중 엣지 동시 삭제 지원
  * 수정일: 2025-04-21 : source/target 필드명을 sourceCardNodeId/targetCardNodeId로 변경하여 Prisma 스키마와 일치시킴
  * 수정일: 2025-04-21 : DB Edge 타입과 ReactFlow Edge 타입의 명확한 구분
+ * 수정일: 2025-05-08 : animated 속성을 엣지 테이블에서 제거하고 설정에서 가져오도록 수정
  */
 
 /**
@@ -45,11 +46,11 @@ const transformDbEdgeToFlowEdge = (dbEdge: DBEdge): ReactFlowEdge => ({
     source: dbEdge.sourceCardNodeId, // DB의 sourceCardNodeId를 React Flow의 source로 변환
     target: dbEdge.targetCardNodeId, // DB의 targetCardNodeId를 React Flow의 target으로 변환
     type: dbEdge.type || 'custom', // dbEdge에서 type 가져오거나 'custom' 사용
-    animated: dbEdge.animated || false,
     style: dbEdge.style || undefined,
     data: dbEdge.data || undefined,
     sourceHandle: dbEdge.sourceHandle,
     targetHandle: dbEdge.targetHandle,
+    // animated 속성은 더 이상 DB에서 가져오지 않음. 이 속성은 설정에서 가져와 적용됨
 });
 
 /**
@@ -65,7 +66,6 @@ export interface CreateEdgeInput {
   targetHandle?: string; // 타겟 노드의 핸들 ID
   projectId: string;
   type?: string;
-  animated?: boolean;
   style?: Record<string, any>;
   data?: Record<string, any>;
 }
@@ -79,7 +79,6 @@ const mapToEdgeInput = (input: CreateEdgeInput): EdgeInput => {
     sourceHandle: input.sourceHandle,
     targetHandle: input.targetHandle,
     type: input.type,
-    animated: input.animated,
     style: input.style,
     data: input.data
   };
@@ -233,7 +232,6 @@ export function useCreateEdge(): UseMutationResult<DBEdge[], Error, CreateEdgeIn
         sourceHandle: newEdgeData.sourceHandle,
         targetHandle: newEdgeData.targetHandle,
         type: newEdgeData.type || 'custom',
-        animated: newEdgeData.animated || false,
         style: newEdgeData.style || {},
         data: newEdgeData.data || {},
       };

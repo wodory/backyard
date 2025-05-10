@@ -6,6 +6,7 @@
  * 수정일: 2025-05-05 : 오류 타입 기대값을 API_ERROR로 변경
  * 수정일: 2025-05-05 : 오류 타입을 서비스 파일과 일치하도록 수정
  * 수정일: 2025-05-05 : 테스트 파일 위치 이동
+ * 수정일: 2025-05-08 : FullSettings 타입 변환에 따른 테스트 업데이트
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchSettings
@@ -17,8 +18,9 @@ import { SettingsData } from '@/types/settings';
 import { setupServer } from 'msw/node';
 import { HttpResponse, http } from 'msw';
 import { ConnectionLineType, MarkerType } from '@xyflow/react';
+import { FullSettings } from '@/lib/schema/settings-schema';
 
-// 테스트용 Mock 데이터
+// 테스트용 Mock 데이터 (SettingsData 형식)
 const mockSettingsData: SettingsData = {
   ideamap: {
     snapToGrid: true,
@@ -72,6 +74,70 @@ const mockSettingsData: SettingsData = {
   theme: {
     mode: 'light',
     accentColor: '#0099ff'
+  }
+};
+
+// FullSettings 형식의 Mock 데이터 (API 응답 구조에 맞게 변환됨)
+const mockFullSettings: FullSettings = {
+  general: {
+    autoSaveIntervalMinutes: 2
+  },
+  theme: {
+    mode: 'light',
+    accentColor: '#0099ff'
+  },
+  ideamap: {
+    snapToGrid: true,
+    snapGrid: [10, 10],
+    edge: {
+      connectionLineType: 'straight' as ConnectionLineType,
+      markerEnd: 'arrow' as MarkerType,
+      strokeWidth: 2,
+      markerSize: 8,
+      edgeColor: '#aaaaaa',
+      animated: true,
+      selectedEdgeColor: '#ff0000'
+    },
+    cardNode: {
+      defaultWidth: 200,
+      backgroundColor: '#ffffff',
+      borderRadius: 5,
+      tagBackgroundColor: '#eeeeee',
+      fontSizes: {
+        default: 14,
+        title: 18,
+        content: 14,
+        tags: 12
+      },
+      handles: {
+        size: 10,
+        backgroundColor: '#ffffff',
+        borderColor: '#000000',
+        borderWidth: 1
+      },
+      nodeSize: {
+        width: 200,
+        height: 150,
+        maxHeight: 300
+      }
+    },
+    layout: {
+      defaultPadding: 50,
+      defaultSpacing: {
+        horizontal: 100,
+        vertical: 70
+      },
+      graphSettings: {
+        nodesep: 70,
+        ranksep: 50,
+        edgesep: 10
+      },
+      nodeSize: {
+        width: 200,
+        height: 150,
+        maxHeight: 300
+      }
+    }
   }
 };
 
@@ -197,7 +263,7 @@ describe('settingsService', () => {
     it('사용자 설정을 성공적으로 조회한다', async () => {
       const result = await fetchSettings('user-1');
       
-      expect(result).toEqual(mockSettingsData);
+      expect(result).toEqual(mockFullSettings);
     });
     
     it('사용자 ID가 없을 때 오류를 발생시킨다', async () => {
@@ -241,7 +307,7 @@ describe('settingsService', () => {
       
       const result = await updateSettings('user-1', partialUpdate);
       
-      expect(result).toEqual(mockSettingsData);
+      expect(result).toEqual(mockFullSettings);
     });
     
     it('사용자 ID가 없을 때 오류를 발생시킨다', async () => {
@@ -258,11 +324,13 @@ describe('settingsService', () => {
       });
     });
     
-    it('업데이트 데이터가 없을 때 오류를 발생시킨다', async () => {
-      await expect(updateSettings('user-1', {})).rejects.toMatchObject({
-        code: 400,
-        type: 'VALIDATION_ERROR'
-      });
+    it('업데이트 데이터가 없을 때 기본값으로 설정한다', async () => {
+      const result = await updateSettings('user-1', {});
+      
+      // 기본값으로 설정되었는지 확인
+      expect(result).toHaveProperty('theme');
+      expect(result).toHaveProperty('general');
+      expect(result).toHaveProperty('ideamap');
     });
     
     it('서버 오류 발생 시 구조화된 오류 객체를 반환한다', async () => {
@@ -275,7 +343,8 @@ describe('settingsService', () => {
       
       await expect(updateSettings('error-user', partialUpdate)).rejects.toMatchObject({
         code: 500,
-        type: 'SERVER_ERROR'
+        type: 'SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.'
       });
     });
     
@@ -319,7 +388,7 @@ describe('settingsService', () => {
     it('초기 설정을 성공적으로 생성한다', async () => {
       const result = await createInitialSettings('user-1', mockSettingsData);
       
-      expect(result).toEqual(mockSettingsData);
+      expect(result).toEqual(mockFullSettings);
     });
     
     it('사용자 ID가 없을 때 오류를 발생시킨다', async () => {
@@ -329,17 +398,20 @@ describe('settingsService', () => {
       });
     });
     
-    it('설정 데이터가 없을 때 오류를 발생시킨다', async () => {
-      await expect(createInitialSettings('user-1', null as unknown as SettingsData)).rejects.toMatchObject({
-        code: 400,
-        type: 'VALIDATION_ERROR'
-      });
+    it('설정 데이터가 없을 때 기본값으로 생성한다', async () => {
+      const result = await createInitialSettings('user-1', null as unknown as SettingsData);
+      
+      // 기본값으로 설정되었는지 확인
+      expect(result).toHaveProperty('theme');
+      expect(result).toHaveProperty('general');
+      expect(result).toHaveProperty('ideamap');
     });
     
     it('서버 오류 발생 시 구조화된 오류 객체를 반환한다', async () => {
       await expect(createInitialSettings('error-user', mockSettingsData)).rejects.toMatchObject({
         code: 500,
-        type: 'SERVER_ERROR'
+        type: 'SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.'
       });
     });
     

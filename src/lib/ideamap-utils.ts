@@ -285,13 +285,14 @@ export function applyStylePriority<T>(
  */
 export function mergeEdgeStyles(
   props: EdgeProps,
-  globalSettings: Record<string, any>,
+  globalSettings: { edge: Record<string, any> },
   data?: { settings?: Record<string, any> }
 ): {
   edgeStyle: CSSProperties;
   effectiveEdgeType: ConnectionLineType;
   isAnimated: boolean;
   markerEndType: MarkerType | null;
+  markerSize: number;
 } {
   // 개별 엣지 설정 (아직 미구현 - 향후 확장 가능)
   const individualSettings = data?.settings || {};
@@ -304,31 +305,52 @@ export function mergeEdgeStyles(
   
   const effectiveEdgeType = applyStylePriority<ConnectionLineType>(
     propsEdgeType,
-    globalSettings.connectionLineType as ConnectionLineType,
+    globalSettings.edge.connectionLineType as ConnectionLineType,
     individualSettings.connectionLineType as ConnectionLineType,
     ConnectionLineType.Bezier
   );
+
+  // 애니메이션 여부 결정 - 직접 설정값을 확인
+  const propsAnimated = props.animated as boolean | undefined;
+  const globalAnimated = globalSettings.edge.animated as boolean | undefined; 
+  const individualAnimated = individualSettings.animated as boolean | undefined;
   
-  // 애니메이션 여부 결정
-  const isAnimated = applyStylePriority<boolean>(
-    props.animated,
-    globalSettings.animated,
-    individualSettings.animated,
-    false
-  );
+  // isAnimated 결정 로직 - 우선순위 명확하게 설정
+  const isAnimated = individualAnimated !== undefined ? individualAnimated : 
+                     globalAnimated !== undefined ? globalAnimated :
+                     propsAnimated !== undefined ? propsAnimated : 
+                     false;
+
+  // 애니메이션 설정 변경이 있는 경우에만 로깅 (많은 로그 제거)
+  const animatedChanged = props.animated !== isAnimated;
+  if (animatedChanged) {
+    logger.debug('animated 속성 변경 감지:', {
+      엣지ID: props.id,
+      기존값: props.animated,
+      새값: isAnimated
+    });
+  }
   
   // 마커 타입 결정
   const markerEndType = applyStylePriority<MarkerType | null>(
     (props.markerEnd as any)?.type as MarkerType,
-    globalSettings.markerEnd as MarkerType,
+    globalSettings.edge.markerEnd as MarkerType,
     individualSettings.markerEnd as MarkerType,
     null
+  );
+
+  // 마커 크기 결정
+  const markerSize = applyStylePriority<number>(
+    (props.markerEnd as any)?.width as number,
+    globalSettings.edge.markerSize,
+    individualSettings.markerSize,
+    20 // 기본 마커 크기
   );
   
   // 선 두께 결정
   const strokeWidth = applyStylePriority<number>(
     props.style?.strokeWidth as number,
-    globalSettings.strokeWidth,
+    globalSettings.edge.strokeWidth,
     individualSettings.strokeWidth,
     2
   );
@@ -337,13 +359,13 @@ export function mergeEdgeStyles(
   const edgeColor = selected 
     ? applyStylePriority<string>(
         props.style?.stroke as string,
-        globalSettings.selectedEdgeColor,
+        globalSettings.edge.selectedEdgeColor,
         individualSettings.selectedEdgeColor,
         '#FF0072'
       )
     : applyStylePriority<string>(
         props.style?.stroke as string,
-        globalSettings.edgeColor,
+        globalSettings.edge.edgeColor,
         individualSettings.edgeColor,
         '#C1C1C1'
       );
@@ -354,12 +376,24 @@ export function mergeEdgeStyles(
     stroke: edgeColor,
     transition: 'stroke 0.2s, stroke-width 0.2s',
   };
+
+  // 디버깅을 위한 로깅 추가
+  logger.debug('엣지 스타일 계산 결과:', {
+    엣지ID: props.id,
+    선택상태: selected,
+    색상: edgeColor,
+    선두께: strokeWidth,
+    마커타입: markerEndType,
+    마커크기: markerSize,
+    애니메이션: isAnimated
+  });
   
   return {
     edgeStyle,
     effectiveEdgeType,
     isAnimated,
-    markerEndType
+    markerEndType,
+    markerSize
   };
 }
 
@@ -370,46 +404,44 @@ export function mergeEdgeStyles(
  * 설정 우선순위:
  * 개별값 > 사용자 설정값 > props > 기본값
  */
-export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edge[] {
-  // 진단용 로그 추가: 설정 값 확인
-  logger.debug('applyIdeaMapEdgeSettings 호출됨', {
-    settingsInput: {
-      strokeWidth: settings.strokeWidth,
-      edgeColor: settings.edgeColor,
-      connectionLineType: settings.connectionLineType,
-      animated: settings.animated,
-      markerEnd: settings.markerEnd
-    },
-    edgeCount: edges.length
+export function applyIdeaMapEdgeSettings(edges: Edge[], settings: { edge: Record<string, any> }): Edge[] {
+  // 진단용 로그 추가: 설정 값 확인 (간결하게 수정)
+  logger.debug('엣지 스타일 업데이트 시작', {
+    엣지수: edges.length,
+    애니메이션설정: settings.edge.animated
   });
-  
-  if (edges.length > 0) {
-    logger.debug('첫 번째 엣지 원본 상태 확인', {
-      id: edges[0].id,
-      style: edges[0].style,
-      animated: edges[0].animated,
-      type: edges[0].type,
-      data: edges[0].data
-    });
-  }
   
   // 각 엣지에 새 설정을 적용
   const updatedEdges = edges.map(edge => {
+    // animated 속성 값을 직접 추출
+    const currentAnimated = 'animated' in edge ? edge.animated : false;
+    
+    // 설정값 (새로운 animated 값) 추출
+    const settingsAnimated = settings.edge.animated;
+    
+    // animated 값이 변경되었는지 확인 (변경된 경우만 로그)
+    const animatedChanged = currentAnimated !== settingsAnimated;
+    if (animatedChanged) {
+      logger.debug(`엣지 ${edge.id}의 animated 속성 변경:`, {
+        이전값: currentAnimated,
+        새값: settingsAnimated
+      });
+    }
+    
     // ReactFlow props 형태로 변환하여 mergeEdgeStyles에 전달
+    // @ts-ignore - 타입 호환성 이슈 제거
     const edgeProps: EdgeProps = {
       id: edge.id,
       source: edge.source,
       target: edge.target,
       style: edge.style,
       selected: edge.selected,
-      animated: edge.animated,
-      markerEnd: edge.markerEnd,
-      type: edge.type,
+      animated: currentAnimated, // 현재 animated 값 전달
       data: edge.data
     };
     
     // 스타일 병합 유틸리티 사용
-    const { edgeStyle, effectiveEdgeType, isAnimated, markerEndType } = 
+    const { edgeStyle, effectiveEdgeType, isAnimated, markerEndType, markerSize } = 
       mergeEdgeStyles(edgeProps, settings, edge.data);
     
     // 업데이트된 엣지 생성
@@ -419,6 +451,7 @@ export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edg
       source: edge.source,
       target: edge.target,
       type: 'custom',
+      // animated 속성은 항상 설정에서 가져온 값으로 설정
       animated: isAnimated,
       style: edgeStyle,
       data: {
@@ -430,11 +463,11 @@ export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edg
           // 이는 CustomEdge가 렌더링 시 이 값들을 참조할 수 있게 함
           animated: isAnimated,
           connectionLineType: effectiveEdgeType,
-          edgeColor: settings.edgeColor,
-          selectedEdgeColor: settings.selectedEdgeColor,
+          edgeColor: settings.edge.edgeColor,
+          selectedEdgeColor: settings.edge.selectedEdgeColor,
           strokeWidth: edgeStyle.strokeWidth,
           markerEnd: markerEndType,
-          markerSize: settings.markerSize
+          markerSize: markerSize
         }
       }
     };
@@ -444,8 +477,8 @@ export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edg
       // @ts-ignore - 마커 타입 호환성 이슈. 추후 타입 정의 개선 필요
       updatedEdge.markerEnd = {
         type: markerEndType,
-        width: settings.markerSize,
-        height: settings.markerSize,
+        width: markerSize,
+        height: markerSize,
         color: edgeStyle.stroke
       };
     } else {
@@ -455,27 +488,21 @@ export function applyIdeaMapEdgeSettings(edges: Edge[], settings: Settings): Edg
     return updatedEdge;
   });
   
-  // 처리 완료된 첫 번째 엣지 확인
-  if (updatedEdges.length > 0) {
-    logger.debug('첫 번째 엣지 스타일 적용 후 상태', {
-      id: updatedEdges[0].id,
-      style: updatedEdges[0].style,
-      animated: updatedEdges[0].animated,
-      type: updatedEdges[0].type,
-      data: updatedEdges[0].data,
-      markerEnd: updatedEdges[0].markerEnd
-    });
+  // 처리 완료된 첫 번째 엣지 확인 (변경사항이 있는 경우만 로그)
+  if (updatedEdges.length > 0 && edges.length > 0) {
+    const firstOrig = edges[0];
+    const firstUpdated = updatedEdges[0];
     
-    // 원본과 비교 - 무엇이 변경되었는지 명확히 확인
-    if (edges.length > 0) {
-      const firstOrig = edges[0];
-      const firstUpdated = updatedEdges[0];
-      
-      logger.debug('첫 번째 엣지 스타일 변경 확인', {
-        styleChanged: JSON.stringify(firstOrig.style) !== JSON.stringify(firstUpdated.style),
-        animatedChanged: firstOrig.animated !== firstUpdated.animated,
-        typeChanged: firstOrig.type !== firstUpdated.type,
-        dataSettingsChanged: JSON.stringify(firstOrig.data?.settings) !== JSON.stringify(firstUpdated.data?.settings)
+    // 먼저 animated 속성 비교
+    const origAnimated = 'animated' in firstOrig ? firstOrig.animated : false;
+    const updatedAnimated = firstUpdated.animated;
+    
+    // 변경이 있는 경우만 로깅
+    if (origAnimated !== updatedAnimated) {
+      logger.debug('엣지 애니메이션 상태 변경:', {
+        엣지ID: firstOrig.id,
+        이전값: origAnimated,
+        새값: updatedAnimated
       });
     }
   }

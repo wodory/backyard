@@ -4,6 +4,7 @@
  * 역할: API 및 프론트엔드에서 사용하는 엣지 관련 타입 제공
  * 작성일: 2025-04-21
  * 수정일: 2025-04-21 : source/target 필드명을 sourceCardNodeId/targetCardNodeId로 변경하여 Prisma 스키마와 일치시킴
+ * 수정일: 2025-05-08 : animated 속성을 엣지 테이블에서 제거하고 설정에서 가져오도록 수정
  */
 
 /**
@@ -18,7 +19,6 @@ export interface Edge {
   sourceHandle: string | null;
   targetHandle: string | null;
   type: string | null;
-  animated: boolean | null;
   style: Record<string, any> | null;
   data: Record<string, any> | null;
   createdAt: string;
@@ -35,7 +35,6 @@ export interface EdgeInput {
   sourceHandle?: string;
   targetHandle?: string;
   type?: string;
-  animated?: boolean;
   style?: Record<string, any>;
   data?: Record<string, any>;
 }
@@ -49,7 +48,6 @@ export interface EdgePatch {
   sourceHandle?: string;
   targetHandle?: string;
   type?: string;
-  animated?: boolean;
   style?: Record<string, any>;
   data?: Record<string, any>;
 } 

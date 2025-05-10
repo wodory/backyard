@@ -7,6 +7,8 @@
  * 수정일: 2025-05-21 : Three-Layer-Standard 준수를 위한 리팩토링 - Zustand 직접 업데이트 제거
  * 수정일: 2025-05-23 : userId를 useAuthStore에서 직접 가져오도록 수정
  * 수정일: 2025-05-06 : React.memo 적용하여 불필요한 리렌더링 방지
+ * 수정일: 2025-04-21 : edge 프로퍼티 내부에 모든 엣지 설정 배치하도록 수정
+ * 수정일: 2025-05-13 : 엣지 애니메이션 설정 버그 수정
  */
 
 'use client';
@@ -64,15 +66,11 @@ import {
   EDGE_COLOR_OPTIONS,
   EDGE_ANIMATION_OPTIONS
 } from '@/lib/ideamap-constants';
-// import {
-//   IDEAMAP_LAYOUT_STORAGE_KEY,
-//   IDEAMAP_EDGES_STORAGE_KEY,
-//   IDEAMAP_TRANSFORM_STORAGE_KEY
-// } from '@/lib/ideamap-constants';
-// import { IdeaMapSettings } from '@/lib/ideamap-utils';
+// import { EdgeSettings, IdeaMapSettings as SchemaIdeaMapSettings } from '@/lib/schema/settings-schema';
+import { IdeaMapSettings as SchemaIdeaMapSettings } from '@/lib/schema/settings-schema';
 import createLogger from '@/lib/logger';
 import { useAppStore, selectActiveProject, Project } from '@/store/useAppStore';
-import { useIdeaMapStore } from '@/store/useIdeaMapStore';
+// import { useIdeaMapStore } from '@/store/useIdeaMapStore';
 import { useAuthStore, selectUserId } from '@/store/useAuthStore';
 
 // 모듈별 로거 생성
@@ -174,17 +172,10 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
       settings: {
         snapGrid: [gridSize, gridSize] as [number, number],
         snapToGrid: gridSize > 0
-      }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('그리드 설정이 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('그리드 설정이 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -199,17 +190,14 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { connectionLineType: value as ConnectionLineType }
+      settings: {
+        edge: {
+          connectionLineType: value as ConnectionLineType
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('연결선 스타일이 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('연결선 스타일이 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -224,17 +212,14 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { markerEnd: value === 'null' ? null : value as MarkerType }
+      settings: {
+        edge: {
+          markerEnd: value === 'null' ? null : value as MarkerType
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('화살표 스타일이 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('화살표 스타일이 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -251,7 +236,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { snapToGrid: newValue }
+      settings: { snapToGrid: newValue } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
         try {
@@ -275,17 +260,14 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { strokeWidth: newValue }
+      settings: {
+        edge: {
+          strokeWidth: newValue
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('연결선 두께가 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('연결선 두께가 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -302,17 +284,14 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { markerSize: newValue }
+      settings: {
+        edge: {
+          markerSize: newValue
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('화살표 크기가 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('화살표 크기가 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -325,7 +304,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     if (!userId) return;
 
     // 성능 최적화: 값이 동일하면 서버 호출 건너뛰기
-    const currentEdgeColor = useIdeaMapStore.getState().ideaMapSettings.edgeColor;
+    const currentEdgeColor = ideaMapSettings?.edge?.edgeColor;
     if (currentEdgeColor === value) {
       logger.debug('동일한 색상값으로 변경 시도, 업데이트 건너뜀');
       return;
@@ -334,24 +313,20 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { edgeColor: value }
+      settings: {
+        edge: {
+          edgeColor: value
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          // 성능 최적화: state 직접 접근 없이 함수만 가져오기
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('연결선 색상이 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('연결선 색상이 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
       }
     });
-  }, [updateSettings, userId]);
+  }, [updateSettings, userId, ideaMapSettings]);
 
   // 선택된 연결선 색상 변경 핸들러
   const handleSelectedEdgeColorChange = useCallback((value: string) => {
@@ -360,17 +335,14 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { selectedEdgeColor: value }
+      settings: {
+        edge: {
+          selectedEdgeColor: value
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success('선택된 연결선 색상이 저장되었습니다.');
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        toast.success('선택된 연결선 색상이 저장되었습니다.');
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
@@ -384,26 +356,30 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
 
     const newValue = value === 'true';
 
+    // 애니메이션 설정이 변경되는 경우에만 로깅
+    logger.debug('애니메이션 설정 변경', {
+      새값: newValue,
+      현재값: ideaMapSettings?.edge?.animated
+    });
+
     // 서버 상태만 업데이트 (TanStack Query → Service)
     updateSettings({
       userId: userId,
-      settings: { animated: newValue }
+      settings: {
+        edge: {
+          animated: newValue
+        }
+      } as Partial<SchemaIdeaMapSettings>
     }, {
       onSuccess: () => {
-        // 성공 시 현재 맵의 모든 엣지에 새 스타일 적용
-        try {
-          const updateAllEdgeStyles = useIdeaMapStore.getState().updateAllEdgeStylesAction;
-          updateAllEdgeStyles();
-          toast.success(`연결선 애니메이션이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
-        } catch (error) {
-          logger.error('엣지 스타일 업데이트 실패:', error);
-        }
+        // 성공 메시지만 표시
+        toast.success(`연결선 애니메이션이 ${newValue ? '활성화' : '비활성화'}되었습니다.`);
       },
       onError: (error) => {
         toast.error(`설정 저장 중 오류 발생: ${error.message}`);
       }
     });
-  }, [updateSettings, userId]);
+  }, [updateSettings, userId, ideaMapSettings, logger]);
 
   // 내보내기 핸들러
   const handleExport = useCallback(() => {
@@ -438,6 +414,17 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
       logger.error('프로젝트가 없습니다.');
     }
   }, [projects.length, createProject]);
+
+  // 디버깅 핸들러 추가 - 애니메이션 설정값 확인
+  const handleDebugSettings = useCallback(() => {
+    if (!ideaMapSettings) return;
+
+    // 현재 설정값 로깅
+    logger.debug('현재 애니메이션 설정값', {
+      animated: ideaMapSettings.edge?.animated,
+      설정구조: ideaMapSettings
+    });
+  }, [ideaMapSettings]);
 
   // 로딩 중이면 로딩 표시
   if (isLoading) {
@@ -552,7 +539,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.connectionLineType}
+                      value={ideaMapSettings.edge?.connectionLineType}
                       onValueChange={isPending ? undefined : handleConnectionTypeChange}
                     >
                       {CONNECTION_TYPE_OPTIONS.map(option => (
@@ -572,7 +559,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.markerEnd === null ? 'null' : ideaMapSettings.markerEnd}
+                      value={ideaMapSettings.edge?.markerEnd === null ? 'null' : ideaMapSettings.edge?.markerEnd}
                       onValueChange={isPending ? undefined : handleMarkerTypeChange}
                     >
                       {MARKER_TYPE_OPTIONS.map(option => (
@@ -592,7 +579,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.strokeWidth?.toString()}
+                      value={ideaMapSettings.edge?.strokeWidth?.toString()}
                       onValueChange={isPending ? undefined : handleStrokeWidthChange}
                     >
                       {STROKE_WIDTH_OPTIONS.map(option => (
@@ -612,7 +599,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.markerSize?.toString()}
+                      value={ideaMapSettings.edge?.markerSize?.toString()}
                       onValueChange={isPending ? undefined : handleMarkerSizeChange}
                     >
                       {MARKER_SIZE_OPTIONS.map(option => (
@@ -632,7 +619,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.edgeColor}
+                      value={ideaMapSettings.edge?.edgeColor}
                       onValueChange={isPending ? undefined : handleEdgeColorChange}
                     >
                       {EDGE_COLOR_OPTIONS.map(option => (
@@ -655,7 +642,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.selectedEdgeColor}
+                      value={ideaMapSettings.edge?.selectedEdgeColor}
                       onValueChange={isPending ? undefined : handleSelectedEdgeColorChange}
                     >
                       {EDGE_COLOR_OPTIONS.map(option => (
@@ -680,7 +667,7 @@ const ProjectToolbar = React.memo(function ProjectToolbarInner() {
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuRadioGroup
-                      value={ideaMapSettings.animated ? 'true' : 'false'}
+                      value={ideaMapSettings.edge?.animated ? 'true' : 'false'}
                       onValueChange={isPending ? undefined : handleAnimatedChange}
                     >
                       {EDGE_ANIMATION_OPTIONS.map(option => (

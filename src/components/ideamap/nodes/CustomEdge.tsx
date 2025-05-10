@@ -18,10 +18,11 @@
  * 수정일: 2025-04-21 : lint 에러 수정 - mergeEdgeStyles 호출 시 전체 EdgeProps 객체 전달
  * 수정일: 2025-04-21 : type 속성 제거 관련 린트 에러 수정
  * 수정일: 2025-04-21 : animated 속성 오류 수정 - boolean 대신 className으로만 처리
+ * 수정일: 2025-05-08 : animated 속성을 엣지 테이블에서 제거하고 설정에서만 가져오도록 수정
  */
 
 import React, { useMemo } from 'react';
-import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath } from '@xyflow/react';
+import { BaseEdge, EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath, ConnectionLineType } from '@xyflow/react';
 
 import { useIdeaMapSettings } from '@/hooks/useIdeaMapSettings'; // React Query 훅으로 변경
 import { mergeEdgeStyles } from '@/lib/ideamap-utils';
@@ -55,26 +56,15 @@ function CustomEdge({
   // TanStack Query를 통해 설정 정보 가져오기
   const { ideaMapSettings, isLoading, isError } = useIdeaMapSettings();
 
-  // 개발 환경에서만 디버깅 로그
+  // 개발 환경에서만 간소화된 디버깅 로그 (중요한 엣지 정보만 로깅)
   if (process.env.NODE_ENV === 'development') {
-    logger.debug('엣지 렌더링', {
-      id: restProps.id,
-      source: restProps.source,
-      target: restProps.target,
-      reactflow_current_data: restProps.data?.settings, // 개별 엣지 설정
-      globalSettings: ideaMapSettings // 전역 설정(사용자 설정/기본값)
-    });
+    if (restProps.animated !== undefined) {
+      logger.debug('엣지 렌더링 - 핵심 정보', {
+        id: restProps.id,
+        restProps: restProps
+      });
+    }
   }
-
-  // 엣지 연결 좌표 계산 (useMemo로 최적화)
-  const edgeParams = useMemo(() => ({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  }), [sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition]);
 
   // 전체 엣지 속성 구성 (mergeEdgeStyles 함수 호출용)
   const fullEdgeProps = useMemo(() => ({
@@ -87,86 +77,81 @@ function CustomEdge({
     targetPosition
   }), [restProps, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
 
-  // 통합 스타일 유틸리티 사용
-  const { edgeStyle, effectiveEdgeType, isAnimated } = useMemo(() => {
-    if (isLoading || isError || !ideaMapSettings) {
-      // 로딩 중이거나 에러 시 기본 스타일 반환
-      return {
-        edgeStyle: {
-          strokeWidth: 2,
-          stroke: restProps.selected ? '#FF0072' : '#C1C1C1',
-          transition: 'stroke 0.2s, stroke-width 0.2s'
-        },
-        effectiveEdgeType: 'bezier',
-        isAnimated: false,
-        markerEndType: null
-      };
+  // mergeEdgeStyles 호출 직전 입력값 로깅
+  console.log('[CustomEdge] mergeEdgeStyles 입력', {
+    fullEdgeProps: restProps,
+    ideaMapSettings,
+    data: restProps.data
+  });
+
+  // edgeParams 한 번만 선언
+  const edgeParams = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition };
+
+  // mergeEdgeStyles 호출 시 ideaMapSettings가 undefined일 경우 기본값 사용
+  const safeIdeaMapSettings = ideaMapSettings ?? { edge: {} };
+
+  const {
+    edgeStyle,
+    isAnimated,
+    markerEndType,
+    markerSize,
+    effectiveEdgeType
+  } = useMemo(() => mergeEdgeStyles(fullEdgeProps, safeIdeaMapSettings, restProps.data), [fullEdgeProps, safeIdeaMapSettings, restProps.data]);
+
+  // edgeStyle에서 strokeWidth, edgeColor 추출
+  const strokeWidth = edgeStyle.strokeWidth;
+  const edgeColor = edgeStyle.stroke;
+
+  // markerEnd를 React Flow 예제처럼 string으로 생성
+  const markerEnd = useMemo(() => {
+    if (markerEndType) {
+      return `url(#marker-${markerEndType})`;
     }
+    return undefined;
+  }, [markerEndType]);
 
-    // 전체 엣지 속성을 포함하여 스타일 병합 유틸리티 사용
-    return mergeEdgeStyles(fullEdgeProps, ideaMapSettings, restProps.data);
-  }, [fullEdgeProps, ideaMapSettings, isLoading, isError, restProps.data, restProps.selected]);
+  // className 병합 (restProps.className이 없을 수 있음)
+  const animatedClassName = isAnimated ? 'edge-animated' : '';
+  // restProps에서 className만 분리 (타입 단언)
+  const { className: restClassName, ...restCleanProps } = restProps as any;
+  const mergedClassName = [animatedClassName, restClassName ?? ''].filter(Boolean).join(' ');
 
-  // 엣지 패스 계산 (연결선 타입에 따라)
+  // edgePath 계산 (effectiveEdgeType에 따라)
   const [edgePath] = useMemo(() => {
-    // 타입에 따라 적절한 경로 생성 함수 사용
     switch (effectiveEdgeType) {
       case 'straight':
         return getStraightPath(edgeParams);
       case 'step':
-        return getSmoothStepPath({
-          ...edgeParams,
-          borderRadius: 0, // 직각
-        });
+        return getSmoothStepPath({ ...edgeParams, borderRadius: 0 });
       case 'smoothstep':
-        return getSmoothStepPath({
-          ...edgeParams,
-          borderRadius: 10, // 부드러운 모서리
-        });
+        return getSmoothStepPath({ ...edgeParams, borderRadius: 10 });
       case 'simplebezier':
-        return getBezierPath({
-          ...edgeParams,
-          curvature: 0.25,
-        });
-      case 'bezier':
+        return getBezierPath({ ...edgeParams, curvature: 0.25 });
+      case ConnectionLineType.Bezier:
       default:
         return getBezierPath(edgeParams);
     }
-  }, [effectiveEdgeType, edgeParams]);
+  }, [effectiveEdgeType, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
 
-  // clean props - 불필요한 prop 제거
-  const cleanProps = useMemo(() => {
-    // restProps에서 DOM 요소에 전달되지 않아야 할 속성들 제거
-    const {
-      selectable,
-      deletable,
-      sourceHandleId,
-      targetHandleId,
-      pathOptions,
-      source,
-      target,
-      id,
-      animated,
-      ...cleanProps
-    } = restProps;
-    return cleanProps;
-  }, [restProps]);
-
-  // 애니메이션 CSS 클래스 결정
-  const animatedClassName = useMemo(() => {
-    return isAnimated ? 'edge-animated' : '';
-  }, [isAnimated]);
+  // BaseEdge에 전달할 최종 style 로깅
+  console.log('[CustomEdge] BaseEdge 전달 style', {
+    edgeStyle,
+    strokeWidth,
+    edgeColor,
+    markerEnd,
+    markerSize
+  });
 
   return (
     <BaseEdge
+      {...restCleanProps}
       path={edgePath}
-      markerEnd={restProps.markerEnd}
       style={edgeStyle}
-      className={animatedClassName}
+      markerEnd={markerEnd}
+      className={mergedClassName}
       data-selected={restProps.selected ? 'true' : 'false'}
       data-component-id={COMPONENT_ID}
       data-animated={isAnimated ? 'true' : 'false'}
-      {...cleanProps}
     />
   );
 }

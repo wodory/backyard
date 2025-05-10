@@ -10,6 +10,7 @@
  * 수정일: 2025-04-21 : createEdgeAPI 함수 로깅 및 에러 처리 개선 - Task 2.6 요구사항 반영
  * 수정일: 2025-05-01 : 오류 처리 및 로깅 개선 - 인증 오류 구분 및 상세 오류 정보 로깅
  * 수정일: 2025-04-21 : source/target 필드명을 sourceCardNodeId/targetCardNodeId로 변경하여 Prisma 스키마와 일치시킴
+ * 수정일: 2025-05-08 : animated 속성을 엣지 테이블에서 제거하고 설정에서 가져오도록 수정
  * @rule   three-layer-standard
  * @layer  service
  * @tag    @service-msw fetchEdges
@@ -43,14 +44,56 @@ export async function fetchEdges(projectId: string): Promise<Edge[]> {
     const response = await fetch(url);
 
     if (!response.ok) {
-      const errorData = await response.text(); // 에러 내용 확인 위해 text() 사용
-      logger.error(`엣지 조회 실패: ${response.status} ${response.statusText}`, { url, errorData });
-      throw new Error(`엣지 목록을 가져오는 중 오류가 발생했습니다: ${response.statusText} (${response.status})`);
+      let errorData;
+      try {
+        // JSON 형식으로 오류 응답이 올 경우
+        errorData = await response.json();
+      } catch (e) {
+        // JSON으로 파싱이 안 될 경우 텍스트로 읽음
+        errorData = await response.text();
+      }
+      
+      logger.error(`엣지 조회 실패: ${response.status} ${response.statusText}`, { 
+        url, 
+        errorData,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      // 응답 상태 코드에 따른 구체적인 오류 메시지
+      if (response.status === 401) {
+        throw new Error('인증이 필요합니다. 다시 로그인해주세요.');
+      } else if (response.status === 400) {
+        throw new Error(`잘못된 요청입니다: ${typeof errorData === 'object' ? errorData?.error || errorData?.message : '매개변수를 확인하세요'}`);
+      } else if (response.status === 500) {
+        logger.error('서버 내부 오류 상세 정보:', errorData);
+        throw new Error(`서버 내부 오류가 발생했습니다: ${typeof errorData === 'object' ? errorData?.details || errorData?.error : '서버 로그를 확인하세요'}`);
+      } else {
+        throw new Error(`엣지 목록을 가져오는 중 오류가 발생했습니다: ${response.statusText} (${response.status})`);
+      }
     }
 
     const data: Edge[] = await response.json();
     logger.debug(`[edgeService] Fetched ${data.length} edges for project ${projectId}`);
-    return data;
+    
+    // Edge 객체 검증 및 안전하게 변환 (animated 속성 관련 문제 방지)
+    const safeEdges = data.map(edge => {
+      // 엣지 데이터 검증 (최소한의 필수 필드만 확인)
+      if (!edge.id || !edge.sourceCardNodeId || !edge.targetCardNodeId) {
+        logger.warn('불완전한 엣지 데이터:', { edge });
+      }
+      
+      // 안전하게 복제하여 반환
+      const safeEdge = { ...edge };
+      
+      // 이제는 animated 속성이 DB에 없으므로, 이 필드를 명시적으로 제거
+      if ('animated' in safeEdge) {
+        delete safeEdge.animated;
+      }
+      
+      return safeEdge;
+    });
+    
+    return safeEdges;
   } catch (error) {
     logger.error(`fetchEdges 오류 (projectId: ${projectId}):`, error);
     throw error;

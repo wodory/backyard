@@ -4,6 +4,7 @@
  * 역할: 서버 상태로서의 일반 설정을 관리하는 훅 제공
  * 작성일: 2025-05-05
  * 수정일: 2025-05-05 : Invalid hook call 오류 수정 - React 훅 규칙 준수
+ * 수정일: 2025-05-08 : SettingsData에서 FullSettings로 타입 변경
  * @rule   three-layer-standard
  * @layer  hook (TQ)
  * @tag    @tanstack-query-msw generalSettings
@@ -11,11 +12,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { extractAndMergeSettings } from '@/lib/settings-utils';
+import { getDefaultSettings } from '@/lib/settings-utils';
 import * as settingsService from '@/services/settingsService';
 import createLogger from '@/lib/logger';
 // import { useUserSettingsQuery } from './useUserSettingsQuery'; // 더 이상 직접 호출하지 않음
-import { GeneralSettings, SettingsData } from '@/types/settings';
+import { SettingsData } from '@/types/settings';
+import { FullSettings, GeneralSettings } from '@/lib/schema/settings-schema';
 
 const logger = createLogger('useGeneralSettings');
 
@@ -25,7 +27,7 @@ const logger = createLogger('useGeneralSettings');
  * @returns {Object} 일반 설정 데이터와 로딩 상태를 포함한 객체
  */
 export const useGeneralSettings = (userId?: string) => {
-  return useQuery<SettingsData | null, Error, GeneralSettings>({
+  return useQuery<FullSettings | null, Error, GeneralSettings>({
     queryKey: ['userSettings', userId], // Core 쿼리 키 공유
     queryFn: async () => {
       logger.debug(`[useGeneralSettings -> queryFn] 사용자 설정 조회 시작 (userId: ${userId})`);
@@ -44,12 +46,15 @@ export const useGeneralSettings = (userId?: string) => {
         throw error;
       }
     },
-    // select 옵션에서 데이터 가공 (기본값 병합 포함)
-    select: (data: SettingsData | null) => {
-      logger.debug('[useGeneralSettings -> select] 일반 설정 추출 및 병합 시작', { data });
-      const generalSettings = extractAndMergeSettings(data, 'general');
-      logger.debug('[useGeneralSettings -> select] 일반 설정 추출 및 병합 완료', { generalSettings });
-      return generalSettings;
+    // select 옵션에서 데이터 가공 - 항상 유효한 GeneralSettings 객체 반환
+    select: (data: FullSettings | null) => {
+      logger.debug('[useGeneralSettings -> select] 일반 설정 추출 시작', { data });
+      // null인 경우 기본 일반 설정 반환
+      if (!data) {
+        logger.debug('[useGeneralSettings -> select] 데이터가 없어 기본 일반 설정 반환');
+        return getDefaultSettings('general');
+      }
+      return data.general;
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5분 동안 데이터를 신선하게 유지
@@ -74,7 +79,7 @@ export const useUpdateGeneralSettingsMutation = () => {
     }) => {
       // 일반 설정만 업데이트하도록 중첩 객체로 구성
       const partialUpdate: Partial<SettingsData> = {
-        general: settings as GeneralSettings // 타입 캐스팅으로 lint 에러 해결
+        general: settings as any // 타입 캐스팅으로 lint 에러 해결
       };
       logger.debug(`[useUpdateGeneralSettingsMutation] 설정 업데이트 요청 시작 (userId: ${userId})`, { partialUpdate });
       return settingsService.updateSettings(userId, partialUpdate);
@@ -87,11 +92,6 @@ export const useUpdateGeneralSettingsMutation = () => {
       queryClient.invalidateQueries({ 
         queryKey: ['userSettings', userId] 
       });
-      
-      // 더 이상 필요하지 않음 (Core 쿼리를 공유하므로)
-      // queryClient.invalidateQueries({ 
-      //   queryKey: ['generalSettings', userId] 
-      // });
     },
     onError: (error) => {
       logger.error('[useUpdateGeneralSettingsMutation] 설정 업데이트 실패:', error);
@@ -116,7 +116,7 @@ export const useUpdateGeneralSettingsMutation = () => {
  *   DB-->>API: 설정 데이터 반환
  *   API-->>Service: 설정 데이터 응답
  *   Service-->>FeatureHook: 처리된 전체 설정 데이터 반환
- *   FeatureHook->>FeatureHook: select 함수로 general 설정만 추출 및 병합
+ *   FeatureHook->>FeatureHook: select 함수로 general 설정만 추출
  *   FeatureHook-->>UI: 일반 설정만 포함한 데이터 반환
  * 
  *   UI->>FeatureHook: updateGeneralSettings()
