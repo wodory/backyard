@@ -1,96 +1,5 @@
 [
   {
-    "timestamp": "2025-05-05T14:27:51.433Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:51.488Z"
-  },
-  {
-    "timestamp": "2025-05-05T14:27:51.432Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:51.496Z"
-  },
-  {
-    "timestamp": "2025-05-05T14:27:51.790Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:51.843Z"
-  },
-  {
-    "timestamp": "2025-05-05T14:27:51.791Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:51.850Z"
-  },
-  {
-    "timestamp": "2025-05-05T14:27:52.167Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:52.217Z"
-  },
-  {
-    "timestamp": "2025-05-05T14:27:52.166Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:52.231Z"
-  },
-  {
-    "timestamp": "2025-05-05T14:27:52.521Z",
-    "level": "error",
-    "module": "ClientLayout",
-    "message": "[ClientLayout] 설정 로드 중 에러 발생:",
-    "data": {
-      "code": 500,
-      "type": "SERVER_ERROR",
-      "message": "서버 응답 형식이 올바르지 않습니다."
-    },
-    "sessionId": "tknjaw651igpketmw4z32t",
-    "serverTimestamp": "2025-05-05T14:27:52.572Z"
-  },
-  {
     "timestamp": "2025-05-05T14:27:52.520Z",
     "level": "error",
     "module": "ClientLayout",
@@ -10608,5 +10517,61 @@
     "message": "프로젝트 생성 API 미구현",
     "sessionId": "tknjaw651igpketmw4z32t",
     "serverTimestamp": "2025-05-10T08:13:24.157Z"
+  },
+  {
+    "timestamp": "2025-05-10T08:45:08.211Z",
+    "level": "error",
+    "module": "ProjectToolbar",
+    "message": "프로젝트가 없습니다.",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-10T08:45:12.416Z"
+  },
+  {
+    "timestamp": "2025-05-10T08:45:41.487Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-10T08:45:41.570Z"
+  },
+  {
+    "timestamp": "2025-05-10T08:45:41.498Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-10T08:45:41.591Z"
+  },
+  {
+    "timestamp": "2025-05-11T01:56:40.691Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-11T01:56:41.463Z"
+  },
+  {
+    "timestamp": "2025-05-11T01:56:40.703Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-11T01:56:41.466Z"
+  },
+  {
+    "timestamp": "2025-05-11T01:56:54.867Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-11T01:56:54.975Z"
+  },
+  {
+    "timestamp": "2025-05-11T01:56:54.856Z",
+    "level": "warn",
+    "module": "useIdeaMapLayout",
+    "message": "프로젝트 생성 API 미구현",
+    "sessionId": "tknjaw651igpketmw4z32t",
+    "serverTimestamp": "2025-05-11T01:56:54.988Z"
   }
 ]

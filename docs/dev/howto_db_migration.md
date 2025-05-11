@@ -10,11 +10,21 @@ npx supabase link
 #수정한 스키마로 prisma 클라이언트 생성
 yarn prisma generate
 
+#supabase migration 폴더 정리 
+
 #수정한 스키마의 마이그레이션 SQL 생성
+
+## Production
+npx prisma migrate diff \
+          --from-url "postgresql://postgres.btdartpjjrkwgfejqnsn:iCLE4RNOaMQ4RJyZ@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres" \
+          --to-schema-datamodel prisma/schema.prisma \
+          --script > supabase/migrations/20250511216000_update_schema_to_prod.sql
+
+#Dev
 npx prisma migrate diff \
           --from-url "postgresql://postgres.rsycayyhmgmbdmmtzewz:SH1HpNpMW4ZSL21d@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres" \
           --to-schema-datamodel prisma/schema.prisma \
-          --script > supabase/migrations/20250505213000_fix_setting_schema.sql
+          --script > supabase/migrations/20250511216000_update_schema_to_prod.sql
 
 #supabase가 링크한 DB 마이그레이션
 npx supabase migration up --linked

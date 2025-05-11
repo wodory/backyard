@@ -19,6 +19,7 @@
  * 수정일: 2025-04-21 : type 속성 제거 관련 린트 에러 수정
  * 수정일: 2025-04-21 : animated 속성 오류 수정 - boolean 대신 className으로만 처리
  * 수정일: 2025-05-08 : animated 속성을 엣지 테이블에서 제거하고 설정에서만 가져오도록 수정
+ * 수정일: 2025-05-31 : BaseEdge에 불필요한 props 전달 제거하여 React 경고 해결
  */
 
 import React, { useMemo } from 'react';
@@ -45,60 +46,85 @@ const COMPONENT_ID = 'CustomEdge_from_nodes_directory';
  * 개별값(individualSettings) > 사용자 설정값(globalSettings) > props(ReactFlow에서 전달)
  */
 function CustomEdge({
+  // BaseEdge에 전달하지 않을 props 명시적 분리
+  id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
   targetY,
   sourcePosition,
   targetPosition,
-  ...restProps
-}: EdgeProps) {
+  data,
+  selected,
+  animated, // isAnimated로 대체
+  selectable, // BaseEdge에 불필요
+  deletable, // BaseEdge에 불필요
+  sourceHandleId, // BaseEdge에 불필요
+  targetHandleId, // BaseEdge에 불필요
+  pathOptions, // BaseEdge에 불필요
+  // 타입 정의에는 없지만 실제로 전달되는 props (as any로 타입 오류 해결)
+  type, // 타입은 이미 CustomEdge로 결정됨
+  style: propStyle, // edgeStyle로 대체
+  className: propClassName, // animatedClassName과 병합
+  // 그 외 BaseEdge에 전달 가능한 표준 SVG 속성들
+  ...safeRestProps
+}: EdgeProps & { type?: string, className?: string }) {
   // TanStack Query를 통해 설정 정보 가져오기
   const { ideaMapSettings, isLoading, isError } = useIdeaMapSettings();
 
   // 개발 환경에서만 간소화된 디버깅 로그 (중요한 엣지 정보만 로깅)
   if (process.env.NODE_ENV === 'development') {
-    if (restProps.animated !== undefined) {
+    if (animated !== undefined) {
       logger.debug('엣지 렌더링 - 핵심 정보', {
-        id: restProps.id,
-        restProps: restProps
+        id: id,
+        animated: animated
       });
     }
   }
 
   // 전체 엣지 속성 구성 (mergeEdgeStyles 함수 호출용)
   const fullEdgeProps = useMemo(() => ({
-    ...restProps,
+    id,
+    source,
+    target,
     sourceX,
     sourceY,
     targetX,
     targetY,
     sourcePosition,
-    targetPosition
-  }), [restProps, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
-
-  // mergeEdgeStyles 호출 직전 입력값 로깅
-  console.log('[CustomEdge] mergeEdgeStyles 입력', {
-    fullEdgeProps: restProps,
-    ideaMapSettings,
-    data: restProps.data
-  });
-
-  // edgeParams 한 번만 선언
-  const edgeParams = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition };
+    targetPosition,
+    data,
+    selected,
+    animated,
+    style: propStyle
+  }), [id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected, animated, propStyle]);
 
   // mergeEdgeStyles 호출 시 ideaMapSettings가 undefined일 경우 기본값 사용
   const safeIdeaMapSettings = ideaMapSettings ?? { edge: {} };
 
+  // edgeParams 한 번만 선언
+  const edgeParams = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition };
+
+  // mergeEdgeStyles 호출하여 스타일 계산
   const {
     edgeStyle,
     isAnimated,
     markerEndType,
     markerSize,
     effectiveEdgeType
-  } = useMemo(() => mergeEdgeStyles(fullEdgeProps, safeIdeaMapSettings, restProps.data), [fullEdgeProps, safeIdeaMapSettings, restProps.data]);
+  } = useMemo(() => {
+    // console.log('[CustomEdge] mergeEdgeStyles 입력', {
+    //   fullEdgeProps,
+    //   ideaMapSettings: safeIdeaMapSettings,
+    //   data
+    // });
 
-  // edgeStyle에서 strokeWidth, edgeColor 추출
+    return mergeEdgeStyles(fullEdgeProps, safeIdeaMapSettings, data);
+  }, [fullEdgeProps, safeIdeaMapSettings, data]);
+
+  // edgeStyle에서 strokeWidth, edgeColor 추출 (디버깅용)
   const strokeWidth = edgeStyle.strokeWidth;
   const edgeColor = edgeStyle.stroke;
 
@@ -110,11 +136,9 @@ function CustomEdge({
     return undefined;
   }, [markerEndType]);
 
-  // className 병합 (restProps.className이 없을 수 있음)
+  // className 병합 (애니메이션 클래스와 전달된 className 병합)
   const animatedClassName = isAnimated ? 'edge-animated' : '';
-  // restProps에서 className만 분리 (타입 단언)
-  const { className: restClassName, ...restCleanProps } = restProps as any;
-  const mergedClassName = [animatedClassName, restClassName ?? ''].filter(Boolean).join(' ');
+  const mergedClassName = [animatedClassName, propClassName].filter(Boolean).join(' ');
 
   // edgePath 계산 (effectiveEdgeType에 따라)
   const [edgePath] = useMemo(() => {
@@ -131,29 +155,32 @@ function CustomEdge({
       default:
         return getBezierPath(edgeParams);
     }
-  }, [effectiveEdgeType, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
+  }, [effectiveEdgeType, edgeParams]);
 
-  // BaseEdge에 전달할 최종 style 로깅
-  console.log('[CustomEdge] BaseEdge 전달 style', {
-    edgeStyle,
-    strokeWidth,
-    edgeColor,
+  // BaseEdge에 전달할 최종 props
+  const baseEdgeProps = {
+    ...safeRestProps, // 명시적으로 제외되지 않은 안전한 props
+    path: edgePath,
+    style: edgeStyle,
     markerEnd,
-    markerSize
-  });
+    className: mergedClassName,
+    // data 속성은 문자열로 전달
+    'data-selected': selected ? 'true' : 'false',
+    'data-component-id': COMPONENT_ID,
+    'data-animated': isAnimated ? 'true' : 'false'
+  };
 
-  return (
-    <BaseEdge
-      {...restCleanProps}
-      path={edgePath}
-      style={edgeStyle}
-      markerEnd={markerEnd}
-      className={mergedClassName}
-      data-selected={restProps.selected ? 'true' : 'false'}
-      data-component-id={COMPONENT_ID}
-      data-animated={isAnimated ? 'true' : 'false'}
-    />
-  );
+  // 디버깅용 로그 (필요시 주석 해제)
+  // console.log('[CustomEdge] BaseEdge 전달 props', {
+  //   edgeStyle,
+  //   strokeWidth,
+  //   edgeColor,
+  //   markerEnd,
+  //   markerSize,
+  //   className: mergedClassName
+  // });
+
+  return <BaseEdge {...baseEdgeProps} />;
 }
 
 // React.memo로 컴포넌트를 감싸 props가 변경되지 않으면 리렌더링 방지
